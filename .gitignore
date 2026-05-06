@@ -1,0 +1,59 @@
+# Android / Kotlin / Gradle
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build/
+/captures
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output.json
+
+# Kotlin
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Android Studio
+/app/build/
+/core/*/build/
+/feature/*/build/
+*.hprof
+
+# OpenCV
+/opencv-sdk/
+
+# Secrets
+*.keystore
+*.jks
+google-services.json
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
