@@ -22,7 +22,7 @@
 | 2.11 | ALS baseline | ✅ |
 | 2.12 | SNIP baseline | ✅ |
 | 2.13 | Baseline quality metrics | ✅ |
-| 2.14 | Noise estimation | ⬜ |
+| 2.14 | Noise estimation | ✅ |
 | 2.15 | Signal-to-noise ratio | ⬜ |
 | 2.16 | Peak detection | ⬜ |
 | 2.17 | Peak boundaries | ⬜ |
@@ -275,21 +275,21 @@
 
 ## 2.14 — Noise estimation
 
-- [ ] Создать NoiseEstimator
-- [ ] Поддержать ручной выбор noise region
-- [ ] Поддержать автоматический выбор noise region вне пиков
-- [ ] Поддержать noise region около ожидаемого пика
-- [ ] Поддержать режим 20 × Wh
-- [ ] Поддержать fallback режим 5 × Wh
-- [ ] Исключать сам пик из noise region
-- [ ] Исключать соседние пики из noise region
-- [ ] Проверять, что noise region достаточно длинный
-- [ ] Считать peak-to-peak noise: h = max(noiseRegion) - min(noiseRegion)
-- [ ] Считать RMS noise
-- [ ] Считать robust noise через MAD
-- [ ] Сохранять noiseMethod, noiseRegionStart, noiseRegionEnd, noiseValue
-- [ ] Сохранять warning, если noise region выбран вручную
-- [ ] Сохранять warning, если noise region содержит подозрительный пик
+- [x] Создать NoiseEstimator
+- [x] Поддержать ручной выбор noise region
+- [x] Поддержать автоматический выбор noise region вне пиков
+- [x] Поддержать noise region около ожидаемого пика
+- [x] Поддержать режим 20 × Wh
+- [x] Поддержать fallback режим 5 × Wh
+- [x] Исключать сам пик из noise region
+- [x] Исключать соседние пики из noise region
+- [x] Проверять, что noise region достаточно длинный
+- [x] Считать peak-to-peak noise: h = max(noiseRegion) - min(noiseRegion)
+- [x] Считать RMS noise
+- [x] Считать robust noise через MAD
+- [x] Сохранять noiseMethod, noiseRegionStart, noiseRegionEnd, noiseValue
+- [x] Сохранять warning, если noise region выбран вручную
+- [x] Сохранять warning, если noise region содержит подозрительный пик
 
 ---
 
