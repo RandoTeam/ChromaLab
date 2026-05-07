@@ -137,6 +137,10 @@ fun ProcessingFlowScreen(
     var smoothedSignal by remember { mutableStateOf<SmoothedSignal?>(null) }
     var digitizationReport by remember { mutableStateOf<DigitizationQualityReport?>(null) }
 
+    // Multi-graph support
+    var currentGraphIndex by remember { mutableIntStateOf(0) }
+    val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
+
     // --- Run real processing on step entry ---
     LaunchedEffect(currentStep) {
         isProcessing = true
@@ -332,7 +336,33 @@ fun ProcessingFlowScreen(
 
     val advance = { step: ProcessingStep ->
         val next = step.next()
-        if (next != null) {
+        // Multi-graph loop: after QUALITY_REPORT, check for more regions
+        if (step == ProcessingStep.QUALITY_REPORT) {
+            // Save current signal to the batch
+            smoothedSignal?.let { processedSignals.add(it) }
+            val totalRegions = graphResult?.regions?.size ?: 1
+            if (currentGraphIndex + 1 < totalRegions) {
+                // More regions — reset per-graph state and loop back
+                currentGraphIndex++
+                val nextRegion = graphResult!!.regions[currentGraphIndex]
+                selectedRegion = nextRegion
+                axesResult = null
+                xCalibration = null
+                yCalibration = null
+                ocrResult = null
+                pixelCalibration = null
+                curveExtractionResult = null
+                curvePoints = emptyList()
+                smoothedSignal = null
+                digitizationReport = null
+                currentStep = ProcessingStep.GRAPH_ROI
+            } else if (next != null) {
+                currentStep = next
+            } else {
+                // Shouldn't happen — EXPORT is after QUALITY_REPORT
+                currentStep = ProcessingStep.EXPORT
+            }
+        } else if (next != null) {
             currentStep = next
         } else {
             // Last step — save signal to Room, then navigate
