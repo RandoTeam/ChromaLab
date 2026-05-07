@@ -25,7 +25,7 @@
 | 2.14 | Noise estimation | ✅ |
 | 2.15 | Signal-to-noise ratio | ✅ |
 | 2.16 | Peak detection | ✅ |
-| 2.17 | Peak boundaries | ⬜ |
+| 2.17 | Peak boundaries | ✅ |
 | 2.18 | Overlapping / shoulder peaks | ⬜ |
 | 2.19 | Peak integration | ⬜ |
 | 2.20 | Peak metrics | ⬜ |
@@ -325,14 +325,14 @@
 
 ## 2.17 — Peak boundaries
 
-- [ ] Создать PeakBoundaryDetector
-- [ ] Реализовать boundary method: prominence bases
-- [ ] Реализовать boundary method: local minima left/right
-- [ ] Реализовать boundary method: baseline intersection
-- [ ] Реализовать boundary method: percent of height (1% или 5%)
-- [ ] Реализовать ручные boundaries
-- [ ] Сохранять boundaryMethod, leftBoundaryTime, rightBoundaryTime, boundaryConfidence
-- [ ] Добавить warnings: пересечение с соседним пиком, обрезан краем, baseline не пересечена, ручные границы
+- [x] Создать PeakBoundaryDetector
+- [x] Реализовать boundary method: prominence bases
+- [x] Реализовать boundary method: local minima left/right
+- [x] Реализовать boundary method: baseline intersection
+- [x] Реализовать boundary method: percent of height (1% или 5%)
+- [x] Реализовать ручные boundaries
+- [x] Сохранять boundaryMethod, leftBoundaryTime, rightBoundaryTime, boundaryConfidence
+- [x] Добавить warnings: пересечение с соседним пиком, обрезан краем, baseline не пересечена, ручные границы
 
 ---
 
