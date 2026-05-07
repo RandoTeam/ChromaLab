@@ -17,7 +17,9 @@ import androidx.navigation.compose.rememberNavController
 import com.chromalab.app.navigation.BottomTab
 import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
+import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
+import com.chromalab.feature.settings.LanguageScreen
 
 @Composable
 fun App() {
@@ -75,16 +77,16 @@ fun App() {
             ) {
                 // --- Bottom tabs ---
                 composable<Route.ProjectList> {
-                    PlaceholderScreen("Проекты")
+                    PlaceholderScreen(Strings.tabProjects)
                 }
                 composable<Route.Capture> {
-                    PlaceholderScreen("Съёмка")
+                    PlaceholderScreen(Strings.tabCapture)
                 }
                 composable<Route.Calculations> {
-                    PlaceholderScreen("Расчёты")
+                    PlaceholderScreen(Strings.tabCalculations)
                 }
                 composable<Route.More> {
-                    PlaceholderScreen("Ещё")
+                    PlaceholderScreen(Strings.tabMore)
                 }
 
                 // --- Projects ---
@@ -128,10 +130,15 @@ fun App() {
                     PlaceholderScreen("Отчёты")
                 }
                 composable<Route.Settings> {
-                    PlaceholderScreen("Настройки")
+                    PlaceholderScreen(Strings.settingsAbout)
+                }
+                composable<Route.Language> {
+                    LanguageScreen(
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable<Route.About> {
-                    PlaceholderScreen("О приложении")
+                    PlaceholderScreen(Strings.settingsAbout)
                 }
             }
         }

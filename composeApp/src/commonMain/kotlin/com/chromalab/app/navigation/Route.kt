@@ -32,5 +32,6 @@ sealed interface Route {
     // --- More ---
     @Serializable data object Reports : Route
     @Serializable data object Settings : Route
+    @Serializable data object Language : Route
     @Serializable data object About : Route
 }
