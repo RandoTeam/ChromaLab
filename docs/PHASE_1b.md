@@ -36,7 +36,7 @@
 | 1b.5 | Image Preprocessing stage (grayscale→CLAHE→binary) | ✅ |
 | 1b.6 | Калибровка: применение XCalibration + YCalibration → PixelCalibration | ✅ |
 | 1b.7 | SignalConverter: curvePoints + calibration → DigitalSignal с реальными единицами | ✅ |
-| 1b.8 | Сглаживание сигнала (SignalSmoother) | ⬜ |
+| 1b.8 | Сглаживание сигнала (SignalSmoother) | ✅ |
 | 1b.9 | Quality Report (DigitizationQualityReport) по итогам pipeline | ⬜ |
 | 1b.10 | ExportScreen: подключение PointExporter + SessionWriter + FileSharer | ⬜ |
 | 1b.11 | Сохранение DigitalSignal в Room (ChromatogramEntity) | ⬜ |

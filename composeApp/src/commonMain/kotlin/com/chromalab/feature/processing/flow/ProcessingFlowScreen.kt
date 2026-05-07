@@ -48,6 +48,9 @@ import com.chromalab.feature.processing.quality.ImageQualityReport
 import com.chromalab.feature.processing.quality.ImageQualityScreen
 import com.chromalab.feature.processing.quality.QualityLevel
 import com.chromalab.feature.processing.quality.QualityMetric
+import com.chromalab.feature.processing.quality.QualityCalculator
+import com.chromalab.feature.processing.quality.DigitizationQualityReport
+import com.chromalab.feature.processing.quality.QualityReportContent
 import com.chromalab.feature.processing.signal.SignalPreviewScreen
 import com.chromalab.feature.processing.signal.SmoothedSignal
 import com.chromalab.feature.processing.signal.DigitalSignal
@@ -123,6 +126,7 @@ fun ProcessingFlowScreen(
     var curveExtractionResult by remember { mutableStateOf<CurveExtractionResult?>(null) }
     var curvePoints by remember { mutableStateOf<List<CurvePoint>>(emptyList()) }
     var smoothedSignal by remember { mutableStateOf<SmoothedSignal?>(null) }
+    var digitizationReport by remember { mutableStateOf<DigitizationQualityReport?>(null) }
 
     // --- Run real processing on step entry ---
     LaunchedEffect(currentStep) {
@@ -266,7 +270,40 @@ fun ProcessingFlowScreen(
                         }
                     }
 
-                    else -> { /* no async processing needed */ }
+                    else -> {
+                        // Build quality report when entering QUALITY_REPORT step
+                        if (currentStep == ProcessingStep.QUALITY_REPORT && digitizationReport == null) {
+                            val imageStage = QualityCalculator.imageQuality(
+                                sharpness = qualityReport?.blurScore?.score?.times(100f) ?: 50f,
+                                contrast = qualityReport?.contrastScore?.score?.times(100f) ?: 50f,
+                            )
+                            val docStage = QualityCalculator.documentDetection(
+                                detected = documentBounds != null,
+                                perspectiveAngle = perspectiveResult?.maxWarpDistance ?: 0f,
+                                hasGlare = false,
+                                unevenLighting = false,
+                            )
+                            val graphStage = QualityCalculator.graphDetection(
+                                autoDetected = graphResult?.confidence?.name != "MANUAL",
+                                graphCount = graphResult?.regions?.size ?: 1,
+                            )
+                            val calStage = QualityCalculator.axisCalibration(
+                                xCalibrated = xCalibration != null,
+                                yCalibrated = yCalibration != null,
+                                ocrUsed = ocrResult != null,
+                                ocrCorrected = false,
+                                manualAxes = axesResult?.detectionMethod?.name == "MANUAL",
+                            )
+                            val curveStage = curveExtractionResult?.let {
+                                QualityCalculator.curveExtraction(it)
+                            } ?: com.chromalab.feature.processing.quality.StageQuality(
+                                "curve", 0f, listOf("Кривая не извлечена"),
+                            )
+                            digitizationReport = QualityCalculator.buildReport(
+                                imageStage, docStage, graphStage, calStage, curveStage,
+                            )
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -508,11 +545,18 @@ fun ProcessingFlowScreen(
                         }
                     }
 
-                    ProcessingStep.QUALITY_REPORT -> StepPlaceholder(
-                        step = step,
-                        onAccept = { advance(step) },
-                        onBack = { goBack(step) },
-                    )
+                    ProcessingStep.QUALITY_REPORT -> {
+                        val report = digitizationReport
+                        if (report != null) {
+                            QualityReportContent(
+                                report = report,
+                                onAccept = { advance(step) },
+                                onBack = { goBack(step) },
+                            )
+                        } else {
+                            ProcessingIndicator("Формирование отчёта о качестве...")
+                        }
+                    }
 
                     ProcessingStep.EXPORT -> StepPlaceholder(
                         step = step,
