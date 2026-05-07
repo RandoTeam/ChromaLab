@@ -20,7 +20,7 @@
 | 1.6 | Crop по рамке | ✅ |
 | 1.7 | Определение листа / документа | ✅ |
 | 1.8 | Perspective correction | ✅ |
-| 1.9 | Предобработка изображения | ⬜ |
+| 1.9 | Предобработка изображения | ✅ |
 | 1.10 | Определение области графика | ⬜ |
 | 1.11 | Поддержка нескольких графиков | ⬜ |
 | 1.12 | Определение осей | ⬜ |
@@ -161,17 +161,17 @@
 
 ## 1.9 — Предобработка изображения
 
-- [ ] Перевести изображение в grayscale
-- [ ] Применить CLAHE для повышения локального контраста
-- [ ] Применить threshold / adaptive threshold
-- [ ] Применить morphology operations
-- [ ] Реализовать noise cleanup
-- [ ] Проверить разные варианты threshold на реальных фото
-- [ ] Сохранять grayscale image
-- [ ] Сохранять contrast-enhanced image
-- [ ] Сохранять binary image
-- [ ] Сохранять morphology image
-- [ ] Все параметры предобработки записывать в processing_params.json
+- [x] Перевести изображение в grayscale
+- [x] Применить CLAHE для повышения локального контраста
+- [x] Применить threshold / adaptive threshold
+- [x] Применить morphology operations
+- [x] Реализовать noise cleanup
+- [x] Проверить разные варианты threshold на реальных фото
+- [x] Сохранять grayscale image
+- [x] Сохранять contrast-enhanced image
+- [x] Сохранять binary image
+- [x] Сохранять morphology image
+- [x] Все параметры предобработки записывать в processing_params.json
 
 ---
 
