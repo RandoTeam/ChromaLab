@@ -19,7 +19,7 @@
 | 0.5 | Room DB: entities | ✅ |
 | 0.6 | Навигация | ✅ |
 | 0.7 | Локализация | ✅ |
-| 0.8 | CI: build check | ⬜ |
+| 0.8 | CI: build check | ✅ |
 
 ---
 
