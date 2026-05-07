@@ -58,6 +58,10 @@ kotlin {
             implementation(libs.sqlite.bundled)
         }
 
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+
         androidMain.dependencies {
             // CameraX
             implementation(libs.camerax.core)
