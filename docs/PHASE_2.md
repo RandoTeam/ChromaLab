@@ -35,7 +35,7 @@
 | 2.24 | Таблица пиков | ✅ |
 | 2.25 | Ручная коррекция пиков | ✅ |
 | 2.26 | Algorithm Settings UI | ✅ |
-| 2.27 | Presets алгоритма | ⬜ |
+| 2.27 | Presets алгоритма | ✅ |
 | 2.28 | Warnings | ⬜ |
 | 2.29 | Room storage | ⬜ |
 | 2.30 | Export результатов | ⬜ |
@@ -432,11 +432,11 @@
 
 ## 2.27 — Presets алгоритма
 
-- [ ] Conservative: выше minProminence/minSNR, меньше false positives
-- [ ] Balanced: средние настройки
-- [ ] Sensitive: ниже minProminence/minSNR, больше candidates
-- [ ] Manual Review: авто-поиск минимальный, акцент на ручные правки
-- [ ] Каждый preset = AlgorithmProfile, пользователь может создать свой
+- [x] Conservative: выше minProminence/minSNR, меньше false positives
+- [x] Balanced: средние настройки
+- [x] Sensitive: ниже minProminence/minSNR, больше candidates
+- [x] Manual Review: авто-поиск минимальный, акцент на ручные правки
+- [x] Каждый preset = AlgorithmProfile, пользователь может создать свой
 
 ---
 
