@@ -30,7 +30,7 @@
 | 2.19 | Peak integration | ✅ |
 | 2.20 | Peak metrics | ✅ |
 | 2.21 | Confidence score пика | ✅ |
-| 2.22 | Интерактивный график Canvas Compose | ⬜ |
+| 2.22 | Интерактивный график Canvas Compose | ✅ |
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ⬜ |
 | 2.24 | Таблица пиков | ⬜ |
 | 2.25 | Ручная коррекция пиков | ⬜ |
@@ -384,12 +384,12 @@
 
 ## 2.22 — Интерактивный график Canvas Compose
 
-- [ ] Реализовать Canvas Compose chart
-- [ ] Показывать raw / smoothed / baseline / corrected signal / пики
-- [ ] Показывать apex markers, left/right boundaries, shaded integration area, noise region
-- [ ] Поддержать zoom, pan, tap по пику, long press для ручного пика, drag boundaries
-- [ ] Поддержать layer toggles, reset zoom, fit to peak
-- [ ] Оптимизировать отрисовку для больших массивов точек (downsampling только для отображения)
+- [x] Реализовать Canvas Compose chart
+- [x] Показывать raw / smoothed / baseline / corrected signal / пики
+- [x] Показывать apex markers, left/right boundaries, shaded integration area, noise region
+- [x] Поддержать zoom, pan, tap по пику, long press для ручного пика, drag boundaries
+- [x] Поддержать layer toggles, reset zoom, fit to peak
+- [x] Оптимизировать отрисовку для больших массивов точек (downsampling только для отображения)
 
 ---
 
