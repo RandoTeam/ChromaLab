@@ -6,6 +6,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 kotlin {
@@ -45,6 +51,10 @@ kotlin {
             // Image loading
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
+
+            // Room
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
 
         val desktopMain by getting {
@@ -53,6 +63,12 @@ kotlin {
             }
         }
     }
+}
+
+// Room KSP — process annotations for each target
+dependencies {
+    add("kspAndroid", libs.room.compiler)
+    add("kspDesktop", libs.room.compiler)
 }
 
 compose.desktop {
