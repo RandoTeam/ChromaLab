@@ -44,7 +44,7 @@
 | 1.30 | Тестирование на реальных фото | ⬜ |
 | 1.31 | Минимальные экраны | ✅ |
 | 1.32 | UX внутри Фазы 1 | ✅ |
-| 1.33 | Структуры данных | ⬜ |
+| 1.33 | Структуры данных | ✅ |
 | 1.34 | Что не входит в Фазу 1 | ⬜ |
 | 1.35 | Definition of Done | ⬜ |
 
@@ -495,20 +495,20 @@
 
 ## 1.33 — Структуры данных Фазы 1
 
-- [ ] ImageCaptureResult
-- [ ] ImageQualityReport
-- [ ] DocumentBounds
-- [ ] PerspectiveCorrectionData
-- [ ] GraphRegion
-- [ ] AxisCalibration
-- [ ] PixelCalibration
-- [ ] CurveExtractionParams
-- [ ] ExtractedPixelPoint
-- [ ] GraphPoint
-- [ ] ExtractedSignal
-- [ ] DigitizationQualityReport
-- [ ] ManualEditLog
-- [ ] ProcessingParams
+- [x] ImageCaptureResult
+- [x] ImageQualityReport
+- [x] DocumentBounds
+- [x] PerspectiveCorrectionData
+- [x] GraphRegion
+- [x] AxisCalibration
+- [x] PixelCalibration
+- [x] CurveExtractionParams
+- [x] ExtractedPixelPoint
+- [x] GraphPoint
+- [x] ExtractedSignal
+- [x] DigitizationQualityReport
+- [x] ManualEditLog
+- [x] ProcessingParams
 
 ---
 
