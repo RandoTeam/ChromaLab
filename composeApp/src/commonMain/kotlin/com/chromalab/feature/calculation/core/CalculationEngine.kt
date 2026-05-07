@@ -1,5 +1,6 @@
 package com.chromalab.feature.calculation.core
 
+import com.chromalab.feature.calculation.algorithm.SavitzkyGolayFilter
 import com.chromalab.feature.processing.signal.DigitalSignal
 
 /**
@@ -49,10 +50,13 @@ object CalculationEngine {
         val (calcSignal, validation) = SignalValidator.validate(signal, sourceId)
         val raw = calcSignal.points
 
-        // Stage 2: Optional smoothing
-        val smoothed: List<SignalPoint>? = if (params.smoothingEnabled) {
-            // Placeholder — real implementation in §2.8
-            null
+        // Stage 2: Optional smoothing (§2.8 Savitzky-Golay)
+        val smoothed: List<SignalPoint>? = if (params.smoothingEnabled && raw.size >= params.smoothingWindowSize) {
+            SavitzkyGolayFilter.smooth(
+                points = raw,
+                windowSize = params.smoothingWindowSize,
+                polynomialOrder = params.smoothingPolynomialOrder,
+            )
         } else null
 
         // Stage 3: Baseline estimation

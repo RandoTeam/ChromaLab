@@ -16,7 +16,7 @@
 | 2.5 | Формальный вход | ✅ |
 | 2.6 | Модель сигналов | ✅ |
 | 2.7 | Порядок расчетного pipeline | ✅ |
-| 2.8 | Savitzky-Golay smoothing | ⬜ |
+| 2.8 | Savitzky-Golay smoothing | ✅ |
 | 2.9 | Baseline correction: общий модуль | ⬜ |
 | 2.10 | Manual linear baseline | ⬜ |
 | 2.11 | ALS baseline | ⬜ |
@@ -185,16 +185,16 @@
 
 ## 2.8 — Savitzky-Golay smoothing
 
-- [ ] Реализовать Savitzky-Golay smoothing
-- [ ] Параметры: windowSize, polynomialOrder, edgeHandlingMode
-- [ ] windowSize должен быть нечетным
-- [ ] polynomialOrder должен быть меньше windowSize
-- [ ] Проверять, что точек достаточно для smoothing
-- [ ] Хранить smoothedSignal отдельно
-- [ ] Добавить переключатель smoothing on/off
-- [ ] Добавить предупреждение: smoothing может менять высоту и ширину пика
-- [ ] По умолчанию использовать smoothing только для detection
-- [ ] Добавить unit tests для smoothing
+- [x] Реализовать Savitzky-Golay smoothing
+- [x] Параметры: windowSize, polynomialOrder, edgeHandlingMode
+- [x] windowSize должен быть нечетным
+- [x] polynomialOrder должен быть меньше windowSize
+- [x] Проверять, что точек достаточно для smoothing
+- [x] Хранить smoothedSignal отдельно
+- [x] Добавить переключатель smoothing on/off
+- [x] Добавить предупреждение: smoothing может менять высоту и ширину пика
+- [x] По умолчанию использовать smoothing только для detection
+- [x] Добавить unit tests для smoothing
 
 ---
 
