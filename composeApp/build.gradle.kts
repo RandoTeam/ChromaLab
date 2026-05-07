@@ -70,6 +70,9 @@ kotlin {
 
             // Coroutines Android
             implementation(libs.coroutines.android)
+
+            // ML Kit Text Recognition (OCR)
+            implementation(libs.mlkit.text)
         }
 
         val desktopMain by getting {
