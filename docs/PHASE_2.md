@@ -37,7 +37,7 @@
 | 2.26 | Algorithm Settings UI | ✅ |
 | 2.27 | Presets алгоритма | ✅ |
 | 2.28 | Warnings | ✅ |
-| 2.29 | Room storage | ⬜ |
+| 2.29 | Room storage | ✅ |
 | 2.30 | Export результатов | ⬜ |
 | 2.31 | Детерминированность | ⬜ |
 | 2.32 | Unit-тесты расчетного ядра | ⬜ |
@@ -452,9 +452,9 @@
 
 ## 2.29 — Room storage
 
-- [ ] Таблицы: CalculationRun, AlgorithmProfile, SignalEntity, BaselineResult, PeakEntity, NoiseRegionEntity, ManualEditEntity, CalculationWarningEntity, ExportRecord
-- [ ] Relation: one ExtractedSignal → many CalculationRuns
-- [ ] Не перезаписывать старый расчет, новый = новый CalculationRun
+- [x] Таблицы: CalculationRun, AlgorithmProfile, SignalEntity, BaselineResult, PeakEntity, NoiseRegionEntity, ManualEditEntity, CalculationWarningEntity, ExportRecord
+- [x] Relation: one ExtractedSignal → many CalculationRuns
+- [x] Не перезаписывать старый расчет, новый = новый CalculationRun
 
 ---
 

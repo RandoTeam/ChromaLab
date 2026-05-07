@@ -7,6 +7,7 @@ import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
 import com.chromalab.core.data.dao.*
 import com.chromalab.core.data.entity.*
+import com.chromalab.feature.calculation.data.*
 
 @Database(
     entities = [
@@ -16,8 +17,15 @@ import com.chromalab.core.data.entity.*
         PeakEntity::class,
         CalculationEntity::class,
         AuditEntity::class,
+        // Phase 2 calculation
+        CalculationRunEntity::class,
+        CalculationPeakEntity::class,
+        BaselineResultEntity::class,
+        NoiseRegionEntity::class,
+        ManualEditEntity::class,
+        ExportRecordEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -29,6 +37,13 @@ abstract class ChromaLabDatabase : RoomDatabase() {
     abstract fun peakDao(): PeakDao
     abstract fun calculationDao(): CalculationDao
     abstract fun auditDao(): AuditDao
+    // Phase 2 calculation
+    abstract fun calculationRunDao(): CalculationRunDao
+    abstract fun calculationPeakDao(): CalculationPeakDao
+    abstract fun baselineResultDao(): BaselineResultDao
+    abstract fun noiseRegionDao(): NoiseRegionDao
+    abstract fun manualEditDao(): ManualEditDao
+    abstract fun exportRecordDao(): ExportRecordDao
 }
 
 // Room KMP generates this via KSP
