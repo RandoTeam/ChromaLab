@@ -61,6 +61,8 @@ actual class GraphRegionDetector actual constructor() {
     /**
      * Method 1: Find horizontal and vertical lines (Sobel + accumulator).
      * If we find clear axis lines, the graph is bounded by them.
+     * When ≥3 horizontal lines are found, this indicates multiple stacked graphs
+     * (e.g., upper = Ion 217, lower = Ion 218).
      */
     private fun tryLineDetection(
         gray: IntArray, w: Int, h: Int, scale: Float,
@@ -88,7 +90,7 @@ actual class GraphRegionDetector actual constructor() {
             vProjection[x] = edgeCount
         }
 
-        // Find strong line peaks (>40% of width/height have edges)
+        // Find strong line peaks (>30% of width/height have edges)
         val hThreshold = (w * 0.3f).toInt()
         val vThreshold = (h * 0.3f).toInt()
 
@@ -97,27 +99,34 @@ actual class GraphRegionDetector actual constructor() {
 
         if (hLines.size < 2 || vLines.isEmpty()) return null
 
-        // The graph area is between the first and last horizontal lines,
-        // and to the right of the leftmost vertical line
-        val topLine = hLines.first()
-        val bottomLine = hLines.last()
         val leftLine = vLines.first()
         val rightLine = if (vLines.size >= 2) vLines.last() else w - 1
 
-        if (bottomLine - topLine < h / 5) return null // Too small
+        // Build regions from consecutive pairs of horizontal lines
+        val regions = mutableListOf<GraphRegion>()
+        for (i in 0 until hLines.size - 1) {
+            val topLine = hLines[i]
+            val bottomLine = hLines[i + 1]
+            if (bottomLine - topLine < h / 10) continue // Too narrow
 
-        val region = GraphRegion(
-            x = (leftLine * scale).roundToInt(),
-            y = (topLine * scale).roundToInt(),
-            width = ((rightLine - leftLine) * scale).roundToInt().coerceAtLeast(1),
-            height = ((bottomLine - topLine) * scale).roundToInt().coerceAtLeast(1),
-        )
+            val region = GraphRegion(
+                x = (leftLine * scale).roundToInt(),
+                y = (topLine * scale).roundToInt(),
+                width = ((rightLine - leftLine) * scale).roundToInt().coerceAtLeast(1),
+                height = ((bottomLine - topLine) * scale).roundToInt().coerceAtLeast(1),
+                label = if (hLines.size > 2) "График ${i + 1}" else "",
+            )
 
-        val areaRatio = region.area.toFloat() / (imgW * imgH)
-        if (areaRatio < 0.05f) return null // Too small to be meaningful
+            val areaRatio = region.area.toFloat() / (imgW * imgH)
+            if (areaRatio >= 0.03f) { // Even small graphs are valid
+                regions.add(region)
+            }
+        }
+
+        if (regions.isEmpty()) return null
 
         return GraphRegionResult(
-            regions = listOf(region),
+            regions = regions,
             detectionMethod = DetectionMethod.AUTO,
             confidence = DetectionConfidence.HIGH,
             imageWidth = imgW,
