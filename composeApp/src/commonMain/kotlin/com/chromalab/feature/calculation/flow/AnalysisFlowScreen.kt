@@ -10,6 +10,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
+import com.chromalab.core.data.DatabaseProvider
+import com.chromalab.core.data.entity.ChromatogramEntity
+import com.chromalab.feature.processing.signal.DigitalSignal
+import com.chromalab.feature.processing.signal.GraphPoint
+import com.chromalab.feature.processing.signal.SignalMetadata
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
 
 /**
  * Analysis flow orchestrator — Phase 2 user scenario.
@@ -33,6 +42,55 @@ fun AnalysisFlowScreen(
 ) {
     var currentStep by remember { mutableStateOf(AnalysisStep.FIRST) }
     var peaksFound by remember { mutableStateOf(false) }
+
+    // Signal loaded from Room
+    var signal by remember { mutableStateOf<DigitalSignal?>(null) }
+    var entity by remember { mutableStateOf<ChromatogramEntity?>(null) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    // Load signal from Room on first composition
+    LaunchedEffect(signalId) {
+        val id = signalId.toLongOrNull()
+        if (id == null) {
+            loadError = "Некорректный ID сигнала"
+            return@LaunchedEffect
+        }
+        try {
+            val loaded = withContext(Dispatchers.IO) {
+                DatabaseProvider.getDatabase().chromatogramDao().getById(id)
+            }
+            if (loaded == null) {
+                loadError = "Сигнал ID=$id не найден в базе"
+                return@LaunchedEffect
+            }
+            entity = loaded
+            // Deserialize dataPoints JSON → List<GraphPoint>
+            val json = loaded.dataPoints
+            if (json != null) {
+                val points = Json.decodeFromString(
+                    ListSerializer(GraphPoint.serializer()), json,
+                )
+                signal = DigitalSignal(
+                    points = points,
+                    timeUnit = "мин",
+                    intensityUnit = loaded.intensityUnit ?: "mAU",
+                    metadata = SignalMetadata(
+                        sourceImage = loaded.filePath ?: "",
+                        totalPoints = points.size,
+                        duplicatesRemoved = 0,
+                        gapCount = 0,
+                        sortValid = true,
+                        timestamp = loaded.createdAt,
+                    ),
+                )
+            } else {
+                loadError = "Нет данных в записи ID=$id"
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            loadError = "Ошибка загрузки: ${e.message}"
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -132,7 +190,7 @@ fun AnalysisFlowScreen(
                 },
                 label = "analysis_step",
             ) { step ->
-                AnalysisStepContent(step, signalId, peaksFound)
+                AnalysisStepContent(step, signalId, signal, loadError, peaksFound)
             }
         }
     }
@@ -142,6 +200,8 @@ fun AnalysisFlowScreen(
 private fun AnalysisStepContent(
     step: AnalysisStep,
     signalId: String,
+    signal: DigitalSignal?,
+    loadError: String?,
     peaksFound: Boolean,
 ) {
     Column(
@@ -159,11 +219,41 @@ private fun AnalysisStepContent(
 
         Spacer(modifier = Modifier.height(Spacing.sm))
 
-        Text(
-            stepDescription(step, peaksFound),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Show signal summary on first step, placeholder on others
+        if (step == AnalysisStep.SIGNAL_OVERVIEW) {
+            if (loadError != null) {
+                Text(
+                    loadError,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            } else if (signal != null) {
+                Text(
+                    "Точек: ${signal.points.size}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    "Время: ${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
+                        "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    "Интенсивность: ${"%.1f".format(signal.minIntensity)} — " +
+                        "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Text("Загрузка сигнала...")
+            }
+        } else {
+            Text(
+                stepDescription(step, peaksFound),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         Spacer(modifier = Modifier.height(Spacing.xs))
 
