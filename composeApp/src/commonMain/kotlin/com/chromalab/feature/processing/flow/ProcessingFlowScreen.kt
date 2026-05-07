@@ -58,6 +58,7 @@ import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
+import com.chromalab.feature.processing.calibration.PixelCalibration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -119,6 +120,7 @@ fun ProcessingFlowScreen(
     var xCalibration by remember { mutableStateOf<XAxisCalibration?>(null) }
     var yCalibration by remember { mutableStateOf<YAxisCalibration?>(null) }
     var ocrResult by remember { mutableStateOf<AxisOcrResult?>(null) }
+    var pixelCalibration by remember { mutableStateOf<PixelCalibration?>(null) }
     var curveExtractionResult by remember { mutableStateOf<CurveExtractionResult?>(null) }
     var curvePoints by remember { mutableStateOf<List<CurvePoint>>(emptyList()) }
     var smoothedSignal by remember { mutableStateOf<SmoothedSignal?>(null) }
@@ -439,6 +441,17 @@ fun ProcessingFlowScreen(
                             axes = axes,
                             onAccept = { cal ->
                                 yCalibration = cal
+                                // Build unified PixelCalibration from X + Y
+                                val xCal = xCalibration
+                                if (xCal != null) {
+                                    val origin = axesResult?.origin
+                                    pixelCalibration = PixelCalibration.from(
+                                        xAxis = xCal,
+                                        yAxis = cal,
+                                        originPixelX = origin?.x ?: 0f,
+                                        originPixelY = origin?.y ?: imageHeight.toFloat(),
+                                    )
+                                }
                                 advance(step)
                             },
                             onBack = { goBack(step) },
