@@ -24,7 +24,7 @@
 | 2.13 | Baseline quality metrics | ✅ |
 | 2.14 | Noise estimation | ✅ |
 | 2.15 | Signal-to-noise ratio | ✅ |
-| 2.16 | Peak detection | ⬜ |
+| 2.16 | Peak detection | ✅ |
 | 2.17 | Peak boundaries | ⬜ |
 | 2.18 | Overlapping / shoulder peaks | ⬜ |
 | 2.19 | Peak integration | ⬜ |
@@ -309,17 +309,17 @@
 
 ## 2.16 — Peak detection
 
-- [ ] Создать PeakDetector
-- [ ] Работать по baselineCorrectedSignal
-- [ ] Для detection можно использовать smoothed corrected signal
-- [ ] Реализовать поиск локальных максимумов
-- [ ] Реализовать prominence-based filtering
-- [ ] Параметры: minHeight, minProminence, minDistance, minWidth, maxWidth, prominenceWindow, minSnr
-- [ ] minProminence задавать в absolute units и как k × noise
-- [ ] Добавить default k = 3 для чувствительного поиска
-- [ ] Для каждого кандидата сохранять: apexTime, apexIntensity, prominence, width, detectionScore, accepted/rejected, rejectReason
-- [ ] В debug mode показывать rejected peak candidates
-- [ ] Не делать обнаружение вещества на основании одного найденного пика
+- [x] Создать PeakDetector
+- [x] Работать по baselineCorrectedSignal
+- [x] Для detection можно использовать smoothed corrected signal
+- [x] Реализовать поиск локальных максимумов
+- [x] Реализовать prominence-based filtering
+- [x] Параметры: minHeight, minProminence, minDistance, minWidth, maxWidth, prominenceWindow, minSnr
+- [x] minProminence задавать в absolute units и как k × noise
+- [x] Добавить default k = 3 для чувствительного поиска
+- [x] Для каждого кандидата сохранять: apexTime, apexIntensity, prominence, width, detectionScore, accepted/rejected, rejectReason
+- [x] В debug mode показывать rejected peak candidates
+- [x] Не делать обнаружение вещества на основании одного найденного пика
 
 ---
 
