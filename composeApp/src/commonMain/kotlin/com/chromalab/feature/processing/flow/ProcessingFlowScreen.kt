@@ -51,6 +51,11 @@ import com.chromalab.feature.processing.quality.QualityMetric
 import com.chromalab.feature.processing.quality.QualityCalculator
 import com.chromalab.feature.processing.quality.DigitizationQualityReport
 import com.chromalab.feature.processing.quality.QualityReportContent
+import com.chromalab.feature.processing.export.ExportScreen
+import com.chromalab.feature.processing.export.ExportBundle
+import com.chromalab.feature.processing.storage.SessionWriter
+import com.chromalab.feature.processing.storage.ProcessingParams
+import com.chromalab.feature.processing.signal.SmoothingParams
 import com.chromalab.feature.processing.signal.SignalPreviewScreen
 import com.chromalab.feature.processing.signal.SmoothedSignal
 import com.chromalab.feature.processing.signal.DigitalSignal
@@ -558,11 +563,37 @@ fun ProcessingFlowScreen(
                         }
                     }
 
-                    ProcessingStep.EXPORT -> StepPlaceholder(
-                        step = step,
-                        onAccept = { advance(step) },
-                        onBack = { goBack(step) },
-                    )
+                    ProcessingStep.EXPORT -> {
+                        val signal = smoothedSignal?.smoothed
+                        if (signal != null) {
+                            val cal = pixelCalibration ?: fallbackCalibration(
+                                imageWidth, imageHeight,
+                            )
+                            val bundle = ExportBundle(
+                                signal = signal,
+                                calibration = cal,
+                                processingParams = ProcessingParams(
+                                    calibration = cal,
+                                    smoothingParams = smoothedSignal?.params ?: SmoothingParams(),
+                                    timestamp = System.currentTimeMillis(),
+                                ),
+                                timestamp = System.currentTimeMillis(),
+                            )
+                            val writer = remember { SessionWriter(outputDir) }
+                            ExportScreen(
+                                signal = signal,
+                                bundle = bundle,
+                                sessionWriter = writer,
+                                onBack = { goBack(step) },
+                            )
+                        } else {
+                            StepPlaceholder(
+                                step = step,
+                                onAccept = { advance(step) },
+                                onBack = { goBack(step) },
+                            )
+                        }
+                    }
                 }
             }
 
