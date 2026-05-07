@@ -20,7 +20,7 @@
 | 2.9 | Baseline correction: общий модуль | ✅ |
 | 2.10 | Manual linear baseline | ✅ |
 | 2.11 | ALS baseline | ✅ |
-| 2.12 | SNIP baseline | ⬜ |
+| 2.12 | SNIP baseline | ✅ |
 | 2.13 | Baseline quality metrics | ⬜ |
 | 2.14 | Noise estimation | ⬜ |
 | 2.15 | Signal-to-noise ratio | ⬜ |
@@ -249,14 +249,14 @@
 
 ## 2.12 — SNIP baseline
 
-- [ ] Реализовать SNIP baseline
-- [ ] Параметры: iterations, windowSize, smoothingMode
-- [ ] Показывать SNIP как альтернативный метод
-- [ ] Не делать SNIP единственным default
-- [ ] Добавить сравнение SNIP vs ALS vs Manual Linear
-- [ ] Добавить warning при широких пиках
-- [ ] Добавить warning при сильном отличии площади от ALS/manual baseline
-- [ ] Добавить unit tests на synthetic nonlinear baseline
+- [x] Реализовать SNIP baseline
+- [x] Параметры: iterations, windowSize, smoothingMode
+- [x] Показывать SNIP как альтернативный метод
+- [x] Не делать SNIP единственным default
+- [x] Добавить сравнение SNIP vs ALS vs Manual Linear
+- [x] Добавить warning при широких пиках
+- [x] Добавить warning при сильном отличии площади от ALS/manual baseline
+- [x] Добавить unit tests на synthetic nonlinear baseline
 
 ---
 

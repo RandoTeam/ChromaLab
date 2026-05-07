@@ -105,6 +105,7 @@ object BaselineDispatcher {
         BaselineMethod.NONE to NoneBaselineEstimator,
         BaselineMethod.MANUAL_LINEAR to ManualLinearBaselineEstimator.auto(),
         BaselineMethod.ALS to AlsBaselineEstimator.medium(),
+        BaselineMethod.SNIP to SnipBaselineEstimator.default(),
     )
 
     /**
