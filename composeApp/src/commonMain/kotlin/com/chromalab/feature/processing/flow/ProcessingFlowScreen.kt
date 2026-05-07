@@ -52,8 +52,7 @@ import com.chromalab.feature.processing.signal.SignalPreviewScreen
 import com.chromalab.feature.processing.signal.SmoothedSignal
 import com.chromalab.feature.processing.signal.SmoothingParams
 import com.chromalab.feature.processing.signal.DigitalSignal
-import com.chromalab.feature.processing.signal.GraphPoint
-import com.chromalab.feature.processing.signal.SignalMetadata
+import com.chromalab.feature.processing.signal.SignalConverter
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
@@ -256,21 +255,12 @@ fun ProcessingFlowScreen(
 
                     ProcessingStep.SIGNAL_PREVIEW -> {
                         if (smoothedSignal == null && curvePoints.isNotEmpty()) {
-                            val points = curvePoints.mapIndexed { i, cp ->
-                                GraphPoint(
-                                    index = i, pixelX = cp.pixelX, pixelY = cp.pixelY,
-                                    time = cp.pixelX.toFloat(),
-                                    intensity = cp.pixelY,
-                                    confidence = cp.confidence,
-                                    isInterpolated = false,
-                                )
-                            }
-                            val signal = DigitalSignal(
-                                points = points, timeUnit = "px", intensityUnit = "px",
-                                metadata = SignalMetadata(
-                                    currentImagePath, points.size, 0, 0, true,
-                                    System.currentTimeMillis(),
-                                ),
+                            // Build or use fallback identity calibration
+                            val cal = pixelCalibration ?: fallbackCalibration(
+                                imageWidth, imageHeight,
+                            )
+                            val signal = SignalConverter.convert(
+                                curvePoints, cal, currentImagePath,
                             )
                             smoothedSignal = SmoothedSignal(
                                 raw = signal, smoothed = signal,
@@ -650,3 +640,27 @@ private fun fallbackAxesResult() = AxesResult(
     confidence = 0.5f,
     timestamp = System.currentTimeMillis(),
 )
+
+/**
+ * Identity calibration: 1 pixel = 1 unit (px).
+ * Used when user skips X/Y calibration steps.
+ */
+private fun fallbackCalibration(w: Int, h: Int): PixelCalibration {
+    val fw = w.coerceAtLeast(1).toFloat()
+    val fh = h.coerceAtLeast(1).toFloat()
+    return PixelCalibration(
+        xCalibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, 0f),
+            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fw, fw),
+        ),
+        yCalibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, fh),
+            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
+        ),
+        xUnit = "px",
+        yUnit = "px",
+        originPixelX = 0f,
+        originPixelY = fh,
+        timestamp = System.currentTimeMillis(),
+    )
+}
