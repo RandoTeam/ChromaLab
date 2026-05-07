@@ -48,19 +48,24 @@
 
 ---
 
-## Фаза 2: Расчётное ядро (Неделя 7–9)
+## Фаза 2: Расчётное ядро (Неделя 7–9) ✅
 
-> Baseline, пики, площади, S/N.
+> Baseline, пики, площади, S/N — 37 подфаз, 36 завершено.
 
-- [ ] Baseline correction (ALS + SNIP)
-- [ ] Peak detection (prominence-based)
-- [ ] Peak integration (trapezoidal)
-- [ ] Таблица пиков: RT, height, area, width, S/N
-- [ ] Интерактивный график хроматограммы (Canvas Compose)
-- [ ] Ручная коррекция пиков (drag boundaries)
-- [ ] Параметры алгоритма: UI настройки
-- [ ] Сохранение результатов в Room
-- [ ] Unit-тесты расчётного ядра
+- [x] Baseline correction: Manual Linear, ALS, SNIP (3 метода)
+- [x] Peak detection (prominence-based + overlap/shoulder)
+- [x] Peak integration (trapezoidal, positive/negative area)
+- [x] Таблица пиков: RT, height, area, width, S/N, confidence
+- [x] Интерактивный график хроматограммы (Canvas Compose, layers)
+- [x] Ручная коррекция пиков (drag boundaries, add/reject, audit trail)
+- [x] Параметры алгоритма: UI настройки + 4 preset profile
+- [x] Warning system: 16 кодов, 4 severity
+- [x] Сохранение результатов в Room (6 новых таблиц)
+- [x] Export: peaks.csv, calculation.json, signal.csv, baseline.csv, warnings.json
+- [x] Детерминированность: DeterminismContract + DeterminismVerifier
+- [x] Unit-тесты расчётного ядра (25 тестов)
+- [x] Synthetic validation tests (18 тестов)
+- [x] Quality metrics: PeakAccuracy, DetectionMetrics, BaselineMetrics
 
 ---
 
