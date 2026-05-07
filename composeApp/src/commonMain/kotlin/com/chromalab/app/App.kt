@@ -20,6 +20,7 @@ import com.chromalab.app.navigation.Route
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
+import com.chromalab.feature.capture.GalleryImportScreen
 import com.chromalab.feature.settings.LanguageScreen
 
 @Composable
@@ -111,7 +112,12 @@ fun App() {
                     )
                 }
                 composable<Route.GalleryFrame> {
-                    PlaceholderScreen("Галерея → Рамка")
+                    GalleryImportScreen(
+                        onImageSelected = { path ->
+                            // TODO: navigate to quality check with imported image
+                        },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable<Route.FileImport> {
                     PlaceholderScreen("Импорт файла")
