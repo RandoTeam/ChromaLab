@@ -168,7 +168,7 @@ private fun AnalysisStepContent(
         Spacer(modifier = Modifier.height(Spacing.xs))
 
         Text(
-            "Signal: $signalId",
+            "Signal ID: ${signalId.toLongOrNull() ?: "—"}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline,
         )

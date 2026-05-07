@@ -39,7 +39,7 @@
 | 1b.8 | Сглаживание сигнала (SignalSmoother) | ✅ |
 | 1b.9 | Quality Report (DigitizationQualityReport) по итогам pipeline | ✅ |
 | 1b.10 | ExportScreen: подключение PointExporter + SessionWriter + FileSharer | ✅ |
-| 1b.11 | Сохранение DigitalSignal в Room (ChromatogramEntity) | ⬜ |
+| 1b.11 | Сохранение DigitalSignal в Room (ChromatogramEntity) | ✅ |
 | 1b.12 | Phase 1→2 bridge: передача signalId из Room в AnalysisFlowScreen | ⬜ |
 | 1b.13 | AnalysisFlowScreen: загрузка сигнала из Room | ⬜ |
 | 1b.14 | AnalysisFlowScreen: подключение реальных Phase 2 алгоритмов | ⬜ |
