@@ -11,7 +11,7 @@
 |---|---------|--------|
 | 2.1 | Базовая цель фазы | ✅ |
 | 2.2 | Пользовательский сценарий | ✅ |
-| 2.3 | Минимальные экраны | ⬜ |
+| 2.3 | Минимальные экраны | ✅ |
 | 2.4 | UX-принцип | ⬜ |
 | 2.5 | Формальный вход | ⬜ |
 | 2.6 | Модель сигналов | ⬜ |
@@ -86,17 +86,17 @@
 
 ## 2.3 — Минимальные экраны Фазы 2
 
-- [ ] CalculationHomeScreen
-- [ ] ChromatogramAnalysisScreen
-- [ ] AlgorithmSettingsScreen
-- [ ] PeakDetailsBottomSheet
-- [ ] BaselineComparisonScreen
-- [ ] NoiseRegionScreen
-- [ ] PeakTableScreen
-- [ ] ManualCorrectionScreen
-- [ ] CalculationResultScreen
-- [ ] CalculationHistoryScreen
-- [ ] ExportCalculationScreen
+- [x] CalculationHomeScreen
+- [x] ChromatogramAnalysisScreen
+- [x] AlgorithmSettingsScreen
+- [x] PeakDetailsBottomSheet
+- [x] BaselineComparisonScreen
+- [x] NoiseRegionScreen
+- [x] PeakTableScreen
+- [x] ManualCorrectionScreen
+- [x] CalculationResultScreen
+- [x] CalculationHistoryScreen
+- [x] ExportCalculationScreen
 
 ---
 
