@@ -40,7 +40,7 @@
 | 2.29 | Room storage | ✅ |
 | 2.30 | Export результатов | ✅ |
 | 2.31 | Детерминированность | ✅ |
-| 2.32 | Unit-тесты расчетного ядра | ⬜ |
+| 2.32 | Unit-тесты расчетного ядра | ✅ |
 | 2.33 | Synthetic validation tests | ⬜ |
 | 2.34 | Проверка на реальных данных | ⬜ |
 | 2.35 | Метрики качества | ⬜ |
@@ -477,11 +477,11 @@
 
 ## 2.32 — Unit-тесты расчетного ядра
 
-- [ ] Тесты: input validation, sorting, smoothing, manual/ALS/SNIP baseline
-- [ ] Тесты: peak detection (single, close, noise-only), prominence, boundaries
-- [ ] Тесты: trapezoidal integration (rectangle, triangle, Gaussian, irregular)
-- [ ] Тесты: S/N (peak-to-peak, RMS), manual correction, rejected peak
-- [ ] Тесты: CalculationRun save/load, identical input → identical output
+- [x] Тесты: input validation, sorting, smoothing, manual/ALS/SNIP baseline
+- [x] Тесты: peak detection (single, close, noise-only), prominence, boundaries
+- [x] Тесты: trapezoidal integration (rectangle, triangle, Gaussian, irregular)
+- [x] Тесты: S/N (peak-to-peak, RMS), manual correction, rejected peak
+- [x] Тесты: CalculationRun save/load, identical input → identical output
 
 ---
 
