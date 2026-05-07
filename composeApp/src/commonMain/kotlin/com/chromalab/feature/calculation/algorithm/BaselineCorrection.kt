@@ -104,6 +104,7 @@ object BaselineDispatcher {
     private val estimators = mutableMapOf<BaselineMethod, BaselineEstimator>(
         BaselineMethod.NONE to NoneBaselineEstimator,
         BaselineMethod.MANUAL_LINEAR to ManualLinearBaselineEstimator.auto(),
+        BaselineMethod.ALS to AlsBaselineEstimator.medium(),
     )
 
     /**

@@ -19,7 +19,7 @@
 | 2.8 | Savitzky-Golay smoothing | ✅ |
 | 2.9 | Baseline correction: общий модуль | ✅ |
 | 2.10 | Manual linear baseline | ✅ |
-| 2.11 | ALS baseline | ⬜ |
+| 2.11 | ALS baseline | ✅ |
 | 2.12 | SNIP baseline | ⬜ |
 | 2.13 | Baseline quality metrics | ⬜ |
 | 2.14 | Noise estimation | ⬜ |
@@ -231,19 +231,19 @@
 
 ## 2.11 — ALS baseline
 
-- [ ] Реализовать ALS baseline
-- [ ] Использовать модель: minimize Σ wi(yi - zi)² + λΣ(Δ²zi)²
-- [ ] Параметры: lambda, p, iterations, diffOrder
-- [ ] lambda управляет гладкостью baseline
-- [ ] p управляет асимметрией весов
-- [ ] Добавить presets: soft, medium, stiff
-- [ ] Сохранять final weights
-- [ ] Сохранять convergence status
-- [ ] Сохранять baselineQualityReport
-- [ ] Добавить warning, если baseline слишком агрессивная
-- [ ] Добавить warning, если baseline выше сигнала на большом участке
-- [ ] Добавить warning, если baseline заметно меняет area
-- [ ] Добавить unit tests на synthetic baseline
+- [x] Реализовать ALS baseline
+- [x] Использовать модель: minimize Σ wi(yi - zi)² + λΣ(Δ²zi)²
+- [x] Параметры: lambda, p, iterations, diffOrder
+- [x] lambda управляет гладкостью baseline
+- [x] p управляет асимметрией весов
+- [x] Добавить presets: soft, medium, stiff
+- [x] Сохранять final weights
+- [x] Сохранять convergence status
+- [x] Сохранять baselineQualityReport
+- [x] Добавить warning, если baseline слишком агрессивная
+- [x] Добавить warning, если baseline выше сигнала на большом участке
+- [x] Добавить warning, если baseline заметно меняет area
+- [x] Добавить unit tests на synthetic baseline
 
 ---
 
