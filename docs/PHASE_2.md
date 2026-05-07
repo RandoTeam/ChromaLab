@@ -32,7 +32,7 @@
 | 2.21 | Confidence score пика | ✅ |
 | 2.22 | Интерактивный график Canvas Compose | ✅ |
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ✅ |
-| 2.24 | Таблица пиков | ⬜ |
+| 2.24 | Таблица пиков | ✅ |
 | 2.25 | Ручная коррекция пиков | ⬜ |
 | 2.26 | Algorithm Settings UI | ⬜ |
 | 2.27 | Presets алгоритма | ⬜ |
@@ -403,10 +403,10 @@
 
 ## 2.24 — Таблица пиков
 
-- [ ] Колонки: status, RT apex, height, area, width, S/N, prominence, confidence, warnings
-- [ ] Сортировка по RT, фильтр по статусу
-- [ ] Быстрый переход от строки к пику на графике
-- [ ] Экспорт таблицы в CSV
+- [x] Колонки: status, RT apex, height, area, width, S/N, prominence, confidence, warnings
+- [x] Сортировка по RT, фильтр по статусу
+- [x] Быстрый переход от строки к пику на графике
+- [x] Экспорт таблицы в CSV
 
 ---
 
