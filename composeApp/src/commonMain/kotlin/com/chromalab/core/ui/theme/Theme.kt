@@ -7,47 +7,97 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 
-// --- Colors ---
-private val Primary = Color(0xFF00D4AA)
-private val PrimaryContainer = Color(0xFF003D32)
-private val Secondary = Color(0xFF64B5F6)
-private val Tertiary = Color(0xFFFFB74D)
-private val ErrorColor = Color(0xFFEF5350)
-private val BackgroundDark = Color(0xFF0F1318)
-private val SurfaceDark = Color(0xFF1A1F27)
-private val OnBackgroundDark = Color(0xFFE8ECF0)
-private val OnSurfaceDark = Color(0xFFC5CBD3)
-private val OutlineDark = Color(0xFF3A4250)
-private val BackgroundLight = Color(0xFFFAFCFE)
-private val SurfaceLight = Color(0xFFF0F3F7)
-private val PrimaryLight = Color(0xFF00897B)
-private val OnBackgroundLight = Color(0xFF1A1F27)
-
+// ============================================================
+// Dark Color Scheme — основной режим для ChromaLab
+// Все пары container + onContainer проверены на контраст ≥ 4.5:1
+// ============================================================
 private val DarkColorScheme = darkColorScheme(
-    primary = Primary,
-    primaryContainer = PrimaryContainer,
-    secondary = Secondary,
-    tertiary = Tertiary,
-    error = ErrorColor,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    onBackground = OnBackgroundDark,
-    onSurface = OnSurfaceDark,
-    outline = OutlineDark,
+    // Primary — бирюзовый акцент
+    primary = Teal80,                    // кнопки, ссылки
+    onPrimary = Teal10,                  // текст НА primary (тёмный на бирюзовом: 12:1)
+    primaryContainer = Teal30,           // фон выделенных элементов
+    onPrimaryContainer = Teal90,         // текст НА primaryContainer (светлый на тёмном: 8:1)
+
+    // Secondary — голубой (графики, ion channel 1)
+    secondary = Blue80,
+    onSecondary = Neutral4,
+    secondaryContainer = Blue30,
+    onSecondaryContainer = Blue80,
+
+    // Tertiary — янтарный (ion channel 2, предупреждения)
+    tertiary = Amber80,
+    onTertiary = Neutral4,
+    tertiaryContainer = Amber30,
+    onTertiaryContainer = Amber80,
+
+    // Error — красный десатурированный
+    error = Error,
+    onError = Neutral4,
+    errorContainer = ErrorDark,
+    onErrorContainer = Error,
+
+    // Surfaces — нейтральные тёмные
+    background = Neutral4,               // фон приложения
+    onBackground = Neutral95,            // основной текст (контраст 14:1)
+    surface = Neutral6,                  // карточки
+    onSurface = Neutral87,              // текст на карточках (контраст 10:1)
+    surfaceVariant = Neutral10,          // второстепенные панели
+    onSurfaceVariant = Neutral70,        // вторичный текст (контраст 6:1)
+    surfaceContainerHigh = Neutral17,    // elevated cards
+    surfaceContainerHighest = Neutral22, // modal sheets
+
+    // Outline
+    outline = Neutral30,                 // разделители, границы
+    outlineVariant = Neutral40,          // менее заметные разделители
+
+    // Inverse — для snackbar и т.п.
+    inverseSurface = Neutral95,
+    inverseOnSurface = Neutral4,
+    inversePrimary = Teal30,
 )
 
+// ============================================================
+// Light Color Scheme — дополнительный режим
+// ============================================================
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryLight,
-    primaryContainer = PrimaryContainer,
-    secondary = Secondary,
-    tertiary = Tertiary,
-    error = ErrorColor,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onBackground = OnBackgroundLight,
-    onSurface = OnBackgroundLight,
+    primary = Teal30,
+    onPrimary = NeutralL99,
+    primaryContainer = Teal90,
+    onPrimaryContainer = Teal10,
+
+    secondary = Blue30,
+    onSecondary = NeutralL99,
+    secondaryContainer = Color(0xFFD4E4FF),
+    onSecondaryContainer = Blue30,
+
+    tertiary = Amber30,
+    onTertiary = NeutralL99,
+    tertiaryContainer = Color(0xFFFFE5B4),
+    onTertiaryContainer = Amber30,
+
+    error = Color(0xFFC62828),
+    onError = NeutralL99,
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF4A1C1C),
+
+    background = NeutralL99,
+    onBackground = NeutralL10,
+    surface = NeutralL96,
+    onSurface = NeutralL20,
+    surfaceVariant = NeutralL92,
+    onSurfaceVariant = NeutralL40,
+
+    outline = Color(0xFFB0B8C4),
+    outlineVariant = Color(0xFFD0D5DD),
+
+    inverseSurface = NeutralL10,
+    inverseOnSurface = NeutralL99,
+    inversePrimary = Teal80,
 )
 
+// ============================================================
+// Theme Composable
+// ============================================================
 @Composable
 fun ChromaLabTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -57,6 +107,8 @@ fun ChromaLabTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = ChromaLabTypography,
+        shapes = ChromaLabShapes,
         content = content
     )
 }
