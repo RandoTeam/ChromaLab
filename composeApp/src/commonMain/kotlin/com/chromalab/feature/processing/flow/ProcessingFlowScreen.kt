@@ -50,9 +50,9 @@ import com.chromalab.feature.processing.quality.QualityLevel
 import com.chromalab.feature.processing.quality.QualityMetric
 import com.chromalab.feature.processing.signal.SignalPreviewScreen
 import com.chromalab.feature.processing.signal.SmoothedSignal
-import com.chromalab.feature.processing.signal.SmoothingParams
 import com.chromalab.feature.processing.signal.DigitalSignal
 import com.chromalab.feature.processing.signal.SignalConverter
+import com.chromalab.feature.processing.signal.SignalSmoother
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
@@ -262,10 +262,7 @@ fun ProcessingFlowScreen(
                             val signal = SignalConverter.convert(
                                 curvePoints, cal, currentImagePath,
                             )
-                            smoothedSignal = SmoothedSignal(
-                                raw = signal, smoothed = signal,
-                                params = SmoothingParams(),
-                            )
+                            smoothedSignal = SignalSmoother.smooth(signal)
                         }
                     }
 
