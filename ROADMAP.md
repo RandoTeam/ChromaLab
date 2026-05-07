@@ -2,38 +2,49 @@
 
 ---
 
-## Фаза 0: Фундамент (Неделя 1–2)
+## Фаза 0: Фундамент (Неделя 1–2) ✅
 
-> Проект, архитектура, дизайн-система.
+> KMP архитектура, дизайн-система, навигация, Room DB, 8 языков, CI.
 
-- [ ] Инициализация Android-проекта (Kotlin, Compose, Gradle KTS)
-- [ ] Настройка модулей (app, core/*, feature/*)
-- [ ] Подключение зависимостей (OpenCV, CameraX, ML Kit, Room, Hilt)
-- [ ] Дизайн-система: цвета, типографика, компоненты Material 3
-- [ ] Room DB: entities (Project, Sample, Chromatogram, Peak, Calculation)
-- [ ] Навигация (Navigation Compose)
-- [ ] Локализация: strings.xml для ru, en
-- [ ] CI: базовый build check
+- [x] Инициализация KMP-проекта (Kotlin 2.3.21, AGP 9.2.1, CMP 1.10.3)
+- [x] Настройка модулей (пакетная структура в composeApp/commonMain)
+- [x] Подключение зависимостей (Navigation, Lifecycle, Koin, Coil, Room, Coroutines, Serialization)
+- [x] Дизайн-система: Lab Precision Dark — WCAG AA, 8 chart colors, typography
+- [x] Room DB: 6 entities, 6 DAOs, KSP + sqlite-bundled
+- [x] Навигация: 15 type-safe routes, 4-tab bottom bar
+- [x] Локализация: 8 языков (RU, EN, FR, DE, ES, IT, PL, CS), instant switch
+- [x] CI: GitHub Actions build check
 
 ---
 
 ## Фаза 1: Камера + Оцифровка (Неделя 3–6)
 
-> Ядро приложения — от фото до массива точек.
+> Ядро приложения — от фото до массива точек (35 секций, 250+ задач).
 
-- [ ] CameraX: Preview + ImageCapture
-- [ ] Overlay: полупрозрачная рамка с анимацией
-- [ ] Автофокус, вспышка, зум
-- [ ] Crop по координатам рамки (CoordinateTransform)
-- [ ] Импорт из галереи + экран подгонки под рамку
-- [ ] OpenCV: perspective correction (auto + manual fallback)
+- [ ] Камера: CameraX Preview + ImageCapture, рамка, фокус, вспышка, зум
+- [ ] Проверка качества фото: blur, brightness, contrast, glare, shadow
+- [ ] Импорт из галереи + подгонка под рамку
+- [ ] Нормализация: EXIF, ориентация, единый формат
+- [ ] Crop по рамке + CoordinateTransform
+- [ ] Определение листа: OpenCV contours + manual fallback
+- [ ] Perspective correction: homography + ручная коррекция углов
 - [ ] Предобработка: grayscale → CLAHE → threshold → morphology
-- [ ] Определение области графика (Hough lines + manual fallback)
-- [ ] OCR осей (ML Kit + manual fallback)
-- [ ] Извлечение кривой (column scan + contour)
-- [ ] Сглаживание (Savitzky-Golay)
-- [ ] Индикатор качества оцифровки
-- [ ] Тестирование на реальных фотографиях
+- [ ] Определение области графика: Hough lines + manual ROI
+- [ ] Поддержка нескольких графиков на листе
+- [ ] Определение осей X/Y: auto + manual editor
+- [ ] Калибровка осей: 2-point linear transform
+- [ ] OCR осей: ML Kit как подсказка + подтверждение пользователя
+- [ ] Извлечение кривой: column scan + contour + skeletonization
+- [ ] Ручная проверка и коррекция кривой
+- [ ] Преобразование в цифровой сигнал: GraphPoint[]
+- [ ] Savitzky-Golay smoothing
+- [ ] Предпросмотр цифрового графика
+- [ ] Индикатор качества оцифровки + предупреждения
+- [ ] Сохранение промежуточных файлов
+- [ ] Экспорт массива точек: CSV + JSON
+- [ ] Debug mode
+- [ ] Детерминированность: pipelineVersion, fixed params, determinism test
+- [ ] Тестирование: синтетические данные + 20–30 реальных фото
 
 ---
 
