@@ -29,7 +29,7 @@
 | 2.18 | Overlapping / shoulder peaks | ✅ |
 | 2.19 | Peak integration | ✅ |
 | 2.20 | Peak metrics | ✅ |
-| 2.21 | Confidence score пика | ⬜ |
+| 2.21 | Confidence score пика | ✅ |
 | 2.22 | Интерактивный график Canvas Compose | ⬜ |
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ⬜ |
 | 2.24 | Таблица пиков | ⬜ |
@@ -374,11 +374,11 @@
 
 ## 2.21 — Confidence score пика
 
-- [ ] Создать PeakConfidenceCalculator
-- [ ] Учитывать S/N, качество baseline, качество boundaries, confidence точек из Фазы 1, overlapStatus, ручные правки, интерполированные участки
-- [ ] Выдавать статус: high, medium, low, failed
-- [ ] Не скрывать причину низкого confidence
-- [ ] Показывать пользователю список причин
+- [x] Создать PeakConfidenceCalculator
+- [x] Учитывать S/N, качество baseline, качество boundaries, confidence точек из Фазы 1, overlapStatus, ручные правки, интерполированные участки
+- [x] Выдавать статус: high, medium, low, failed
+- [x] Не скрывать причину низкого confidence
+- [x] Показывать пользователю список причин
 
 ---
 
