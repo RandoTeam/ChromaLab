@@ -6,20 +6,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 
 /**
  * Processing flow orchestrator.
  *
- * Manages the step-by-step pipeline:
- * photo → quality → crop → perspective → graph → axes → calibration →
- * OCR → curve → correction → signal → quality report → export
- *
- * Each step renders its own screen and calls onNext/onBack.
- * The orchestrator tracks current step and shows a progress indicator.
+ * Manages the step-by-step pipeline with consistent UX:
+ * - Always show current step (progress header)
+ * - Always allow going back
+ * - One main action per step
+ * - Animated transitions between steps
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProcessingFlowScreen(
     imagePath: String,
@@ -30,34 +27,38 @@ fun ProcessingFlowScreen(
     var currentStep by remember { mutableStateOf(ProcessingStep.FIRST) }
 
     Scaffold(
-        topBar = {
-            Column {
-                // Step indicator
-                LinearProgressIndicator(
-                    progress = { (currentStep.index + 1).toFloat() / currentStep.totalSteps },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Шаг ${currentStep.index + 1} из ${currentStep.totalSteps}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        currentStep.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
+        topBar = { StepProgressHeader(currentStep) },
+        bottomBar = {
+            StepBottomBar(
+                onAccept = {
+                    val next = currentStep.next()
+                    if (next != null) {
+                        currentStep = next
+                    } else {
+                        onFinish()
+                    }
+                },
+                onBack = {
+                    val prev = currentStep.prev()
+                    if (prev != null) {
+                        currentStep = prev
+                    } else {
+                        onCancel()
+                    }
+                },
+                acceptLabel = if (currentStep.next() != null) "Принять" else "Завершить",
+                acceptEnabled = true,
+                showCorrect = currentStep in listOf(
+                    ProcessingStep.CROP_REVIEW,
+                    ProcessingStep.PERSPECTIVE,
+                    ProcessingStep.GRAPH_ROI,
+                    ProcessingStep.AXIS_DETECTION,
+                    ProcessingStep.CURVE_EDITOR,
+                ),
+                onCorrect = {
+                    // Placeholder — will open correction mode per step
+                },
+            )
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
@@ -70,81 +71,29 @@ fun ProcessingFlowScreen(
                 targetState = currentStep,
                 transitionSpec = {
                     if (targetState.index > initialState.index) {
-                        slideInHorizontally { it } + fadeIn() togetherWith
-                            slideOutHorizontally { -it } + fadeOut()
+                        slideInHorizontally { it / 3 } + fadeIn() togetherWith
+                            slideOutHorizontally { -it / 3 } + fadeOut()
                     } else {
-                        slideInHorizontally { -it } + fadeIn() togetherWith
-                            slideOutHorizontally { it } + fadeOut()
+                        slideInHorizontally { -it / 3 } + fadeIn() togetherWith
+                            slideOutHorizontally { it / 3 } + fadeOut()
                     }
                 },
                 label = "step_transition",
             ) { step ->
-                StepContent(
-                    step = step,
-                    imagePath = imagePath,
-                    onNext = {
-                        val next = step.next()
-                        if (next != null) {
-                            currentStep = next
-                        } else {
-                            onFinish()
-                        }
-                    },
-                    onBack = {
-                        val prev = step.prev()
-                        if (prev != null) {
-                            currentStep = prev
-                        } else {
-                            onCancel()
-                        }
-                    },
-                )
+                StepContent(step, imagePath)
             }
         }
     }
 }
 
 /**
- * Renders the screen for a given processing step.
- * Each step gets onNext (accept) and onBack (go back) callbacks.
+ * Renders content for a given processing step.
+ * Each step displays its name, description, and relevant controls.
  */
 @Composable
 private fun StepContent(
     step: ProcessingStep,
     imagePath: String,
-    onNext: () -> Unit,
-    onBack: () -> Unit,
-) {
-    // Each step renders a placeholder that delegates to the real screen.
-    // Real screens accept onAccept/onBack — we map onNext to onAccept.
-    when (step) {
-        ProcessingStep.IMAGE_QUALITY -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.CROP_REVIEW -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.PERSPECTIVE -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.GRAPH_SELECTION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.GRAPH_ROI -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.AXIS_DETECTION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.X_CALIBRATION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.Y_CALIBRATION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.OCR_SUGGESTION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.CURVE_EXTRACTION -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.CURVE_EDITOR -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.SIGNAL_PREVIEW -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.QUALITY_REPORT -> StepPlaceholder(step, imagePath, onNext, onBack)
-        ProcessingStep.EXPORT -> StepPlaceholder(step, imagePath, onNext, onBack)
-    }
-}
-
-/**
- * Step placeholder — shows the step name + image path + Accept/Back buttons.
- * Will be replaced with real processing screens as platform logic is integrated.
- */
-@Composable
-private fun StepPlaceholder(
-    step: ProcessingStep,
-    imagePath: String,
-    onNext: () -> Unit,
-    onBack: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -162,7 +111,7 @@ private fun StepPlaceholder(
         Spacer(modifier = Modifier.height(Spacing.sm))
 
         Text(
-            "Шаг ${step.index + 1} из ${step.totalSteps}",
+            stepDescription(step),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -170,22 +119,56 @@ private fun StepPlaceholder(
         Spacer(modifier = Modifier.height(Spacing.xs))
 
         Text(
-            imagePath.substringAfterLast('/'),
+            imagePath.substringAfterLast('/').substringAfterLast('\\'),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.outline,
         )
 
-        Spacer(modifier = Modifier.height(Spacing.xl))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        // Zoom hint for interactive steps
+        if (step in listOf(
+                ProcessingStep.CROP_REVIEW,
+                ProcessingStep.PERSPECTIVE,
+                ProcessingStep.GRAPH_ROI,
+                ProcessingStep.AXIS_DETECTION,
+                ProcessingStep.CURVE_EDITOR,
+            )
         ) {
-            OutlinedButton(onClick = onBack) {
-                Text("Назад")
-            }
-            Button(onClick = onNext) {
-                Text(if (step.next() != null) "Принять" else "Завершить")
+            Spacer(modifier = Modifier.height(Spacing.md))
+            ZoomPanHint()
+        }
+
+        // Expandable params for processing steps
+        if (step in listOf(
+                ProcessingStep.X_CALIBRATION,
+                ProcessingStep.Y_CALIBRATION,
+                ProcessingStep.CURVE_EXTRACTION,
+                ProcessingStep.SIGNAL_PREVIEW,
+            )
+        ) {
+            Spacer(modifier = Modifier.height(Spacing.md))
+            ExpandableParamsSection {
+                Text(
+                    "Параметры будут отображены при подключении обработки",
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }
+}
+
+private fun stepDescription(step: ProcessingStep): String = when (step) {
+    ProcessingStep.IMAGE_QUALITY -> "Проверка резкости, контраста и освещения"
+    ProcessingStep.CROP_REVIEW -> "Автоматическая обрезка по границам документа"
+    ProcessingStep.PERSPECTIVE -> "Коррекция перспективных искажений"
+    ProcessingStep.GRAPH_SELECTION -> "Выбор области с хроматограммой"
+    ProcessingStep.GRAPH_ROI -> "Точная настройка области графика"
+    ProcessingStep.AXIS_DETECTION -> "Определение осей X и Y"
+    ProcessingStep.X_CALIBRATION -> "Привязка шкалы времени к пикселям"
+    ProcessingStep.Y_CALIBRATION -> "Привязка шкалы интенсивности к пикселям"
+    ProcessingStep.OCR_SUGGESTION -> "Распознавание числовых подписей осей"
+    ProcessingStep.CURVE_EXTRACTION -> "Извлечение кривой из изображения"
+    ProcessingStep.CURVE_EDITOR -> "Проверка и ручная коррекция кривой"
+    ProcessingStep.SIGNAL_PREVIEW -> "Предпросмотр цифрового сигнала"
+    ProcessingStep.QUALITY_REPORT -> "Оценка качества оцифровки"
+    ProcessingStep.EXPORT -> "Экспорт данных в CSV / JSON"
 }
