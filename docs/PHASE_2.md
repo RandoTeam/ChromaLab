@@ -34,7 +34,7 @@
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ✅ |
 | 2.24 | Таблица пиков | ✅ |
 | 2.25 | Ручная коррекция пиков | ✅ |
-| 2.26 | Algorithm Settings UI | ⬜ |
+| 2.26 | Algorithm Settings UI | ✅ |
 | 2.27 | Presets алгоритма | ⬜ |
 | 2.28 | Warnings | ⬜ |
 | 2.29 | Room storage | ⬜ |
@@ -423,10 +423,10 @@
 
 ## 2.26 — Algorithm Settings UI
 
-- [ ] Разделы: Smoothing, Baseline, Peak Detection, Boundaries, Integration, Noise/S/N, Confidence, Advanced
-- [ ] Presets: Conservative, Balanced, Sensitive, Manual Review
-- [ ] Reset to defaults, save/apply profile
-- [ ] Изменение настроек → "Пересчитать" (не молчаливая перезапись)
+- [x] Разделы: Smoothing, Baseline, Peak Detection, Boundaries, Integration, Noise/S/N, Confidence, Advanced
+- [x] Presets: Conservative, Balanced, Sensitive, Manual Review
+- [x] Reset to defaults, save/apply profile
+- [x] Изменение настроек → "Пересчитать" (не молчаливая перезапись)
 
 ---
 
