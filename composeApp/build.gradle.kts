@@ -65,6 +65,9 @@ kotlin {
             implementation(libs.camerax.lifecycle)
             implementation(libs.camerax.view)
 
+            // EXIF
+            implementation(libs.exifinterface)
+
             // Coroutines Android
             implementation(libs.coroutines.android)
         }
