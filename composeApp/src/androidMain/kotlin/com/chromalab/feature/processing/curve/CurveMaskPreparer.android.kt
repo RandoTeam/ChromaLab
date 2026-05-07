@@ -70,19 +70,27 @@ actual class CurveMaskPreparer actual constructor() {
         val cleanMask = rawMask.copyOf()
         val suppressions = mutableListOf<String>()
 
-        // Pass 1: Suppress axes
+        // Pass 1: Suppress axes (wider margin to cover tick marks)
         if (axes.xAxis != null || axes.yAxis != null) {
             suppressAxes(cleanMask, w, h, axes, graphRegion)
             suppressions.add("axes")
         }
 
-        // Pass 2: Suppress grid lines
+        // Pass 2: Suppress grid lines (lowered threshold for partial grid)
         val gridSuppressed = suppressGrid(cleanMask, w, h)
         if (gridSuppressed) suppressions.add("grid")
 
-        // Pass 3: Suppress small text-like blobs
-        val textSuppressed = suppressSmallBlobs(cleanMask, w, h, minSize = 3, maxSize = 30)
+        // Pass 3: Morphological opening (erode→dilate) to break thin connections
+        morphologicalOpen(cleanMask, w, h, radius = 1)
+        suppressions.add("morph_open")
+
+        // Pass 4: Suppress text blobs (larger max — text chars are big)
+        val textSuppressed = suppressSmallBlobs(cleanMask, w, h, minSize = 3, maxSize = 2000)
         if (textSuppressed) suppressions.add("text_blobs")
+
+        // Pass 5: Keep only the largest connected component (the signal curve)
+        keepLargestComponent(cleanMask, w, h)
+        suppressions.add("largest_component")
 
         val cleanCount = cleanMask.count { it }
         val cleanPath = File(dir, "mask_clean.png").absolutePath
@@ -156,7 +164,7 @@ actual class CurveMaskPreparer actual constructor() {
         mask: BooleanArray, w: Int, h: Int,
         axes: AxesResult, graphRegion: GraphRegion,
     ) {
-        val thickness = 3 // Erase ±3 pixels around axis position
+        val thickness = 8 // Erase ±8 pixels around axis position (covers tick marks too)
 
         // X axis (horizontal line)
         axes.xAxis?.let { xAxis ->
@@ -187,7 +195,7 @@ actual class CurveMaskPreparer actual constructor() {
      */
     private fun suppressGrid(mask: BooleanArray, w: Int, h: Int): Boolean {
         var suppressed = false
-        val lineThreshold = 0.6f // Row/col with >60% dark pixels is likely a grid line
+        val lineThreshold = 0.25f // Row/col with >25% dark pixels is likely a grid line
 
         // Horizontal grid lines
         for (y in 0 until h) {
@@ -311,5 +319,69 @@ actual class CurveMaskPreparer actual constructor() {
 
     companion object {
         private val NEIGHBORS_4 = listOf(0 to -1, 0 to 1, -1 to 0, 1 to 0)
+    }
+
+    /**
+     * Morphological opening (erode then dilate) to remove thin noise
+     * and break connections between the curve and text/axes.
+     */
+    private fun morphologicalOpen(mask: BooleanArray, w: Int, h: Int, radius: Int) {
+        // Erode
+        val eroded = BooleanArray(w * h)
+        for (y in radius until h - radius) {
+            for (x in radius until w - radius) {
+                var allSet = true
+                outer@ for (dy in -radius..radius) {
+                    for (dx in -radius..radius) {
+                        if (!mask[(y + dy) * w + (x + dx)]) {
+                            allSet = false
+                            break@outer
+                        }
+                    }
+                }
+                eroded[y * w + x] = allSet
+            }
+        }
+        // Dilate eroded back into mask
+        mask.fill(false)
+        for (y in radius until h - radius) {
+            for (x in radius until w - radius) {
+                if (eroded[y * w + x]) {
+                    for (dy in -radius..radius) {
+                        for (dx in -radius..radius) {
+                            mask[(y + dy) * w + (x + dx)] = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Keep only the largest connected component in the mask.
+     * The chromatogram curve is typically the largest remaining blob.
+     */
+    private fun keepLargestComponent(mask: BooleanArray, w: Int, h: Int) {
+        val labels = IntArray(w * h)
+        var nextLabel = 1
+        val sizes = mutableMapOf<Int, Int>()
+
+        for (y in 0 until h) {
+            for (x in 0 until w) {
+                if (mask[y * w + x] && labels[y * w + x] == 0) {
+                    val size = floodFill(mask, labels, w, h, x, y, nextLabel)
+                    sizes[nextLabel] = size
+                    nextLabel++
+                }
+            }
+        }
+
+        if (sizes.isEmpty()) return
+        val largestLabel = sizes.maxByOrNull { it.value }?.key ?: return
+
+        // Erase everything except the largest
+        for (i in mask.indices) {
+            if (labels[i] != largestLabel) mask[i] = false
+        }
     }
 }
