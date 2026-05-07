@@ -103,9 +103,11 @@ fun ProcessingFlowScreen(
 
     // --- Intermediate results populated by real processors ---
     var normalizedResult by remember { mutableStateOf<NormalizedImageResult?>(null) }
+    var normalizedPath by remember { mutableStateOf(imagePath) }
     var imageWidth by remember { mutableStateOf(0) }
     var imageHeight by remember { mutableStateOf(0) }
     var qualityReport by remember { mutableStateOf<ImageQualityReport?>(null) }
+    var documentBounds by remember { mutableStateOf<com.chromalab.feature.processing.document.DocumentBounds?>(null) }
     var cropResult by remember { mutableStateOf<CropResult?>(null) }
     var currentImagePath by remember { mutableStateOf(imagePath) }
     var perspectiveResult by remember { mutableStateOf<PerspectiveCorrectionResult?>(null) }
@@ -131,6 +133,7 @@ fun ProcessingFlowScreen(
                             val norm = imageNormalizer.normalize(imagePath, outputDir)
                             if (norm != null) {
                                 normalizedResult = norm
+                                normalizedPath = norm.normalizedPath
                                 currentImagePath = norm.normalizedPath
                                 imageWidth = norm.width
                                 imageHeight = norm.height
@@ -138,6 +141,7 @@ fun ProcessingFlowScreen(
                                     0, 0, norm.width, norm.height,
                                 )
                             } else {
+                                normalizedPath = imagePath
                                 currentImagePath = imagePath
                             }
                         }
@@ -146,7 +150,10 @@ fun ProcessingFlowScreen(
 
                     ProcessingStep.CROP_REVIEW -> {
                         if (cropResult == null) {
+                            // Reset to normalized path (in case of recrop)
+                            currentImagePath = normalizedPath
                             val bounds = documentDetector.detect(currentImagePath)
+                            documentBounds = bounds  // cache for perspective step
                             if (bounds != null) {
                                 val c = bounds.corners
                                 val x1 = min(c.topLeft.x, c.bottomLeft.x).roundToInt()
@@ -159,24 +166,40 @@ fun ProcessingFlowScreen(
                                     width = (x2 - x1).coerceAtLeast(1),
                                     height = (y2 - y1).coerceAtLeast(1),
                                 )
-                                cropResult = imageCropper.crop(currentImagePath, rect, outputDir)
-                                cropResult?.let { currentImagePath = it.croppedPath }
+                                val result = imageCropper.crop(currentImagePath, rect, outputDir)
+                                if (result != null) {
+                                    cropResult = result
+                                    currentImagePath = result.croppedPath
+                                } else {
+                                    cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
+                                }
                             } else {
-                                cropResult = fallbackCropResult(currentImagePath)
+                                // No document found — proceed with full image
+                                cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
                             }
                         }
                     }
 
                     ProcessingStep.PERSPECTIVE -> {
                         if (perspectiveResult == null) {
-                            val bounds = documentDetector.detect(currentImagePath)
+                            // Reuse cached bounds from crop step (avoid double detect)
+                            val bounds = documentBounds
                             if (bounds != null) {
-                                perspectiveResult = perspectiveWarper.warp(
+                                val result = perspectiveWarper.warp(
                                     currentImagePath, bounds.corners, outputDir,
                                 )
-                                perspectiveResult?.let { currentImagePath = it.correctedPath }
+                                if (result != null) {
+                                    perspectiveResult = result
+                                    currentImagePath = result.correctedPath
+                                } else {
+                                    perspectiveResult = fallbackPerspectiveResult(
+                                        currentImagePath, imageWidth, imageHeight,
+                                    )
+                                }
                             } else {
-                                perspectiveResult = fallbackPerspectiveResult(currentImagePath)
+                                perspectiveResult = fallbackPerspectiveResult(
+                                    currentImagePath, imageWidth, imageHeight,
+                                )
                             }
                         }
                     }
@@ -303,7 +326,11 @@ fun ProcessingFlowScreen(
                             CropReviewScreen(
                                 cropResult = result,
                                 onAccept = { advance(step) },
-                                onRecrop = { cropResult = null },
+                                onRecrop = {
+                                    cropResult = null
+                                    perspectiveResult = null  // perspective depends on crop
+                                    documentBounds = null
+                                },
                                 onBack = { goBack(step) },
                             )
                         } else {
@@ -317,7 +344,9 @@ fun ProcessingFlowScreen(
                             PerspectiveReviewScreen(
                                 result = result,
                                 onAccept = { advance(step) },
-                                onAdjustCorners = { perspectiveResult = null },
+                                onAdjustCorners = {
+                                    perspectiveResult = null
+                                },
                                 onBack = { goBack(step) },
                             )
                         } else {
@@ -559,25 +588,36 @@ private fun StepPlaceholder(
 
 // ─── Fallback data when processing fails or isn't applicable ────────
 
-private fun fallbackCropResult(path: String) = CropResult(
-    croppedPath = path, sourcePath = path,
-    sourceWidth = 1920, sourceHeight = 1080,
-    cropRect = CropRect(0, 0, 1920, 1080),
-    croppedWidth = 1920, croppedHeight = 1080,
-    timestamp = System.currentTimeMillis(),
-)
+private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
+    val width = w.coerceAtLeast(1)
+    val height = h.coerceAtLeast(1)
+    return CropResult(
+        croppedPath = path, sourcePath = path,
+        sourceWidth = width, sourceHeight = height,
+        cropRect = CropRect(0, 0, width, height),
+        croppedWidth = width, croppedHeight = height,
+        timestamp = System.currentTimeMillis(),
+    )
+}
 
-private fun fallbackPerspectiveResult(path: String) = PerspectiveCorrectionResult(
-    correctedPath = path, sourcePath = path,
-    homography = HomographyMatrix(floatArrayOf(1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)),
-    sourceCorners = DocumentCorners(
-        topLeft = ImagePoint(0f, 0f), topRight = ImagePoint(1920f, 0f),
-        bottomLeft = ImagePoint(0f, 1080f), bottomRight = ImagePoint(1920f, 1080f),
-    ),
-    outputWidth = 1920, outputHeight = 1080,
-    maxWarpDistance = 0f, correctedAspectRatio = 1.78f,
-    isExcessiveWarp = false, timestamp = System.currentTimeMillis(),
-)
+private fun fallbackPerspectiveResult(path: String, w: Int, h: Int): PerspectiveCorrectionResult {
+    val width = w.coerceAtLeast(1)
+    val height = h.coerceAtLeast(1)
+    val fw = width.toFloat()
+    val fh = height.toFloat()
+    return PerspectiveCorrectionResult(
+        correctedPath = path, sourcePath = path,
+        homography = HomographyMatrix(floatArrayOf(1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)),
+        sourceCorners = DocumentCorners(
+            topLeft = ImagePoint(0f, 0f), topRight = ImagePoint(fw, 0f),
+            bottomLeft = ImagePoint(0f, fh), bottomRight = ImagePoint(fw, fh),
+        ),
+        outputWidth = width, outputHeight = height,
+        maxWarpDistance = 0f,
+        correctedAspectRatio = if (height > 0) fw / fh else 1f,
+        isExcessiveWarp = false, timestamp = System.currentTimeMillis(),
+    )
+}
 
 private fun fallbackAxesResult() = AxesResult(
     xAxis = AxisLine(0f, 100f, 1600f, 100f),
