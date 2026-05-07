@@ -28,7 +28,7 @@
 | 2.17 | Peak boundaries | ✅ |
 | 2.18 | Overlapping / shoulder peaks | ✅ |
 | 2.19 | Peak integration | ✅ |
-| 2.20 | Peak metrics | ⬜ |
+| 2.20 | Peak metrics | ✅ |
 | 2.21 | Confidence score пика | ⬜ |
 | 2.22 | Интерактивный график Canvas Compose | ⬜ |
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ⬜ |
@@ -366,9 +366,9 @@
 
 ## 2.20 — Peak metrics
 
-- [ ] Создать PeakMetricsCalculator
-- [ ] Считать RT apex, RT centroid (optional), height, area, widthBase, widthHalfHeight, widthHalfProminence, prominence, leftBase/rightBase, S/N, confidence score
-- [ ] Сохранять warnings, manual/auto status
+- [x] Создать PeakMetricsCalculator
+- [x] Считать RT apex, RT centroid (optional), height, area, widthBase, widthHalfHeight, widthHalfProminence, prominence, leftBase/rightBase, S/N, confidence score
+- [x] Сохранять warnings, manual/auto status
 
 ---
 
