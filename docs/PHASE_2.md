@@ -31,7 +31,7 @@
 | 2.20 | Peak metrics | ✅ |
 | 2.21 | Confidence score пика | ✅ |
 | 2.22 | Интерактивный график Canvas Compose | ✅ |
-| 2.23 | Карточка пика / PeakDetailsBottomSheet | ⬜ |
+| 2.23 | Карточка пика / PeakDetailsBottomSheet | ✅ |
 | 2.24 | Таблица пиков | ⬜ |
 | 2.25 | Ручная коррекция пиков | ⬜ |
 | 2.26 | Algorithm Settings UI | ⬜ |
@@ -395,9 +395,9 @@
 
 ## 2.23 — Карточка пика / PeakDetailsBottomSheet
 
-- [ ] Показывать peakId, RT apex, height, area, width, S/N, prominence
-- [ ] Показывать baseline/integration/noise method, confidence, warnings
-- [ ] Кнопки: исправить границы, выбрать noise region, сменить baseline, принять/отклонить пик, технические детали
+- [x] Показывать peakId, RT apex, height, area, width, S/N, prominence
+- [x] Показывать baseline/integration/noise method, confidence, warnings
+- [x] Кнопки: исправить границы, выбрать noise region, сменить baseline, принять/отклонить пик, технические детали
 
 ---
 
