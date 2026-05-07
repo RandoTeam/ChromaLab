@@ -15,7 +15,7 @@
 | 2.4 | UX-принцип | ✅ |
 | 2.5 | Формальный вход | ✅ |
 | 2.6 | Модель сигналов | ✅ |
-| 2.7 | Порядок расчетного pipeline | ⬜ |
+| 2.7 | Порядок расчетного pipeline | ✅ |
 | 2.8 | Savitzky-Golay smoothing | ⬜ |
 | 2.9 | Baseline correction: общий модуль | ⬜ |
 | 2.10 | Manual linear baseline | ⬜ |
@@ -162,7 +162,7 @@
 
 ## 2.7 — Порядок расчетного pipeline
 
-- [ ] Зафиксировать pipeline order:
+- [x] Зафиксировать pipeline order:
       1. raw signal validation
       2. optional smoothing
       3. baseline estimation
@@ -175,11 +175,11 @@
       10. warnings/confidence
       11. manual corrections
       12. recalculation
-- [ ] Сохранять pipelineVersion
-- [ ] Сохранять algorithmVersion
-- [ ] Сохранять все параметры pipeline
-- [ ] Любой пересчет с новыми параметрами должен создавать новый CalculationRun
-- [ ] Старый CalculationRun не перезаписывать
+- [x] Сохранять pipelineVersion
+- [x] Сохранять algorithmVersion
+- [x] Сохранять все параметры pipeline
+- [x] Любой пересчет с новыми параметрами должен создавать новый CalculationRun
+- [x] Старый CalculationRun не перезаписывать
 
 ---
 
