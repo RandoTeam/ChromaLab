@@ -327,6 +327,31 @@ fun ProcessingFlowScreen(
             processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
         }
         isProcessing = false
+
+        // --- Auto-advance logic ---
+        if (processingError == null) {
+            val shouldAutoAdvance = when (currentStep.autoAdvance) {
+                AutoAdvancePolicy.ALWAYS -> true
+                AutoAdvancePolicy.IF_CONFIDENT -> when (currentStep) {
+                    ProcessingStep.GRAPH_SELECTION,
+                    ProcessingStep.GRAPH_ROI -> {
+                        val conf = graphResult?.confidence
+                        conf == com.chromalab.feature.processing.graph.DetectionConfidence.HIGH ||
+                            conf == com.chromalab.feature.processing.graph.DetectionConfidence.MEDIUM
+                    }
+                    ProcessingStep.CURVE_EDITOR -> {
+                        curvePoints.size > 20
+                    }
+                    else -> false
+                }
+                AutoAdvancePolicy.NEVER -> false
+            }
+            if (shouldAutoAdvance) {
+                kotlinx.coroutines.delay(250L)
+                val next = currentStep.next()
+                if (next != null) currentStep = next
+            }
+        }
     }
 
     var savedSignalId by remember { mutableStateOf<Long?>(null) }
@@ -536,10 +561,12 @@ fun ProcessingFlowScreen(
                             imagePath = currentImagePath,
                             graphRegion = selectedRegion,
                             axes = axes,
+                            ocrSuggestion = ocrResult,
                             onAccept = { cal ->
                                 xCalibration = cal
                                 advance(step)
                             },
+                            onSkip = { advance(step) },
                             onBack = { goBack(step) },
                         )
                     }
@@ -550,6 +577,7 @@ fun ProcessingFlowScreen(
                             imagePath = currentImagePath,
                             graphRegion = selectedRegion,
                             axes = axes,
+                            ocrSuggestion = ocrResult,
                             onAccept = { cal ->
                                 yCalibration = cal
                                 // Build unified PixelCalibration from X + Y
@@ -565,6 +593,7 @@ fun ProcessingFlowScreen(
                                 }
                                 advance(step)
                             },
+                            onSkip = { advance(step) },
                             onBack = { goBack(step) },
                         )
                     }
@@ -681,13 +710,22 @@ fun ProcessingFlowScreen(
 
             // Loading overlay during processing
             if (isProcessing) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
+                if (currentStep.autoAdvance != AutoAdvancePolicy.NEVER) {
+                    // Auto-advance steps get the full progress overlay
+                    AutoProgressOverlay(
+                        currentStep = currentStep,
+                        isProcessing = true,
                     )
+                } else {
+                    // Manual steps get a simple spinner
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
 

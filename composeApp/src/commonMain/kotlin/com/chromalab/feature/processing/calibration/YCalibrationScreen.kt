@@ -25,6 +25,7 @@ import coil3.compose.AsyncImage
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.ocr.AxisOcrResult
 import kotlin.math.pow
 
 /**
@@ -42,7 +43,9 @@ fun YCalibrationScreen(
     imagePath: String,
     graphRegion: GraphRegion,
     axes: AxesResult,
+    ocrSuggestion: AxisOcrResult?,
     onAccept: (YAxisCalibration) -> Unit,
+    onSkip: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -59,6 +62,22 @@ fun YCalibrationScreen(
     var value1 by remember { mutableStateOf("") }
     var value2 by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("mAU") }
+
+    // Pre-fill from OCR on first composition
+    LaunchedEffect(ocrSuggestion) {
+        val ocr = ocrSuggestion ?: return@LaunchedEffect
+        if (ocr.hasYSuggestions && value1.isEmpty()) {
+            val sorted = ocr.suggestedYValues.sorted()
+            value1 = sorted.first().toBigDecimal().toPlainString()
+            value2 = sorted.last().toBigDecimal().toPlainString()
+            // Auto-place points: bottom and top of graph
+            point1Y = viewH * 0.90f  // near bottom (low intensity)
+            point2Y = viewH * 0.10f  // near top (high intensity)
+        }
+        if (ocr.yUnit != null && unit == "mAU") {
+            unit = ocr.yUnit
+        }
+    }
 
     var settingPoint by remember { mutableIntStateOf(1) }
 
@@ -234,6 +253,14 @@ fun YCalibrationScreen(
                         ) {
                             Text("Принять с предупреждениями")
                         }
+                    }
+
+                    // Skip button
+                    TextButton(
+                        onClick = onSkip,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Пропустить калибровку Y")
                     }
                 }
             }

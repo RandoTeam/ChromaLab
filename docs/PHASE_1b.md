@@ -45,7 +45,7 @@
 | 1b.14 | AnalysisFlowScreen: подключение реальных Phase 2 алгоритмов | ✅ |
 | 1b.15 | Multi-graph loop: повтор pipeline для каждого графика | ✅ |
 | 1b.16 | Error handling и recovery на каждом шаге | ✅ |
-| 1b.17 | Desktop actual stubs (устранение compilation error) | ⬜ |
+| 1b.17 | Desktop actual stubs (устранение compilation error) | ✅ |
 | 1b.18 | End-to-end тест на реальном фото | ⬜ |
 | 1b.19 | Версия 0.0.3 + signed APK + GitHub Release | ⬜ |
 

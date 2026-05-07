@@ -26,6 +26,7 @@ import coil3.compose.AsyncImage
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.ocr.AxisOcrResult
 import kotlin.math.pow
 
 /**
@@ -40,7 +41,9 @@ fun XCalibrationScreen(
     imagePath: String,
     graphRegion: GraphRegion,
     axes: AxesResult,
+    ocrSuggestion: AxisOcrResult?,
     onAccept: (XAxisCalibration) -> Unit,
+    onSkip: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -57,6 +60,22 @@ fun XCalibrationScreen(
     var value1 by remember { mutableStateOf("") }
     var value2 by remember { mutableStateOf("") }
     var unit by remember { mutableStateOf("мин") }
+
+    // Pre-fill from OCR on first composition
+    LaunchedEffect(ocrSuggestion) {
+        val ocr = ocrSuggestion ?: return@LaunchedEffect
+        if (ocr.hasXSuggestions && value1.isEmpty()) {
+            val sorted = ocr.suggestedXValues.sorted()
+            value1 = sorted.first().toBigDecimal().toPlainString()
+            value2 = sorted.last().toBigDecimal().toPlainString()
+            // Auto-place points at axis extremes
+            point1X = 0f + viewW * 0.05f  // near left edge
+            point2X = viewW * 0.95f        // near right edge
+        }
+        if (ocr.xUnit != null && unit == "мин") {
+            unit = ocr.xUnit
+        }
+    }
 
     // Which point we're setting
     var settingPoint by remember { mutableIntStateOf(1) }
@@ -226,6 +245,14 @@ fun XCalibrationScreen(
                         ) {
                             Text("Принять с предупреждениями")
                         }
+                    }
+
+                    // Skip button
+                    TextButton(
+                        onClick = onSkip,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Пропустить калибровку X")
                     }
                 }
             }
