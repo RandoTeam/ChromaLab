@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.calibration
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -80,6 +81,7 @@ fun YCalibrationScreen(
     }
 
     var settingPoint by remember { mutableIntStateOf(1) }
+    var draggingPoint by remember { mutableIntStateOf(0) }
 
     val yAxisX = axes.yAxis?.let { (it.x1 - graphRegion.x) * (viewW / graphRegion.width) }
         ?: (viewW * 0.10f)
@@ -284,23 +286,64 @@ fun YCalibrationScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            // Overlay
+            // Overlay — supports tap-to-place and drag-to-adjust
+            val dragThreshold = 40f
+
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
+                                val dist1 = if (point1Y > 0) kotlin.math.abs(offset.y - point1Y) else Float.MAX_VALUE
+                                val dist2 = if (point2Y > 0) kotlin.math.abs(offset.y - point2Y) else Float.MAX_VALUE
+                                val grabRadius = dragThreshold * density
+
+                                when {
+                                    dist1 < grabRadius && dist1 <= dist2 -> draggingPoint = 1
+                                    dist2 < grabRadius && dist2 < dist1 -> draggingPoint = 2
+                                    point1Y <= 0 -> { point1Y = offset.y; draggingPoint = 1 }
+                                    point2Y <= 0 -> { point2Y = offset.y; draggingPoint = 2 }
+                                    else -> draggingPoint = if (dist1 <= dist2) 1 else 2
+                                }
+                            },
+                            onDrag = { change, _ ->
+                                change.consume()
+                                when (draggingPoint) {
+                                    1 -> point1Y = change.position.y.coerceIn(0f, size.height.toFloat())
+                                    2 -> point2Y = change.position.y.coerceIn(0f, size.height.toFloat())
+                                }
+                            },
+                            onDragEnd = { draggingPoint = 0 },
+                            onDragCancel = { draggingPoint = 0 },
+                        )
+                    }
+                    .pointerInput(Unit) {
                         detectTapGestures { offset ->
-                            if (settingPoint == 1) {
-                                point1Y = offset.y
-                                settingPoint = 2
-                            } else {
-                                point2Y = offset.y
-                                settingPoint = 1
+                            val dist1 = if (point1Y > 0) kotlin.math.abs(offset.y - point1Y) else Float.MAX_VALUE
+                            val dist2 = if (point2Y > 0) kotlin.math.abs(offset.y - point2Y) else Float.MAX_VALUE
+                            val grabRadius = dragThreshold * density
+
+                            when {
+                                dist1 < grabRadius && dist1 <= dist2 -> settingPoint = 1
+                                dist2 < grabRadius && dist2 < dist1 -> settingPoint = 2
+                                point1Y <= 0 || settingPoint == 1 -> {
+                                    point1Y = offset.y; settingPoint = 2
+                                }
+                                point2Y <= 0 || settingPoint == 2 -> {
+                                    point2Y = offset.y; settingPoint = 1
+                                }
+                                else -> {
+                                    if (settingPoint == 1) { point1Y = offset.y; settingPoint = 2 }
+                                    else { point2Y = offset.y; settingPoint = 1 }
+                                }
                             }
                         }
                     },
             ) {
                 val dashEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 4f), 0f)
+                val activeRadius = 12.dp.toPx()
+                val inactiveRadius = 7.dp.toPx()
 
                 // Y axis line
                 drawLine(
@@ -313,28 +356,32 @@ fun YCalibrationScreen(
 
                 // Point 1 (lower)
                 if (point1Y > 0) {
+                    val isActive = draggingPoint == 1
                     drawLine(
-                        p1Color,
+                        p1Color.copy(alpha = if (isActive) 1f else 0.7f),
                         start = Offset(0f, point1Y),
                         end = Offset(size.width, point1Y),
-                        strokeWidth = 1.5f.dp.toPx(),
+                        strokeWidth = if (isActive) 2.5f.dp.toPx() else 1.5f.dp.toPx(),
                         pathEffect = dashEffect,
                     )
-                    drawCircle(Color.White, radius = 8.dp.toPx(), center = Offset(yAxisX, point1Y))
-                    drawCircle(p1Color, radius = 5.dp.toPx(), center = Offset(yAxisX, point1Y))
+                    val r = if (isActive) activeRadius else inactiveRadius
+                    drawCircle(Color.White, radius = r + 3.dp.toPx(), center = Offset(yAxisX, point1Y))
+                    drawCircle(p1Color, radius = r, center = Offset(yAxisX, point1Y))
                 }
 
                 // Point 2 (upper)
                 if (point2Y > 0) {
+                    val isActive = draggingPoint == 2
                     drawLine(
-                        p2Color,
+                        p2Color.copy(alpha = if (isActive) 1f else 0.7f),
                         start = Offset(0f, point2Y),
                         end = Offset(size.width, point2Y),
-                        strokeWidth = 1.5f.dp.toPx(),
+                        strokeWidth = if (isActive) 2.5f.dp.toPx() else 1.5f.dp.toPx(),
                         pathEffect = dashEffect,
                     )
-                    drawCircle(Color.White, radius = 8.dp.toPx(), center = Offset(yAxisX, point2Y))
-                    drawCircle(p2Color, radius = 5.dp.toPx(), center = Offset(yAxisX, point2Y))
+                    val r = if (isActive) activeRadius else inactiveRadius
+                    drawCircle(Color.White, radius = r + 3.dp.toPx(), center = Offset(yAxisX, point2Y))
+                    drawCircle(p2Color, radius = r, center = Offset(yAxisX, point2Y))
                 }
 
                 // Control tick marks
