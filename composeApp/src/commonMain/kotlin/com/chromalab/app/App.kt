@@ -14,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.chromalab.app.navigation.BottomTab
 import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
@@ -133,7 +134,8 @@ fun App() {
                     PlaceholderScreen("Импорт файла")
                 }
                 composable<Route.Processing> { backStackEntry ->
-                    val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+                    val route = backStackEntry.toRoute<Route.Processing>()
+                    val imageUri = route.imageUri
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = { signalId ->
@@ -153,7 +155,8 @@ fun App() {
                     PlaceholderScreen("Хроматограмма")
                 }
                 composable<Route.Analysis> { backStackEntry ->
-                    val signalId = backStackEntry.arguments?.getString("signalId") ?: ""
+                    val route = backStackEntry.toRoute<Route.Analysis>()
+                    val signalId = route.signalId
                     AnalysisFlowScreen(
                         signalId = signalId,
                         onFinish = {
