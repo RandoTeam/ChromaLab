@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidKmpLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -18,10 +19,32 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // Compose
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+
+            // Navigation
+            implementation(libs.navigation.compose)
+
+            // Lifecycle
+            implementation(libs.lifecycle.viewmodel.compose)
+            implementation(libs.lifecycle.runtime.compose)
+
+            // Coroutines
+            implementation(libs.coroutines.core)
+
+            // Serialization
+            implementation(libs.serialization.json)
+
+            // DI
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+
+            // Image loading
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network)
         }
 
         val desktopMain by getting {
