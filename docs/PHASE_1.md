@@ -42,7 +42,7 @@
 | 1.28 | Детерминированность | ✅ |
 | 1.29 | Тестирование на синтетических данных | ✅ |
 | 1.30 | Тестирование на реальных фото | ⬜ |
-| 1.31 | Минимальные экраны | ⬜ |
+| 1.31 | Минимальные экраны | ✅ |
 | 1.32 | UX внутри Фазы 1 | ⬜ |
 | 1.33 | Структуры данных | ⬜ |
 | 1.34 | Что не входит в Фазу 1 | ⬜ |
@@ -466,17 +466,17 @@
 
 ## 1.31 — Минимальные экраны Фазы 1
 
-- [ ] CameraScreen
-- [ ] GalleryImportScreen
-- [ ] ImageQualityScreen
-- [ ] CropReviewScreen
-- [ ] PerspectiveCorrectionScreen
-- [ ] GraphRegionScreen
-- [ ] AxisCalibrationScreen
-- [ ] CurveExtractionScreen
-- [ ] DigitizedSignalScreen
-- [ ] ExportPointsScreen
-- [ ] DebugScreen
+- [x] CameraScreen
+- [x] GalleryImportScreen
+- [x] ImageQualityScreen
+- [x] CropReviewScreen
+- [x] PerspectiveCorrectionScreen
+- [x] GraphRegionScreen
+- [x] AxisCalibrationScreen
+- [x] CurveExtractionScreen
+- [x] DigitizedSignalScreen
+- [x] ExportPointsScreen
+- [x] DebugScreen
 
 ---
 

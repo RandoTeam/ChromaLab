@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.chromalab.app.navigation.BottomTab
 import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
+import com.chromalab.feature.processing.flow.ProcessingFlowScreen
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
@@ -130,8 +131,17 @@ fun App() {
                 composable<Route.FileImport> {
                     PlaceholderScreen("Импорт файла")
                 }
-                composable<Route.Processing> {
-                    PlaceholderScreen("Обработка изображения…")
+                composable<Route.Processing> { backStackEntry ->
+                    val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
+                    ProcessingFlowScreen(
+                        imagePath = imageUri,
+                        onFinish = {
+                            navController.popBackStack(Route.Capture, inclusive = false)
+                        },
+                        onCancel = {
+                            navController.popBackStack(Route.Capture, inclusive = false)
+                        },
+                    )
                 }
 
                 // --- Calculations ---
