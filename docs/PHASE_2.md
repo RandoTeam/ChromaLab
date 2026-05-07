@@ -39,7 +39,7 @@
 | 2.28 | Warnings | ✅ |
 | 2.29 | Room storage | ✅ |
 | 2.30 | Export результатов | ✅ |
-| 2.31 | Детерминированность | ⬜ |
+| 2.31 | Детерминированность | ✅ |
 | 2.32 | Unit-тесты расчетного ядра | ⬜ |
 | 2.33 | Synthetic validation tests | ⬜ |
 | 2.34 | Проверка на реальных данных | ⬜ |
@@ -469,9 +469,9 @@
 
 ## 2.31 — Детерминированность
 
-- [ ] Pure functions, Double для расчетов (не Float), no random, no ML
-- [ ] signal + params + manual edits = same result
-- [ ] Determinism test, сохранять numericPrecisionMode + algorithmVersion
+- [x] Pure functions, Double для расчетов (не Float), no random, no ML
+- [x] signal + params + manual edits = same result
+- [x] Determinism test, сохранять numericPrecisionMode + algorithmVersion
 
 ---
 
