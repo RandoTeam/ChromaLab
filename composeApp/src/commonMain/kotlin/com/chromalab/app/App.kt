@@ -137,7 +137,11 @@ fun App() {
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = {
-                            navController.popBackStack(Route.Capture, inclusive = false)
+                            // Phase 1→2 bridge: navigate to calculation engine
+                            val signalId = "signal_${System.currentTimeMillis()}"
+                            navController.navigate(Route.Analysis(signalId)) {
+                                popUpTo(Route.Capture) { inclusive = false }
+                            }
                         },
                         onCancel = {
                             navController.popBackStack(Route.Capture, inclusive = false)
