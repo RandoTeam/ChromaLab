@@ -36,7 +36,7 @@
 | 2.25 | Ручная коррекция пиков | ✅ |
 | 2.26 | Algorithm Settings UI | ✅ |
 | 2.27 | Presets алгоритма | ✅ |
-| 2.28 | Warnings | ⬜ |
+| 2.28 | Warnings | ✅ |
 | 2.29 | Room storage | ⬜ |
 | 2.30 | Export результатов | ⬜ |
 | 2.31 | Детерминированность | ⬜ |
@@ -442,11 +442,11 @@
 
 ## 2.28 — Warnings
 
-- [ ] Warning: низкий S/N, пик после smoothing, перекрытие, shoulder, ручные границы
-- [ ] Warning: baseline влияет на area, noise region проблемы, baseline выше/пересекает сигнал
-- [ ] Warning: отрицательная площадь, низкое качество оцифровки, interpolated points, низкий confidence
-- [ ] Warning: результат ориентировочный
-- [ ] Severity: info, caution, serious, failed
+- [x] Warning: низкий S/N, пик после smoothing, перекрытие, shoulder, ручные границы
+- [x] Warning: baseline влияет на area, noise region проблемы, baseline выше/пересекает сигнал
+- [x] Warning: отрицательная площадь, низкое качество оцифровки, interpolated points, низкий confidence
+- [x] Warning: результат ориентировочный
+- [x] Severity: info, caution, serious, failed
 
 ---
 
