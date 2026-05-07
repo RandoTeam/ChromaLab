@@ -108,6 +108,7 @@ data class CalculationParams(
     val minSnr: Double = 3.0,
     val noiseMethod: String = "peak_to_peak",
     val integrationMethod: String = "trapezoidal",
+    val useSmoothedForIntegration: Boolean = false,
     val presetName: String = "Balanced",
 )
 

@@ -14,7 +14,7 @@
 | 2.3 | Минимальные экраны | ✅ |
 | 2.4 | UX-принцип | ✅ |
 | 2.5 | Формальный вход | ✅ |
-| 2.6 | Модель сигналов | ⬜ |
+| 2.6 | Модель сигналов | ✅ |
 | 2.7 | Порядок расчетного pipeline | ⬜ |
 | 2.8 | Savitzky-Golay smoothing | ⬜ |
 | 2.9 | Baseline correction: общий модуль | ⬜ |
@@ -146,17 +146,17 @@
 
 ## 2.6 — Модель сигналов
 
-- [ ] Хранить rawSignal
-- [ ] Хранить smoothedSignal
-- [ ] Хранить estimatedBaseline
-- [ ] Хранить baselineCorrectedSignal
-- [ ] Хранить signalUsedForDetection
-- [ ] Хранить signalUsedForIntegration
-- [ ] По умолчанию искать пики по smoothed corrected signal
-- [ ] По умолчанию интегрировать по rawSignal - baseline
-- [ ] Не использовать smoothedSignal для финальной площади, если пользователь явно это не включил
-- [ ] В интерфейсе показывать, какой сигнал сейчас отображается
-- [ ] В отчете сохранять, какой сигнал использовался для detection и integration
+- [x] Хранить rawSignal
+- [x] Хранить smoothedSignal
+- [x] Хранить estimatedBaseline
+- [x] Хранить baselineCorrectedSignal
+- [x] Хранить signalUsedForDetection
+- [x] Хранить signalUsedForIntegration
+- [x] По умолчанию искать пики по smoothed corrected signal
+- [x] По умолчанию интегрировать по rawSignal - baseline
+- [x] Не использовать smoothedSignal для финальной площади, если пользователь явно это не включил
+- [x] В интерфейсе показывать, какой сигнал сейчас отображается
+- [x] В отчете сохранять, какой сигнал использовался для detection и integration
 
 ---
 
