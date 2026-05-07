@@ -1,5 +1,7 @@
 package com.chromalab.feature.calculation.core
 
+import com.chromalab.feature.calculation.algorithm.BaselineDispatcher
+import com.chromalab.feature.calculation.algorithm.BaselineMethod
 import com.chromalab.feature.calculation.algorithm.SavitzkyGolayFilter
 import com.chromalab.feature.processing.signal.DigitalSignal
 
@@ -59,11 +61,13 @@ object CalculationEngine {
             )
         } else null
 
-        // Stage 3: Baseline estimation
-        val baseline: List<Double>? = run {
-            // Placeholder — real implementation in §2.9–2.12
-            null
-        }
+        // Stage 3: Baseline estimation (§2.9)
+        val baselineMethod = BaselineMethod.entries.find { it.name == params.baselineMethod }
+            ?: BaselineMethod.NONE
+        val baselineResult = BaselineDispatcher.estimate(baselineMethod, raw)
+        val baseline: List<Double>? = if (baselineMethod != BaselineMethod.NONE) {
+            baselineResult.baseline
+        } else null
 
         // Stage 4: Build signal bundle (baseline correction happens here)
         val signals = SignalModelBuilder.build(

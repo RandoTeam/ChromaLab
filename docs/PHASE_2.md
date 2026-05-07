@@ -17,7 +17,7 @@
 | 2.6 | Модель сигналов | ✅ |
 | 2.7 | Порядок расчетного pipeline | ✅ |
 | 2.8 | Savitzky-Golay smoothing | ✅ |
-| 2.9 | Baseline correction: общий модуль | ⬜ |
+| 2.9 | Baseline correction: общий модуль | ✅ |
 | 2.10 | Manual linear baseline | ⬜ |
 | 2.11 | ALS baseline | ⬜ |
 | 2.12 | SNIP baseline | ⬜ |
@@ -200,19 +200,19 @@
 
 ## 2.9 — Baseline correction: общий модуль
 
-- [ ] Создать BaselineCorrector interface
-- [ ] Реализовать BaselineMethod.NONE
-- [ ] Реализовать BaselineMethod.MANUAL_LINEAR
-- [ ] Реализовать BaselineMethod.ALS
-- [ ] Реализовать BaselineMethod.SNIP
-- [ ] Для каждого метода сохранять baseline array
-- [ ] Для каждого метода сохранять параметры
-- [ ] Для каждого метода сохранять warnings
-- [ ] Дать пользователю сравнивать baseline methods
-- [ ] Один метод должен быть активным для текущего расчета
-- [ ] ALS сделать основным автоматическим методом
-- [ ] Manual linear baseline сделать прозрачным контрольным методом
-- [ ] SNIP сделать альтернативным / experimental методом
+- [x] Создать BaselineCorrector interface
+- [x] Реализовать BaselineMethod.NONE
+- [x] Реализовать BaselineMethod.MANUAL_LINEAR
+- [x] Реализовать BaselineMethod.ALS
+- [x] Реализовать BaselineMethod.SNIP
+- [x] Для каждого метода сохранять baseline array
+- [x] Для каждого метода сохранять параметры
+- [x] Для каждого метода сохранять warnings
+- [x] Дать пользователю сравнивать baseline methods
+- [x] Один метод должен быть активным для текущего расчета
+- [x] ALS сделать основным автоматическим методом
+- [x] Manual linear baseline сделать прозрачным контрольным методом
+- [x] SNIP сделать альтернативным / experimental методом
 
 ---
 
