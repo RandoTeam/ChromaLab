@@ -142,8 +142,11 @@ fun ProcessingFlowScreen(
     val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
 
     // --- Run real processing on step entry ---
+    var processingError by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(currentStep) {
         isProcessing = true
+        processingError = null  // clear previous error on step entry
         try {
             withContext(Dispatchers.Default) {
                 when (currentStep) {
@@ -320,8 +323,8 @@ fun ProcessingFlowScreen(
                 }
             }
         } catch (e: Exception) {
-            // Processing failed — user can still proceed with fallback data
             e.printStackTrace()
+            processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
         }
         isProcessing = false
     }
@@ -685,6 +688,62 @@ fun ProcessingFlowScreen(
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.primary,
                     )
+                }
+            }
+
+            // Error recovery overlay
+            val error = processingError
+            if (error != null && !isProcessing) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(Spacing.lg),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        ),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(Spacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        ) {
+                            Text(
+                                "Ошибка обработки",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                            Text(
+                                error,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                OutlinedButton(onClick = { goBack(currentStep) }) {
+                                    Text("Назад")
+                                }
+                                Button(onClick = {
+                                    processingError = null
+                                    // Re-trigger LaunchedEffect by toggling step
+                                    val step = currentStep
+                                    currentStep = ProcessingStep.FIRST
+                                    currentStep = step
+                                }) {
+                                    Text("Повторить")
+                                }
+                                TextButton(onClick = {
+                                    processingError = null
+                                    advance(currentStep)
+                                }) {
+                                    Text("Пропустить")
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
