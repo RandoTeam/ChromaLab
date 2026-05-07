@@ -38,7 +38,7 @@
 | 1.24 | Список предупреждений | ✅ |
 | 1.25 | Сохранение промежуточных файлов | ✅ |
 | 1.26 | Экспорт массива точек | ✅ |
-| 1.27 | Debug mode | ⬜ |
+| 1.27 | Debug mode | ✅ |
 | 1.28 | Детерминированность | ⬜ |
 | 1.29 | Тестирование на синтетических данных | ⬜ |
 | 1.30 | Тестирование на реальных фото | ⬜ |
@@ -422,11 +422,11 @@
 
 ## 1.27 — Debug mode
 
-- [ ] Добавить debug mode в настройках
-- [ ] Показывать найденные контуры, границы листа, homography corners
-- [ ] Показывать найденные области графиков, оси
-- [ ] Показывать curve mask, extracted curve overlay
-- [ ] Export debug package (изображения + points + params + quality report + manual edits)
+- [x] Добавить debug mode в настройках
+- [x] Показывать найденные контуры, границы листа, homography corners
+- [x] Показывать найденные области графиков, оси
+- [x] Показывать curve mask, extracted curve overlay
+- [x] Export debug package (изображения + points + params + quality report + manual edits)
 
 ---
 
