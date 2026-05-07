@@ -58,6 +58,17 @@ kotlin {
             implementation(libs.sqlite.bundled)
         }
 
+        androidMain.dependencies {
+            // CameraX
+            implementation(libs.camerax.core)
+            implementation(libs.camerax.camera2)
+            implementation(libs.camerax.lifecycle)
+            implementation(libs.camerax.view)
+
+            // Coroutines Android
+            implementation(libs.coroutines.android)
+        }
+
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)

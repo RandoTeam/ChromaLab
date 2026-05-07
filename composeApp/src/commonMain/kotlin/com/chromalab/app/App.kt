@@ -19,6 +19,7 @@ import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
+import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.settings.LanguageScreen
 
 @Composable
@@ -102,7 +103,12 @@ fun App() {
 
                 // --- Capture ---
                 composable<Route.Camera> {
-                    PlaceholderScreen("Камера")
+                    CameraScreen(
+                        onImageCaptured = { path ->
+                            // TODO: navigate to processing with captured image
+                        },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable<Route.GalleryFrame> {
                     PlaceholderScreen("Галерея → Рамка")
