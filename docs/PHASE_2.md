@@ -43,7 +43,7 @@
 | 2.32 | Unit-тесты расчетного ядра | ✅ |
 | 2.33 | Synthetic validation tests | ✅ |
 | 2.34 | Проверка на реальных данных | ⬜ |
-| 2.35 | Метрики качества | ⬜ |
+| 2.35 | Метрики качества | ✅ |
 | 2.36 | Что не входит в Фазу 2 | ⬜ |
 | 2.37 | Definition of Done | ⬜ |
 
@@ -508,13 +508,13 @@
 
 ## 2.35 — Метрики качества Фазы 2
 
-- [ ] RT absolute/relative error
-- [ ] Height/Area/Width relative error
-- [ ] S/N relative difference
-- [ ] Peak detection precision/recall
-- [ ] False positive/negative peaks
-- [ ] Baseline RMSE, area sensitivity to baseline method
-- [ ] Repeatability, determinism pass/fail
+- [x] RT absolute/relative error
+- [x] Height/Area/Width relative error
+- [x] S/N relative difference
+- [x] Peak detection precision/recall
+- [x] False positive/negative peaks
+- [x] Baseline RMSE, area sensitivity to baseline method
+- [x] Repeatability, determinism pass/fail
 
 ---
 
