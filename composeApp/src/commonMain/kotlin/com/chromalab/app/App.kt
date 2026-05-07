@@ -136,10 +136,9 @@ fun App() {
                     val imageUri = backStackEntry.arguments?.getString("imageUri") ?: ""
                     ProcessingFlowScreen(
                         imagePath = imageUri,
-                        onFinish = {
-                            // Phase 1→2 bridge: navigate to calculation engine
-                            val signalId = "signal_${System.currentTimeMillis()}"
-                            navController.navigate(Route.Analysis(signalId)) {
+                        onFinish = { signalId ->
+                            // Phase 1→2 bridge: navigate to analysis with Room signal ID
+                            navController.navigate(Route.Analysis(signalId.toString())) {
                                 popUpTo(Route.Capture) { inclusive = false }
                             }
                         },

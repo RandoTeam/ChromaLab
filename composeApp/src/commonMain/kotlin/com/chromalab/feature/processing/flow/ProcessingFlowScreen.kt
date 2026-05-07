@@ -66,7 +66,11 @@ import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
+import com.chromalab.core.data.DatabaseProvider
+import com.chromalab.core.data.entity.ChromatogramEntity
+import com.chromalab.core.data.model.SourceType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.max
 import kotlin.math.min
@@ -84,7 +88,7 @@ import kotlin.math.roundToInt
 @Composable
 fun ProcessingFlowScreen(
     imagePath: String,
-    onFinish: () -> Unit,
+    onFinish: (signalId: Long) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -318,9 +322,54 @@ fun ProcessingFlowScreen(
         isProcessing = false
     }
 
+    var savedSignalId by remember { mutableStateOf<Long?>(null) }
+    val scope = rememberCoroutineScope()
+
+    // When signal is saved, navigate to analysis
+    LaunchedEffect(savedSignalId) {
+        savedSignalId?.let { onFinish(it) }
+    }
+
     val advance = { step: ProcessingStep ->
         val next = step.next()
-        if (next != null) currentStep = next else onFinish()
+        if (next != null) {
+            currentStep = next
+        } else {
+            // Last step — save signal to Room, then navigate
+            scope.launch {
+                val signal = smoothedSignal?.smoothed
+                val now = System.currentTimeMillis()
+                if (signal != null) {
+                    try {
+                        val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                        val entity = ChromatogramEntity(
+                            sampleId = 0, // standalone, no sample yet
+                            sourceType = SourceType.PHOTO,
+                            filePath = currentImagePath,
+                            timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
+                            timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
+                            intensityUnit = signal.intensityUnit,
+                            qualityScore = digitizationReport?.overall?.score,
+                            dataPoints = kotlinx.serialization.json.Json.encodeToString(
+                                kotlinx.serialization.builtins.ListSerializer(
+                                    com.chromalab.feature.processing.signal.GraphPoint.serializer(),
+                                ),
+                                signal.points,
+                            ),
+                            createdAt = now,
+                            updatedAt = now,
+                        )
+                        savedSignalId = dao.insert(entity)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        // Fallback: navigate with timestamp-based ID
+                        savedSignalId = now
+                    }
+                } else {
+                    savedSignalId = now
+                }
+            }
+        }
     }
     val goBack = { step: ProcessingStep ->
         val prev = step.prev()
