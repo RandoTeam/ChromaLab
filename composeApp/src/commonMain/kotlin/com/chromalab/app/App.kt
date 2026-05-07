@@ -20,6 +20,7 @@ import com.chromalab.app.navigation.Route
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
+import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.capture.GalleryImportScreen
 import com.chromalab.feature.settings.LanguageScreen
 
@@ -82,7 +83,10 @@ fun App() {
                     PlaceholderScreen(Strings.tabProjects)
                 }
                 composable<Route.Capture> {
-                    PlaceholderScreen(Strings.tabCapture)
+                    CaptureHubScreen(
+                        onCamera = { navController.navigate(Route.Camera) },
+                        onGallery = { navController.navigate(Route.GalleryFrame) },
+                    )
                 }
                 composable<Route.Calculations> {
                     PlaceholderScreen(Strings.tabCalculations)
@@ -106,7 +110,9 @@ fun App() {
                 composable<Route.Camera> {
                     CameraScreen(
                         onImageCaptured = { path ->
-                            // TODO: navigate to processing with captured image
+                            navController.navigate(Route.Processing(path)) {
+                                popUpTo(Route.Capture) { inclusive = false }
+                            }
                         },
                         onBack = { navController.popBackStack() },
                     )
@@ -114,7 +120,9 @@ fun App() {
                 composable<Route.GalleryFrame> {
                     GalleryImportScreen(
                         onImageSelected = { path ->
-                            // TODO: navigate to quality check with imported image
+                            navController.navigate(Route.Processing(path)) {
+                                popUpTo(Route.Capture) { inclusive = false }
+                            }
                         },
                         onBack = { navController.popBackStack() },
                     )
@@ -123,7 +131,7 @@ fun App() {
                     PlaceholderScreen("Импорт файла")
                 }
                 composable<Route.Processing> {
-                    PlaceholderScreen("Обработка")
+                    PlaceholderScreen("Обработка изображения…")
                 }
 
                 // --- Calculations ---
