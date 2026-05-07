@@ -18,7 +18,7 @@
 | 2.7 | Порядок расчетного pipeline | ✅ |
 | 2.8 | Savitzky-Golay smoothing | ✅ |
 | 2.9 | Baseline correction: общий модуль | ✅ |
-| 2.10 | Manual linear baseline | ⬜ |
+| 2.10 | Manual linear baseline | ✅ |
 | 2.11 | ALS baseline | ⬜ |
 | 2.12 | SNIP baseline | ⬜ |
 | 2.13 | Baseline quality metrics | ⬜ |
@@ -218,14 +218,14 @@
 
 ## 2.10 — Manual linear baseline
 
-- [ ] Реализовать baseline между leftBoundary и rightBoundary
-- [ ] Использовать линейную интерполяцию baseline под пиком
-- [ ] Дать пользователю вручную двигать boundaries
-- [ ] Показывать линию baseline на графике
-- [ ] Интегрировать площадь относительно этой baseline
-- [ ] Сохранять manual baseline points
-- [ ] Использовать как fallback при спорной автоматической baseline
-- [ ] Добавить warning, если baseline пересекает сигнал некорректно
+- [x] Реализовать baseline между leftBoundary и rightBoundary
+- [x] Использовать линейную интерполяцию baseline под пиком
+- [x] Дать пользователю вручную двигать boundaries
+- [x] Показывать линию baseline на графике
+- [x] Интегрировать площадь относительно этой baseline
+- [x] Сохранять manual baseline points
+- [x] Использовать как fallback при спорной автоматической baseline
+- [x] Добавить warning, если baseline пересекает сигнал некорректно
 
 ---
 
