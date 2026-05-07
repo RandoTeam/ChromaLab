@@ -54,7 +54,7 @@ fun CameraFrameOverlay(modifier: Modifier = Modifier) {
 
             // Frame rect — 80% width, ~60% height, centered
             val frameW = size.width - padding * 2
-            val frameH = frameW * 1.35f // ~A4 portrait ratio
+            val frameH = frameW * 0.65f // landscape ratio for chromatogram
             val frameX = padding
             val frameY = (size.height - frameH) / 2
 
