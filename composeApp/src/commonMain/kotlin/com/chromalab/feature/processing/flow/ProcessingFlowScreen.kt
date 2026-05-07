@@ -56,6 +56,7 @@ import com.chromalab.feature.processing.signal.GraphPoint
 import com.chromalab.feature.processing.signal.SignalMetadata
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
+import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -101,12 +102,15 @@ fun ProcessingFlowScreen(
     val curveExtractor = remember { CurveExtractor() }
 
     // --- Intermediate results populated by real processors ---
+    var normalizedResult by remember { mutableStateOf<NormalizedImageResult?>(null) }
+    var imageWidth by remember { mutableStateOf(0) }
+    var imageHeight by remember { mutableStateOf(0) }
     var qualityReport by remember { mutableStateOf<ImageQualityReport?>(null) }
     var cropResult by remember { mutableStateOf<CropResult?>(null) }
     var currentImagePath by remember { mutableStateOf(imagePath) }
     var perspectiveResult by remember { mutableStateOf<PerspectiveCorrectionResult?>(null) }
     var graphResult by remember { mutableStateOf<GraphRegionResult?>(null) }
-    var selectedRegion by remember { mutableStateOf(GraphRegion(0, 0, 1920, 1080)) }
+    var selectedRegion by remember { mutableStateOf(GraphRegion(0, 0, 1, 1)) }
     var axesResult by remember { mutableStateOf<AxesResult?>(null) }
     var xCalibration by remember { mutableStateOf<XAxisCalibration?>(null) }
     var yCalibration by remember { mutableStateOf<YAxisCalibration?>(null) }
@@ -122,12 +126,27 @@ fun ProcessingFlowScreen(
             withContext(Dispatchers.Default) {
                 when (currentStep) {
                     ProcessingStep.IMAGE_QUALITY -> {
-                        qualityReport = qualityAnalyzer.analyze(imagePath)
+                        // Normalize first: fix EXIF orientation
+                        if (normalizedResult == null) {
+                            val norm = imageNormalizer.normalize(imagePath, outputDir)
+                            if (norm != null) {
+                                normalizedResult = norm
+                                currentImagePath = norm.normalizedPath
+                                imageWidth = norm.width
+                                imageHeight = norm.height
+                                selectedRegion = GraphRegion(
+                                    0, 0, norm.width, norm.height,
+                                )
+                            } else {
+                                currentImagePath = imagePath
+                            }
+                        }
+                        qualityReport = qualityAnalyzer.analyze(currentImagePath)
                     }
 
                     ProcessingStep.CROP_REVIEW -> {
                         if (cropResult == null) {
-                            val bounds = documentDetector.detect(imagePath)
+                            val bounds = documentDetector.detect(currentImagePath)
                             if (bounds != null) {
                                 val c = bounds.corners
                                 val x1 = min(c.topLeft.x, c.bottomLeft.x).roundToInt()
@@ -140,10 +159,10 @@ fun ProcessingFlowScreen(
                                     width = (x2 - x1).coerceAtLeast(1),
                                     height = (y2 - y1).coerceAtLeast(1),
                                 )
-                                cropResult = imageCropper.crop(imagePath, rect, outputDir)
+                                cropResult = imageCropper.crop(currentImagePath, rect, outputDir)
                                 cropResult?.let { currentImagePath = it.croppedPath }
                             } else {
-                                cropResult = fallbackCropResult(imagePath)
+                                cropResult = fallbackCropResult(currentImagePath)
                             }
                         }
                     }
@@ -164,11 +183,8 @@ fun ProcessingFlowScreen(
 
                     ProcessingStep.GRAPH_SELECTION, ProcessingStep.GRAPH_ROI -> {
                         if (graphResult == null) {
-                            val norm = imageNormalizer.normalize(
-                                currentImagePath, outputDir,
-                            )
-                            val w = norm?.width ?: 1920
-                            val h = norm?.height ?: 1080
+                            val w = imageWidth.takeIf { it > 0 } ?: 1920
+                            val h = imageHeight.takeIf { it > 0 } ?: 1080
                             graphResult = graphDetector.detect(currentImagePath, w, h)
                             graphResult?.selectedRegion?.let { selectedRegion = it }
                         }
