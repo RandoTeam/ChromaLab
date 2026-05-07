@@ -34,7 +34,7 @@
 | 1.20 | Преобразование в цифровой сигнал | ✅ |
 | 1.21 | Первичная обработка сигнала | ✅ |
 | 1.22 | Предпросмотр цифрового графика | ✅ |
-| 1.23 | Индикатор качества оцифровки | ⬜ |
+| 1.23 | Индикатор качества оцифровки | ✅ |
 | 1.24 | Список предупреждений | ⬜ |
 | 1.25 | Сохранение промежуточных файлов | ⬜ |
 | 1.26 | Экспорт массива точек | ⬜ |
@@ -363,16 +363,16 @@
 
 ## 1.23 — Индикатор качества оцифровки
 
-- [ ] Реализовать image quality score
-- [ ] Реализовать document detection quality score
-- [ ] Реализовать graph detection quality score
-- [ ] Реализовать axis calibration quality score
-- [ ] Реализовать curve extraction quality score
-- [ ] Реализовать общий digitization quality score
-- [ ] Показывать статус: good / acceptable / risky / failed
-- [ ] Показывать список предупреждений
-- [ ] Не скрывать технические предупреждения
-- [ ] Сохранять quality_report.json
+- [x] Реализовать image quality score
+- [x] Реализовать document detection quality score
+- [x] Реализовать graph detection quality score
+- [x] Реализовать axis calibration quality score
+- [x] Реализовать curve extraction quality score
+- [x] Реализовать общий digitization quality score
+- [x] Показывать статус: good / acceptable / risky / failed
+- [x] Показывать список предупреждений
+- [x] Не скрывать технические предупреждения
+- [x] Сохранять quality_report.json
 
 ---
 
