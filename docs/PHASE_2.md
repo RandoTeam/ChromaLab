@@ -33,7 +33,7 @@
 | 2.22 | Интерактивный график Canvas Compose | ✅ |
 | 2.23 | Карточка пика / PeakDetailsBottomSheet | ✅ |
 | 2.24 | Таблица пиков | ✅ |
-| 2.25 | Ручная коррекция пиков | ⬜ |
+| 2.25 | Ручная коррекция пиков | ✅ |
 | 2.26 | Algorithm Settings UI | ⬜ |
 | 2.27 | Presets алгоритма | ⬜ |
 | 2.28 | Warnings | ⬜ |
@@ -412,12 +412,12 @@
 
 ## 2.25 — Ручная коррекция пиков
 
-- [ ] Drag left/right boundary
-- [ ] Ручное добавление/удаление/восстановление пика
-- [ ] Ручной выбор apex, noise region, baseline method
-- [ ] После каждой правки пересчитывать metrics
-- [ ] Сохранять oldValue, newValue, timestamp, editType, editReason
-- [ ] Все правки в ManualEditLog
+- [x] Drag left/right boundary
+- [x] Ручное добавление/удаление/восстановление пика
+- [x] Ручной выбор apex, noise region, baseline method
+- [x] После каждой правки пересчитывать metrics
+- [x] Сохранять oldValue, newValue, timestamp, editType, editReason
+- [x] Все правки в ManualEditLog
 
 ---
 

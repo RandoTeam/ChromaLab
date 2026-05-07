@@ -108,7 +108,7 @@ object CalculationEngine {
             signals = signals,
             peaks = peaks,
             warnings = warnings,
-            manualEdits = manualEdits,
+            manualEditsCsv = "",
             timestamp = currentTimeMillis(),
         )
     }

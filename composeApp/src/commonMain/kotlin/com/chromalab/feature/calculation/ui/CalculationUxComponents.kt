@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
-import com.chromalab.feature.calculation.core.PeakConfidence
+import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
 import com.chromalab.feature.calculation.core.PeakStatus
 import com.chromalab.feature.calculation.core.WarningSeverity
 
@@ -59,12 +59,12 @@ fun PeakStatusBadge(status: PeakStatus, modifier: Modifier = Modifier) {
 // ─── Confidence Badge ───────────────────────────────────────────
 
 @Composable
-fun ConfidenceBadge(confidence: PeakConfidence, modifier: Modifier = Modifier) {
+fun ConfidenceBadge(confidence: ConfidenceGrade, modifier: Modifier = Modifier) {
     val (label, color) = when (confidence) {
-        PeakConfidence.HIGH -> "Высокая" to Color(0xFF4CAF50)
-        PeakConfidence.MEDIUM -> "Средняя" to Color(0xFFFFA726)
-        PeakConfidence.LOW -> "Низкая" to Color(0xFFEF5350)
-        PeakConfidence.FAILED -> "Ошибка" to MaterialTheme.colorScheme.error
+        ConfidenceGrade.HIGH -> "Высокая" to Color(0xFF4CAF50)
+        ConfidenceGrade.MEDIUM -> "Средняя" to Color(0xFFFFA726)
+        ConfidenceGrade.LOW -> "Низкая" to Color(0xFFEF5350)
+        ConfidenceGrade.FAILED -> "Ошибка" to MaterialTheme.colorScheme.error
     }
     Surface(
         shape = RoundedCornerShape(4.dp),

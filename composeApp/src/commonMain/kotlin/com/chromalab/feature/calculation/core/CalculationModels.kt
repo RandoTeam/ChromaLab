@@ -1,5 +1,7 @@
 package com.chromalab.feature.calculation.core
 
+import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
+import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import kotlinx.serialization.Serializable
 
 /**
@@ -85,7 +87,7 @@ data class CalculationRun(
     val signals: SignalBundle,
     val peaks: List<PeakResult>,
     val warnings: List<CalculationWarning>,
-    val manualEdits: List<ManualEdit>,
+    val manualEditsCsv: String = "",
     val timestamp: Long,
 )
 
@@ -130,7 +132,7 @@ data class PeakResult(
     val snrMethod: String,
     val baselineMethod: String,
     val integrationMethod: String,
-    val confidence: PeakConfidence,
+    val confidence: ConfidenceGrade,
     val overlapStatus: OverlapStatus,
     val leftBoundaryTime: Double,
     val rightBoundaryTime: Double,
@@ -144,20 +146,6 @@ enum class PeakStatus {
     CORRECTED,
     REJECTED,
     LOW_CONFIDENCE,
-}
-
-enum class PeakConfidence {
-    HIGH,
-    MEDIUM,
-    LOW,
-    FAILED,
-}
-
-enum class OverlapStatus {
-    ISOLATED,
-    PARTIALLY_OVERLAPPED,
-    SHOULDER,
-    UNRESOLVED,
 }
 
 /**
@@ -176,29 +164,4 @@ enum class WarningSeverity {
     CAUTION,
     SERIOUS,
     FAILED,
-}
-
-/**
- * Manual edit record for audit trail.
- */
-@Serializable
-data class ManualEdit(
-    val editId: Int,
-    val peakId: Int?,
-    val editType: EditType,
-    val oldValue: String?,
-    val newValue: String?,
-    val reason: String?,
-    val timestamp: Long,
-)
-
-enum class EditType {
-    BOUNDARY_LEFT,
-    BOUNDARY_RIGHT,
-    ADD_PEAK,
-    REJECT_PEAK,
-    RESTORE_PEAK,
-    CHANGE_APEX,
-    CHANGE_NOISE_REGION,
-    CHANGE_BASELINE_METHOD,
 }
