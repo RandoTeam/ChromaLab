@@ -41,7 +41,7 @@
 | 2.30 | Export результатов | ✅ |
 | 2.31 | Детерминированность | ✅ |
 | 2.32 | Unit-тесты расчетного ядра | ✅ |
-| 2.33 | Synthetic validation tests | ⬜ |
+| 2.33 | Synthetic validation tests | ✅ |
 | 2.34 | Проверка на реальных данных | ⬜ |
 | 2.35 | Метрики качества | ⬜ |
 | 2.36 | Что не входит в Фазу 2 | ⬜ |
@@ -487,12 +487,12 @@
 
 ## 2.33 — Synthetic validation tests
 
-- [ ] Генерировать: flat/linear/polynomial/sinusoidal baseline drift
-- [ ] Генерировать: Gaussian/skewed/overlapping/shoulder/low-S/N peaks
-- [ ] Генерировать: white noise, spike noise
-- [ ] Для synthetic: знать true RT/height/area/width
-- [ ] Считать: RT error, height/area/width relative error, false positives/negatives, baseline RMSE
-- [ ] Golden test suite
+- [x] Генерировать: flat/linear/polynomial/sinusoidal baseline drift
+- [x] Генерировать: Gaussian/skewed/overlapping/shoulder/low-S/N peaks
+- [x] Генерировать: white noise, spike noise
+- [x] Для synthetic: знать true RT/height/area/width
+- [x] Считать: RT error, height/area/width relative error, false positives/negatives, baseline RMSE
+- [x] Golden test suite
 
 ---
 
