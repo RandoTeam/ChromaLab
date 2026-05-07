@@ -38,7 +38,7 @@
 | 2.27 | Presets алгоритма | ✅ |
 | 2.28 | Warnings | ✅ |
 | 2.29 | Room storage | ✅ |
-| 2.30 | Export результатов | ⬜ |
+| 2.30 | Export результатов | ✅ |
 | 2.31 | Детерминированность | ⬜ |
 | 2.32 | Unit-тесты расчетного ядра | ⬜ |
 | 2.33 | Synthetic validation tests | ⬜ |
@@ -460,10 +460,10 @@
 
 ## 2.30 — Export результатов
 
-- [ ] Export: peaks.csv, calculation.json, corrected_signal.csv, baseline.csv, warnings.json
-- [ ] CSV пиков: peakId, status, rtApex, height, area, widthBase, widthHalfHeight, prominence, snr, snrMethod, baselineMethod, integrationMethod, confidence, warnings
-- [ ] JSON: metadata, sourceSignalId, pipelineVersion, algorithmParams, baseline, peaks, noiseRegions, manualEdits, warnings
-- [ ] Share через системное меню Android
+- [x] Export: peaks.csv, calculation.json, corrected_signal.csv, baseline.csv, warnings.json
+- [x] CSV пиков: peakId, status, rtApex, height, area, widthBase, widthHalfHeight, prominence, snr, snrMethod, baselineMethod, integrationMethod, confidence, warnings
+- [x] JSON: metadata, sourceSignalId, pipelineVersion, algorithmParams, baseline, peaks, noiseRegions, manualEdits, warnings
+- [x] Share через системное меню Android
 
 ---
 
