@@ -21,7 +21,7 @@
 | 2.10 | Manual linear baseline | ✅ |
 | 2.11 | ALS baseline | ✅ |
 | 2.12 | SNIP baseline | ✅ |
-| 2.13 | Baseline quality metrics | ⬜ |
+| 2.13 | Baseline quality metrics | ✅ |
 | 2.14 | Noise estimation | ⬜ |
 | 2.15 | Signal-to-noise ratio | ⬜ |
 | 2.16 | Peak detection | ⬜ |
@@ -262,14 +262,14 @@
 
 ## 2.13 — Baseline quality metrics
 
-- [ ] Реализовать baselineResidualRMS в noise regions
-- [ ] Реализовать baselineAboveSignalFraction
-- [ ] Реализовать negativeCorrectedFraction
-- [ ] Реализовать baselineCrossingCount
-- [ ] Реализовать areaSensitivityToBaseline
-- [ ] Если разные baseline methods дают сильно разные areas — показывать warning
-- [ ] Сохранять baselineQualityReport
-- [ ] Показывать пользователю простую оценку: good / acceptable / risky / failed
+- [x] Реализовать baselineResidualRMS в noise regions
+- [x] Реализовать baselineAboveSignalFraction
+- [x] Реализовать negativeCorrectedFraction
+- [x] Реализовать baselineCrossingCount
+- [x] Реализовать areaSensitivityToBaseline
+- [x] Если разные baseline methods дают сильно разные areas — показывать warning
+- [x] Сохранять baselineQualityReport
+- [x] Показывать пользователю простую оценку: good / acceptable / risky / failed
 
 ---
 
