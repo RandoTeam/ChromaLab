@@ -26,7 +26,7 @@
 | 2.15 | Signal-to-noise ratio | ✅ |
 | 2.16 | Peak detection | ✅ |
 | 2.17 | Peak boundaries | ✅ |
-| 2.18 | Overlapping / shoulder peaks | ⬜ |
+| 2.18 | Overlapping / shoulder peaks | ✅ |
 | 2.19 | Peak integration | ⬜ |
 | 2.20 | Peak metrics | ⬜ |
 | 2.21 | Confidence score пика | ⬜ |
@@ -338,14 +338,14 @@
 
 ## 2.18 — Overlapping / shoulder peaks
 
-- [ ] Детектировать близкие пики
-- [ ] Детектировать shoulder peaks
-- [ ] Детектировать отсутствие valley между соседними пиками
-- [ ] Ввести peakOverlapStatus: isolated, partially_overlapped, shoulder, unresolved
-- [ ] Для unresolved peaks разрешить только ручное уточнение boundaries
-- [ ] Не делать сложную deconvolution как обязательную функцию Фазы 2
-- [ ] Помечать area unresolved peaks как low confidence
-- [ ] Добавить warning: overlapping peak
+- [x] Детектировать близкие пики
+- [x] Детектировать shoulder peaks
+- [x] Детектировать отсутствие valley между соседними пиками
+- [x] Ввести peakOverlapStatus: isolated, partially_overlapped, shoulder, unresolved
+- [x] Для unresolved peaks разрешить только ручное уточнение boundaries
+- [x] Не делать сложную deconvolution как обязательную функцию Фазы 2
+- [x] Помечать area unresolved peaks как low confidence
+- [x] Добавить warning: overlapping peak
 
 ---
 
