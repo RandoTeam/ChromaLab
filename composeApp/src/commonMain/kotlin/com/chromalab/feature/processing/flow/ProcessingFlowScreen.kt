@@ -57,6 +57,7 @@ import com.chromalab.feature.processing.signal.SignalMetadata
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
+import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -112,6 +113,7 @@ fun ProcessingFlowScreen(
     var currentImagePath by remember { mutableStateOf(imagePath) }
     var perspectiveResult by remember { mutableStateOf<PerspectiveCorrectionResult?>(null) }
     var graphResult by remember { mutableStateOf<GraphRegionResult?>(null) }
+    var preprocessingResult by remember { mutableStateOf<PreprocessingResult?>(null) }
     var selectedRegion by remember { mutableStateOf(GraphRegion(0, 0, 1, 1)) }
     var axesResult by remember { mutableStateOf<AxesResult?>(null) }
     var xCalibration by remember { mutableStateOf<XAxisCalibration?>(null) }
@@ -205,6 +207,12 @@ fun ProcessingFlowScreen(
                     }
 
                     ProcessingStep.GRAPH_SELECTION, ProcessingStep.GRAPH_ROI -> {
+                        // Run preprocessing (grayscale→CLAHE→binary) once
+                        if (preprocessingResult == null) {
+                            preprocessingResult = preprocessor.preprocess(
+                                currentImagePath, outputDir,
+                            )
+                        }
                         if (graphResult == null) {
                             val w = imageWidth.takeIf { it > 0 } ?: 1920
                             val h = imageHeight.takeIf { it > 0 } ?: 1080
@@ -229,11 +237,13 @@ fun ProcessingFlowScreen(
 
                     ProcessingStep.CURVE_EXTRACTION -> {
                         if (curveExtractionResult == null && axesResult != null) {
+                            // Use preprocessed binary image for mask preparation
+                            val inputForMask = preprocessingResult?.binaryPath ?: currentImagePath
                             val mask = curveMaskPreparer.prepare(
-                                currentImagePath, selectedRegion,
+                                inputForMask, selectedRegion,
                                 axesResult!!, outputDir,
                             )
-                            val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: currentImagePath
+                            val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: inputForMask
                             curveExtractionResult = curveExtractor.extract(
                                 maskPath, selectedRegion.width,
                                 selectedRegion.height, outputDir,

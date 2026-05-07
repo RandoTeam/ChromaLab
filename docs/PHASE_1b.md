@@ -31,8 +31,8 @@
 |---|---------|--------|
 | 1b.1 | Аудит точек разрыва и граф зависимостей | ✅ |
 | 1b.2 | Нормализация при входе в pipeline | ✅ |
-| 1b.3 | Правильная передача CropResult → currentImagePath | ⬜ |
-| 1b.4 | Передача PerspectiveResult → currentImagePath | ⬜ |
+| 1b.3 | Правильная передача CropResult → currentImagePath | ✅ |
+| 1b.4 | Передача PerspectiveResult → currentImagePath | ✅ |
 | 1b.5 | Image Preprocessing stage (grayscale→CLAHE→binary) | ⬜ |
 | 1b.6 | Калибровка: применение XCalibration + YCalibration → PixelCalibration | ⬜ |
 | 1b.7 | SignalConverter: curvePoints + calibration → DigitalSignal с реальными единицами | ⬜ |
