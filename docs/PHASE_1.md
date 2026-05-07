@@ -36,7 +36,7 @@
 | 1.22 | Предпросмотр цифрового графика | ✅ |
 | 1.23 | Индикатор качества оцифровки | ✅ |
 | 1.24 | Список предупреждений | ✅ |
-| 1.25 | Сохранение промежуточных файлов | ⬜ |
+| 1.25 | Сохранение промежуточных файлов | ✅ |
 | 1.26 | Экспорт массива точек | ⬜ |
 | 1.27 | Debug mode | ⬜ |
 | 1.28 | Детерминированность | ⬜ |
@@ -396,17 +396,17 @@
 
 ## 1.25 — Сохранение промежуточных файлов
 
-- [ ] original.jpg
-- [ ] normalized.jpg
-- [ ] cropped.jpg
-- [ ] document_corrected.jpg
-- [ ] grayscale.png / clahe.png / binary.png / morphology.png
-- [ ] graph_roi.png
-- [ ] curve_mask.png / curve_overlay.png
-- [ ] extracted_points.csv / extracted_points.json
-- [ ] processing_params.json
-- [ ] quality_report.json
-- [ ] manual_edits.json
+- [x] original.jpg
+- [x] normalized.jpg
+- [x] cropped.jpg
+- [x] document_corrected.jpg
+- [x] grayscale.png / clahe.png / binary.png / morphology.png
+- [x] graph_roi.png
+- [x] curve_mask.png / curve_overlay.png
+- [x] extracted_points.csv / extracted_points.json
+- [x] processing_params.json
+- [x] quality_report.json
+- [x] manual_edits.json
 
 ---
 
