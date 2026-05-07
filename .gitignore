@@ -33,9 +33,7 @@ output.json
 *.rar
 
 # Android Studio
-/app/build/
-/core/*/build/
-/feature/*/build/
+**/build/
 *.hprof
 
 # OpenCV
