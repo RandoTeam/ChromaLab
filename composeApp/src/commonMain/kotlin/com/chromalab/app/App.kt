@@ -18,6 +18,7 @@ import com.chromalab.app.navigation.BottomTab
 import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
 import com.chromalab.feature.processing.flow.ProcessingFlowScreen
+import com.chromalab.feature.calculation.flow.AnalysisFlowScreen
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
@@ -147,6 +148,18 @@ fun App() {
                 // --- Calculations ---
                 composable<Route.ChromatogramView> {
                     PlaceholderScreen("Хроматограмма")
+                }
+                composable<Route.Analysis> { backStackEntry ->
+                    val signalId = backStackEntry.arguments?.getString("signalId") ?: ""
+                    AnalysisFlowScreen(
+                        signalId = signalId,
+                        onFinish = {
+                            navController.popBackStack(Route.Calculations, inclusive = false)
+                        },
+                        onCancel = {
+                            navController.popBackStack(Route.Calculations, inclusive = false)
+                        },
+                    )
                 }
                 composable<Route.IonRatio> {
                     PlaceholderScreen("Ion Ratio")

@@ -26,6 +26,7 @@ sealed interface Route {
 
     // --- Calculations ---
     @Serializable data class ChromatogramView(val chromatogramId: Long) : Route
+    @Serializable data class Analysis(val signalId: String) : Route
     @Serializable data object IonRatio : Route
     @Serializable data object Calibration : Route
 
