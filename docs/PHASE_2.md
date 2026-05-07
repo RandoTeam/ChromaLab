@@ -27,7 +27,7 @@
 | 2.16 | Peak detection | ✅ |
 | 2.17 | Peak boundaries | ✅ |
 | 2.18 | Overlapping / shoulder peaks | ✅ |
-| 2.19 | Peak integration | ⬜ |
+| 2.19 | Peak integration | ✅ |
 | 2.20 | Peak metrics | ⬜ |
 | 2.21 | Confidence score пика | ⬜ |
 | 2.22 | Интерактивный график Canvas Compose | ⬜ |
@@ -351,16 +351,16 @@
 
 ## 2.19 — Peak integration
 
-- [ ] Создать PeakIntegrator
-- [ ] Реализовать trapezoidal integration: area = Σ 0.5 × (y_i + y_{i+1}) × (t_{i+1} - t_i)
-- [ ] Интегрировать baseline-corrected raw signal
-- [ ] Не использовать smoothed signal для финальной площади по умолчанию
-- [ ] Поддержать irregular time spacing
-- [ ] Поддержать linear interpolation на start/end boundaries
-- [ ] Считать totalArea, positiveArea, negativeArea
-- [ ] Не обнулять отрицательные участки без явного параметра
-- [ ] Сохранять integrationMethod, units (intensity × minute / second)
-- [ ] Добавить unit tests: rectangle, triangle, Gaussian peak, irregular spacing
+- [x] Создать PeakIntegrator
+- [x] Реализовать trapezoidal integration: area = Σ 0.5 × (y_i + y_{i+1}) × (t_{i+1} - t_i)
+- [x] Интегрировать baseline-corrected raw signal
+- [x] Не использовать smoothed signal для финальной площади по умолчанию
+- [x] Поддержать irregular time spacing
+- [x] Поддержать linear interpolation на start/end boundaries
+- [x] Считать totalArea, positiveArea, negativeArea
+- [x] Не обнулять отрицательные участки без явного параметра
+- [x] Сохранять integrationMethod, units (intensity × minute / second)
+- [x] Добавить unit tests: rectangle, triangle, Gaussian peak, irregular spacing
 
 ---
 
