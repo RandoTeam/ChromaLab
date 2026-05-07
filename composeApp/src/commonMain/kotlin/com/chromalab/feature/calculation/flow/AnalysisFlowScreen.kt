@@ -15,7 +15,11 @@ import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.feature.processing.signal.DigitalSignal
 import com.chromalab.feature.processing.signal.GraphPoint
 import com.chromalab.feature.processing.signal.SignalMetadata
+import com.chromalab.feature.calculation.core.CalculationEngine
+import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.calculation.core.CalculationParams
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.ListSerializer
@@ -47,6 +51,11 @@ fun AnalysisFlowScreen(
     var signal by remember { mutableStateOf<DigitalSignal?>(null) }
     var entity by remember { mutableStateOf<ChromatogramEntity?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+
+    // Phase 2 calculation result
+    var calculationRun by remember { mutableStateOf<CalculationRun?>(null) }
+    var isCalculating by remember { mutableStateOf(false) }
+    val calcScope = rememberCoroutineScope()
 
     // Load signal from Room on first composition
     LaunchedEffect(signalId) {
@@ -148,12 +157,42 @@ fun AnalysisFlowScreen(
                     if (currentStep == AnalysisStep.PEAK_DETECTION && !peaksFound) {
                         Spacer(modifier = Modifier.weight(1f))
                         Button(
-                            onClick = { peaksFound = true },
+                            onClick = {
+                                val sig = signal ?: return@Button
+                                isCalculating = true
+                                calcScope.launch {
+                                    try {
+                                        val run = withContext(Dispatchers.Default) {
+                                            CalculationEngine.execute(
+                                                signal = sig,
+                                                sourceId = signalId,
+                                                params = CalculationParams(),
+                                            )
+                                        }
+                                        calculationRun = run
+                                        peaksFound = true
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                    } finally {
+                                        isCalculating = false
+                                    }
+                                }
+                            },
+                            enabled = signal != null && !isCalculating,
                             modifier = Modifier.height(48.dp),
                         ) {
-                            Icon(Icons.Filled.Search, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Найти пики")
+                            if (isCalculating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Анализ...")
+                            } else {
+                                Icon(Icons.Filled.Search, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Найти пики")
+                            }
                         }
                     } else {
                         Spacer(modifier = Modifier.weight(1f))
@@ -190,7 +229,7 @@ fun AnalysisFlowScreen(
                 },
                 label = "analysis_step",
             ) { step ->
-                AnalysisStepContent(step, signalId, signal, loadError, peaksFound)
+                AnalysisStepContent(step, signalId, signal, loadError, calculationRun, peaksFound)
             }
         }
     }
@@ -202,6 +241,7 @@ private fun AnalysisStepContent(
     signalId: String,
     signal: DigitalSignal?,
     loadError: String?,
+    calculationRun: CalculationRun?,
     peaksFound: Boolean,
 ) {
     Column(
@@ -220,39 +260,76 @@ private fun AnalysisStepContent(
         Spacer(modifier = Modifier.height(Spacing.sm))
 
         // Show signal summary on first step, placeholder on others
-        if (step == AnalysisStep.SIGNAL_OVERVIEW) {
-            if (loadError != null) {
-                Text(
-                    loadError,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            } else if (signal != null) {
-                Text(
-                    "Точек: ${signal.points.size}",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    "Время: ${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
-                        "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    "Интенсивность: ${"%.1f".format(signal.minIntensity)} — " +
-                        "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            } else {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(Spacing.sm))
-                Text("Загрузка сигнала...")
+        when {
+            step == AnalysisStep.SIGNAL_OVERVIEW -> {
+                if (loadError != null) {
+                    Text(
+                        loadError,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                } else if (signal != null) {
+                    Text(
+                        "Точек: ${signal.points.size}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        "Время: ${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
+                            "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "Интенсивность: ${"%.1f".format(signal.minIntensity)} — " +
+                            "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Text("Загрузка сигнала...")
+                }
             }
-        } else {
-            Text(
-                stepDescription(step, peaksFound),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // Show calculation results on steps after peak detection
+            step.index >= AnalysisStep.PEAK_REVIEW.index && calculationRun != null -> {
+                val run = calculationRun
+                Text(
+                    "Пиков найдено: ${run.peaks.size}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                if (run.peaks.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    run.peaks.take(5).forEach { peak ->
+                        Text(
+                            "#${peak.peakId}: RT=${"%.3f".format(peak.rtApex)}  " +
+                                "H=${"%.1f".format(peak.height)}  " +
+                                "S=${"%.1f".format(peak.area)}",
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (run.peaks.size > 5) {
+                        Text(
+                            "… ещё ${run.peaks.size - 5}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                if (run.warnings.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Text(
+                        "Предупреждений: ${run.warnings.size}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+            }
+            else -> {
+                Text(
+                    stepDescription(step, peaksFound),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(Spacing.xs))
