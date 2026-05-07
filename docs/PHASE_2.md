@@ -23,7 +23,7 @@
 | 2.12 | SNIP baseline | ✅ |
 | 2.13 | Baseline quality metrics | ✅ |
 | 2.14 | Noise estimation | ✅ |
-| 2.15 | Signal-to-noise ratio | ⬜ |
+| 2.15 | Signal-to-noise ratio | ✅ |
 | 2.16 | Peak detection | ⬜ |
 | 2.17 | Peak boundaries | ⬜ |
 | 2.18 | Overlapping / shoulder peaks | ⬜ |
@@ -295,15 +295,15 @@
 
 ## 2.15 — Signal-to-noise ratio
 
-- [ ] Создать SnrCalculator
-- [ ] Реализовать S/N по peak-to-peak noise: S/N = 2H / h
-- [ ] Реализовать engineering mode: S/N = H / RMS_noise
-- [ ] Реализовать robust mode: S/N = H / robustNoise
-- [ ] В таблице явно показывать S/N method
-- [ ] Не смешивать разные S/N methods без обозначения
-- [ ] Добавить ориентировочные флаги: <3 low, 3–10 detectable-like, ≥10 quantitation-like
-- [ ] Не называть эти флаги юридическим или лабораторным заключением
-- [ ] Сохранять formula description, noise window, S/N warnings
+- [x] Создать SnrCalculator
+- [x] Реализовать S/N по peak-to-peak noise: S/N = 2H / h
+- [x] Реализовать engineering mode: S/N = H / RMS_noise
+- [x] Реализовать robust mode: S/N = H / robustNoise
+- [x] В таблице явно показывать S/N method
+- [x] Не смешивать разные S/N methods без обозначения
+- [x] Добавить ориентировочные флаги: <3 low, 3–10 detectable-like, ≥10 quantitation-like
+- [x] Не называть эти флаги юридическим или лабораторным заключением
+- [x] Сохранять formula description, noise window, S/N warnings
 
 ---
 
