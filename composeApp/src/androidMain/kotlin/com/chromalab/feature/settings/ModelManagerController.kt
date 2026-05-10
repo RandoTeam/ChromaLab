@@ -127,6 +127,7 @@ class ModelManagerController(
                                 basePath = model.primaryPath,
                                 mmprojPath = model.mmprojPath ?: "",
                                 threads = manager.threadCount,
+                                modelFamily = model.info.family,
                             )
                         }
                         llama

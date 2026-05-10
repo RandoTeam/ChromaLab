@@ -152,13 +152,17 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
  * 2. Build prompt with <__media__> marker
  * 3. mtmd_tokenize → chunks (text + image tokens)
  * 4. mtmd_helper_eval_chunks → populate KV cache
- * 5. Greedy decode loop → collect output tokens
+ * 5. Greedy decode loop with repeat penalty → collect output tokens
  * 6. Return decoded text
+ *
+ * Sampling strategy: GREEDY (temperature=0) for deterministic factual output.
+ * Repeat penalty prevents degenerate JSON loops.
  */
 JNIEXPORT jstring JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeInferWithImage(
     JNIEnv *env, jobject /* this */,
-    jlong handle, jstring imagePath, jstring prompt) {
+    jlong handle, jstring imagePath, jstring prompt,
+    jint maxTokens, jfloat repeatPenalty, jint repeatLastN) {
 
     auto *mc = reinterpret_cast<ModelContext *>(handle);
     if (!mc || !mc->ctx || !mc->model) {
@@ -169,7 +173,12 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
     const char *img_path = env->GetStringUTFChars(imagePath, nullptr);
     const char *pmt      = env->GetStringUTFChars(prompt, nullptr);
 
-    LOGI("Infer: image=%s", img_path);
+    const int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+
+    LOGI("Infer: image=%s, maxTokens=%d, repeatPenalty=%.2f, repeatLastN=%d",
+         img_path, n_predict, rep_penalty, rep_last_n);
 
     std::string result_text;
 
@@ -226,17 +235,31 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
             return env->NewStringUTF("{\"x\": [], \"y\": []}");
         }
 
-        // 5. Decode loop using sampler chain (canonical llama.cpp approach)
+        // 5. Decode loop — greedy sampling with repeat penalty
+        //
+        // Sampling chain for chromatogram analysis:
+        //   a) Repeat penalty — prevents degenerate JSON value loops
+        //   b) Greedy — deterministic, temperature=0, no randomness
+        //
+        // This ensures maximum accuracy for numeric OCR extraction.
         const llama_vocab *vocab = llama_model_get_vocab(mc->model);
-        const int max_tokens = 512;
 
-        // Create sampler chain: greedy sampling
         llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
         sparams.no_perf = true;
         llama_sampler *smpl = llama_sampler_chain_init(sparams);
+
+        // Add repeat penalty before greedy (order matters in sampler chain)
+        if (rep_penalty > 1.0f) {
+            llama_sampler_chain_add(smpl, llama_sampler_init_penalties(
+                rep_last_n,      // last_n tokens to penalize
+                rep_penalty,     // repeat_penalty
+                0.0f,            // frequency_penalty (disabled)
+                0.0f             // presence_penalty (disabled)
+            ));
+        }
         llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
 
-        for (int i = 0; i < max_tokens; i++) {
+        for (int i = 0; i < n_predict; i++) {
             // Sample token using sampler chain (-1 = last logits)
             llama_token token_id = llama_sampler_sample(smpl, mc->ctx, -1);
 
@@ -274,3 +297,4 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
 }
 
 } // extern "C"
+

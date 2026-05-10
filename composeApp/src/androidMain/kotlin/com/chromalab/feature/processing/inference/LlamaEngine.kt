@@ -1,5 +1,6 @@
 package com.chromalab.feature.processing.inference
 
+import com.chromalab.feature.processing.inference.InferenceConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -15,6 +16,7 @@ class LlamaEngine : InferenceEngine {
     private var modelHandle: Long = 0L
     private var backendName: String = "llama.cpp CPU"
     private var loaded: Boolean = false
+    private var config: InferenceConfig = InferenceConfig.DEFAULT
 
     companion object {
         private var nativeLoaded = false
@@ -48,6 +50,9 @@ class LlamaEngine : InferenceEngine {
             handle: Long,
             imagePath: String,
             prompt: String,
+            maxTokens: Int,
+            repeatPenalty: Float,
+            repeatLastN: Int,
         ): String
     }
 
@@ -57,11 +62,13 @@ class LlamaEngine : InferenceEngine {
      * @param basePath path to base model .gguf
      * @param mmprojPath path to vision projector .gguf (empty string if none)
      * @param threads number of CPU threads (1..N)
+     * @param modelFamily model family for auto-selecting InferenceConfig
      */
     suspend fun loadModel(
         basePath: String,
         mmprojPath: String,
         threads: Int = 4,
+        modelFamily: String = "",
     ) = withContext(Dispatchers.IO) {
         if (!nativeLoaded) {
             loadNativeLibrary()
@@ -69,7 +76,10 @@ class LlamaEngine : InferenceEngine {
 
         require(nativeLoaded) { "Native library not available" }
 
+        // Auto-select inference config for this model family
+        config = InferenceConfig.forModelFamily(modelFamily)
         println("LLAMA[LOAD] Loading model: $basePath + $mmprojPath, threads=$threads")
+        println("LLAMA[LOAD] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}, repeatLastN=${config.repeatLastN}")
 
         modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0)
         if (modelHandle == 0L) {
@@ -87,8 +97,12 @@ class LlamaEngine : InferenceEngine {
 
         return withContext(Dispatchers.IO) {
             println("LLAMA[INFER] Analyzing chart: $imagePath")
+            println("LLAMA[INFER] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}")
 
-            val responseText = nativeInferWithImage(modelHandle, imagePath, prompt)
+            val responseText = nativeInferWithImage(
+                modelHandle, imagePath, prompt,
+                config.maxTokens, config.repeatPenalty, config.repeatLastN,
+            )
             println("LLAMA[INFER] Response length: ${responseText.length}")
             ChartPrompts.parseResponse(responseText)
         }
