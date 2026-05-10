@@ -28,12 +28,16 @@ import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.settings.LanguageScreen
 import com.chromalab.feature.settings.MoreScreen
 import com.chromalab.feature.settings.ModelManagerScreen
+import com.chromalab.feature.settings.rememberModelManagerState
 
 @Composable
 fun App() {
     ChromaLabTheme {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
+
+        // Model Manager — platform-specific state + actions
+        val (modelState, modelActions) = rememberModelManagerState()
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -97,12 +101,12 @@ fun App() {
                 }
                 composable<Route.More> {
                     MoreScreen(
-                        activeModelName = null, // TODO: wire from ModelManager
-                        threadCount = 4,        // TODO: wire from ModelManager
+                        activeModelName = modelState.activeModelName,
+                        threadCount = modelState.threadCount,
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                         onOpenLanguage = { navController.navigate(Route.Language) },
                         onOpenAbout = { navController.navigate(Route.About) },
-                        onThreadCountChange = { /* TODO: wire to ModelManager.threadCount */ },
+                        onThreadCountChange = { modelActions.setThreadCount(it) },
                     )
                 }
 
@@ -190,18 +194,18 @@ fun App() {
                 }
                 composable<Route.ModelManager> {
                     ModelManagerScreen(
-                        downloadedModelIds = emptySet(), // TODO: wire from ModelManager
-                        activeModelId = null,
-                        downloadingModelId = null,
-                        downloadProgress = 0f,
-                        downloadSpeedMbps = 0f,
-                        deviceRamMb = 8192,
-                        availableStorageGb = 32f,
-                        totalModelDiskUsageGb = 0f,
-                        onDownload = { /* TODO: wire download */ },
-                        onDelete = { /* TODO: wire delete */ },
-                        onActivate = { /* TODO: wire activate */ },
-                        onImport = { /* TODO: wire file picker */ },
+                        downloadedModelIds = modelState.downloadedModelIds,
+                        activeModelId = modelState.activeModelId,
+                        downloadingModelId = modelState.downloadingModelId,
+                        downloadProgress = modelState.downloadProgress,
+                        downloadSpeedMbps = modelState.downloadSpeedMbps,
+                        deviceRamMb = modelState.deviceRamMb,
+                        availableStorageGb = modelState.availableStorageGb,
+                        totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,
+                        onDownload = { modelActions.download(it) },
+                        onDelete = { modelActions.delete(it) },
+                        onActivate = { modelActions.activate(it) },
+                        onImport = { modelActions.onImport() },
                         onBack = { navController.popBackStack() },
                     )
                 }
