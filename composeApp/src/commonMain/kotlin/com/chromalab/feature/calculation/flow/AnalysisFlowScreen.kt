@@ -23,7 +23,15 @@ import com.chromalab.feature.processing.signal.SignalMetadata
 import com.chromalab.feature.calculation.core.CalculationEngine
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.CalculationParams
+import com.chromalab.feature.calculation.core.PeakResult
+import com.chromalab.feature.calculation.algorithm.*
 import com.chromalab.feature.calculation.ui.ChromatogramChart
+import com.chromalab.feature.calculation.ui.PeakTable
+import com.chromalab.feature.calculation.ui.PeakTableRow
+import com.chromalab.feature.calculation.ui.PeakTableSort
+import com.chromalab.feature.calculation.ui.PeakTableFilter
+import com.chromalab.feature.calculation.ui.PeakDetailsContent
+import com.chromalab.feature.calculation.ui.PeakDetailsData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,6 +51,7 @@ import kotlinx.serialization.builtins.ListSerializer
  * 7. Metrics recalculate after every edit
  * 8. Save CalculationRun → Export CSV/JSON
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalysisFlowScreen(
     signalId: String,
@@ -62,6 +71,10 @@ fun AnalysisFlowScreen(
     var calculationRun by remember { mutableStateOf<CalculationRun?>(null) }
     var isCalculating by remember { mutableStateOf(false) }
     val calcScope = rememberCoroutineScope()
+
+    // Peak selection state
+    var selectedPeakIndex by remember { mutableStateOf(-1) }
+    var showPeakSheet by remember { mutableStateOf(false) }
 
     // Load signal from Room on first composition
     LaunchedEffect(signalId) {
@@ -235,8 +248,38 @@ fun AnalysisFlowScreen(
                 },
                 label = "analysis_step",
             ) { step ->
-                AnalysisStepContent(step, signalId, signal, loadError, calculationRun, peaksFound)
+                AnalysisStepContent(
+                    step = step,
+                    signalId = signalId,
+                    signal = signal,
+                    loadError = loadError,
+                    calculationRun = calculationRun,
+                    peaksFound = peaksFound,
+                    selectedPeakIndex = selectedPeakIndex,
+                    onPeakSelected = { idx ->
+                        selectedPeakIndex = idx
+                        showPeakSheet = true
+                    },
+                )
             }
+        }
+    }
+
+    // Peak details bottom sheet
+    if (showPeakSheet && calculationRun != null && selectedPeakIndex in calculationRun!!.peaks.indices) {
+        ModalBottomSheet(
+            onDismissRequest = { showPeakSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            val peakData = remember(selectedPeakIndex, calculationRun) {
+                buildPeakDetailsData(calculationRun!!.peaks[selectedPeakIndex])
+            }
+            PeakDetailsContent(
+                data = peakData,
+                onRejectPeak = {
+                    showPeakSheet = false
+                },
+            )
         }
     }
 }
@@ -249,6 +292,8 @@ private fun AnalysisStepContent(
     loadError: String?,
     calculationRun: CalculationRun?,
     peaksFound: Boolean,
+    selectedPeakIndex: Int = -1,
+    onPeakSelected: ((Int) -> Unit)? = null,
 ) {
     // Layer visibility state — persisted across steps
     var visibleLayers by remember {
@@ -301,23 +346,30 @@ private fun AnalysisStepContent(
             // Signal loaded — show chart
             else -> {
                 // Build chart state based on current step
-                val chartState = remember(calculationRun, visibleLayers, peaksFound) {
+                val chartState = remember(calculationRun, visibleLayers, peaksFound, selectedPeakIndex) {
                     if (calculationRun != null) {
                         CalculationToChartMapper.buildChartState(
                             run = calculationRun,
                             visibleLayers = visibleLayers,
+                            selectedPeakIndex = selectedPeakIndex,
                         )
                     } else {
                         CalculationToChartMapper.buildRawChartState(signal)
                     }
                 }
 
-                // Chart — fills most of the space
+                // Chart — flexible height, shrinks when table visible
+                val chartWeight = if (
+                    step == AnalysisStep.PEAK_REVIEW ||
+                    step == AnalysisStep.RESULTS
+                ) 0.5f else 1f
+
                 ChromatogramChart(
                     state = chartState,
+                    onPeakTap = onPeakSelected,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(chartWeight),
                 )
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
@@ -371,14 +423,23 @@ private fun AnalysisStepContent(
                     }
 
                     else -> {
-                        // PEAK_REVIEW, PEAK_CORRECTION, RESULTS, EXPORT
-                        // handled by Phases 10-12
+                        // PEAK_REVIEW, RESULTS — show PeakTable
                         if (calculationRun != null && calculationRun.peaks.isNotEmpty()) {
-                            Text(
-                                "Пиков: ${calculationRun.peaks.size}  ·  " +
-                                    "Σ Area: ${"%.0f".format(calculationRun.peaks.sumOf { it.area })}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            val tableRows = remember(calculationRun) {
+                                buildPeakTableRows(calculationRun.peaks)
+                            }
+                            var tableSort by remember { mutableStateOf(PeakTableSort.RT_ASC) }
+                            var tableFilter by remember { mutableStateOf(PeakTableFilter.ALL) }
+
+                            PeakTable(
+                                rows = tableRows,
+                                sort = tableSort,
+                                filter = tableFilter,
+                                selectedIndex = selectedPeakIndex,
+                                onRowTap = { onPeakSelected?.invoke(it) },
+                                onSortChange = { tableSort = it },
+                                onFilterChange = { tableFilter = it },
+                                modifier = Modifier.weight(0.5f),
                             )
                         }
                     }
@@ -386,7 +447,7 @@ private fun AnalysisStepContent(
 
                 // Signal ID footer
                 Text(
-                    "Signal ID: ${signalId.toLongOrNull() ?: "—"}",
+                    "Signal ID: ${signalId.toLongOrNull() ?: "\u2014"}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(top = Spacing.xs),
@@ -396,12 +457,92 @@ private fun AnalysisStepContent(
     }
 }
 
+// \u2500\u2500\u2500 PeakResult \u2192 PeakTableRow mapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+private fun buildPeakTableRows(peaks: List<PeakResult>): List<PeakTableRow> {
+    val totalArea = peaks.sumOf { it.area }
+    return peaks.mapIndexed { i, p ->
+        PeakTableRow(
+            index = i,
+            rtApex = p.rtApex,
+            height = p.height,
+            area = p.area,
+            areaPercent = if (totalArea > 0) p.area / totalArea * 100.0 else 0.0,
+            widthBase = p.widthBase,
+            snr = p.snr,
+            prominence = p.height, // use height as proxy when prominence not in PeakResult
+            tailingFactor = p.tailingFactor,
+            confidenceGrade = p.confidence,
+            overlapStatus = p.overlapStatus,
+            isManuallyEdited = p.status == com.chromalab.feature.calculation.core.PeakStatus.MANUAL ||
+                p.status == com.chromalab.feature.calculation.core.PeakStatus.CORRECTED,
+            warningCount = p.warnings.size,
+        )
+    }
+}
+
+// \u2500\u2500\u2500 PeakResult \u2192 PeakDetailsData mapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+
+private fun buildPeakDetailsData(peak: PeakResult): PeakDetailsData {
+    return PeakDetailsData(
+        peakId = peak.peakId,
+        metrics = PeakMetrics(
+            rtApex = peak.rtApex,
+            rtCentroid = peak.rtCentroid ?: peak.rtApex,
+            height = peak.height,
+            area = peak.area,
+            widthBase = peak.widthBase,
+            widthHalfHeight = peak.widthHalfHeight ?: 0.0,
+            widthHalfProminence = 0.0,
+            prominence = peak.height,
+            leftBaseTime = peak.leftBoundaryTime,
+            rightBaseTime = peak.rightBoundaryTime,
+            snrValue = peak.snr,
+            snrFlag = if (peak.snr >= 10) SnrFlag.QUANTITATION
+                else if (peak.snr >= 3) SnrFlag.DETECTABLE
+                else SnrFlag.LOW,
+            overlapStatus = peak.overlapStatus,
+            boundaryMethod = BoundaryMethod.entries.find { it.name == peak.boundaryMethod }
+                ?: BoundaryMethod.LOCAL_MINIMA,
+            boundaryConfidence = 0.8,
+            isManuallyEdited = peak.status == com.chromalab.feature.calculation.core.PeakStatus.MANUAL,
+            tailingFactor = peak.tailingFactor,
+            asymmetryFactor = peak.asymmetryFactor,
+            plateCount = peak.plateCount,
+            warnings = peak.warnings,
+        ),
+        confidence = PeakConfidence(
+            grade = peak.confidence,
+            score = when (peak.confidence) {
+                ConfidenceGrade.HIGH -> 0.9
+                ConfidenceGrade.MEDIUM -> 0.6
+                ConfidenceGrade.LOW -> 0.3
+                ConfidenceGrade.FAILED -> 0.0
+            },
+            factors = emptyList(),
+            reasons = emptyList(),
+        ),
+        integration = IntegrationResult(
+            totalArea = peak.area,
+            positiveArea = peak.area,
+            negativeArea = 0.0,
+            method = IntegrationMethod.entries.find { it.name == peak.integrationMethod }
+                ?: IntegrationMethod.TRAPEZOIDAL,
+            startTime = peak.leftBoundaryTime,
+            endTime = peak.rightBoundaryTime,
+            pointCount = 0,
+            clampedNegative = false,
+        ),
+        baselineMethod = peak.baselineMethod,
+    )
+}
+
 // ─── Signal Summary Card ────────────────────────────────────────
 
 @Composable
 private fun SignalSummaryCard(signal: DigitalSignal) {
     Surface(
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         modifier = Modifier.fillMaxWidth(),
     ) {
