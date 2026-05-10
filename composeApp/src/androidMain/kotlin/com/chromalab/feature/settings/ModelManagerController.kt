@@ -106,6 +106,7 @@ class ModelManagerController(
         _state.update {
             it.copy(downloadingModelId = null, downloadProgress = 0f, downloadSpeedMbps = 0f)
         }
+        refresh()
     }
 
     /** Activate a downloaded model — creates inference engine + sets VlmEngineHolder. */
