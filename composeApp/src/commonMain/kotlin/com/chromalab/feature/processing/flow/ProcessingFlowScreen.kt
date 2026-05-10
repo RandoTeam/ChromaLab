@@ -202,15 +202,20 @@ fun ProcessingFlowScreen(
                     ProcessingStep.GRAPH_SELECTION, ProcessingStep.GRAPH_ROI -> {
                         // === AUTO-SWEEP: try all preprocessing configs, pick best ===
                         if (!sweepCompleted) {
-                            println("PIPELINE[SWEEP] Starting auto-sweep with ${sweepEngine.configs.size} configs...")
+                            val isSubsequentGraph = currentGraphIndex > 0
+                            val totalRegions = graphResult?.filteredRegions?.size ?: 0
+                            println("PIPELINE[SWEEP] Starting sweep for graph ${currentGraphIndex + 1}/${maxOf(totalRegions, 1)}, configs=${sweepEngine.configs.size}")
                             val w = imageWidth.takeIf { it > 0 } ?: 1920
                             val h = imageHeight.takeIf { it > 0 } ?: 1080
 
                             val sweepResults = sweepEngine.sweep(
                                 imagePath = currentImagePath,
-                                outputDir = outputDir,
+                                outputDir = "$outputDir/graph_${currentGraphIndex}",
                                 imageWidth = w,
                                 imageHeight = h,
+                                // Multi-graph: reuse graph detection, target specific region
+                                cachedGraphResult = if (isSubsequentGraph) graphResult else null,
+                                overrideRegion = if (isSubsequentGraph) selectedRegion else null,
                                 onProgress = { progress ->
                                     sweepProgress = progress
                                 },
@@ -221,19 +226,24 @@ fun ProcessingFlowScreen(
                                 bestSweepConfig = best.config.name
                                 println("PIPELINE[SWEEP] Winner: '${best.config.name}' score=${best.score} (${best.scoreBreakdown})")
 
-                                // Apply ALL sweep results to pipeline state
+                                // Apply sweep results to pipeline state
                                 preprocessingResult = best.preprocessingResult
-                                graphResult = best.graphResult
-                                best.selectedRegion?.let { selectedRegion = it }
+                                // Only update graphResult on first graph
+                                if (!isSubsequentGraph) {
+                                    graphResult = best.graphResult
+                                    best.selectedRegion?.let { selectedRegion = it }
+                                }
                                 ocrResult = best.ocrResult
                                 axesResult = best.axesResult
                                 curveExtractionResult = best.curveResult
                                 curvePoints = best.curveResult?.points ?: emptyList()
 
-                                val allRegions = graphResult?.sortedRegions ?: emptyList()
-                                println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
-                                allRegions.forEachIndexed { idx, r ->
-                                    println("PIPELINE[GRAPH]   [$idx] (${r.x},${r.y}) ${r.width}x${r.height} area=${r.area} label='${r.label}'")
+                                val allRegions = graphResult?.filteredRegions ?: emptyList()
+                                if (!isSubsequentGraph) {
+                                    println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
+                                    allRegions.forEachIndexed { idx, r ->
+                                        println("PIPELINE[GRAPH]   [$idx] (${r.x},${r.y}) ${r.width}x${r.height} area=${r.area} label='${r.label}'")
+                                    }
                                 }
                                 println("PIPELINE[GRAPH] selected=$selectedRegion")
                                 println("PIPELINE[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
@@ -270,6 +280,7 @@ fun ProcessingFlowScreen(
                             val axes = axesResult
                             val xValues = ocr?.suggestedXValues ?: emptyList()
                             val origin = axes?.origin
+                            val regionWidth = selectedRegion.width.toFloat()
 
                             if (xValues.size >= 2) {
                                 val sorted = xValues.sorted()
@@ -282,43 +293,54 @@ fun ProcessingFlowScreen(
                                     .filter { it.numericValue != null && it.numericValue in sorted }
                                     .sortedBy { it.numericValue }
 
-                                val firstElem = xElems.firstOrNull { it.numericValue == minVal }
-                                val lastElem = xElems.lastOrNull { it.numericValue == maxVal }
-
-                                // Use center of OCR bounding box for precision
                                 // Convert from full-image coords to graphRegion-relative coords
-                                // (CurvePoints are in region-relative coords: 0..graphRegion.width)
                                 val regionX = selectedRegion.x.toFloat()
 
-                                val px1 = if (firstElem != null) {
-                                    (firstElem.x + firstElem.width / 2f) - regionX
-                                } else {
-                                    // Fallback: origin relative to region
-                                    (origin?.x ?: regionX) - regionX
-                                }
-                                val px2 = if (lastElem != null) {
-                                    (lastElem.x + lastElem.width / 2f) - regionX
-                                } else {
-                                    selectedRegion.width.toFloat()
-                                }
+                                // Build calibration points from OCR elements
+                                // Filter: only use elements that map to valid pixel positions (inside the region)
+                                val validPoints = xElems.mapNotNull { elem ->
+                                    val px = (elem.x + elem.width / 2f) - regionX
+                                    val value = elem.numericValue ?: return@mapNotNull null
+                                    // Reject if pixel position is outside the region (±10% tolerance)
+                                    if (px < -regionWidth * 0.1f || px > regionWidth * 1.1f) {
+                                        println("PIPELINE[X_CAL] rejected: value=$value px=$px (outside region 0..${regionWidth.toInt()})")
+                                        return@mapNotNull null
+                                    }
+                                    px to value
+                                }.distinctBy { it.second } // one point per unique value
+                                    .sortedBy { it.second }
 
-                                println("PIPELINE[X_CAL] OCR-based: px1=$px1→$minVal, px2=$px2→$maxVal (regionX=$regionX)")
+                                if (validPoints.size >= 2) {
+                                    val first = validPoints.first()
+                                    val last = validPoints.last()
+                                    println("PIPELINE[X_CAL] OCR-based: px1=${first.first}→${first.second}, px2=${last.first}→${last.second} (regionX=$regionX, ${validPoints.size} points)")
 
-                                xCalibration = XAxisCalibration(
-                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, minVal),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, maxVal),
-                                    ),
-                                    unit = ocr?.xUnit ?: "мин",
-                                    timestamp = System.currentTimeMillis(),
-                                )
+                                    xCalibration = XAxisCalibration(
+                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(first.first, first.second),
+                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(last.first, last.second),
+                                        ),
+                                        unit = ocr?.xUnit ?: "мин",
+                                        timestamp = System.currentTimeMillis(),
+                                    )
+                                } else {
+                                    // Not enough valid OCR points → pixel-based fallback
+                                    println("PIPELINE[X_CAL] fallback: not enough valid OCR points (${validPoints.size})")
+                                    xCalibration = XAxisCalibration(
+                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, minVal),
+                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(regionWidth, maxVal),
+                                        ),
+                                        unit = ocr?.xUnit ?: "мин",
+                                        timestamp = System.currentTimeMillis(),
+                                    )
+                                }
                             } else {
                                 // No OCR → identity calibration (pixels)
-                                val px2 = selectedRegion.width.toFloat()
                                 xCalibration = XAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
                                         point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, 0f),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, px2),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(regionWidth, regionWidth),
                                     ),
                                     unit = "px",
                                     timestamp = System.currentTimeMillis(),
@@ -495,8 +517,38 @@ fun ProcessingFlowScreen(
             val shouldAutoAdvance = currentStep.autoAdvance == AutoAdvancePolicy.ALWAYS
             if (shouldAutoAdvance) {
                 kotlinx.coroutines.delay(150L)
-                val next = currentStep.next()
-                if (next != null) currentStep = next
+                if (currentStep == ProcessingStep.QUALITY_REPORT) {
+                    // Multi-graph: check for more regions before advancing to EXPORT
+                    smoothedSignal?.let { processedSignals.add(it) }
+                    val totalRegions = graphResult?.filteredRegions?.size ?: 1
+                    if (currentGraphIndex + 1 < totalRegions) {
+                        currentGraphIndex++
+                        val nextRegion = graphResult!!.filteredRegions[currentGraphIndex]
+                        selectedRegion = nextRegion
+                        println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/$totalRegions: ${nextRegion.label}")
+                        // Reset per-graph state
+                        axesResult = null
+                        xCalibration = null
+                        yCalibration = null
+                        ocrResult = null
+                        pixelCalibration = null
+                        curveExtractionResult = null
+                        curvePoints = emptyList()
+                        smoothedSignal = null
+                        digitizationReport = null
+                        sweepCompleted = false
+                        sweepProgress = null
+                        bestSweepConfig = null
+                        currentStep = ProcessingStep.GRAPH_ROI
+                    } else {
+                        // All graphs processed → go to EXPORT
+                        val next = currentStep.next()
+                        if (next != null) currentStep = next
+                    }
+                } else {
+                    val next = currentStep.next()
+                    if (next != null) currentStep = next
+                }
             }
         }
     }
@@ -515,12 +567,14 @@ fun ProcessingFlowScreen(
         if (step == ProcessingStep.QUALITY_REPORT) {
             // Save current signal to the batch
             smoothedSignal?.let { processedSignals.add(it) }
-            val totalRegions = graphResult?.regions?.size ?: 1
+            val totalRegions = graphResult?.filteredRegions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
                 // More regions — reset per-graph state and loop back
                 currentGraphIndex++
-                val nextRegion = graphResult!!.regions[currentGraphIndex]
+                val nextRegion = graphResult!!.filteredRegions[currentGraphIndex]
                 selectedRegion = nextRegion
+                println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/$totalRegions: ${nextRegion.label} (${nextRegion.width}x${nextRegion.height})")
+                // Reset per-graph results
                 axesResult = null
                 xCalibration = null
                 yCalibration = null
@@ -530,6 +584,10 @@ fun ProcessingFlowScreen(
                 curvePoints = emptyList()
                 smoothedSignal = null
                 digitizationReport = null
+                // Reset sweep so it runs for the new region
+                sweepCompleted = false
+                sweepProgress = null
+                bestSweepConfig = null
                 currentStep = ProcessingStep.GRAPH_ROI
             } else if (next != null) {
                 currentStep = next
@@ -540,21 +598,24 @@ fun ProcessingFlowScreen(
         } else if (next != null) {
             currentStep = next
         } else {
-            // Last step — save signal to Room, then navigate
+            // Last step — save all signals to Room, then navigate
+            // Add last graph's signal to the batch
+            smoothedSignal?.let { processedSignals.add(it) }
             scope.launch {
-                val signal = smoothedSignal?.smoothed
                 val now = System.currentTimeMillis()
-                if (signal != null) {
-                    try {
-                        val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                try {
+                    val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                    var firstId: Long? = null
+                    for ((idx, ss) in processedSignals.withIndex()) {
+                        val signal = ss.smoothed
                         val entity = ChromatogramEntity(
-                            sampleId = 0, // standalone, no sample yet
+                            sampleId = 0,
                             sourceType = SourceType.PHOTO,
                             filePath = currentImagePath,
                             timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
                             timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
                             intensityUnit = signal.intensityUnit,
-                            qualityScore = digitizationReport?.overall?.score,
+                            qualityScore = null,
                             dataPoints = kotlinx.serialization.json.Json.encodeToString(
                                 kotlinx.serialization.builtins.ListSerializer(
                                     com.chromalab.feature.processing.signal.GraphPoint.serializer(),
@@ -564,13 +625,13 @@ fun ProcessingFlowScreen(
                             createdAt = now,
                             updatedAt = now,
                         )
-                        savedSignalId = dao.insert(entity)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        // Fallback: navigate with timestamp-based ID
-                        savedSignalId = now
+                        val id = dao.insert(entity)
+                        if (firstId == null) firstId = id
+                        println("PIPELINE[SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
                     }
-                } else {
+                    savedSignalId = firstId ?: now
+                } catch (e: Exception) {
+                    e.printStackTrace()
                     savedSignalId = now
                 }
             }
@@ -592,6 +653,8 @@ fun ProcessingFlowScreen(
                     isProcessing = true,
                     sweepProgress = sweepProgress,
                     bestSweepConfig = bestSweepConfig,
+                    currentGraphIndex = currentGraphIndex,
+                    totalGraphs = graphResult?.filteredRegions?.size ?: 1,
                 )
 
                 // Error overlay on top
@@ -650,13 +713,17 @@ fun ProcessingFlowScreen(
                 }
             } else {
                 // EXPORT: the final results dashboard — only screen the user sees
-                val signal = smoothedSignal?.smoothed
-                if (signal != null) {
+                // Collect all signals: processedSignals already has them from multi-graph loop
+                val allSignals = remember(processedSignals.size) {
+                    processedSignals.map { it.smoothed }
+                }
+                val displaySignal = allSignals.lastOrNull() ?: smoothedSignal?.smoothed
+                if (displaySignal != null) {
                     val cal = pixelCalibration ?: fallbackCalibration(
                         imageWidth, imageHeight,
                     )
                     val bundle = ExportBundle(
-                        signal = signal,
+                        signal = displaySignal,
                         calibration = cal,
                         processingParams = ProcessingParams(
                             calibration = cal,
@@ -667,10 +734,11 @@ fun ProcessingFlowScreen(
                     )
                     val writer = remember { SessionWriter(outputDir) }
                     ExportScreen(
-                        signal = signal,
+                        signal = displaySignal,
                         bundle = bundle,
                         sessionWriter = writer,
                         onBack = { onCancel() },
+                        allSignals = allSignals,
                     )
                 } else {
                     // Pipeline produced no signal — show error

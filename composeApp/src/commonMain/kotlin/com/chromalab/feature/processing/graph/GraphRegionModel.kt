@@ -56,15 +56,37 @@ data class GraphRegionResult(
     val selectedRegion: GraphRegion?
         get() {
             if (regions.isEmpty()) return null
-            // Select topmost region that looks like a real graph
-            // Skip thin strips (text headers, axis labels) — aspect ratio > 5:1
-            val graphs = sortedRegions.filter { it.width.toFloat() / it.height.coerceAtLeast(1) < 5f }
+            // Select topmost region that looks like a real graph.
+            // Filter out text headers, axis labels, and thin strips:
+            // 1. Aspect ratio < 3.5 — real graphs are roughly 2:1, not 4:1+
+            // 2. Min height: at least 15% of image height
+            // 3. Min area: at least 5% of image area
+            val minHeight = (imageHeight * 0.15f).toInt()
+            val minArea = (imageWidth.toLong() * imageHeight * 0.05f).toInt()
+            val graphs = sortedRegions.filter { r ->
+                r.aspectRatio < 3.5f &&
+                    r.height >= minHeight &&
+                    r.area >= minArea
+            }
             return graphs.firstOrNull() ?: sortedRegions.first()
         }
 
     /** Regions sorted top-to-bottom (by Y coordinate) — natural reading order */
     val sortedRegions: List<GraphRegion>
         get() = regions.sortedBy { it.y }
+
+    /** Regions that pass quality filter — only real graph areas, no headers/labels */
+    val filteredRegions: List<GraphRegion>
+        get() {
+            val minHeight = (imageHeight * 0.15f).toInt()
+            val minArea = (imageWidth.toLong() * imageHeight * 0.05f).toInt()
+            val filtered = sortedRegions.filter { r ->
+                r.aspectRatio < 3.5f &&
+                    r.height >= minHeight &&
+                    r.area >= minArea
+            }
+            return filtered.ifEmpty { sortedRegions }
+        }
 
     /** Always true — we never block the user */
     val canProceed: Boolean get() = true

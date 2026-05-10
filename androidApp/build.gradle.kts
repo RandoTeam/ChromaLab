@@ -21,6 +21,11 @@ android {
         targetSdk = 35
         versionCode = 2
         versionName = "0.0.2"
+
+        ndk {
+            // Target only arm64 (modern phones)
+            abiFilters += "arm64-v8a"
+        }
     }
 
     signingConfigs {
@@ -49,6 +54,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    // NDK build for llama.cpp JNI bridge
+    externalNativeBuild {
+        cmake {
+            path = file("CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    ndkVersion = "27.2.12479018"
 }
 
 kotlin {
@@ -60,4 +75,7 @@ kotlin {
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.activity.compose)
+
+    // LiteRT-LM — Google's on-device GenAI runtime
+    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
 }

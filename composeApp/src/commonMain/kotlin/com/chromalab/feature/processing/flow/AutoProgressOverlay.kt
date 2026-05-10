@@ -35,6 +35,8 @@ fun AutoProgressOverlay(
     isProcessing: Boolean,
     sweepProgress: AutoSweepEngine.SweepProgress? = null,
     bestSweepConfig: String? = null,
+    currentGraphIndex: Int = 0,
+    totalGraphs: Int = 1,
     modifier: Modifier = Modifier,
 ) {
     // Only show during auto-advance steps
@@ -64,11 +66,26 @@ fun AutoProgressOverlay(
                     modifier = Modifier.padding(Spacing.lg),
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
-                    Text(
-                        "Автоматическая обработка",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    // Title with graph counter
+                    if (totalGraphs > 1) {
+                        Text(
+                            "График ${currentGraphIndex + 1} из $totalGraphs",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            "Автоматическая обработка",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text(
+                            "Автоматическая обработка",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                     Spacer(modifier = Modifier.height(Spacing.sm))
 
                     // Overall progress bar

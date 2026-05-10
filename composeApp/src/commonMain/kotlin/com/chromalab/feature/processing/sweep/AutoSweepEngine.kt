@@ -140,12 +140,17 @@ class AutoSweepEngine {
      * 1. Graph detect + OCR + axis detect: run ONCE (image-dependent, not config-dependent)
      * 2. Per config: preprocess → curve mask → curve extract → score
      * 3. Return sorted results (best first)
+     *
+     * @param cachedGraphResult Reuse graph detection from first graph (multi-graph mode)
+     * @param overrideRegion Use specific region instead of auto-selected (multi-graph mode)
      */
     suspend fun sweep(
         imagePath: String,
         outputDir: String,
         imageWidth: Int,
         imageHeight: Int,
+        cachedGraphResult: com.chromalab.feature.processing.graph.GraphRegionResult? = null,
+        overrideRegion: com.chromalab.feature.processing.graph.GraphRegion? = null,
         onProgress: (SweepProgress) -> Unit = {},
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
@@ -159,14 +164,17 @@ class AutoSweepEngine {
         val w = imageWidth.takeIf { it > 0 } ?: 1920
         val h = imageHeight.takeIf { it > 0 } ?: 1080
 
-        onProgress(SweepProgress(0, configs.size, "Определение графика", "detect"))
-        val graphRes = try {
-            graphDetector.detect(imagePath, w, h)
-        } catch (e: Exception) {
-            println("SWEEP[GRAPH] detection failed: ${e.message}")
-            null
+        // Graph detection — reuse cached result if available (multi-graph)
+        val graphRes = cachedGraphResult ?: run {
+            onProgress(SweepProgress(0, configs.size, "Определение графика", "detect"))
+            try {
+                graphDetector.detect(imagePath, w, h)
+            } catch (e: Exception) {
+                println("SWEEP[GRAPH] detection failed: ${e.message}")
+                null
+            }
         }
-        val region = graphRes?.selectedRegion
+        val region = overrideRegion ?: graphRes?.selectedRegion
         println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} regions, selected=$region")
 
         if (region == null) {

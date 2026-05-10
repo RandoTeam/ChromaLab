@@ -179,6 +179,13 @@ actual class AxisOcrReader actual constructor() {
         filteredX = allXValues
         filteredY = allYValues
 
+        // === CROSS-AXIS RESCUE ===
+        // Detect misclassified values: if a Y value fits the X step pattern, move it to X.
+        // Example: X=[45,50,55,60,65], Y=[35,40] → 35,40 belong in X (step=5).
+        val rescuedPair = crossAxisRescue(filteredX, filteredY)
+        filteredX = rescuedPair.first.toMutableList()
+        filteredY = rescuedPair.second.toMutableList()
+
         // Sort: X ascending, Y descending
         val sortedX = filteredX.sorted()
         val sortedY = filteredY.sortedDescending()
@@ -458,6 +465,90 @@ actual class AxisOcrReader actual constructor() {
 
         // Step 3: Step-based filter — detect dominant step and remove outliers
         return filterByStep(iqrResult)
+    }
+
+    /**
+     * Cross-axis rescue: detect misclassified values and migrate them.
+     *
+     * Strategy: find dominant step in X, check if any Y values fit that step.
+     * Then do the reverse. Move values that improve step consistency.
+     *
+     * Example: X=[0,45,50,55,60,65], Y=[35,40]
+     * → X step=5 (from 45,50,55,60,65). 35 and 40 fit step=5 → move from Y to X.
+     * → 0 doesn't fit step=5 from base 35 → move to Y.
+     * Result: X=[35,40,45,50,55,60,65], Y=[0]
+     */
+    private fun crossAxisRescue(
+        xValues: List<Float>,
+        yValues: List<Float>,
+    ): Pair<List<Float>, List<Float>> {
+        if (xValues.isEmpty() && yValues.isEmpty()) return xValues to yValues
+
+        val xSorted = xValues.sorted().toMutableList()
+        val ySorted = yValues.sorted().toMutableList()
+
+        // Find dominant step for X axis (need at least 2 values)
+        val xStep = if (xSorted.size >= 3) {
+            val diffs = (1 until xSorted.size).map { xSorted[it] - xSorted[it - 1] }
+            findDominantStep(diffs)
+        } else if (xSorted.size == 2) {
+            xSorted[1] - xSorted[0]
+        } else 0f
+
+        // Try to rescue Y values into X
+        if (xStep > 0 && ySorted.isNotEmpty()) {
+            val tolerance = xStep * 0.15f
+            val toMoveToX = mutableListOf<Float>()
+
+            for (yVal in ySorted) {
+                // Check if yVal fits as a continuation of the X series
+                val fitsX = xSorted.any { xBase ->
+                    val diff = abs(yVal - xBase)
+                    val nearestMultiple = kotlin.math.round(diff / xStep) * xStep
+                    abs(diff - nearestMultiple) < tolerance && diff > tolerance
+                }
+                if (fitsX) {
+                    toMoveToX.add(yVal)
+                }
+            }
+
+            if (toMoveToX.isNotEmpty()) {
+                println("OCR[RESCUE] Moving Y→X: $toMoveToX (xStep=$xStep)")
+                xSorted.addAll(toMoveToX)
+                ySorted.removeAll(toMoveToX.toSet())
+                xSorted.sort()
+            }
+        }
+
+        // Check if any X values are outliers that belong in Y
+        if (xStep > 0 && xSorted.size >= 3) {
+            val tolerance = xStep * 0.15f
+            val toMoveToY = mutableListOf<Float>()
+
+            for (xVal in xSorted) {
+                val fitsAny = xSorted.any { other ->
+                    if (other == xVal) return@any false
+                    val diff = abs(xVal - other)
+                    val nearestMultiple = kotlin.math.round(diff / xStep) * xStep
+                    abs(diff - nearestMultiple) < tolerance
+                }
+                if (!fitsAny) {
+                    toMoveToY.add(xVal)
+                }
+            }
+
+            if (toMoveToY.isNotEmpty()) {
+                println("OCR[RESCUE] Moving X→Y: $toMoveToY (doesn't fit xStep=$xStep)")
+                ySorted.addAll(toMoveToY)
+                xSorted.removeAll(toMoveToY.toSet())
+                ySorted.sort()
+            }
+        }
+
+        // Re-filter after migration
+        val finalX = filterAxisValues(xSorted)
+        val finalY = filterAxisValues(ySorted)
+        return finalX to finalY
     }
 
     /**
