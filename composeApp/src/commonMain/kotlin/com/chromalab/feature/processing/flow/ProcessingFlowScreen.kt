@@ -43,6 +43,7 @@ import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.ImagePoint
 import com.chromalab.feature.processing.pipeline.DetectionMethod
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
+import com.chromalab.feature.processing.sweep.AutoSweepEngine
 import com.chromalab.feature.processing.quality.ImageQualityAnalyzer
 import com.chromalab.feature.processing.quality.ImageQualityReport
 import com.chromalab.feature.processing.quality.ImageQualityScreen
@@ -137,6 +138,12 @@ fun ProcessingFlowScreen(
     var smoothedSignal by remember { mutableStateOf<SmoothedSignal?>(null) }
     var digitizationReport by remember { mutableStateOf<DigitizationQualityReport?>(null) }
 
+    // Auto-Sweep state
+    val sweepEngine = remember { AutoSweepEngine() }
+    var sweepProgress by remember { mutableStateOf<AutoSweepEngine.SweepProgress?>(null) }
+    var sweepCompleted by remember { mutableStateOf(false) }
+    var bestSweepConfig by remember { mutableStateOf<String?>(null) }
+
     // Multi-graph support
     var currentGraphIndex by remember { mutableIntStateOf(0) }
     val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
@@ -193,39 +200,66 @@ fun ProcessingFlowScreen(
                     }
 
                     ProcessingStep.GRAPH_SELECTION, ProcessingStep.GRAPH_ROI -> {
-                        // Run preprocessing (grayscaleâ†’CLAHEâ†’binary) once
-                        if (preprocessingResult == null) {
-                            preprocessingResult = preprocessor.preprocess(
-                                currentImagePath, outputDir,
-                            )
-                        }
-                        if (graphResult == null) {
+                        // === AUTO-SWEEP: try all preprocessing configs, pick best ===
+                        if (!sweepCompleted) {
+                            println("PIPELINE[SWEEP] Starting auto-sweep with ${sweepEngine.configs.size} configs...")
                             val w = imageWidth.takeIf { it > 0 } ?: 1920
                             val h = imageHeight.takeIf { it > 0 } ?: 1080
-                            graphResult = graphDetector.detect(currentImagePath, w, h)
-                            graphResult?.selectedRegion?.let { selectedRegion = it }
-                            val allRegions = graphResult?.sortedRegions ?: emptyList()
-                            println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
-                            allRegions.forEachIndexed { idx, r ->
-                                println("PIPELINE[GRAPH]   [$idx] (${r.x},${r.y}) ${r.width}x${r.height} area=${r.area} label='${r.label}'")
+
+                            val sweepResults = sweepEngine.sweep(
+                                imagePath = currentImagePath,
+                                outputDir = outputDir,
+                                imageWidth = w,
+                                imageHeight = h,
+                                onProgress = { progress ->
+                                    sweepProgress = progress
+                                },
+                            )
+
+                            if (sweepResults.isNotEmpty()) {
+                                val best = sweepResults.first()
+                                bestSweepConfig = best.config.name
+                                println("PIPELINE[SWEEP] Winner: '${best.config.name}' score=${best.score} (${best.scoreBreakdown})")
+
+                                // Apply ALL sweep results to pipeline state
+                                preprocessingResult = best.preprocessingResult
+                                graphResult = best.graphResult
+                                best.selectedRegion?.let { selectedRegion = it }
+                                ocrResult = best.ocrResult
+                                axesResult = best.axesResult
+                                curveExtractionResult = best.curveResult
+                                curvePoints = best.curveResult?.points ?: emptyList()
+
+                                val allRegions = graphResult?.sortedRegions ?: emptyList()
+                                println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
+                                allRegions.forEachIndexed { idx, r ->
+                                    println("PIPELINE[GRAPH]   [$idx] (${r.x},${r.y}) ${r.width}x${r.height} area=${r.area} label='${r.label}'")
+                                }
+                                println("PIPELINE[GRAPH] selected=$selectedRegion")
+                                println("PIPELINE[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
+                                println("PIPELINE[CURVE] points=${curvePoints.size}")
                             }
-                            println("PIPELINE[GRAPH] selected=${selectedRegion}")
+                            sweepCompleted = true
                         }
                     }
 
                     ProcessingStep.AXIS_DETECTION -> {
+                        // Axis detection already done by sweep
                         if (axesResult == null) {
                             axesResult = axisDetector.detect(currentImagePath, selectedRegion)
-                            println("PIPELINE[AXES] xAxis=${axesResult?.xAxis != null}, yAxis=${axesResult?.yAxis != null}, origin=${axesResult?.origin}, confidence=${axesResult?.confidence}")
+                            println("PIPELINE[AXES] fallback: origin=${axesResult?.origin}")
+                        } else {
+                            println("PIPELINE[AXES] using sweep result")
                         }
                     }
 
                     ProcessingStep.OCR_SUGGESTION -> {
-                        if (ocrResult == null) {
-                            ocrResult = ocrReader.readAxisLabels(
-                                currentImagePath, selectedRegion,
-                            )
-                            println("PIPELINE[OCR] xValues=${ocrResult?.suggestedXValues}, yValues=${ocrResult?.suggestedYValues}, xUnit=${ocrResult?.xUnit}, yUnit=${ocrResult?.yUnit}")
+                        // OCR already done by sweep
+                        if (ocrResult != null) {
+                            println("PIPELINE[OCR] using sweep result: x=${ocrResult?.suggestedXValues?.size} values, y=${ocrResult?.suggestedYValues?.size} values")
+                        } else {
+                            ocrResult = ocrReader.readAxisLabels(currentImagePath, selectedRegion)
+                            println("PIPELINE[OCR] fallback: x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
                         }
                     }
 
@@ -374,11 +408,9 @@ fun ProcessingFlowScreen(
                                 axesResult = fallbackAxesResult()
                                 println("PIPELINE[CURVE] using fallback axes")
                             }
-                            // Use ORIGINAL image for mask preparation.
-                            // CurveMaskPreparer does its own grayscale + Canny edge detection.
-                            // Feeding it binary.jpg is wrong — Canny on binary image
-                            // finds edges of threshold blobs, not the actual signal curve.
-                            val inputForMask = currentImagePath
+                            // Use contrast-enhanced image from preprocessing if available.
+                            // CLAHE improves edge detection for Canny in CurveMaskPreparer.
+                            val inputForMask = preprocessingResult?.contrastEnhancedPath ?: currentImagePath
                             println("PIPELINE[CURVE] input=$inputForMask, region=$selectedRegion")
                             val mask = curveMaskPreparer.prepare(
                                 inputForMask, selectedRegion,
@@ -392,6 +424,8 @@ fun ProcessingFlowScreen(
                             )
                             curvePoints = curveExtractionResult?.points ?: emptyList()
                             println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")
+                        } else {
+                            println("PIPELINE[CURVE] using sweep result: ${curvePoints.size} points")
                         }
                     }
 
