@@ -32,6 +32,8 @@ import com.chromalab.feature.calculation.algorithm.MetricValue
 import com.chromalab.feature.calculation.algorithm.PatternResult
 import com.chromalab.feature.calculation.algorithm.SeriesConfidence
 import com.chromalab.feature.calculation.algorithm.EnvelopeShape
+import com.chromalab.feature.calculation.algorithm.MethodQualityResult
+import com.chromalab.feature.calculation.algorithm.MethodGrade
 import com.chromalab.feature.calculation.ui.ChromatogramChart
 
 /**
@@ -85,7 +87,12 @@ fun ResultsSummaryScreen(
             PatternSection(patt)
         }
 
-        // Section 8: Parameters (expandable)
+        // Section 8: Method quality (Phase 15)
+        run.methodQuality?.let { mq ->
+            MethodQualitySection(mq)
+        }
+
+        // Section 9: Parameters (expandable)
         ParametersSection(run)
 
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -586,7 +593,68 @@ private fun PatternItem(
     }
 }
 
-// ─── Section 8: Parameters ──────────────────────────────────────
+// ─── Section 8: Method Quality ──────────────────────────────────
+
+@Composable
+private fun MethodQualitySection(mq: MethodQualityResult) {
+    SectionHeader("Качество метода")
+
+    // Grade badge
+    val (gradeColor, gradeLabel) = when (mq.grade) {
+        MethodGrade.EXCELLENT -> Color(0xFF4CAF50) to "EXCELLENT"
+        MethodGrade.GOOD -> Color(0xFF66BB6A) to "GOOD"
+        MethodGrade.ACCEPTABLE -> Color(0xFFFFA726) to "ACCEPTABLE"
+        MethodGrade.POOR -> Color(0xFFEF5350) to "POOR"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = gradeColor.copy(alpha = 0.15f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = gradeColor,
+            ) {
+                Text(
+                    gradeLabel,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            }
+            Text(
+                mq.gradeReason,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.xs))
+
+    // Metrics
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            mq.allMetrics.forEach { metric ->
+                MetricRow(metric)
+            }
+        }
+    }
+}
+
+// ─── Section 9: Parameters ──────────────────────────────────────
 
 @Composable
 private fun ParametersSection(run: CalculationRun) {

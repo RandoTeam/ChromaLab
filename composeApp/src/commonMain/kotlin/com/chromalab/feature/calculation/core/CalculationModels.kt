@@ -2,6 +2,7 @@ package com.chromalab.feature.calculation.core
 
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
 import com.chromalab.feature.calculation.algorithm.DistributionResult
+import com.chromalab.feature.calculation.algorithm.MethodQualityResult
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import com.chromalab.feature.calculation.algorithm.PatternResult
 import kotlinx.serialization.Serializable
@@ -96,6 +97,8 @@ data class CalculationRun(
     val distribution: DistributionResult? = null,
     @kotlinx.serialization.Transient
     val pattern: PatternResult? = null,
+    @kotlinx.serialization.Transient
+    val methodQuality: MethodQualityResult? = null,
 )
 
 /**

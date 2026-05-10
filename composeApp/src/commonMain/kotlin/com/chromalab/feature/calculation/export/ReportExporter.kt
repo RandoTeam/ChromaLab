@@ -173,7 +173,21 @@ object ReportExporter {
                 appendLine("</section>")
             }
 
-            // Section 7: Parameters
+            // Section 7: Method Quality (Phase 15)
+            run.methodQuality?.let { mq ->
+                appendLine("<section>")
+                appendLine("<h2>Качество метода — <span class=\"${mq.grade.name.lowercase()}\">${mq.grade.name}</span></h2>")
+                appendLine("<p class=\"meta\">${escHtml(mq.gradeReason)}</p>")
+                appendLine("<table class=\"summary\">")
+                mq.allMetrics.forEach { m ->
+                    val display = if (m.unit.isNotEmpty()) "${m.formatted} ${m.unit}" else m.formatted
+                    appendLine("<tr><td class=\"label\">${escHtml(m.name)}</td><td>$display <span style=\"color:var(--text2);font-size:0.8em\">— ${escHtml(m.interpretation)}</span></td></tr>")
+                }
+                appendLine("</table>")
+                appendLine("</section>")
+            }
+
+            // Section 8: Parameters
             appendLine("<section>")
             appendLine("<h2>Параметры алгоритма</h2>")
             appendLine("<table class=\"summary\">")
@@ -245,6 +259,10 @@ object ReportExporter {
   .med { color: var(--med); }
   .low { color: var(--low); }
   .fail { color: var(--fail); font-weight: 700; }
+  .excellent { color: var(--high); font-weight: 700; }
+  .good { color: #66bb6a; font-weight: 600; }
+  .acceptable { color: var(--med); font-weight: 600; }
+  .poor { color: var(--fail); font-weight: 700; }
   .warn-serious, .warn-failed { color: var(--fail); }
   .warn-caution { color: var(--med); }
   .warn-info { color: var(--text2); }
