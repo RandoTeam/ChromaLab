@@ -49,17 +49,63 @@ actual class AxisOcrReader actual constructor() {
 
                             val numericValue = parseNumeric(text)
 
-                            elements.add(
-                                OcrTextElement(
-                                    text = text,
-                                    numericValue = numericValue,
-                                    x = box.left.toFloat(),
-                                    y = box.top.toFloat(),
-                                    width = box.width().toFloat(),
-                                    height = box.height().toFloat(),
-                                    confidence = 0.8f, // ML Kit doesn't expose per-line confidence
-                                ),
-                            )
+                            if (numericValue != null) {
+                                // Single number — add as one element
+                                elements.add(
+                                    OcrTextElement(
+                                        text = text,
+                                        numericValue = numericValue,
+                                        x = box.left.toFloat(),
+                                        y = box.top.toFloat(),
+                                        width = box.width().toFloat(),
+                                        height = box.height().toFloat(),
+                                        confidence = 0.8f,
+                                    ),
+                                )
+                            } else {
+                                // Not a single number — try splitting by spaces
+                                // ML Kit often merges X-axis labels into one line:
+                                // "10.00 15.00 20.00 25.00 ..."
+                                val tokens = text.split("\\s+".toRegex())
+                                val parsedTokens = tokens.mapNotNull { token ->
+                                    parseNumeric(token)?.let { token to it }
+                                }
+
+                                if (parsedTokens.size >= 2) {
+                                    // Multiple numbers found — create individual elements
+                                    // Distribute x positions evenly across the bounding box
+                                    val step = if (parsedTokens.size > 1)
+                                        box.width().toFloat() / (parsedTokens.size - 1)
+                                    else 0f
+
+                                    parsedTokens.forEachIndexed { i, (token, value) ->
+                                        elements.add(
+                                            OcrTextElement(
+                                                text = token,
+                                                numericValue = value,
+                                                x = box.left.toFloat() + i * step,
+                                                y = box.top.toFloat(),
+                                                width = step.coerceAtLeast(20f),
+                                                height = box.height().toFloat(),
+                                                confidence = 0.7f,
+                                            ),
+                                        )
+                                    }
+                                } else {
+                                    // Non-numeric or single failed parse — keep as text element
+                                    elements.add(
+                                        OcrTextElement(
+                                            text = text,
+                                            numericValue = parsedTokens.firstOrNull()?.second,
+                                            x = box.left.toFloat(),
+                                            y = box.top.toFloat(),
+                                            width = box.width().toFloat(),
+                                            height = box.height().toFloat(),
+                                            confidence = 0.8f,
+                                        ),
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -72,28 +118,45 @@ actual class AxisOcrReader actual constructor() {
                     var yUnit: String? = null
 
                     val margin = graphRegion.height * 0.15f
+                    val graphBottom = graphRegion.y + graphRegion.height
+                    val graphRight = graphRegion.x + graphRegion.width
+
+                    println("OCR[RAW] ${elements.size} elements, region=(${graphRegion.x},${graphRegion.y},${graphRegion.width}x${graphRegion.height}), margin=$margin")
 
                     for (elem in elements) {
+                        println("OCR[ELEM] text='${elem.text}' num=${elem.numericValue} pos=(${elem.x.toInt()},${elem.y.toInt()}) size=(${elem.width.toInt()}x${elem.height.toInt()})")
+
                         if (elem.numericValue != null) {
-                            // Below or on the X axis → X labels
-                            if (elem.y > graphRegion.bottom - margin &&
+                            val isXCandidate = elem.y > graphBottom - margin &&
                                 elem.x >= graphRegion.x - margin &&
-                                elem.x <= graphRegion.right + margin
-                            ) {
+                                elem.x <= graphRight + margin
+                            val isYCandidate = elem.x < graphRegion.x + margin &&
+                                elem.y >= graphRegion.y - margin &&
+                                elem.y <= graphBottom + margin
+
+                            // Below or on the X axis → X labels
+                            if (isXCandidate && !isYCandidate) {
                                 xAxisLabels.add(elem.numericValue)
                             }
-
                             // Left of or on the Y axis → Y labels
-                            if (elem.x < graphRegion.x + margin &&
-                                elem.y >= graphRegion.y - margin &&
-                                elem.y <= graphRegion.bottom + margin
-                            ) {
+                            else if (isYCandidate && !isXCandidate) {
                                 yAxisLabels.add(elem.numericValue)
+                            }
+                            // Both? Use position relative to diagonal
+                            else if (isXCandidate && isYCandidate) {
+                                // If closer to bottom edge → X, closer to left edge → Y
+                                val distToBottom = (graphBottom - elem.y).coerceAtLeast(0f)
+                                val distToLeft = (elem.x - graphRegion.x).coerceAtLeast(0f)
+                                if (distToBottom < distToLeft) {
+                                    xAxisLabels.add(elem.numericValue)
+                                } else {
+                                    yAxisLabels.add(elem.numericValue)
+                                }
                             }
                         } else {
                             // Non-numeric — could be unit labels
                             val lower = elem.text.lowercase()
-                            if (elem.y > graphRegion.bottom) {
+                            if (elem.y > graphBottom) {
                                 if (lower.contains("мин") || lower.contains("min") ||
                                     lower.contains("сек") || lower.contains("sec") ||
                                     lower.contains("time")
@@ -104,7 +167,7 @@ actual class AxisOcrReader actual constructor() {
                             if (elem.x < graphRegion.x) {
                                 if (lower.contains("mau") || lower.contains("mv") ||
                                     lower.contains("µv") || lower.contains("au") ||
-                                    lower.contains("intensity")
+                                    lower.contains("intensity") || lower.contains("abundance")
                                 ) {
                                     yUnit = elem.text
                                 }
