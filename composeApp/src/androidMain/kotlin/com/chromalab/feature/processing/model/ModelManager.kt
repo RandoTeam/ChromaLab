@@ -130,8 +130,6 @@ class ModelManager(private val context: Context) {
         return deleted
     }
 
-    // ===== Import / Export =====
-
     /**
      * Import a model file from a URI (user picked from file manager).
      * Copies the file into the models directory.
@@ -140,30 +138,108 @@ class ModelManager(private val context: Context) {
      */
     suspend fun importFile(uri: Uri, targetModelId: String? = null): ModelInfo? =
         withContext(Dispatchers.IO) {
-            try {
-                val fileName = getFileNameFromUri(uri) ?: return@withContext null
-                val fileType = ModelRegistry.identifyFileType(fileName)
-                    ?: return@withContext null
+            val result = importFileValidated(uri, targetModelId)
+            (result as? ModelImportResult.Success)?.modelInfo
+        }
 
-                val modelId = targetModelId ?: "custom_${System.currentTimeMillis()}"
-                val dir = getModelDir(modelId)
-                val targetFile = File(dir, fileName)
+    /**
+     * Import a model file with full validation.
+     * - Validates GGUF magic bytes and metadata
+     * - Detects architecture and vision encoder
+     * - Matches to known model families
+     * - Warns if no vision encoder found
+     */
+    suspend fun importFileValidated(
+        uri: Uri,
+        targetModelId: String? = null,
+    ): ModelImportResult = withContext(Dispatchers.IO) {
+        try {
+            val fileName = getFileNameFromUri(uri)
+                ?: return@withContext ModelImportResult.ValidationError(
+                    "Не удалось определить имя файла",
+                )
 
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output, bufferSize = 8192)
+            val fileType = ModelRegistry.identifyFileType(fileName)
+                ?: return@withContext ModelImportResult.ValidationError(
+                    "Неизвестный формат файла",
+                    "Поддерживаются: .gguf, .litertlm",
+                )
+
+            val modelId = targetModelId ?: "custom_${System.currentTimeMillis()}"
+            val dir = getModelDir(modelId)
+            val targetFile = File(dir, fileName)
+
+            // Copy file
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                targetFile.outputStream().use { output ->
+                    input.copyTo(output, bufferSize = 65536)
+                }
+            } ?: return@withContext ModelImportResult.IoError("Не удалось открыть файл")
+
+            println("MODEL[MGR] Copied: $fileName -> ${targetFile.absolutePath}")
+
+            // Validate based on type
+            val warnings = mutableListOf<String>()
+            var ggufInfo: GgufValidator.GgufInfo? = null
+
+            when (fileType) {
+                ModelFileType.GGUF_BASE, ModelFileType.GGUF_MMPROJ -> {
+                    ggufInfo = GgufValidator.validate(targetFile)
+                    if (!ggufInfo.isValid) {
+                        // Clean up invalid file
+                        targetFile.delete()
+                        if (dir.listFiles()?.isEmpty() == true) dir.delete()
+                        return@withContext ModelImportResult.ValidationError(
+                            "Невалидный GGUF файл",
+                            ggufInfo.error,
+                        )
+                    }
+                    println("MODEL[MGR] GGUF validated: ${ggufInfo.summary}")
+
+                    // Check for vision encoder
+                    if (fileType == ModelFileType.GGUF_BASE && !ggufInfo.hasVisionEncoder) {
+                        // Check if there's already an mmproj in the same dir
+                        val hasMmproj = dir.listFiles()?.any {
+                            it.name.contains("mmproj") && it.name.endsWith(".gguf")
+                        } == true
+                        if (!hasMmproj) {
+                            warnings.add("Модель без vision encoder. Для анализа графиков нужен mmproj файл.")
+                        }
                     }
                 }
-
-                println("MODEL[MGR] Imported: $fileName -> ${targetFile.absolutePath}")
-
-                // Try to match to a builtin model
-                ModelRegistry.findById(modelId) ?: buildCustomModelInfo(dir)
-            } catch (e: Exception) {
-                println("MODEL[MGR] Import failed: ${e.message}")
-                null
+                ModelFileType.LITERT_BUNDLE -> {
+                    if (!GgufValidator.isLiteRTBundle(targetFile)) {
+                        warnings.add("Файл может быть повреждён (не прошёл проверку формата)")
+                    }
+                }
             }
+
+            // Build model info
+            val family = GgufValidator.matchFamily(fileName, ggufInfo?.architecture)
+            val info = buildCustomModelInfo(dir) ?: run {
+                // Clean up if can't build info
+                dir.deleteRecursively()
+                return@withContext ModelImportResult.IoError("Не удалось создать запись модели")
+            }
+
+            // Override family if detected
+            val finalInfo = if (family != null) {
+                info.copy(
+                    family = family,
+                    description = "Импортированная модель ($family)",
+                )
+            } else info
+
+            ModelImportResult.Success(
+                modelInfo = finalInfo,
+                ggufInfo = ggufInfo,
+                warnings = warnings,
+            )
+        } catch (e: Exception) {
+            println("MODEL[MGR] Import failed: ${e.message}")
+            ModelImportResult.IoError("Ошибка импорта: ${e.message}", e)
         }
+    }
 
     /**
      * Export a model file to a user-chosen location.
