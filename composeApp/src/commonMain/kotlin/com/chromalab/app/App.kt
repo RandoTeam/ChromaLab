@@ -28,6 +28,7 @@ import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.capture.FileImportScreenWithPicker
 
 import com.chromalab.feature.settings.LanguageScreen
+import com.chromalab.feature.settings.AboutScreen
 import com.chromalab.feature.settings.MoreScreen
 import com.chromalab.feature.settings.ModelManagerScreen
 import com.chromalab.feature.settings.rememberModelManagerState
@@ -177,7 +178,9 @@ fun App() {
                     )
                 }
                 composable<Route.About> {
-                    PlaceholderScreen(Strings.settingsAbout)
+                    AboutScreen(
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable<Route.ModelManager> {
                     ModelManagerScreen(
