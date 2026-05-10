@@ -25,6 +25,7 @@ import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
+import com.chromalab.feature.capture.FileImportScreenWithPicker
 
 import com.chromalab.feature.settings.LanguageScreen
 import com.chromalab.feature.settings.MoreScreen
@@ -128,7 +129,14 @@ fun App() {
                     )
                 }
                 composable<Route.FileImport> {
-                    PlaceholderScreen("Импорт файла")
+                    FileImportScreenWithPicker(
+                        onSaved = { signalId ->
+                            navController.navigate(Route.Analysis(signalId.toString())) {
+                                popUpTo(Route.Capture) { inclusive = false }
+                            }
+                        },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable<Route.Processing> { backStackEntry ->
                     val route = backStackEntry.toRoute<Route.Processing>()
