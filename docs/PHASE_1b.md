@@ -46,8 +46,15 @@
 | 1b.15 | Multi-graph loop: повтор pipeline для каждого графика | ✅ |
 | 1b.16 | Error handling и recovery на каждом шаге | ✅ |
 | 1b.17 | Desktop actual stubs (устранение compilation error) | ✅ |
-| 1b.18 | End-to-end тест на реальном фото | ⬜ |
+| 1b.18 | End-to-end тест на реальном фото | 🔄 |
 | 1b.19 | Версия 0.0.3 + signed APK + GitHub Release | ⬜ |
+| **1b.20** | **Pipeline stabilization: adaptive Canny, signal extraction fixes** | ✅ |
+| **1b.21** | **OCR: X-axis multi-number splitting + mutual exclusion** | ✅ |
+| **1b.22** | **Calibration: OCR pixel positions + region-relative coords** | ✅ |
+| **1b.23** | **Multi-graph detection: splitByValleys algorithm (Phase 1/4)** | ✅ |
+| **1b.24** | **Multi-graph: sequential processing loop (Phase 2/4)** | ⬜ |
+| **1b.25** | **Multi-graph: result model + aggregation (Phase 3/4)** | ⬜ |
+| **1b.26** | **Multi-graph: UI per-graph results (Phase 4/4)** | ⬜ |
 
 ---
 
