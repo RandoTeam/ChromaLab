@@ -58,7 +58,9 @@ actual class CurveMaskPreparer actual constructor() {
         val rh = (graphRegion.height * scale).toInt().coerceIn(1, bitmap.height - ry)
 
         val cropped = Bitmap.createBitmap(bitmap, rx, ry, rw, rh)
-        bitmap.recycle()
+        // Only recycle source if createBitmap returned a new bitmap
+        // (Android returns same object when crop == full image)
+        if (cropped !== bitmap) bitmap.recycle()
 
         val w = cropped.width
         val h = cropped.height

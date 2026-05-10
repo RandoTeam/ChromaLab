@@ -15,8 +15,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
+import com.chromalab.feature.processing.sweep.AutoSweepEngine
 
 /**
  * Full-screen overlay shown during auto-advance.
@@ -24,14 +26,15 @@ import com.chromalab.core.ui.theme.Spacing
  *
  * ✓ Качество фото
  * ✓ Обрезка
- * ● Перспектива...       ← current
- * ○ Поиск графика
+ * ● Область графика...    ← current (with sweep details)
  * ○ Определение осей
  */
 @Composable
 fun AutoProgressOverlay(
     currentStep: ProcessingStep,
     isProcessing: Boolean,
+    sweepProgress: AutoSweepEngine.SweepProgress? = null,
+    bestSweepConfig: String? = null,
     modifier: Modifier = Modifier,
 ) {
     // Only show during auto-advance steps
@@ -84,15 +87,43 @@ fun AutoProgressOverlay(
                     )
                     Spacer(modifier = Modifier.height(Spacing.sm))
 
-                    // Step checklist — show only auto-advance steps for clarity
+                    // Step checklist
                     ProcessingStep.entries.forEach { step ->
                         val state = when {
                             step.index < currentStep.index -> StepState.DONE
                             step.index == currentStep.index -> StepState.ACTIVE
                             else -> StepState.PENDING
                         }
-                        // Show all steps but dim NEVER-policy ones less
                         StepRow(step, state)
+
+                        // Show sweep detail below GRAPH_SELECTION when active
+                        if (step == ProcessingStep.GRAPH_SELECTION && state == StepState.ACTIVE) {
+                            val sp = sweepProgress
+                            if (sp != null && sp.totalConfigs > 0) {
+                                SweepDetailRow(sp)
+                            }
+                        }
+                    }
+
+                    // Show winning config after sweep completes
+                    if (bestSweepConfig != null) {
+                        Spacer(modifier = Modifier.height(Spacing.xs))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = 24.dp),
+                        ) {
+                            Text(
+                                "Лучший конфиг: ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                bestSweepConfig,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
@@ -154,7 +185,7 @@ private fun StepRow(step: ProcessingStep, state: StepState) {
             },
         )
 
-        // Show "auto" badge for auto-skip steps
+        // Show "авто" badge for completed auto-skip steps
         if (step.autoAdvance == AutoAdvancePolicy.ALWAYS && state == StepState.DONE) {
             Spacer(modifier = Modifier.width(4.dp))
             Text(
@@ -163,5 +194,73 @@ private fun StepRow(step: ProcessingStep, state: StepState) {
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
             )
         }
+    }
+}
+
+/**
+ * Sweep detail: shows current config progress below the GRAPH_SELECTION step row.
+ */
+@Composable
+private fun SweepDetailRow(progress: AutoSweepEngine.SweepProgress) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 24.dp, top = 2.dp, bottom = 4.dp),
+    ) {
+        // Config counter + name
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                if (progress.currentConfig == 0) "Подготовка..."
+                else "Конфиг ${progress.currentConfig}/${progress.totalConfigs}",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+            Spacer(modifier = Modifier.width(Spacing.sm))
+            Text(
+                progress.configName,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Sweep progress bar
+        val sweepFraction by animateFloatAsState(
+            targetValue = if (progress.totalConfigs > 0) {
+                progress.currentConfig.toFloat() / progress.totalConfigs
+            } else 0f,
+            label = "sweep_progress",
+        )
+        LinearProgressIndicator(
+            progress = { sweepFraction },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(RoundedCornerShape(1.5.dp)),
+            color = MaterialTheme.colorScheme.tertiary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // Phase label
+        val phaseLabel = when (progress.phase) {
+            "detect" -> "🔍 Определение графика"
+            "ocr" -> "🔤 Распознавание текста"
+            "axes" -> "📐 Определение осей"
+            "preprocess" -> "⚙️ Предобработка"
+            "curve" -> "📈 Извлечение кривой"
+            else -> progress.phase
+        }
+        Text(
+            phaseLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        )
     }
 }

@@ -590,6 +590,8 @@ fun ProcessingFlowScreen(
                 AutoProgressOverlay(
                     currentStep = currentStep,
                     isProcessing = true,
+                    sweepProgress = sweepProgress,
+                    bestSweepConfig = bestSweepConfig,
                 )
 
                 // Error overlay on top
