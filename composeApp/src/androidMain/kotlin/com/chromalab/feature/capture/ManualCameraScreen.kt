@@ -42,6 +42,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import android.view.Surface
+import android.view.OrientationEventListener
 
 /**
  * Premium manual CameraX screen with:
@@ -66,6 +68,7 @@ fun ManualCameraScreen(
     var exposureIndex by remember { mutableIntStateOf(0) }
     var isCapturing by remember { mutableStateOf(false) }
     var showExposureSlider by remember { mutableStateOf(false) }
+    var cameraReady by remember { mutableStateOf(false) }
 
     // Focus indicator state
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
@@ -79,6 +82,26 @@ fun ManualCameraScreen(
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
             .setResolutionSelector(resolutionSelector)
             .build()
+    }
+
+    // Track display rotation for correct EXIF orientation
+    DisposableEffect(context) {
+        val orientationListener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                val rotation = when {
+                    orientation >= 315 || orientation < 45 -> Surface.ROTATION_0
+                    orientation in 45..134 -> Surface.ROTATION_270
+                    orientation in 135..224 -> Surface.ROTATION_180
+                    else -> Surface.ROTATION_90
+                }
+                imageCapture.targetRotation = rotation
+            }
+        }
+        if (orientationListener.canDetectOrientation()) {
+            orientationListener.enable()
+        }
+        onDispose { orientationListener.disable() }
     }
 
     val preview = remember { Preview.Builder().build() }
@@ -148,26 +171,32 @@ fun ManualCameraScreen(
                         view.performClick()
                         true
                     }
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-            update = { previewView ->
-                scope.launch {
-                    val provider = context.getCameraProvider()
-                    provider.unbindAll()
-                    camera = provider.bindToLifecycle(
-                        lifecycleOwner, cameraSelector, preview, imageCapture,
-                    )
-                    preview.surfaceProvider = previewView.surfaceProvider
 
-                    // Read exposure compensation range
-                    camera?.cameraInfo?.exposureState?.let { state ->
-                        exposureRange = state.exposureCompensationRange.let {
-                            it.lower..it.upper
+                    // Bind camera once
+                    scope.launch {
+                        try {
+                            val provider = ctx.getCameraProvider()
+                            provider.unbindAll()
+                            camera = provider.bindToLifecycle(
+                                lifecycleOwner, cameraSelector, preview, imageCapture,
+                            )
+                            preview.surfaceProvider = previewView.surfaceProvider
+
+                            // Read exposure compensation range
+                            camera?.cameraInfo?.exposureState?.let { state ->
+                                exposureRange = state.exposureCompensationRange.let {
+                                    it.lower..it.upper
+                                }
+                            }
+                            cameraReady = true
+                            println("CAMERA[MANUAL] Camera bound successfully")
+                        } catch (e: Exception) {
+                            println("CAMERA[MANUAL] Camera bind failed: ${e.message}")
                         }
                     }
                 }
             },
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Document frame overlay
@@ -340,12 +369,17 @@ fun ManualCameraScreen(
                 // Inner button
                 IconButton(
                     onClick = {
-                        if (!isCapturing) {
+                        if (!isCapturing && cameraReady) {
                             isCapturing = true
                             scope.launch {
                                 val path = captureImage(context, imageCapture)
                                 isCapturing = false
-                                if (path != null) onImageCaptured(path)
+                                if (path != null) {
+                                    println("CAMERA[MANUAL] Captured: $path")
+                                    onImageCaptured(path)
+                                } else {
+                                    println("CAMERA[MANUAL] Capture failed")
+                                }
                             }
                         }
                     },

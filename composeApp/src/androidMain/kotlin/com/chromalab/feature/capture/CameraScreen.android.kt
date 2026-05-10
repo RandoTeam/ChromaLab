@@ -27,13 +27,13 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import java.io.File
 
 /**
- * Capture entry screen — Smart Scan only.
+ * Capture entry screen — Авто (Smart Scan).
  *
  * Launches Google ML Kit document scanner immediately on entry.
  * ML Kit provides built-in camera, edge detection, crop, deskew,
  * shadow removal and image filters — all via Google Play Services (0 MB in APK).
  *
- * If ML Kit is unavailable, falls back to ManualCameraScreen.
+ * If ML Kit is unavailable, falls back to Manual (ManualCameraScreen).
  */
 @Composable
 actual fun CameraScreen(
