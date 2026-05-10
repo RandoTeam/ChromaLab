@@ -2,7 +2,6 @@ package com.chromalab.feature.capture
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,7 +18,6 @@ import com.chromalab.core.ui.theme.Spacing
 @Composable
 fun CaptureHubScreen(
     onCamera: () -> Unit,
-    onGallery: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -38,29 +36,19 @@ fun CaptureHubScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Сфотографируйте или выберите из галереи",
+            "Сфотографируйте хроматограмму или выберите из галереи камеры",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(Spacing.xl))
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            CaptureOptionCard(
-                icon = Icons.Filled.PhotoCamera,
-                label = "Камера",
-                onClick = onCamera,
-                modifier = Modifier.weight(1f),
-            )
-            CaptureOptionCard(
-                icon = Icons.Filled.Image,
-                label = "Галерея",
-                onClick = onGallery,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        CaptureOptionCard(
+            icon = Icons.Filled.PhotoCamera,
+            label = "Камера",
+            onClick = onCamera,
+            modifier = Modifier.fillMaxWidth(0.5f),
+        )
     }
 }
 

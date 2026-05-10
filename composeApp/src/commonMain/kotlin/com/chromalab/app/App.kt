@@ -24,7 +24,7 @@ import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
-import com.chromalab.feature.capture.GalleryImportScreen
+
 import com.chromalab.feature.settings.LanguageScreen
 
 @Composable
@@ -88,7 +88,6 @@ fun App() {
                 composable<Route.Capture> {
                     CaptureHubScreen(
                         onCamera = { navController.navigate(Route.Camera) },
-                        onGallery = { navController.navigate(Route.GalleryFrame) },
                     )
                 }
                 composable<Route.Calculations> {
@@ -120,16 +119,7 @@ fun App() {
                         onBack = { navController.popBackStack() },
                     )
                 }
-                composable<Route.GalleryFrame> {
-                    GalleryImportScreen(
-                        onImageSelected = { path ->
-                            navController.navigate(Route.Processing(path)) {
-                                popUpTo(Route.Capture) { inclusive = false }
-                            }
-                        },
-                        onBack = { navController.popBackStack() },
-                    )
-                }
+
                 composable<Route.FileImport> {
                     PlaceholderScreen("Импорт файла")
                 }
