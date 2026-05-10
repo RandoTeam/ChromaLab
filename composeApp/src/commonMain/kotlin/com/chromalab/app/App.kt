@@ -26,6 +26,8 @@ import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
 
 import com.chromalab.feature.settings.LanguageScreen
+import com.chromalab.feature.settings.MoreScreen
+import com.chromalab.feature.settings.ModelManagerScreen
 
 @Composable
 fun App() {
@@ -94,7 +96,14 @@ fun App() {
                     PlaceholderScreen(Strings.tabCalculations)
                 }
                 composable<Route.More> {
-                    PlaceholderScreen(Strings.tabMore)
+                    MoreScreen(
+                        activeModelName = null, // TODO: wire from ModelManager
+                        threadCount = 4,        // TODO: wire from ModelManager
+                        onOpenModelManager = { navController.navigate(Route.ModelManager) },
+                        onOpenLanguage = { navController.navigate(Route.Language) },
+                        onOpenAbout = { navController.navigate(Route.About) },
+                        onThreadCountChange = { /* TODO: wire to ModelManager.threadCount */ },
+                    )
                 }
 
                 // --- Projects ---
@@ -178,6 +187,23 @@ fun App() {
                 }
                 composable<Route.About> {
                     PlaceholderScreen(Strings.settingsAbout)
+                }
+                composable<Route.ModelManager> {
+                    ModelManagerScreen(
+                        downloadedModelIds = emptySet(), // TODO: wire from ModelManager
+                        activeModelId = null,
+                        downloadingModelId = null,
+                        downloadProgress = 0f,
+                        downloadSpeedMbps = 0f,
+                        deviceRamMb = 8192,
+                        availableStorageGb = 32f,
+                        totalModelDiskUsageGb = 0f,
+                        onDownload = { /* TODO: wire download */ },
+                        onDelete = { /* TODO: wire delete */ },
+                        onActivate = { /* TODO: wire activate */ },
+                        onImport = { /* TODO: wire file picker */ },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
             }
         }
