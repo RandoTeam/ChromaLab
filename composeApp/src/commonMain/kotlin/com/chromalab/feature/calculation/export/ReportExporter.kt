@@ -143,7 +143,21 @@ object ReportExporter {
                 appendLine("</section>")
             }
 
-            // Section 5: Parameters
+            // Section 5: Distribution Statistics (Phase 13)
+            run.distribution?.let { dist ->
+                appendLine("<section>")
+                appendLine("<h2>Статистика распределения</h2>")
+                appendLine("<p><strong>Доминантный пик #${dist.dominantPeak.peakIndex + 1}</strong> — RT = ${"%.3f".format(dist.dominantPeak.rtApex)} мин, ${"%.1f".format(dist.dominantPeak.areaPercent)}% площади</p>")
+                appendLine("<table class=\"summary\">")
+                dist.allMetrics.forEach { m ->
+                    val display = if (m.unit.isNotEmpty()) "${m.formatted} ${m.unit}" else m.formatted
+                    appendLine("<tr><td class=\"label\">${escHtml(m.name)}</td><td>$display <span style=\"color:var(--text2);font-size:0.8em\">— ${escHtml(m.interpretation)}</span></td></tr>")
+                }
+                appendLine("</table>")
+                appendLine("</section>")
+            }
+
+            // Section 6: Parameters
             appendLine("<section>")
             appendLine("<h2>Параметры алгоритма</h2>")
             appendLine("<table class=\"summary\">")

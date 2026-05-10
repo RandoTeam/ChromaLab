@@ -27,6 +27,8 @@ import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.core.WarningSeverity
 import com.chromalab.feature.calculation.flow.CalculationToChartMapper
+import com.chromalab.feature.calculation.algorithm.DistributionResult
+import com.chromalab.feature.calculation.algorithm.MetricValue
 import com.chromalab.feature.calculation.ui.ChromatogramChart
 
 /**
@@ -38,7 +40,8 @@ import com.chromalab.feature.calculation.ui.ChromatogramChart
  * 3. Peak results table
  * 4. System suitability table (USP)
  * 5. Quality overview
- * 6. Algorithm parameters (expandable)
+ * 6. Distribution statistics (Phase 13)
+ * 7. Algorithm parameters (expandable)
  */
 @Composable
 fun ResultsSummaryScreen(
@@ -69,7 +72,12 @@ fun ResultsSummaryScreen(
         // Section 5: Quality overview
         QualitySection(run)
 
-        // Section 6: Parameters (expandable)
+        // Section 6: Distribution statistics (Phase 13)
+        run.distribution?.let { dist ->
+            DistributionSection(dist)
+        }
+
+        // Section 7: Parameters (expandable)
         ParametersSection(run)
 
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -376,7 +384,92 @@ private fun ConfidenceBadge(label: String, count: Int, color: Color, modifier: M
     }
 }
 
-// ─── Section 6: Parameters ──────────────────────────────────────
+// ─── Section 6: Distribution Statistics ──────────────────────────
+
+@Composable
+private fun DistributionSection(dist: DistributionResult) {
+    SectionHeader("Статистика распределения")
+
+    // Dominant peak badge
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(
+                "🏆",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Column {
+                Text(
+                    "Доминантный пик #${dist.dominantPeak.peakIndex + 1}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "RT = ${"%.3f".format(dist.dominantPeak.rtApex)} мин · ${"%.1f".format(dist.dominantPeak.areaPercent)}% площади",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.xs))
+
+    // Metric cards — two per row
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            dist.allMetrics.forEach { metric ->
+                MetricRow(metric)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricRow(metric: MetricValue) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                metric.name,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                if (metric.unit.isNotEmpty()) "${metric.formatted} ${metric.unit}"
+                else metric.formatted,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Text(
+            metric.interpretation,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+}
+
+// ─── Section 7: Parameters ──────────────────────────────────────
 
 @Composable
 private fun ParametersSection(run: CalculationRun) {

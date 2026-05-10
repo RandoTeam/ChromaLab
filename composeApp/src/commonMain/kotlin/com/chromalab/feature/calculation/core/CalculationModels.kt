@@ -1,6 +1,7 @@
 package com.chromalab.feature.calculation.core
 
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
+import com.chromalab.feature.calculation.algorithm.DistributionResult
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import kotlinx.serialization.Serializable
 
@@ -89,6 +90,9 @@ data class CalculationRun(
     val warnings: List<CalculationWarning>,
     val manualEditsCsv: String = "",
     val timestamp: Long,
+    // Extended analytics (Phases 13-16) — computed, not serialized
+    @kotlinx.serialization.Transient
+    val distribution: DistributionResult? = null,
 )
 
 /**
