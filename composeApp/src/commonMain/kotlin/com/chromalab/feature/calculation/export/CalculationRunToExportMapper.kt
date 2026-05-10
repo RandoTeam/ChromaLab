@@ -76,6 +76,8 @@ object CalculationRunToExportMapper {
             plateCount = peak.plateCount,
             resolution = peak.resolution,
             areaPercent = if (totalArea > 0) peak.area / totalArea * 100.0 else 0.0,
+            compoundName = peak.compoundName,
+            compoundSource = peak.compoundSource.name,
         )
     }
 

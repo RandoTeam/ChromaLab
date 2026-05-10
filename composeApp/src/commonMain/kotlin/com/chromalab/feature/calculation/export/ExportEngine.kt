@@ -65,6 +65,9 @@ data class ExportPeak(
     val plateCount: Int? = null,
     val resolution: Double? = null,
     val areaPercent: Double = 0.0,
+    // Compound identification
+    val compoundName: String? = null,
+    val compoundSource: String = "NONE",
 )
 
 data class ExportPoint(val time: Double, val intensity: Double)
@@ -99,6 +102,7 @@ object PeaksCsvExporter {
         "Positive_Area", "Negative_Area",
         "Tailing_Factor", "Asymmetry_Factor",
         "Plate_Count", "Resolution",
+        "Compound", "Compound_Source",
         "Manual", "Warnings",
     ).joinToString(",")
 
@@ -131,6 +135,8 @@ object PeaksCsvExporter {
                 "%.3f".format(p.asymmetryFactor),
                 p.plateCount?.toString() ?: "",
                 p.resolution?.let { "%.3f".format(it) } ?: "",
+                p.compoundName ?: "",
+                p.compoundSource,
                 if (p.isManuallyEdited) "yes" else "no",
                 "\"${p.warnings.joinToString("; ")}\"",
             ).joinToString(",")

@@ -37,6 +37,8 @@ import com.chromalab.feature.calculation.screen.ExportCalculationScreen
 import com.chromalab.feature.calculation.algorithm.DistributionAnalyzer
 import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
+import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
+import com.chromalab.feature.calculation.algorithm.CompoundSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -197,10 +199,30 @@ fun AnalysisFlowScreen(
                                         val dist = DistributionAnalyzer.analyze(run.peaks)
                                         val patt = PatternAnalyzer.analyze(run.peaks, run.signals)
                                         val mq = MethodQualityAnalyzer.analyze(run.peaks, run.signals)
+
+                                        // Phase 16: geochemistry + auto-label if homologous
+                                        val sortedPeaks = run.peaks.sortedBy { it.rtApex }
+                                        val geochem = if (patt?.homologousSeries?.detected == true) {
+                                            GeochemicalCalculator.calculate(sortedPeaks)
+                                        } else null
+
+                                        // Auto-label peaks with carbon numbers if series detected
+                                        val labeledPeaks = if (geochem != null) {
+                                            sortedPeaks.mapIndexed { i, p ->
+                                                val cn = geochem.firstCarbonNumber + i
+                                                p.copy(
+                                                    compoundName = "C\u2080${cn}".let { "C$cn" },
+                                                    compoundSource = CompoundSource.AUTO_SERIES,
+                                                )
+                                            }
+                                        } else run.peaks
+
                                         calculationRun = run.copy(
+                                            peaks = labeledPeaks,
                                             distribution = dist,
                                             pattern = patt,
                                             methodQuality = mq,
+                                            geochemistry = geochem,
                                         )
                                         peaksFound = true
                                     } catch (e: Exception) {

@@ -34,6 +34,8 @@ import com.chromalab.feature.calculation.algorithm.SeriesConfidence
 import com.chromalab.feature.calculation.algorithm.EnvelopeShape
 import com.chromalab.feature.calculation.algorithm.MethodQualityResult
 import com.chromalab.feature.calculation.algorithm.MethodGrade
+import com.chromalab.feature.calculation.algorithm.GeochemistryResult
+import com.chromalab.feature.calculation.algorithm.CompoundSource
 import com.chromalab.feature.calculation.ui.ChromatogramChart
 
 /**
@@ -92,7 +94,18 @@ fun ResultsSummaryScreen(
             MethodQualitySection(mq)
         }
 
-        // Section 9: Parameters (expandable)
+        // Section 9: Geochemistry (Phase 16)
+        run.geochemistry?.let { geo ->
+            GeochemistrySection(geo)
+        }
+
+        // Section 10: Compound identification (Phase 16)
+        val labeledPeaks = run.peaks.filter { it.compoundName != null }
+        if (labeledPeaks.isNotEmpty()) {
+            CompoundIdSection(run.peaks)
+        }
+
+        // Section 11: Parameters (expandable)
         ParametersSection(run)
 
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -654,7 +667,106 @@ private fun MethodQualitySection(mq: MethodQualityResult) {
     }
 }
 
-// ─── Section 9: Parameters ──────────────────────────────────────
+// ─── Section 9: Geochemistry ────────────────────────────────────
+
+@Composable
+private fun GeochemistrySection(geo: GeochemistryResult) {
+    SectionHeader("Геохимические индексы")
+
+    // Range badge
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            "🧪 Гомологический ряд C${geo.firstCarbonNumber}—C${geo.lastCarbonNumber} (${geo.peakCount} пиков)",
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+
+    Spacer(modifier = Modifier.height(Spacing.xs))
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            geo.allIndices.forEach { metric ->
+                MetricRow(metric)
+            }
+        }
+    }
+}
+
+// ─── Section 10: Compound Identification ────────────────────────
+
+@Composable
+private fun CompoundIdSection(peaks: List<PeakResult>) {
+    val labeled = peaks.filter { it.compoundName != null }
+    if (labeled.isEmpty()) return
+
+    SectionHeader("Идентификация веществ")
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Header row
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text("Пик", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(0.15f))
+                Text("Вещество", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(0.35f))
+                Text("RT", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(0.25f))
+                Text("Источник", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(0.25f))
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            labeled.forEachIndexed { i, p ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("#${i + 1}", style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(0.15f))
+                    Text(p.compoundName ?: "", style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.weight(0.35f))
+                    Text("${"%.3f".format(p.rtApex)} мин", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(0.25f))
+                    val sourceLabel = when (p.compoundSource) {
+                        CompoundSource.AUTO_SERIES -> "🤖 AUTO"
+                        CompoundSource.MANUAL -> "✏️ MANUAL"
+                        CompoundSource.TEMPLATE -> "📋 TEMPLATE"
+                        CompoundSource.NONE -> "—"
+                    }
+                    Text(sourceLabel, style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.weight(0.25f))
+                }
+            }
+        }
+    }
+}
+
+// ─── Section 11: Parameters ─────────────────────────────────────
 
 @Composable
 private fun ParametersSection(run: CalculationRun) {

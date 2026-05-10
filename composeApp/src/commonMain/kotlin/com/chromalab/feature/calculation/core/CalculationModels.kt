@@ -1,7 +1,9 @@
 package com.chromalab.feature.calculation.core
 
+import com.chromalab.feature.calculation.algorithm.CompoundSource
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
 import com.chromalab.feature.calculation.algorithm.DistributionResult
+import com.chromalab.feature.calculation.algorithm.GeochemistryResult
 import com.chromalab.feature.calculation.algorithm.MethodQualityResult
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import com.chromalab.feature.calculation.algorithm.PatternResult
@@ -99,6 +101,8 @@ data class CalculationRun(
     val pattern: PatternResult? = null,
     @kotlinx.serialization.Transient
     val methodQuality: MethodQualityResult? = null,
+    @kotlinx.serialization.Transient
+    val geochemistry: GeochemistryResult? = null,
 )
 
 /**
@@ -154,6 +158,9 @@ data class PeakResult(
     val plateCount: Int? = null,
     val resolution: Double? = null,   // Rs to previous peak (null for first peak)
     val areaPercent: Double = 0.0,
+    // Compound identification (Phase 16)
+    val compoundName: String? = null,
+    val compoundSource: CompoundSource = CompoundSource.NONE,
 )
 
 enum class PeakStatus {

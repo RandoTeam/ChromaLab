@@ -187,7 +187,41 @@ object ReportExporter {
                 appendLine("</section>")
             }
 
-            // Section 8: Parameters
+            // Section 8: Geochemistry (Phase 16)
+            run.geochemistry?.let { geo ->
+                appendLine("<section>")
+                appendLine("<h2>Геохимические индексы (C${geo.firstCarbonNumber}—C${geo.lastCarbonNumber})</h2>")
+                appendLine("<table class=\"summary\">")
+                geo.allIndices.forEach { m ->
+                    val display = if (m.unit.isNotEmpty()) "${m.formatted} ${m.unit}" else m.formatted
+                    appendLine("<tr><td class=\"label\">${escHtml(m.name)}</td><td>$display <span style=\"color:var(--text2);font-size:0.8em\">— ${escHtml(m.interpretation)}</span></td></tr>")
+                }
+                appendLine("</table>")
+                appendLine("</section>")
+            }
+
+            // Section 9: Compound identification (Phase 16)
+            val labeled = peaks.filter { it.compoundName != null }
+            if (labeled.isNotEmpty()) {
+                appendLine("<section>")
+                appendLine("<h2>Идентификация веществ</h2>")
+                appendLine("<table class=\"data\">")
+                appendLine("<thead><tr><th>#</th><th>Вещество</th><th>RT (мин)</th><th>Площадь</th><th>Источник</th></tr></thead>")
+                appendLine("<tbody>")
+                labeled.forEachIndexed { i, p ->
+                    appendLine("<tr>")
+                    appendLine("<td>${i + 1}</td>")
+                    appendLine("<td><strong>${escHtml(p.compoundName ?: "")}</strong></td>")
+                    appendLine("<td>${"%.3f".format(p.rtApex)}</td>")
+                    appendLine("<td>${formatNumber(p.area)}</td>")
+                    appendLine("<td>${p.compoundSource.name}</td>")
+                    appendLine("</tr>")
+                }
+                appendLine("</tbody></table>")
+                appendLine("</section>")
+            }
+
+            // Section 10: Parameters
             appendLine("<section>")
             appendLine("<h2>Параметры алгоритма</h2>")
             appendLine("<table class=\"summary\">")
