@@ -33,6 +33,7 @@ import com.chromalab.feature.calculation.ui.PeakTableFilter
 import com.chromalab.feature.calculation.ui.PeakDetailsContent
 import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
+import com.chromalab.feature.calculation.screen.ExportCalculationScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -368,6 +369,13 @@ private fun AnalysisStepContent(
                 if (step == AnalysisStep.RESULTS && calculationRun != null) {
                     ResultsSummaryScreen(
                         run = calculationRun,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else if (step == AnalysisStep.EXPORT && calculationRun != null) {
+                    ExportCalculationScreen(
+                        run = calculationRun,
+                        onFileSave = { _: String, _: String -> /* platform file save */ },
+                        onShare = { _: String, _: String -> /* platform share */ },
                         modifier = Modifier.weight(1f),
                     )
                 } else {
