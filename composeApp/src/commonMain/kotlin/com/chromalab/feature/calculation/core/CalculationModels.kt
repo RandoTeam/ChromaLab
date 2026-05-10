@@ -138,6 +138,12 @@ data class PeakResult(
     val rightBoundaryTime: Double,
     val boundaryMethod: String,
     val warnings: List<String>,
+    // USP system suitability metrics
+    val tailingFactor: Double = 1.0,
+    val asymmetryFactor: Double = 1.0,
+    val plateCount: Int? = null,
+    val resolution: Double? = null,   // Rs to previous peak (null for first peak)
+    val areaPercent: Double = 0.0,
 )
 
 enum class PeakStatus {

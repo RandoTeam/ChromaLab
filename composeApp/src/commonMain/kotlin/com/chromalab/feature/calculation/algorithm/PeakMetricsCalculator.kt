@@ -1,6 +1,7 @@
 package com.chromalab.feature.calculation.algorithm
 
 import com.chromalab.feature.calculation.core.SignalPoint
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 /**
@@ -93,6 +94,28 @@ object PeakMetricsCalculator {
             warnings.add("Пик изменён вручную")
         }
 
+        // USP Tailing Factor (at 5% height)
+        val tailingFactor = computeTailingFactor(
+            points, peak.index, boundary.leftIndex, boundary.rightIndex, 0.05
+        )
+
+        // EP Asymmetry Factor (at 10% height)
+        val asymmetryFactor = computeAsymmetryFactor(
+            points, peak.index, boundary.leftIndex, boundary.rightIndex, 0.10
+        )
+
+        // USP Plate Count: N = 5.545 × (RT / W½)²
+        val plateCount = if (widthHalfHeight > 0.0) {
+            (5.545 * (rtApex / widthHalfHeight) * (rtApex / widthHalfHeight)).toInt()
+        } else null
+
+        // Tailing warnings
+        if (tailingFactor > 2.0) {
+            warnings.add("USP Tailing factor ${"%.2f".format(tailingFactor)} > 2.0 — пик сильно асимметричен")
+        } else if (tailingFactor > 1.5) {
+            warnings.add("USP Tailing factor ${"%.2f".format(tailingFactor)} > 1.5 — умеренная асимметрия")
+        }
+
         return PeakMetrics(
             rtApex = rtApex,
             rtCentroid = rtCentroid,
@@ -110,6 +133,9 @@ object PeakMetricsCalculator {
             boundaryMethod = boundary.method,
             boundaryConfidence = boundary.confidence,
             isManuallyEdited = isManuallyEdited,
+            tailingFactor = tailingFactor,
+            asymmetryFactor = asymmetryFactor,
+            plateCount = plateCount,
             warnings = warnings,
         )
     }
@@ -187,6 +213,122 @@ object PeakMetricsCalculator {
         return (rightIdx - leftIdx).toDouble()
     }
 
+    // ─── USP Tailing Factor ─────────────────────────────────────
+
+    /**
+     * USP Tailing Factor: T = W / (2 × f)
+     * where W is peak width at [heightFraction] of peak height,
+     * and f is the front half-width (leading edge to apex at that height).
+     *
+     * @param heightFraction 0.05 for USP (5%), 0.10 for EP (10%)
+     * @return Tailing factor. 1.0 = symmetric. >1 = tailing. <1 = fronting.
+     */
+    private fun computeTailingFactor(
+        points: List<SignalPoint>,
+        peakIdx: Int,
+        leftIdx: Int,
+        rightIdx: Int,
+        heightFraction: Double,
+    ): Double {
+        val peakIntensity = points[peakIdx].intensity
+        val threshold = peakIntensity * heightFraction
+        if (threshold <= 0.0) return 1.0
+
+        val peakTime = points[peakIdx].time
+
+        // Find left crossing time (front)
+        var leftTime = points[leftIdx].time
+        for (i in peakIdx downTo leftIdx + 1) {
+            if (points[i - 1].intensity <= threshold && points[i].intensity > threshold) {
+                val frac = (threshold - points[i - 1].intensity) /
+                    (points[i].intensity - points[i - 1].intensity)
+                leftTime = points[i - 1].time + frac * (points[i].time - points[i - 1].time)
+                break
+            }
+        }
+
+        // Find right crossing time (tail)
+        var rightTime = points[rightIdx].time
+        for (i in peakIdx until rightIdx) {
+            if (points[i].intensity > threshold && points[i + 1].intensity <= threshold) {
+                val frac = (threshold - points[i + 1].intensity) /
+                    (points[i].intensity - points[i + 1].intensity)
+                rightTime = points[i + 1].time + frac * (points[i].time - points[i + 1].time)
+                break
+            }
+        }
+
+        val totalWidth = rightTime - leftTime
+        val frontWidth = peakTime - leftTime
+
+        return if (frontWidth > 0.0) totalWidth / (2.0 * frontWidth) else 1.0
+    }
+
+    // ─── EP Asymmetry Factor ────────────────────────────────────
+
+    /**
+     * Asymmetry Factor (EP): As = b / a
+     * where a = front half-width, b = rear half-width at [heightFraction].
+     *
+     * @param heightFraction 0.10 for EP standard
+     * @return Asymmetry factor. 1.0 = symmetric.
+     */
+    private fun computeAsymmetryFactor(
+        points: List<SignalPoint>,
+        peakIdx: Int,
+        leftIdx: Int,
+        rightIdx: Int,
+        heightFraction: Double,
+    ): Double {
+        val peakIntensity = points[peakIdx].intensity
+        val threshold = peakIntensity * heightFraction
+        if (threshold <= 0.0) return 1.0
+
+        val peakTime = points[peakIdx].time
+
+        // Find left crossing
+        var leftTime = points[leftIdx].time
+        for (i in peakIdx downTo leftIdx + 1) {
+            if (points[i - 1].intensity <= threshold && points[i].intensity > threshold) {
+                val frac = (threshold - points[i - 1].intensity) /
+                    (points[i].intensity - points[i - 1].intensity)
+                leftTime = points[i - 1].time + frac * (points[i].time - points[i - 1].time)
+                break
+            }
+        }
+
+        // Find right crossing
+        var rightTime = points[rightIdx].time
+        for (i in peakIdx until rightIdx) {
+            if (points[i].intensity > threshold && points[i + 1].intensity <= threshold) {
+                val frac = (threshold - points[i + 1].intensity) /
+                    (points[i].intensity - points[i + 1].intensity)
+                rightTime = points[i + 1].time + frac * (points[i].time - points[i + 1].time)
+                break
+            }
+        }
+
+        val a = peakTime - leftTime  // front half
+        val b = rightTime - peakTime // rear half
+
+        return if (a > 0.0) b / a else 1.0
+    }
+
+    // ─── Resolution ─────────────────────────────────────────────
+
+    /**
+     * USP Resolution between two adjacent peaks:
+     * Rs = 2 × (RT₂ - RT₁) / (W₁ + W₂)
+     * where W is peak width at base.
+     */
+    fun calculateResolution(
+        rt1: Double, widthBase1: Double,
+        rt2: Double, widthBase2: Double,
+    ): Double {
+        val denom = widthBase1 + widthBase2
+        return if (denom > 0.0) 2.0 * abs(rt2 - rt1) / denom else 0.0
+    }
+
     // ─── Centroid ───────────────────────────────────────────────
 
     /**
@@ -227,5 +369,8 @@ data class PeakMetrics(
     val boundaryMethod: BoundaryMethod,
     val boundaryConfidence: Double,
     val isManuallyEdited: Boolean,
+    val tailingFactor: Double = 1.0,
+    val asymmetryFactor: Double = 1.0,
+    val plateCount: Int? = null,
     val warnings: List<String>,
 )

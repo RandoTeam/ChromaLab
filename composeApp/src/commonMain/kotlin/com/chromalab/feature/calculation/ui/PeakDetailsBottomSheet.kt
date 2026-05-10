@@ -147,6 +147,10 @@ private fun PrimaryMetrics(metrics: PeakMetrics) {
             MetricCard("S/N", "%.1f".format(metrics.snrValue), Modifier.weight(1f))
             MetricCard("Prominence", formatValue(metrics.prominence), Modifier.weight(1f))
         }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            MetricCard("Tailing (USP)", "%.3f".format(metrics.tailingFactor), Modifier.weight(1f))
+            MetricCard("N (plates)", metrics.plateCount?.let { formatValue(it.toDouble()) } ?: "—", Modifier.weight(1f))
+        }
     }
 }
 
@@ -298,6 +302,7 @@ private fun ActionButtons(
 private fun TechDetailsContent(data: PeakDetailsData) {
     DetailRow("RT centroid", "%.4f мин".format(data.metrics.rtCentroid))
     DetailRow("Ширина полупроминенции", "%.3f".format(data.metrics.widthHalfProminence))
+    DetailRow("Asymmetry Factor (EP)", "%.3f".format(data.metrics.asymmetryFactor))
     DetailRow("Метод границ", data.metrics.boundaryMethod.label)
     DetailRow("Уверенность границ", "${(data.metrics.boundaryConfidence * 100).toInt()}%")
     DetailRow("Перекрытие", data.metrics.overlapStatus.label)

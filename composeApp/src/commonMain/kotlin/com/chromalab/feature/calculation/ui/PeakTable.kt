@@ -37,9 +37,11 @@ data class PeakTableRow(
     val rtApex: Double,
     val height: Double,
     val area: Double,
+    val areaPercent: Double,
     val widthBase: Double,
     val snr: Double,
     val prominence: Double,
+    val tailingFactor: Double,
     val confidenceGrade: ConfidenceGrade,
     val overlapStatus: OverlapStatus,
     val isManuallyEdited: Boolean,
@@ -166,8 +168,8 @@ private fun TableToolbar(
 
 // ─── Table rows ─────────────────────────────────────────────────
 
-private val colWidths = listOf(44.dp, 70.dp, 72.dp, 80.dp, 60.dp, 52.dp, 68.dp, 64.dp, 28.dp)
-private val colLabels = listOf("", "RT", "Высота", "Площадь", "Ширина", "S/N", "Promin.", "Уверен.", "⚠")
+private val colWidths = listOf(44.dp, 70.dp, 72.dp, 80.dp, 56.dp, 60.dp, 52.dp, 52.dp, 64.dp, 28.dp)
+private val colLabels = listOf("", "RT", "Высота", "Площадь", "Area%", "Ширина", "S/N", "Tail.", "Уверен.", "⚠")
 
 @Composable
 private fun TableHeaderRow() {
@@ -216,14 +218,16 @@ private fun TableDataRow(
         CellText(formatCompact(row.height), colWidths[2])
         // Area
         CellText(formatCompact(row.area), colWidths[3])
+        // Area%
+        CellText("%.1f".format(row.areaPercent), colWidths[4])
         // Width
-        CellText("%.3f".format(row.widthBase), colWidths[4])
+        CellText("%.3f".format(row.widthBase), colWidths[5])
         // S/N
-        CellText("%.1f".format(row.snr), colWidths[5])
-        // Prominence
-        CellText(formatCompact(row.prominence), colWidths[6])
+        CellText("%.1f".format(row.snr), colWidths[6])
+        // Tailing
+        CellText("%.2f".format(row.tailingFactor), colWidths[7])
         // Confidence
-        Box(modifier = Modifier.width(colWidths[7]).padding(horizontal = 4.dp)) {
+        Box(modifier = Modifier.width(colWidths[8]).padding(horizontal = 4.dp)) {
             ConfidenceDot(row.confidenceGrade)
         }
         // Warnings
@@ -232,10 +236,10 @@ private fun TableDataRow(
                 "${row.warningCount}",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color(0xFFFFA726),
-                modifier = Modifier.width(colWidths[8]).padding(horizontal = 4.dp),
+                modifier = Modifier.width(colWidths[9]).padding(horizontal = 4.dp),
             )
         } else {
-            Spacer(modifier = Modifier.width(colWidths[8]))
+            Spacer(modifier = Modifier.width(colWidths[9]))
         }
     }
 }

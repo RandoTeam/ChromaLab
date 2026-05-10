@@ -59,6 +59,12 @@ data class ExportPeak(
     val negativeArea: Double,
     val isManuallyEdited: Boolean,
     val warnings: List<String>,
+    // USP system suitability
+    val tailingFactor: Double = 1.0,
+    val asymmetryFactor: Double = 1.0,
+    val plateCount: Int? = null,
+    val resolution: Double? = null,
+    val areaPercent: Double = 0.0,
 )
 
 data class ExportPoint(val time: Double, val intensity: Double)
@@ -84,13 +90,15 @@ object PeaksCsvExporter {
 
     private val HEADER = listOf(
         "PeakId", "Status", "RT_Apex", "RT_Centroid",
-        "Height", "Area", "Width_Base", "Width_HalfHeight",
+        "Height", "Area", "Area%", "Width_Base", "Width_HalfHeight",
         "Prominence", "SNR", "SNR_Method",
         "Baseline_Method", "Integration_Method",
         "Confidence", "Confidence_Score",
         "Overlap", "Boundary_Method",
         "Left_Boundary", "Right_Boundary",
         "Positive_Area", "Negative_Area",
+        "Tailing_Factor", "Asymmetry_Factor",
+        "Plate_Count", "Resolution",
         "Manual", "Warnings",
     ).joinToString(",")
 
@@ -103,6 +111,7 @@ object PeaksCsvExporter {
                 "%.4f".format(p.rtCentroid),
                 "%.2f".format(p.height),
                 "%.2f".format(p.area),
+                "%.2f".format(p.areaPercent),
                 "%.4f".format(p.widthBase),
                 "%.4f".format(p.widthHalfHeight),
                 "%.2f".format(p.prominence),
@@ -118,6 +127,10 @@ object PeaksCsvExporter {
                 "%.4f".format(p.rightBoundary),
                 "%.2f".format(p.positiveArea),
                 "%.2f".format(p.negativeArea),
+                "%.3f".format(p.tailingFactor),
+                "%.3f".format(p.asymmetryFactor),
+                p.plateCount?.toString() ?: "",
+                p.resolution?.let { "%.3f".format(it) } ?: "",
                 if (p.isManuallyEdited) "yes" else "no",
                 "\"${p.warnings.joinToString("; ")}\"",
             ).joinToString(",")
@@ -175,6 +188,11 @@ object CalculationJsonExporter {
             appendLine("      \"overlap\": \"${p.overlapStatus}\",")
             appendLine("      \"leftBoundary\": ${p.leftBoundary},")
             appendLine("      \"rightBoundary\": ${p.rightBoundary},")
+            appendLine("      \"tailingFactor\": ${p.tailingFactor},")
+            appendLine("      \"asymmetryFactor\": ${p.asymmetryFactor},")
+            appendLine("      \"plateCount\": ${p.plateCount ?: "null"},")
+            appendLine("      \"resolution\": ${p.resolution ?: "null"},")
+            appendLine("      \"areaPercent\": ${p.areaPercent},")
             appendLine("      \"manual\": ${p.isManuallyEdited}")
             appendLine("    }$comma")
         }
