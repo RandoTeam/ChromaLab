@@ -1,6 +1,7 @@
 package com.chromalab.feature.settings
 
 import android.content.Context
+import android.net.Uri
 import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
 import com.chromalab.feature.processing.inference.LiteRTEngine
@@ -167,5 +168,23 @@ class ModelManagerController(
     fun setThreadCount(count: Int) {
         manager.threadCount = count
         _state.update { it.copy(threadCount = count) }
+    }
+
+    /** Import a model file from a user-selected URI. */
+    fun importFile(uri: Uri) {
+        scope.launch {
+            try {
+                println("MODEL[CTRL] Importing file: $uri")
+                val result = manager.importFile(uri)
+                if (result != null) {
+                    println("MODEL[CTRL] Import success: ${result.displayName}")
+                } else {
+                    println("MODEL[CTRL] Import failed — unknown format or invalid file")
+                }
+                refresh()
+            } catch (e: Exception) {
+                println("MODEL[CTRL] Import error: ${e.message}")
+            }
+        }
     }
 }
