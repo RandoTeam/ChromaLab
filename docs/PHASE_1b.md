@@ -58,7 +58,7 @@
 | **1b.27** | **OCR: 3-level filter (spatial + classify + IQR) + 2-pass targeted crop** | ✅ |
 | **1b.28** | **Graph selection: topmost region + thin-strip filter** | ✅ |
 | **1b.29** | **Camera UX: Smart Scan auto-launch, remove manual selector** | ✅ |
-| **1b.30** | **OCR: Y-axis misclassification fix + step-based outlier filter** | ⬜ |
+| **1b.30** | **OCR: Y-axis misclassification fix + step-based outlier filter + multi-level scan** | ✅ |
 | **1b.31** | **Auto-Sweep Pipeline: multi-config preprocessing + best-score selection** | ⬜ |
 
 ---

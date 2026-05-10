@@ -73,26 +73,33 @@ actual class AxisOcrReader actual constructor() {
             println("OCR[ELEM] text='${elem.text}' num=${elem.numericValue} pos=(${elem.x.toInt()},${elem.y.toInt()}) center=(${cx.toInt()},${cy.toInt()}) size=(${elem.width.toInt()}x${elem.height.toInt()})")
 
             if (elem.numericValue != null) {
+                // Primary rule: if element center is LEFT of graph → always Y-axis
+                // This prevents Y-labels (50, 100, 150...) from being classified as X
+                val isDefinitelyY = cx < graphRegion.x
+
                 // X candidates: below graph area (near bottom axis)
-                val isXCandidate = cy > graphBottom - classMargin &&
+                val isXCandidate = !isDefinitelyY &&
+                    cy > graphBottom - classMargin &&
                     cx >= graphRegion.x - classMargin &&
                     cx <= graphRight + classMargin
                 // Y candidates: left of graph area (near left axis)
-                val isYCandidate = cx < graphRegion.x + classMargin &&
+                val isYCandidate = isDefinitelyY || (
+                    cx < graphRegion.x + classMargin &&
                     cy >= graphRegion.y - classMargin &&
-                    cy <= graphBottom + classMargin
+                    cy <= graphBottom + classMargin)
 
                 if (isXCandidate && !isYCandidate) {
                     xAxisLabels.add(elem)
                 } else if (isYCandidate && !isXCandidate) {
                     yAxisLabels.add(elem)
                 } else if (isXCandidate && isYCandidate) {
-                    val distToBottom = (graphBottom - cy).coerceAtLeast(0f)
+                    // Ambiguous corner — prefer Y if closer to left edge
                     val distToLeft = (cx - graphRegion.x).coerceAtLeast(0f)
-                    if (distToBottom < distToLeft) {
-                        xAxisLabels.add(elem)
-                    } else {
+                    val distToBottom = (graphBottom - cy).coerceAtLeast(0f)
+                    if (distToLeft < distToBottom) {
                         yAxisLabels.add(elem)
+                    } else {
+                        xAxisLabels.add(elem)
                     }
                 }
                 // else: element is inside graph area (title, etc.) → skip
@@ -126,36 +133,51 @@ actual class AxisOcrReader actual constructor() {
 
         println("OCR[FILTER] xFiltered=$filteredX, yFiltered=$filteredY")
 
-        // === PASS 2: Always run targeted crop for better coverage ===
-        // Cropped strip gives ML Kit zoomed-in view → small labels become large
+        // === PASS 2: Multi-level progressive crop scanning ===
+        // Each level uses different margins. Small crops are upscaled for better ML Kit recognition.
         val allElements = elements.toMutableList()
+        var allXValues = filteredX.toMutableList()
+        var allYValues = filteredY.toMutableList()
 
         val retryBitmap = BitmapFactory.decodeFile(imagePath)
         if (retryBitmap != null) {
-            // X-axis: crop strip below graph
-            println("OCR[RETRY-X] Pass 1 found ${filteredX.size} X values, enhancing with X-axis crop...")
-            val xRetry = retryAxisStrip(retryBitmap, graphRegion, axis = "X")
-            if (xRetry != null && xRetry.values.isNotEmpty()) {
-                allElements.addAll(xRetry.elements)
-                val mergedX = (filteredX + xRetry.values).distinct().sorted()
-                filteredX = filterAxisValues(mergedX)
-                if (xRetry.unit != null && xUnit == null) xUnit = xRetry.unit
-                println("OCR[RETRY-X] found ${xRetry.values.size} new values, merged=$filteredX")
-            }
+            // Define scan levels: (marginFactor, description)
+            // Wider margins → more context. Tighter margins → bigger text relative to frame.
+            val scanLevels = listOf(
+                0.25f to "wide",     // Level 1: 25% margin — standard
+                0.15f to "medium",   // Level 2: 15% margin — tighter
+                0.08f to "tight",    // Level 3: 8% margin — very focused
+            )
 
-            // Y-axis: crop strip left of graph
-            println("OCR[RETRY-Y] Pass 1 found ${filteredY.size} Y values, enhancing with Y-axis crop...")
-            val yRetry = retryAxisStrip(retryBitmap, graphRegion, axis = "Y")
-            if (yRetry != null && yRetry.values.isNotEmpty()) {
-                allElements.addAll(yRetry.elements)
-                val mergedY = (filteredY + yRetry.values).distinct().sorted()
-                filteredY = filterAxisValues(mergedY)
-                if (yRetry.unit != null && yUnit == null) yUnit = yRetry.unit
-                println("OCR[RETRY-Y] found ${yRetry.values.size} new values, merged=$filteredY")
+            for ((marginFactor, levelName) in scanLevels) {
+                // X-axis scan
+                val xResult = scanAxisLevel(retryBitmap, graphRegion, "X", marginFactor, levelName)
+                if (xResult != null && xResult.values.isNotEmpty()) {
+                    allElements.addAll(xResult.elements)
+                    allXValues.addAll(xResult.values)
+                    if (xResult.unit != null && xUnit == null) xUnit = xResult.unit
+                }
+
+                // Y-axis scan
+                val yResult = scanAxisLevel(retryBitmap, graphRegion, "Y", marginFactor, levelName)
+                if (yResult != null && yResult.values.isNotEmpty()) {
+                    allElements.addAll(yResult.elements)
+                    allYValues.addAll(yResult.values)
+                    if (yResult.unit != null && yUnit == null) yUnit = yResult.unit
+                }
             }
 
             retryBitmap.recycle()
+
+            // Final dedup + filter on accumulated values
+            allXValues = filterAxisValues(allXValues.distinct().sorted()).toMutableList()
+            allYValues = filterAxisValues(allYValues.distinct().sorted()).toMutableList()
+
+            println("OCR[MULTI] after ${scanLevels.size} levels: x=$allXValues, y=$allYValues")
         }
+
+        filteredX = allXValues
+        filteredY = allYValues
 
         // Sort: X ascending, Y descending
         val sortedX = filteredX.sorted()
@@ -260,45 +282,63 @@ actual class AxisOcrReader actual constructor() {
     )
 
     /**
-     * Targeted OCR retry: crop a narrow strip along the specified axis
-     * and re-scan with ML Kit. This makes small axis labels much larger
-     * relative to the image, dramatically improving recognition.
+     * Multi-level axis scanning: crop a strip along the axis with configurable margin,
+     * then upscale if the crop is too small for reliable OCR.
      *
-     * For X-axis: crop strip below graphRegion (where X labels sit)
-     * For Y-axis: crop strip left of graphRegion (where Y labels sit)
+     * @param marginFactor Controls strip size: 0.25 = 25% of graph dimension,
+     *                     0.08 = 8% (tighter, more zoomed on labels)
+     * @param levelName For logging
      */
-    private suspend fun retryAxisStrip(
+    private suspend fun scanAxisLevel(
         bitmap: android.graphics.Bitmap,
         graphRegion: GraphRegion,
         axis: String,
+        marginFactor: Float,
+        levelName: String,
     ): AxisRetryResult? {
-        // Define crop area
         val cropX: Int
         val cropY: Int
         val cropW: Int
         val cropH: Int
 
         if (axis == "X") {
-            // Strip below graph: from graphBottom to graphBottom + 25% height
-            val stripHeight = (graphRegion.height * 0.25f).toInt().coerceAtLeast(50)
+            val stripHeight = (graphRegion.height * marginFactor).toInt().coerceAtLeast(30)
             cropX = (graphRegion.x - graphRegion.width * 0.05f).toInt().coerceAtLeast(0)
             cropY = (graphRegion.y + graphRegion.height).coerceIn(0, bitmap.height - 1)
             cropW = (graphRegion.width * 1.1f).toInt().coerceAtMost(bitmap.width - cropX)
             cropH = stripHeight.coerceAtMost(bitmap.height - cropY)
         } else {
-            // Strip left of graph: from graphLeft - 25% width to graphLeft
-            val stripWidth = (graphRegion.width * 0.15f).toInt().coerceAtLeast(50)
+            val stripWidth = (graphRegion.width * marginFactor).toInt().coerceAtLeast(30)
             cropX = (graphRegion.x - stripWidth).coerceAtLeast(0)
             cropY = (graphRegion.y - graphRegion.height * 0.05f).toInt().coerceAtLeast(0)
-            cropW = (graphRegion.x - cropX + graphRegion.width * 0.05f).toInt().coerceAtMost(bitmap.width - cropX)
+            cropW = (graphRegion.x - cropX + graphRegion.width * 0.05f).toInt()
+                .coerceAtMost(bitmap.width - cropX)
+                .coerceAtLeast(1)
             cropH = (graphRegion.height * 1.1f).toInt().coerceAtMost(bitmap.height - cropY)
         }
 
-        if (cropW < 10 || cropH < 10) return null
+        if (cropW < 5 || cropH < 5) return null
 
-        println("OCR[RETRY-$axis] crop: ($cropX,$cropY) ${cropW}x${cropH}")
+        var cropped = android.graphics.Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
 
-        val cropped = android.graphics.Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
+        // Upscale small crops — ML Kit needs at least ~200px in the short dimension
+        val minDimension = 200
+        val shortSide = minOf(cropped.width, cropped.height)
+        val scaleFactor = if (shortSide < minDimension) {
+            (minDimension.toFloat() / shortSide).coerceAtMost(4f)
+        } else 1f
+
+        if (scaleFactor > 1f) {
+            val scaledW = (cropped.width * scaleFactor).toInt()
+            val scaledH = (cropped.height * scaleFactor).toInt()
+            val scaled = android.graphics.Bitmap.createScaledBitmap(cropped, scaledW, scaledH, true)
+            cropped.recycle()
+            cropped = scaled
+            println("OCR[SCAN-$axis/$levelName] crop: ($cropX,$cropY) ${cropW}x${cropH} → upscaled ${scaledW}x${scaledH} (${scaleFactor}x)")
+        } else {
+            println("OCR[SCAN-$axis/$levelName] crop: ($cropX,$cropY) ${cropW}x${cropH}")
+        }
+
         val inputImage = InputImage.fromBitmap(cropped, 0)
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
@@ -316,9 +356,9 @@ actual class AxisOcrReader actual constructor() {
                             val text = line.text.trim()
                             if (text.isBlank()) continue
 
-                            // Remap coordinates back to full-image space
-                            val fullX = box.left.toFloat() + cropX
-                            val fullY = box.top.toFloat() + cropY
+                            // Remap coordinates: undo upscale, then add crop offset
+                            val fullX = box.left.toFloat() / scaleFactor + cropX
+                            val fullY = box.top.toFloat() / scaleFactor + cropY
 
                             val numericValue = parseNumeric(text)
                             if (numericValue != null) {
@@ -329,18 +369,18 @@ actual class AxisOcrReader actual constructor() {
                                         numericValue = numericValue,
                                         x = fullX,
                                         y = fullY,
-                                        width = box.width().toFloat(),
-                                        height = box.height().toFloat(),
+                                        width = box.width().toFloat() / scaleFactor,
+                                        height = box.height().toFloat() / scaleFactor,
                                         confidence = 0.75f,
                                     ),
                                 )
-                                println("OCR[RETRY-$axis] found: '$text' = $numericValue at ($fullX,$fullY)")
+                                println("OCR[SCAN-$axis/$levelName] found: '$text' = $numericValue at ($fullX,$fullY)")
                             } else {
                                 // Try splitting merged numbers
                                 val tokens = text.split("\\s+".toRegex())
                                 val parsed = tokens.mapNotNull { t -> parseNumeric(t)?.let { t to it } }
                                 if (parsed.size >= 2) {
-                                    val step = if (parsed.size > 1) box.width().toFloat() / (parsed.size - 1) else 0f
+                                    val step = if (parsed.size > 1) box.width().toFloat() / scaleFactor / (parsed.size - 1) else 0f
                                     parsed.forEachIndexed { i, (tok, v) ->
                                         values.add(v)
                                         elems.add(
@@ -350,11 +390,11 @@ actual class AxisOcrReader actual constructor() {
                                                 x = fullX + i * step,
                                                 y = fullY,
                                                 width = step.coerceAtLeast(20f),
-                                                height = box.height().toFloat(),
+                                                height = box.height().toFloat() / scaleFactor,
                                                 confidence = 0.65f,
                                             ),
                                         )
-                                        println("OCR[RETRY-$axis] split: '$tok' = $v at (${fullX + i * step},$fullY)")
+                                        println("OCR[SCAN-$axis/$levelName] split: '$tok' = $v at (${fullX + i * step},$fullY)")
                                     }
                                 } else {
                                     // Check for unit labels
@@ -380,11 +420,13 @@ actual class AxisOcrReader actual constructor() {
     }
 
     /**
-     * Filter axis values: deduplicate and remove statistical outliers.
+     * Filter axis values: deduplicate, remove statistical outliers, and enforce step consistency.
      *
      * Axis labels on chromatograms are evenly spaced (e.g., 35, 40, 45, 50...).
      * Outliers like 301002.0 (from title text "0301002.D") are many orders
      * of magnitude away from the real values and can be detected via IQR.
+     * Values that don't fit the dominant step pattern (e.g., "29" in [100,150,200,250,300])
+     * are removed by step-based filtering.
      */
     private fun filterAxisValues(values: List<Float>): List<Float> {
         if (values.size < 2) return values
@@ -394,27 +436,108 @@ actual class AxisOcrReader actual constructor() {
         if (unique.size < 2) return unique
 
         // Step 2: IQR-based outlier removal
-        // Sort for quartile calculation
         val sorted = unique.sorted()
         val q1 = sorted[sorted.size / 4]
         val q3 = sorted[(sorted.size * 3) / 4]
         val iqr = q3 - q1
 
-        // For very small IQR (all values close), use range-based check
         val range = sorted.last() - sorted.first()
         val threshold = if (iqr > 0) iqr * 3f else range * 0.5f
 
-        val filtered = if (threshold > 0) {
+        val afterIqr = if (threshold > 0) {
             unique.filter { v ->
                 v >= q1 - threshold && v <= q3 + threshold
             }
         } else {
-            unique // All same value
+            unique
         }
 
-        println("OCR[IQR] input=$unique, q1=$q1, q3=$q3, iqr=$iqr, threshold=$threshold, output=$filtered")
+        println("OCR[IQR] input=$unique, q1=$q1, q3=$q3, iqr=$iqr, threshold=$threshold, output=$afterIqr")
 
-        return if (filtered.size >= 2) filtered else unique
+        val iqrResult = if (afterIqr.size >= 2) afterIqr else unique
+
+        // Step 3: Step-based filter — detect dominant step and remove outliers
+        return filterByStep(iqrResult)
+    }
+
+    /**
+     * Remove values that don't fit the dominant step pattern.
+     *
+     * Real axis labels are evenly spaced: [100, 150, 200, 250, 300] → step=50.
+     * A noise value like "29" doesn't fit any multiple of 50 → remove it.
+     */
+    private fun filterByStep(values: List<Float>): List<Float> {
+        if (values.size < 3) return values
+
+        val sorted = values.sorted()
+
+        // Calculate all adjacent differences
+        val diffs = (1 until sorted.size).map { sorted[it] - sorted[it - 1] }
+
+        // Find dominant step: most common difference (with 10% tolerance)
+        val dominantStep = findDominantStep(diffs)
+        if (dominantStep <= 0f) return values
+
+        // Find the largest group of consecutive values sharing the dominant step.
+        // Don't assume sorted[0] is a good base — it could be noise (e.g., "2.0" from "2D").
+        val tolerance = dominantStep * 0.15f
+        
+        // Build compatibility groups: each group is a maximal set of step-compatible values
+        val groups = mutableListOf<MutableList<Float>>()
+        for (v in sorted) {
+            var added = false
+            for (group in groups) {
+                val fitsGroup = group.any { base ->
+                    val diff = kotlin.math.abs(v - base)
+                    val nearestMultiple = kotlin.math.round(diff / dominantStep) * dominantStep
+                    kotlin.math.abs(diff - nearestMultiple) < tolerance
+                }
+                if (fitsGroup) {
+                    group.add(v)
+                    added = true
+                    break
+                }
+            }
+            if (!added) {
+                groups.add(mutableListOf(v))
+            }
+        }
+
+        // Pick the largest group — these are the real axis labels
+        val bestGroup = groups.maxByOrNull { it.size } ?: return values
+        
+        // Log rejected values
+        val rejected = sorted.filter { it !in bestGroup }
+        for (v in rejected) {
+            println("OCR[STEP] rejected $v — doesn't fit step=$dominantStep (best group=${bestGroup.first()}..${bestGroup.last()})")
+        }
+
+        println("OCR[STEP] input=$sorted, step=$dominantStep, output=$bestGroup")
+        return if (bestGroup.size >= 2) bestGroup else values
+    }
+
+    /**
+     * Find the most common step size among differences.
+     * Groups similar diffs (within 10% tolerance) and returns the median of the largest group.
+     */
+    private fun findDominantStep(diffs: List<Float>): Float {
+        if (diffs.isEmpty()) return 0f
+        if (diffs.size == 1) return diffs[0]
+
+        val sorted = diffs.sorted()
+        // Group by similarity (10% tolerance)
+        val groups = mutableListOf(mutableListOf(sorted[0]))
+        for (i in 1 until sorted.size) {
+            val last = groups.last().last()
+            if (sorted[i] - last < last * 0.2f + 1f) {
+                groups.last().add(sorted[i])
+            } else {
+                groups.add(mutableListOf(sorted[i]))
+            }
+        }
+        // Return median of largest group
+        val largest = groups.maxByOrNull { it.size } ?: return 0f
+        return largest[largest.size / 2]
     }
 
     /**
