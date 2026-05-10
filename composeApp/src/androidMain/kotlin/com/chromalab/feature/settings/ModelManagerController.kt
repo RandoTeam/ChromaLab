@@ -3,6 +3,7 @@ package com.chromalab.feature.settings
 import android.content.Context
 import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
+import com.chromalab.feature.processing.inference.LiteRTEngine
 import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.model.ModelDownloader
@@ -121,10 +122,14 @@ class ModelManagerController(
                         llama
                     }
                     ModelRuntime.LITERT_LM -> {
-                        // LiteRT engine creation would go here
-                        // For now, just set active model without engine
-                        println("MODEL[CTRL] LiteRT engine not yet implemented")
-                        null
+                        val liteRT = LiteRTEngine()
+                        withContext(Dispatchers.IO) {
+                            liteRT.loadModel(
+                                modelPath = model.primaryPath,
+                                preferGpu = true,
+                            )
+                        }
+                        liteRT
                     }
                 }
 

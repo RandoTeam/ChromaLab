@@ -1,106 +1,133 @@
 package com.chromalab.feature.processing.inference
 
+import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Content
+import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.Engine
+import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.Message
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
- * LiteRT-LM inference engine for .litertlm models.
- * Uses Google's LiteRT-LM Kotlin API with NPU/GPU acceleration.
+ * LiteRT-LM inference engine for .litertlm models (Gemma 4, etc.).
+ * Uses Google's LiteRT-LM SDK v0.11.0 with GPU/CPU acceleration.
  *
- * Requires: com.google.ai.edge.litertlm:litertlm-android dependency.
+ * Supports multimodal inference: Content.ImageFile + Content.Text.
  *
- * Models: Gemma 4 E2B, Gemma 4 E4B from litert-community on HuggingFace.
+ * EngineConfig params verified from actual AAR bytecode (v0.11.0):
+ *   EngineConfig(modelPath, backend, visionBackend, audioBackend,
+ *                maxNumTokens, maxNumImages, cacheDir)
  */
 class LiteRTEngine : InferenceEngine {
 
-    // LiteRT-LM engine handle — initialized on loadModel()
-    // Using Any? to avoid compile error if dependency not yet resolved
-    private var engine: Any? = null
+    private var engine: Engine? = null
     private var backendName: String = "LiteRT CPU"
     private var loaded: Boolean = false
-
-    /**
-     * Supported LiteRT-LM backends.
-     */
-    enum class Backend { CPU, GPU, NPU }
 
     /**
      * Load a .litertlm model file.
      *
      * @param modelPath absolute path to .litertlm file
-     * @param backend acceleration backend to use
-     * @param context Android context for native library dir
+     * @param preferGpu try GPU backend, fall back to CPU if unavailable
      */
     suspend fun loadModel(
         modelPath: String,
-        backend: Backend = Backend.CPU,
-        nativeLibraryDir: String? = null,
+        preferGpu: Boolean = true,
     ) = withContext(Dispatchers.IO) {
-        try {
-            // Dynamic loading to avoid hard compile dependency during initial integration
-            // Will be replaced with direct API calls once LiteRT-LM dependency is added
-            println("LITERT[LOAD] Loading model: $modelPath, backend=$backend")
+        // Unload previous model if any
+        unload()
 
-            // TODO: Replace with actual LiteRT-LM API calls:
-            // val engineConfig = EngineConfig(
-            //     modelPath = modelPath,
-            //     backend = when (backend) {
-            //         Backend.NPU -> com.google.ai.edge.litertlm.Backend.NPU(nativeLibraryDir!!)
-            //         Backend.GPU -> com.google.ai.edge.litertlm.Backend.GPU()
-            //         Backend.CPU -> com.google.ai.edge.litertlm.Backend.CPU()
-            //     }
-            // )
-            // engine = Engine(engineConfig)
-            // engine.initialize()
+        println("LITERT[LOAD] Loading model: $modelPath, preferGpu=$preferGpu")
 
-            backendName = "LiteRT $backend"
-            loaded = true
-            println("LITERT[LOAD] Model loaded successfully")
-        } catch (e: Exception) {
-            println("LITERT[LOAD] Failed: ${e.message}")
-            loaded = false
-            throw e
-        }
+        val backend = if (preferGpu) Backend.GPU() else Backend.CPU()
+
+        // visionBackend must be set for multimodal (image) support
+        val engineConfig = EngineConfig(
+            modelPath,
+            backend,       // backend
+            backend,       // visionBackend — same as main for image processing
+            null,          // audioBackend
+            null,          // maxNumTokens
+            1,             // maxNumImages
+            null,          // cacheDir
+        )
+
+        val eng = Engine(engineConfig)
+        eng.initialize()
+
+        engine = eng
+        backendName = "LiteRT ${if (preferGpu) "GPU" else "CPU"}"
+        loaded = true
+        println("LITERT[LOAD] Model loaded ($backendName)")
     }
 
     override suspend fun analyzeChart(imagePath: String, prompt: String): ChartAnalysis {
-        check(loaded) { "LiteRT model not loaded. Call loadModel() first." }
+        val eng = engine
+        check(loaded && eng != null) { "LiteRT model not loaded" }
 
         return withContext(Dispatchers.IO) {
+            println("LITERT[INFER] Analyzing: $imagePath")
+
+            val conversation = eng.createConversation()
             try {
-                println("LITERT[INFER] Analyzing chart: $imagePath")
+                // Build multimodal contents: image + text
+                val imageFile = File(imagePath)
+                val contents: Contents = if (imageFile.exists()) {
+                    Contents.of(
+                        Content.ImageFile(imagePath),
+                        Content.Text(prompt),
+                    )
+                } else {
+                    println("LITERT[INFER] Image not found, text-only")
+                    Contents.of(Content.Text(prompt))
+                }
 
-                // TODO: Replace with actual LiteRT-LM API calls:
-                // val imageBytes = java.io.File(imagePath).readBytes()
-                // val conversation = (engine as Engine).createConversation()
-                // val response = conversation.sendMessage(listOf(
-                //     Content.Text(prompt),
-                //     Content.Image(data = imageBytes, mimeType = "image/jpeg")
-                // ))
-                // val responseText = response.text
-                // return@withContext ChartPrompts.parseResponse(responseText)
+                // Synchronous send — returns complete Message
+                val response: Message = conversation.sendMessage(contents)
 
-                // Placeholder until dependency is wired
-                println("LITERT[INFER] Engine not yet wired — returning empty result")
-                ChartAnalysis(
-                    xValues = emptyList(),
-                    yValues = emptyList(),
-                    confidence = 0f,
-                )
+                // Extract text from response
+                val responseText = extractText(response)
+                println("LITERT[INFER] Response: ${responseText.length} chars")
+                ChartPrompts.parseResponse(responseText)
             } catch (e: Exception) {
                 println("LITERT[INFER] Error: ${e.message}")
                 ChartAnalysis(xValues = emptyList(), yValues = emptyList(), confidence = 0f)
+            } finally {
+                // Conversation implements AutoCloseable
+                (conversation as? AutoCloseable)?.close()
             }
         }
+    }
+
+    /**
+     * Extract text content from a LiteRT-LM Message.
+     * The response Message.contents is a Contents object containing List<Content>.
+     * We concatenate all Content.Text entries.
+     */
+    private fun extractText(message: Message): String {
+        val contentList = message.contents.contents
+        val sb = StringBuilder()
+        for (item in contentList) {
+            if (item is Content.Text) {
+                sb.append(item.text)
+            }
+        }
+        return sb.toString()
     }
 
     override fun isLoaded(): Boolean = loaded
 
     override fun unload() {
-        // TODO: engine?.close() or similar cleanup
+        try {
+            engine?.close()
+        } catch (e: Exception) {
+            println("LITERT[UNLOAD] Error: ${e.message}")
+        }
         engine = null
         loaded = false
-        println("LITERT[UNLOAD] Model unloaded")
+        println("LITERT[UNLOAD] Unloaded")
     }
 
     override fun getBackendName(): String = backendName

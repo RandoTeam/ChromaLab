@@ -75,7 +75,4 @@ kotlin {
 dependencies {
     implementation(project(":composeApp"))
     implementation(libs.activity.compose)
-
-    // LiteRT-LM — Google's on-device GenAI runtime
-    implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
 }
