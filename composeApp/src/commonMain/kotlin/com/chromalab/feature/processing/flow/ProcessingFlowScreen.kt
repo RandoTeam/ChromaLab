@@ -32,7 +32,7 @@ import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.graph.GraphRoiEditorScreen
 import com.chromalab.feature.processing.graph.GraphSelectionScreen
-import com.chromalab.feature.processing.ocr.AxisOcrReader
+import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrSuggestionScreen
 import com.chromalab.feature.processing.perspective.PerspectiveCorrectionResult
@@ -111,7 +111,7 @@ fun ProcessingFlowScreen(
     val preprocessor = remember { ImagePreprocessor() }
     val graphDetector = remember { GraphRegionDetector() }
     val axisDetector = remember { AxisDetector() }
-    val ocrReader = remember { AxisOcrReader() }
+    val chartReader = remember { ChartAnalysisReader() }
     val curveMaskPreparer = remember { CurveMaskPreparer() }
     val curveExtractor = remember { CurveExtractor() }
 
@@ -268,7 +268,7 @@ fun ProcessingFlowScreen(
                         if (ocrResult != null) {
                             println("PIPELINE[OCR] using sweep result: x=${ocrResult?.suggestedXValues?.size} values, y=${ocrResult?.suggestedYValues?.size} values")
                         } else {
-                            ocrResult = ocrReader.readAxisLabels(currentImagePath, selectedRegion)
+                            ocrResult = chartReader.readAxisLabels(currentImagePath, selectedRegion)
                             println("PIPELINE[OCR] fallback: x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
                         }
                     }

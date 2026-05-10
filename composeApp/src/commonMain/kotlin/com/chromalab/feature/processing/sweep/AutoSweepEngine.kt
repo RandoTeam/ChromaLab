@@ -3,7 +3,7 @@ package com.chromalab.feature.processing.sweep
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
-import com.chromalab.feature.processing.ocr.AxisOcrReader
+import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
 import com.chromalab.feature.processing.preprocess.PreprocessingParams
@@ -155,7 +155,7 @@ class AutoSweepEngine {
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
         val graphDetector = GraphRegionDetector()
-        val ocrReader = AxisOcrReader()
+        val ocrReader = ChartAnalysisReader()
         val axisDetector = AxisDetector()
         val curveMaskPreparer = CurveMaskPreparer()
         val curveExtractor = CurveExtractor()
