@@ -56,13 +56,33 @@ actual class CurveMaskPreparer actual constructor() {
                 0.114 * (p and 0xFF)).toInt()
         }
         // --- Dual-strategy mask ---
-        // Strategy 1: Canny edge detection (best for photos — thin, precise edges)
-        val cannyMask = cannyEdges(gray, w, h, lowThreshold = 20, highThreshold = 50)
+        // Strategy 1: Canny edge detection with adaptive thresholds
+        // If too many edges (>15%), raise thresholds to reduce noise
+        var low = 20
+        var high = 50
+        var cannyMask = cannyEdges(gray, w, h, lowThreshold = low, highThreshold = high)
+        var cannyCount = cannyMask.count { it }
+        val totalPixels = w * h
+        var cannyPercent = cannyCount * 100 / totalPixels
+        println("MASK[1-CANNY] pixels=$cannyCount / $totalPixels ($cannyPercent%) thresholds=$low/$high")
+
+        // Adaptive: if too noisy, raise thresholds
+        while (cannyPercent > 15 && high < 200) {
+            low += 15
+            high += 25
+            cannyMask = cannyEdges(gray, w, h, lowThreshold = low, highThreshold = high)
+            cannyCount = cannyMask.count { it }
+            cannyPercent = cannyCount * 100 / totalPixels
+            println("MASK[1-CANNY-RETRY] pixels=$cannyCount ($cannyPercent%) thresholds=$low/$high")
+        }
+
         // Dilate Canny edges by 1px to form connected curve
         dilate(cannyMask, w, h)
+        println("MASK[1-DILATE] pixels=${cannyMask.count { it }}")
 
         // Strategy 2: Adaptive threshold (good for high-contrast scans)
         val adaptiveMask = adaptiveThreshold(gray, w, h, blockSize = 31, c = 10)
+        println("MASK[2-ADAPTIVE] pixels=${adaptiveMask.count { it }}")
 
         // Combine: use Canny as primary (less noise), add adaptive where Canny found edges
         // This catches the curve strongly while ignoring faint background noise
@@ -70,6 +90,7 @@ actual class CurveMaskPreparer actual constructor() {
             cannyMask[i] || (adaptiveMask[i] && hasNeighbor(cannyMask, w, h, i % w, i / w, radius = 3))
         }
         val rawCount = rawMask.count { it }
+        println("MASK[3-COMBINED] pixels=$rawCount")
 
         // Save raw mask
         val dir = File(outputDir).also { it.mkdirs() }
@@ -84,23 +105,28 @@ actual class CurveMaskPreparer actual constructor() {
         if (axes.xAxis != null || axes.yAxis != null) {
             suppressAxes(cleanMask, w, h, axes, graphRegion)
             suppressions.add("axes")
+            println("MASK[4-AXES] pixels=${cleanMask.count { it }}")
         }
 
         // Pass 2: Suppress grid lines (lowered threshold for partial grid)
         val gridSuppressed = suppressGrid(cleanMask, w, h)
         if (gridSuppressed) suppressions.add("grid")
+        println("MASK[5-GRID] pixels=${cleanMask.count { it }}, suppressed=$gridSuppressed")
 
         // Pass 3: Morphological opening (erode→dilate) to break thin connections
         morphologicalOpen(cleanMask, w, h, radius = 1)
         suppressions.add("morph_open")
+        println("MASK[6-MORPH] pixels=${cleanMask.count { it }}")
 
         // Pass 4: Suppress text blobs (larger max — text chars are big)
-        val textSuppressed = suppressSmallBlobs(cleanMask, w, h, minSize = 3, maxSize = 2000)
+        val textSuppressed = suppressSmallBlobs(cleanMask, w, h, minSize = 3, maxSize = 150)
         if (textSuppressed) suppressions.add("text_blobs")
+        println("MASK[7-BLOBS] pixels=${cleanMask.count { it }}, suppressed=$textSuppressed")
 
         // Pass 5: Keep only the largest connected component (the signal curve)
         keepLargestComponent(cleanMask, w, h)
         suppressions.add("largest_component")
+        println("MASK[8-LARGEST] pixels=${cleanMask.count { it }}")
 
         val cleanCount = cleanMask.count { it }
         val cleanPath = File(dir, "mask_clean.png").absolutePath
@@ -205,7 +231,7 @@ actual class CurveMaskPreparer actual constructor() {
      */
     private fun suppressGrid(mask: BooleanArray, w: Int, h: Int): Boolean {
         var suppressed = false
-        val lineThreshold = 0.25f // Row/col with >25% dark pixels is likely a grid line
+        val lineThreshold = 0.70f // Row/col with >70% pixels is a grid line (was 25% — too aggressive)
 
         // Horizontal grid lines
         for (y in 0 until h) {
@@ -286,7 +312,7 @@ actual class CurveMaskPreparer actual constructor() {
             }
 
             // Cap to prevent runaway on huge components
-            if (count > 5000) break
+            if (count > 100000) break
         }
         return count
     }

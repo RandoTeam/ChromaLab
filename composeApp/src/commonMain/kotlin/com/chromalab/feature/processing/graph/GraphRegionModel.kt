@@ -54,7 +54,11 @@ data class GraphRegionResult(
     val timestamp: Long,
 ) {
     val selectedRegion: GraphRegion?
-        get() = regions.getOrNull(selectedIndex)
+        get() {
+            if (regions.isEmpty()) return null
+            // Always select the largest region by area — the main graph
+            return regions.maxByOrNull { it.width.toLong() * it.height.toLong() }
+        }
 
     /** Always true — we never block the user */
     val canProceed: Boolean get() = true

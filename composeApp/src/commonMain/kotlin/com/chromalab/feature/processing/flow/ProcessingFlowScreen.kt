@@ -169,6 +169,7 @@ fun ProcessingFlowScreen(
                             }
                         }
                         qualityReport = qualityAnalyzer.analyze(currentImagePath)
+                        println("PIPELINE[IMAGE_QUALITY] done: blur=${qualityReport?.blurScore?.score}")
                     }
 
                     ProcessingStep.CROP_REVIEW -> {
@@ -177,6 +178,7 @@ fun ProcessingFlowScreen(
                             // Auto-pipeline: skip document detection
                             // ML Kit images are pre-cropped, gallery images are user-selected
                             cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
+                            println("PIPELINE[CROP] skip: using image as-is, w=$imageWidth h=$imageHeight")
                         }
                     }
 
@@ -186,6 +188,7 @@ fun ProcessingFlowScreen(
                             perspectiveResult = fallbackPerspectiveResult(
                                 currentImagePath, imageWidth, imageHeight,
                             )
+                            println("PIPELINE[PERSPECTIVE] skip")
                         }
                     }
 
@@ -201,12 +204,14 @@ fun ProcessingFlowScreen(
                             val h = imageHeight.takeIf { it > 0 } ?: 1080
                             graphResult = graphDetector.detect(currentImagePath, w, h)
                             graphResult?.selectedRegion?.let { selectedRegion = it }
+                            println("PIPELINE[GRAPH] regions=${graphResult?.regions?.size}, confidence=${graphResult?.confidence}, selected=${selectedRegion}")
                         }
                     }
 
                     ProcessingStep.AXIS_DETECTION -> {
                         if (axesResult == null) {
                             axesResult = axisDetector.detect(currentImagePath, selectedRegion)
+                            println("PIPELINE[AXES] xAxis=${axesResult?.xAxis != null}, yAxis=${axesResult?.yAxis != null}, origin=${axesResult?.origin}, confidence=${axesResult?.confidence}")
                         }
                     }
 
@@ -215,6 +220,7 @@ fun ProcessingFlowScreen(
                             ocrResult = ocrReader.readAxisLabels(
                                 currentImagePath, selectedRegion,
                             )
+                            println("PIPELINE[OCR] xValues=${ocrResult?.suggestedXValues}, yValues=${ocrResult?.suggestedYValues}, xUnit=${ocrResult?.xUnit}, yUnit=${ocrResult?.yUnit}")
                         }
                     }
 
@@ -308,32 +314,48 @@ fun ProcessingFlowScreen(
                     }
 
                     ProcessingStep.CURVE_EXTRACTION -> {
-                        if (curveExtractionResult == null && axesResult != null) {
-                            // Use preprocessed binary image for mask preparation
-                            val inputForMask = preprocessingResult?.binaryPath ?: currentImagePath
+                        if (curveExtractionResult == null) {
+                            // Use fallback axes if axis detection failed
+                            if (axesResult == null) {
+                                axesResult = fallbackAxesResult()
+                                println("PIPELINE[CURVE] using fallback axes")
+                            }
+                            // Use ORIGINAL image for mask preparation.
+                            // CurveMaskPreparer does its own grayscale + Canny edge detection.
+                            // Feeding it binary.jpg is wrong — Canny on binary image
+                            // finds edges of threshold blobs, not the actual signal curve.
+                            val inputForMask = currentImagePath
+                            println("PIPELINE[CURVE] input=$inputForMask, region=$selectedRegion")
                             val mask = curveMaskPreparer.prepare(
                                 inputForMask, selectedRegion,
                                 axesResult!!, outputDir,
                             )
+                            println("PIPELINE[CURVE] mask: raw=${mask.rawMaskPath}, clean=${mask.cleanMaskPath}")
                             val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: inputForMask
                             curveExtractionResult = curveExtractor.extract(
                                 maskPath, selectedRegion.width,
                                 selectedRegion.height, outputDir,
                             )
                             curvePoints = curveExtractionResult?.points ?: emptyList()
+                            println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")
                         }
                     }
 
                     ProcessingStep.SIGNAL_PREVIEW -> {
-                        if (smoothedSignal == null && curvePoints.isNotEmpty()) {
-                            // Build or use fallback identity calibration
-                            val cal = pixelCalibration ?: fallbackCalibration(
-                                imageWidth, imageHeight,
-                            )
-                            val signal = SignalConverter.convert(
-                                curvePoints, cal, currentImagePath,
-                            )
-                            smoothedSignal = SignalSmoother.smooth(signal)
+                        if (smoothedSignal == null) {
+                            println("PIPELINE[SIGNAL] curvePoints=${curvePoints.size}, pixelCal=${pixelCalibration != null}")
+                            if (curvePoints.isNotEmpty()) {
+                                val cal = pixelCalibration ?: fallbackCalibration(
+                                    imageWidth, imageHeight,
+                                )
+                                val signal = SignalConverter.convert(
+                                    curvePoints, cal, currentImagePath,
+                                )
+                                smoothedSignal = SignalSmoother.smooth(signal)
+                                println("PIPELINE[SIGNAL] done: points=${smoothedSignal?.smoothed?.points?.size}")
+                            } else {
+                                println("PIPELINE[SIGNAL] FAILED: no curve points!")
+                            }
                         }
                     }
 
