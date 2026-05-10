@@ -1,13 +1,18 @@
 package com.chromalab.feature.calculation.flow
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.core.data.DatabaseProvider
@@ -18,6 +23,7 @@ import com.chromalab.feature.processing.signal.SignalMetadata
 import com.chromalab.feature.calculation.core.CalculationEngine
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.CalculationParams
+import com.chromalab.feature.calculation.ui.ChromatogramChart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -244,102 +250,254 @@ private fun AnalysisStepContent(
     calculationRun: CalculationRun?,
     peaksFound: Boolean,
 ) {
+    // Layer visibility state — persisted across steps
+    var visibleLayers by remember {
+        mutableStateOf(setOf("raw", "corrected"))
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(Spacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
     ) {
+        // Step title
         Text(
             step.label,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        Spacer(modifier = Modifier.height(Spacing.sm))
+        Spacer(modifier = Modifier.height(Spacing.xs))
 
-        // Show signal summary on first step, placeholder on others
         when {
-            step == AnalysisStep.SIGNAL_OVERVIEW -> {
-                if (loadError != null) {
+            // Error state
+            loadError != null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         loadError,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
-                } else if (signal != null) {
-                    Text(
-                        "Точек: ${signal.points.size}",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        "Время: ${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
-                            "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(
-                        "Интенсивность: ${"%.1f".format(signal.minIntensity)} — " +
-                            "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                } else {
-                    CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Text("Загрузка сигнала...")
                 }
             }
-            // Show calculation results on steps after peak detection
-            step.index >= AnalysisStep.PEAK_REVIEW.index && calculationRun != null -> {
-                val run = calculationRun
-                Text(
-                    "Пиков найдено: ${run.peaks.size}",
-                    style = MaterialTheme.typography.bodyMedium,
+
+            // Loading state
+            signal == null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        Text("Загрузка сигнала...")
+                    }
+                }
+            }
+
+            // Signal loaded — show chart
+            else -> {
+                // Build chart state based on current step
+                val chartState = remember(calculationRun, visibleLayers, peaksFound) {
+                    if (calculationRun != null) {
+                        CalculationToChartMapper.buildChartState(
+                            run = calculationRun,
+                            visibleLayers = visibleLayers,
+                        )
+                    } else {
+                        CalculationToChartMapper.buildRawChartState(signal)
+                    }
+                }
+
+                // Chart — fills most of the space
+                ChromatogramChart(
+                    state = chartState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 )
-                if (run.peaks.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(Spacing.xs))
-                    run.peaks.take(5).forEach { peak ->
-                        Text(
-                            "#${peak.peakId}: RT=${"%.3f".format(peak.rtApex)}  " +
-                                "H=${"%.1f".format(peak.height)}  " +
-                                "S=${"%.1f".format(peak.area)}",
-                            style = MaterialTheme.typography.bodySmall,
+
+                Spacer(modifier = Modifier.height(Spacing.sm))
+
+                // Step-specific bottom content
+                when (step) {
+                    AnalysisStep.SIGNAL_OVERVIEW -> {
+                        // Signal summary card
+                        SignalSummaryCard(signal)
+                    }
+
+                    AnalysisStep.LAYER_SELECTION -> {
+                        // Layer toggle chips
+                        LayerToggleChips(
+                            hasSmoothed = calculationRun?.signals?.smoothed != null,
+                            hasBaseline = calculationRun?.signals?.baseline != null,
+                            hasCorrected = calculationRun?.signals?.baselineCorrected != null,
+                            visibleLayers = visibleLayers,
+                            onToggle = { layerId ->
+                                visibleLayers = if (layerId in visibleLayers) {
+                                    visibleLayers - layerId
+                                } else {
+                                    visibleLayers + layerId
+                                }
+                            },
                         )
                     }
-                    if (run.peaks.size > 5) {
+
+                    AnalysisStep.PEAK_DETECTION -> {
+                        if (peaksFound && calculationRun != null) {
+                            Text(
+                                "Найдено пиков: ${calculationRun.peaks.size}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        } else {
+                            Text(
+                                "Нажмите «Найти пики» для запуска анализа",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    AnalysisStep.NOISE_BASELINE -> {
                         Text(
-                            "… ещё ${run.peaks.size - 5}",
-                            style = MaterialTheme.typography.labelSmall,
+                            "Выберите noise region, смените baseline method",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+
+                    else -> {
+                        // PEAK_REVIEW, PEAK_CORRECTION, RESULTS, EXPORT
+                        // handled by Phases 10-12
+                        if (calculationRun != null && calculationRun.peaks.isNotEmpty()) {
+                            Text(
+                                "Пиков: ${calculationRun.peaks.size}  ·  " +
+                                    "Σ Area: ${"%.0f".format(calculationRun.peaks.sumOf { it.area })}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
-                if (run.warnings.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Text(
-                        "Предупреждений: ${run.warnings.size}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                }
-            }
-            else -> {
+
+                // Signal ID footer
                 Text(
-                    stepDescription(step, peaksFound),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "Signal ID: ${signalId.toLongOrNull() ?: "—"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(top = Spacing.xs),
                 )
             }
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(Spacing.xs))
+// ─── Signal Summary Card ────────────────────────────────────────
 
+@Composable
+private fun SignalSummaryCard(signal: DigitalSignal) {
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            SummaryRow("Точек", "${signal.points.size}")
+            SummaryRow(
+                "Время",
+                "${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
+                    "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
+            )
+            SummaryRow(
+                "Интенсивность",
+                "${"%.1f".format(signal.minIntensity)} — " +
+                    "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
+            )
+        }
+    }
+}
+
+@Composable
+private fun SummaryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
         Text(
-            "Signal ID: ${signalId.toLongOrNull() ?: "—"}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline,
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
         )
     }
+}
+
+// ─── Layer Toggle Chips ─────────────────────────────────────────
+
+@Composable
+private fun LayerToggleChips(
+    hasSmoothed: Boolean,
+    hasBaseline: Boolean,
+    hasCorrected: Boolean,
+    visibleLayers: Set<String>,
+    onToggle: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(
+            "Слои сигнала",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            LayerChip("Raw", "raw", Color(0xFF42A5F5), visibleLayers, onToggle)
+            if (hasSmoothed) {
+                LayerChip("Smoothed", "smoothed", Color(0xFF80DEEA), visibleLayers, onToggle)
+            }
+            if (hasBaseline) {
+                LayerChip("Baseline", "baseline", Color(0xFF9E9E9E), visibleLayers, onToggle)
+            }
+            if (hasCorrected) {
+                LayerChip("Corrected", "corrected", Color(0xFF66BB6A), visibleLayers, onToggle)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LayerChip(
+    label: String,
+    layerId: String,
+    color: Color,
+    visibleLayers: Set<String>,
+    onToggle: (String) -> Unit,
+) {
+    FilterChip(
+        selected = layerId in visibleLayers,
+        onClick = { onToggle(layerId) },
+        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+        leadingIcon = {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(
+                        color = if (layerId in visibleLayers) color else color.copy(alpha = 0.3f),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                    ),
+            )
+        },
+    )
 }
 
 private fun stepDescription(step: AnalysisStep, peaksFound: Boolean): String = when (step) {
@@ -354,3 +512,4 @@ private fun stepDescription(step: AnalysisStep, peaksFound: Boolean): String = w
     AnalysisStep.RESULTS -> "Таблица пиков — метрики пересчитаны"
     AnalysisStep.EXPORT -> "Сохранение CalculationRun и экспорт CSV/JSON"
 }
+
