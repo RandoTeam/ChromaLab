@@ -35,6 +35,7 @@ import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
 import com.chromalab.feature.calculation.screen.ExportCalculationScreen
 import com.chromalab.feature.calculation.algorithm.DistributionAnalyzer
+import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -193,7 +194,11 @@ fun AnalysisFlowScreen(
                                         }
                                         // Attach extended analytics
                                         val dist = DistributionAnalyzer.analyze(run.peaks)
-                                        calculationRun = run.copy(distribution = dist)
+                                        val patt = PatternAnalyzer.analyze(run.peaks, run.signals)
+                                        calculationRun = run.copy(
+                                            distribution = dist,
+                                            pattern = patt,
+                                        )
                                         peaksFound = true
                                     } catch (e: Exception) {
                                         e.printStackTrace()

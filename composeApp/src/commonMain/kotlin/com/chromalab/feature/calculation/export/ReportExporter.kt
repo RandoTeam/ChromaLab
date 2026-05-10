@@ -157,7 +157,23 @@ object ReportExporter {
                 appendLine("</section>")
             }
 
-            // Section 6: Parameters
+            // Section 6: Pattern Analysis (Phase 14)
+            run.pattern?.let { patt ->
+                appendLine("<section>")
+                appendLine("<h2>Анализ паттернов</h2>")
+                appendLine("<table class=\"summary\">")
+                summaryRow("Гомологический ряд", "${patt.homologousSeries.confidence.name} — ${escHtml(patt.homologousSeries.interpretation)}")
+                summaryRow("Огибающая", "${patt.envelope.shape.name} — ${escHtml(patt.envelope.interpretation)}")
+                summaryRow("UCM", "${"%.0f".format(patt.ucm.ucmRatio * 100)}% — ${escHtml(patt.ucm.interpretation)}")
+                summaryRow("Кластеры", escHtml(patt.clusters.interpretation))
+                patt.oddEvenRatio?.let { oe ->
+                    summaryRow("Чёт/нечёт ratio", "${"%.2f".format(oe.ratio)} — ${escHtml(oe.interpretation)}")
+                }
+                appendLine("</table>")
+                appendLine("</section>")
+            }
+
+            // Section 7: Parameters
             appendLine("<section>")
             appendLine("<h2>Параметры алгоритма</h2>")
             appendLine("<table class=\"summary\">")

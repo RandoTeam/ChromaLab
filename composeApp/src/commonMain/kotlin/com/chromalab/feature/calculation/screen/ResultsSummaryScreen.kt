@@ -29,6 +29,9 @@ import com.chromalab.feature.calculation.core.WarningSeverity
 import com.chromalab.feature.calculation.flow.CalculationToChartMapper
 import com.chromalab.feature.calculation.algorithm.DistributionResult
 import com.chromalab.feature.calculation.algorithm.MetricValue
+import com.chromalab.feature.calculation.algorithm.PatternResult
+import com.chromalab.feature.calculation.algorithm.SeriesConfidence
+import com.chromalab.feature.calculation.algorithm.EnvelopeShape
 import com.chromalab.feature.calculation.ui.ChromatogramChart
 
 /**
@@ -77,7 +80,12 @@ fun ResultsSummaryScreen(
             DistributionSection(dist)
         }
 
-        // Section 7: Parameters (expandable)
+        // Section 7: Pattern analysis (Phase 14)
+        run.pattern?.let { patt ->
+            PatternSection(patt)
+        }
+
+        // Section 8: Parameters (expandable)
         ParametersSection(run)
 
         Spacer(modifier = Modifier.height(Spacing.lg))
@@ -469,7 +477,116 @@ private fun MetricRow(metric: MetricValue) {
     }
 }
 
-// ─── Section 7: Parameters ──────────────────────────────────────
+// ─── Section 7: Pattern Analysis ────────────────────────────────
+
+@Composable
+private fun PatternSection(patt: PatternResult) {
+    SectionHeader("Анализ паттернов")
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            // 1. Homologous series
+            val seriesColor = when (patt.homologousSeries.confidence) {
+                SeriesConfidence.HIGH -> Color(0xFF4CAF50)
+                SeriesConfidence.MEDIUM -> Color(0xFFFFA726)
+                SeriesConfidence.NONE -> MaterialTheme.colorScheme.outline
+            }
+            val seriesIcon = when (patt.homologousSeries.confidence) {
+                SeriesConfidence.HIGH -> "✅"
+                SeriesConfidence.MEDIUM -> "⚠️"
+                SeriesConfidence.NONE -> "❌"
+            }
+            PatternItem(
+                icon = seriesIcon,
+                title = "Гомологический ряд: ${patt.homologousSeries.confidence.name}",
+                titleColor = seriesColor,
+                detail = patt.homologousSeries.interpretation,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // 2. Envelope
+            val envelopeIcon = when (patt.envelope.shape) {
+                EnvelopeShape.UNIMODAL -> "🔔"
+                EnvelopeShape.BIMODAL -> "🐫"
+                EnvelopeShape.FLAT -> "📏"
+                EnvelopeShape.DECREASING -> "📉"
+            }
+            PatternItem(
+                icon = envelopeIcon,
+                title = "Огибающая: ${patt.envelope.shape.name}",
+                detail = patt.envelope.interpretation,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // 3. UCM
+            val ucmPct = (patt.ucm.ucmRatio * 100).toInt()
+            PatternItem(
+                icon = if (ucmPct > 30) "🌊" else "✓",
+                title = "UCM (неразреш. смесь): $ucmPct%",
+                detail = patt.ucm.interpretation,
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // 4. Clusters
+            PatternItem(
+                icon = "📊",
+                title = "Кластеры: ${patt.clusters.clusterCount} групп, ${patt.clusters.isolatedCount} изолир.",
+                detail = patt.clusters.interpretation,
+            )
+
+            // 5. Odd/even (only if homologous series detected)
+            patt.oddEvenRatio?.let { oe ->
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                PatternItem(
+                    icon = "⚖️",
+                    title = "Чёт/нечёт: ratio=${"%.2f".format(oe.ratio)}",
+                    detail = oe.interpretation,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PatternItem(
+    icon: String,
+    title: String,
+    detail: String,
+    titleColor: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        Text(icon, style = MaterialTheme.typography.bodyMedium)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = titleColor,
+            )
+            Text(
+                detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        }
+    }
+}
+
+// ─── Section 8: Parameters ──────────────────────────────────────
 
 @Composable
 private fun ParametersSection(run: CalculationRun) {
