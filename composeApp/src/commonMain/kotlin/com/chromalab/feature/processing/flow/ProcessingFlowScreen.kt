@@ -233,13 +233,38 @@ fun ProcessingFlowScreen(
                             val origin = axes?.origin
 
                             if (xValues.size >= 2) {
-                                // OCR found axis values â†’ use first and last
                                 val sorted = xValues.sorted()
                                 val minVal = sorted.first()
                                 val maxVal = sorted.last()
-                                // Map pixels: origin X â†’ minVal, right edge â†’ maxVal
-                                val px1 = origin?.x ?: 0f
-                                val px2 = (selectedRegion.x + selectedRegion.width).toFloat()
+
+                                // Find OCR elements with matching values to get pixel positions
+                                val rawElems = ocr?.rawElements ?: emptyList()
+                                val xElems = rawElems
+                                    .filter { it.numericValue != null && it.numericValue in sorted }
+                                    .sortedBy { it.numericValue }
+
+                                val firstElem = xElems.firstOrNull { it.numericValue == minVal }
+                                val lastElem = xElems.lastOrNull { it.numericValue == maxVal }
+
+                                // Use center of OCR bounding box for precision
+                                // Convert from full-image coords to graphRegion-relative coords
+                                // (CurvePoints are in region-relative coords: 0..graphRegion.width)
+                                val regionX = selectedRegion.x.toFloat()
+
+                                val px1 = if (firstElem != null) {
+                                    (firstElem.x + firstElem.width / 2f) - regionX
+                                } else {
+                                    // Fallback: origin relative to region
+                                    (origin?.x ?: regionX) - regionX
+                                }
+                                val px2 = if (lastElem != null) {
+                                    (lastElem.x + lastElem.width / 2f) - regionX
+                                } else {
+                                    selectedRegion.width.toFloat()
+                                }
+
+                                println("PIPELINE[X_CAL] OCR-based: px1=$px1→$minVal, px2=$px2→$maxVal (regionX=$regionX)")
+
                                 xCalibration = XAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
                                         point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, minVal),
@@ -249,12 +274,11 @@ fun ProcessingFlowScreen(
                                     timestamp = System.currentTimeMillis(),
                                 )
                             } else {
-                                // No OCR â†’ identity calibration (pixels)
-                                val px1 = origin?.x ?: 0f
+                                // No OCR → identity calibration (pixels)
                                 val px2 = selectedRegion.width.toFloat()
                                 xCalibration = XAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, 0f),
+                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, 0f),
                                         point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, px2),
                                     ),
                                     unit = "px",
@@ -274,21 +298,45 @@ fun ProcessingFlowScreen(
 
                             if (yValues.size >= 2) {
                                 val sorted = yValues.sorted()
-                                val minVal = sorted.first()
                                 val maxVal = sorted.last()
-                                // Y axis: pixel 0 = top (maxVal), pixel H = bottom (minVal)
-                                val py1 = 0f
-                                val py2 = origin?.y ?: selectedRegion.height.toFloat()
+
+                                // Find OCR element for the highest Y value to get its pixel position
+                                val rawElems = ocr?.rawElements ?: emptyList()
+                                val topElem = rawElems
+                                    .filter { it.numericValue == maxVal }
+                                    .minByOrNull { it.y } // highest on screen = smallest y
+
+                                // Convert to graphRegion-relative coords
+                                val regionY = selectedRegion.y.toFloat()
+
+                                // Top of Y scale: position of highest OCR label
+                                val py1 = if (topElem != null) {
+                                    (topElem.y + topElem.height / 2f) - regionY
+                                } else {
+                                    0f
+                                }
+
+                                // Bottom of Y scale: origin = zero line
+                                // origin.y is in full-image coords, convert to region-relative
+                                val py2 = if (origin != null) {
+                                    origin.y - regionY
+                                } else {
+                                    selectedRegion.height.toFloat()
+                                }
+
+                                // Y axis: py1 (top, small pixel) → maxVal, py2 (bottom, origin) → 0
+                                println("PIPELINE[Y_CAL] OCR-based: py1=$py1→$maxVal, py2=$py2→0 (regionY=$regionY)")
+
                                 yCalibration = YAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
                                         point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(py1, maxVal),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(py2, minVal),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(py2, 0f),
                                     ),
                                     unit = ocr?.yUnit ?: "mAU",
                                     timestamp = System.currentTimeMillis(),
                                 )
                             } else {
-                                // No OCR â†’ identity (pixels, inverted)
+                                // No OCR → identity (pixels, inverted)
                                 val fh = selectedRegion.height.toFloat()
                                 yCalibration = YAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
@@ -306,8 +354,9 @@ fun ProcessingFlowScreen(
                                 pixelCalibration = PixelCalibration.from(
                                     xAxis = xCal,
                                     yAxis = yCalibration!!,
-                                    originPixelX = origin?.x ?: 0f,
-                                    originPixelY = origin?.y ?: imageHeight.toFloat(),
+                                    // Convert origin to region-relative coords
+                                    originPixelX = (origin?.x ?: selectedRegion.x.toFloat()) - selectedRegion.x.toFloat(),
+                                    originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) - selectedRegion.y.toFloat(),
                                 )
                             }
                         }
