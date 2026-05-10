@@ -56,8 +56,10 @@ data class GraphRegionResult(
     val selectedRegion: GraphRegion?
         get() {
             if (regions.isEmpty()) return null
-            // Always select the largest region by area — the main graph
-            return regions.maxByOrNull { it.width.toLong() * it.height.toLong() }
+            // Select topmost region that looks like a real graph
+            // Skip thin strips (text headers, axis labels) — aspect ratio > 5:1
+            val graphs = sortedRegions.filter { it.width.toFloat() / it.height.coerceAtLeast(1) < 5f }
+            return graphs.firstOrNull() ?: sortedRegions.first()
         }
 
     /** Regions sorted top-to-bottom (by Y coordinate) — natural reading order */
