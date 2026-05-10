@@ -15,8 +15,9 @@ enum class AutoAdvancePolicy {
 /**
  * Processing pipeline steps — the ordered flow through Phase 1.
  *
- * Step order: OCR is moved BEFORE calibration so that OCR results
- * can pre-fill the calibration fields.
+ * Auto-advance policy: ALL steps auto-advance.
+ * The pipeline runs fully automatically from photo to results.
+ * User only stops at EXPORT to see the final dashboard.
  */
 enum class ProcessingStep(
     val index: Int,
@@ -26,17 +27,17 @@ enum class ProcessingStep(
     IMAGE_QUALITY(0, "Качество фото", AutoAdvancePolicy.ALWAYS),
     CROP_REVIEW(1, "Обрезка", AutoAdvancePolicy.ALWAYS),
     PERSPECTIVE(2, "Перспектива", AutoAdvancePolicy.ALWAYS),
-    GRAPH_SELECTION(3, "Область графика", AutoAdvancePolicy.IF_CONFIDENT),
-    GRAPH_ROI(4, "ROI графика", AutoAdvancePolicy.IF_CONFIDENT),
+    GRAPH_SELECTION(3, "Область графика", AutoAdvancePolicy.ALWAYS),
+    GRAPH_ROI(4, "ROI графика", AutoAdvancePolicy.ALWAYS),
     AXIS_DETECTION(5, "Определение осей", AutoAdvancePolicy.ALWAYS),
     OCR_SUGGESTION(6, "OCR осей", AutoAdvancePolicy.ALWAYS),
-    X_CALIBRATION(7, "Калибровка X", AutoAdvancePolicy.NEVER),
-    Y_CALIBRATION(8, "Калибровка Y", AutoAdvancePolicy.NEVER),
+    X_CALIBRATION(7, "Калибровка X", AutoAdvancePolicy.ALWAYS),
+    Y_CALIBRATION(8, "Калибровка Y", AutoAdvancePolicy.ALWAYS),
     CURVE_EXTRACTION(9, "Извлечение кривой", AutoAdvancePolicy.ALWAYS),
-    CURVE_EDITOR(10, "Коррекция кривой", AutoAdvancePolicy.IF_CONFIDENT),
-    SIGNAL_PREVIEW(11, "Цифровой график", AutoAdvancePolicy.NEVER),
-    QUALITY_REPORT(12, "Качество оцифровки", AutoAdvancePolicy.NEVER),
-    EXPORT(13, "Экспорт", AutoAdvancePolicy.NEVER),
+    CURVE_EDITOR(10, "Коррекция кривой", AutoAdvancePolicy.ALWAYS),
+    SIGNAL_PREVIEW(11, "Цифровой график", AutoAdvancePolicy.ALWAYS),
+    QUALITY_REPORT(12, "Качество оцифровки", AutoAdvancePolicy.ALWAYS),
+    EXPORT(13, "Результат", AutoAdvancePolicy.NEVER),
     ;
 
     val totalSteps: Int get() = entries.size

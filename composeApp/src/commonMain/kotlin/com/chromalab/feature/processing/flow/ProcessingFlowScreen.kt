@@ -101,7 +101,7 @@ fun ProcessingFlowScreen(
         imagePath.substringBeforeLast(sep)
     }
 
-    // Platform processors — instantiated once
+    // Platform processors â€” instantiated once
     val qualityAnalyzer = remember { ImageQualityAnalyzer() }
     val imageCropper = remember { ImageCropper() }
     val imageNormalizer = remember { ImageNormalizer() }
@@ -176,11 +176,11 @@ fun ProcessingFlowScreen(
                             currentImagePath = normalizedPath
 
                             // If image was pre-processed by ML Kit Scanner,
-                            // skip document detection — it's already cropped and clean.
+                            // skip document detection â€” it's already cropped and clean.
                             val isPreScanned = currentImagePath.contains("mlkit_scanned")
 
                             if (isPreScanned) {
-                                // ML Kit already cropped + deskewed — use as-is
+                                // ML Kit already cropped + deskewed â€” use as-is
                                 cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
                             } else {
                                 val bounds = documentDetector.detect(currentImagePath)
@@ -216,7 +216,7 @@ fun ProcessingFlowScreen(
                             val isPreScanned = currentImagePath.contains("mlkit_scanned")
 
                             if (isPreScanned) {
-                                // ML Kit already deskewed — skip perspective correction
+                                // ML Kit already deskewed â€” skip perspective correction
                                 perspectiveResult = fallbackPerspectiveResult(
                                     currentImagePath, imageWidth, imageHeight,
                                 )
@@ -244,7 +244,7 @@ fun ProcessingFlowScreen(
                     }
 
                     ProcessingStep.GRAPH_SELECTION, ProcessingStep.GRAPH_ROI -> {
-                        // Run preprocessing (grayscale→CLAHE→binary) once
+                        // Run preprocessing (grayscaleâ†’CLAHEâ†’binary) once
                         if (preprocessingResult == null) {
                             preprocessingResult = preprocessor.preprocess(
                                 currentImagePath, outputDir,
@@ -269,6 +269,95 @@ fun ProcessingFlowScreen(
                             ocrResult = ocrReader.readAxisLabels(
                                 currentImagePath, selectedRegion,
                             )
+                        }
+                    }
+
+                    ProcessingStep.X_CALIBRATION -> {
+                        // Auto-calibrate X axis from OCR results
+                        if (xCalibration == null) {
+                            val ocr = ocrResult
+                            val axes = axesResult
+                            val xValues = ocr?.suggestedXValues ?: emptyList()
+                            val origin = axes?.origin
+
+                            if (xValues.size >= 2) {
+                                // OCR found axis values â†’ use first and last
+                                val sorted = xValues.sorted()
+                                val minVal = sorted.first()
+                                val maxVal = sorted.last()
+                                // Map pixels: origin X â†’ minVal, right edge â†’ maxVal
+                                val px1 = origin?.x ?: 0f
+                                val px2 = (selectedRegion.x + selectedRegion.width).toFloat()
+                                xCalibration = XAxisCalibration(
+                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, minVal),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, maxVal),
+                                    ),
+                                    unit = ocr?.xUnit ?: "Ð¼Ð¸Ð½",
+                                    timestamp = System.currentTimeMillis(),
+                                )
+                            } else {
+                                // No OCR â†’ identity calibration (pixels)
+                                val px1 = origin?.x ?: 0f
+                                val px2 = selectedRegion.width.toFloat()
+                                xCalibration = XAxisCalibration(
+                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, 0f),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, px2),
+                                    ),
+                                    unit = "px",
+                                    timestamp = System.currentTimeMillis(),
+                                )
+                            }
+                        }
+                    }
+
+                    ProcessingStep.Y_CALIBRATION -> {
+                        // Auto-calibrate Y axis from OCR results
+                        if (yCalibration == null) {
+                            val ocr = ocrResult
+                            val axes = axesResult
+                            val yValues = ocr?.suggestedYValues ?: emptyList()
+                            val origin = axes?.origin
+
+                            if (yValues.size >= 2) {
+                                val sorted = yValues.sorted()
+                                val minVal = sorted.first()
+                                val maxVal = sorted.last()
+                                // Y axis: pixel 0 = top (maxVal), pixel H = bottom (minVal)
+                                val py1 = 0f
+                                val py2 = origin?.y ?: selectedRegion.height.toFloat()
+                                yCalibration = YAxisCalibration(
+                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(py1, maxVal),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(py2, minVal),
+                                    ),
+                                    unit = ocr?.yUnit ?: "mAU",
+                                    timestamp = System.currentTimeMillis(),
+                                )
+                            } else {
+                                // No OCR â†’ identity (pixels, inverted)
+                                val fh = selectedRegion.height.toFloat()
+                                yCalibration = YAxisCalibration(
+                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, fh),
+                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
+                                    ),
+                                    unit = "px",
+                                    timestamp = System.currentTimeMillis(),
+                                )
+                            }
+
+                            // Build unified PixelCalibration
+                            val xCal = xCalibration
+                            if (xCal != null) {
+                                pixelCalibration = PixelCalibration.from(
+                                    xAxis = xCal,
+                                    yAxis = yCalibration!!,
+                                    originPixelX = origin?.x ?: 0f,
+                                    originPixelY = origin?.y ?: imageHeight.toFloat(),
+                                )
+                            }
                         }
                     }
 
@@ -329,7 +418,7 @@ fun ProcessingFlowScreen(
                             val curveStage = curveExtractionResult?.let {
                                 QualityCalculator.curveExtraction(it)
                             } ?: com.chromalab.feature.processing.quality.StageQuality(
-                                "curve", 0f, listOf("Кривая не извлечена"),
+                                "curve", 0f, listOf("ÐšÑ€Ð¸Ð²Ð°Ñ Ð½Ðµ Ð¸Ð·Ð²Ð»ÐµÑ‡ÐµÐ½Ð°"),
                             )
                             digitizationReport = QualityCalculator.buildReport(
                                 imageStage, docStage, graphStage, calStage, curveStage,
@@ -340,30 +429,16 @@ fun ProcessingFlowScreen(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
+            processingError = "${currentStep.label}: ${e.message ?: "Ð½ÐµÐ¸Ð·Ð²ÐµÑÑ‚Ð½Ð°Ñ Ð¾ÑˆÐ¸Ð±ÐºÐ°"}"
         }
         isProcessing = false
 
         // --- Auto-advance logic ---
+        // All steps auto-advance except EXPORT (the final dashboard).
         if (processingError == null) {
-            val shouldAutoAdvance = when (currentStep.autoAdvance) {
-                AutoAdvancePolicy.ALWAYS -> true
-                AutoAdvancePolicy.IF_CONFIDENT -> when (currentStep) {
-                    ProcessingStep.GRAPH_SELECTION,
-                    ProcessingStep.GRAPH_ROI -> {
-                        val conf = graphResult?.confidence
-                        conf == com.chromalab.feature.processing.graph.DetectionConfidence.HIGH ||
-                            conf == com.chromalab.feature.processing.graph.DetectionConfidence.MEDIUM
-                    }
-                    ProcessingStep.CURVE_EDITOR -> {
-                        curvePoints.size > 20
-                    }
-                    else -> false
-                }
-                AutoAdvancePolicy.NEVER -> false
-            }
+            val shouldAutoAdvance = currentStep.autoAdvance == AutoAdvancePolicy.ALWAYS
             if (shouldAutoAdvance) {
-                kotlinx.coroutines.delay(250L)
+                kotlinx.coroutines.delay(150L)
                 val next = currentStep.next()
                 if (next != null) currentStep = next
             }
@@ -386,7 +461,7 @@ fun ProcessingFlowScreen(
             smoothedSignal?.let { processedSignals.add(it) }
             val totalRegions = graphResult?.regions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
-                // More regions — reset per-graph state and loop back
+                // More regions â€” reset per-graph state and loop back
                 currentGraphIndex++
                 val nextRegion = graphResult!!.regions[currentGraphIndex]
                 selectedRegion = nextRegion
@@ -403,13 +478,13 @@ fun ProcessingFlowScreen(
             } else if (next != null) {
                 currentStep = next
             } else {
-                // Shouldn't happen — EXPORT is after QUALITY_REPORT
+                // Shouldn't happen â€” EXPORT is after QUALITY_REPORT
                 currentStep = ProcessingStep.EXPORT
             }
         } else if (next != null) {
             currentStep = next
         } else {
-            // Last step — save signal to Room, then navigate
+            // Last step â€” save signal to Room, then navigate
             scope.launch {
                 val signal = smoothedSignal?.smoothed
                 val now = System.currentTimeMillis()
@@ -451,350 +526,116 @@ fun ProcessingFlowScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        // Progress header — always visible
-        StepProgressHeader(currentStep)
-
-        // Step content — routed to real screens
+        // Step content
         Box(modifier = Modifier.weight(1f)) {
-            AnimatedContent(
-                targetState = currentStep,
-                transitionSpec = {
-                    if (targetState.index > initialState.index) {
-                        slideInHorizontally { it / 3 } + fadeIn() togetherWith
-                            slideOutHorizontally { -it / 3 } + fadeOut()
-                    } else {
-                        slideInHorizontally { -it / 3 } + fadeIn() togetherWith
-                            slideOutHorizontally { it / 3 } + fadeOut()
-                    }
-                },
-                label = "step_transition",
-            ) { step ->
-                when (step) {
-                    ProcessingStep.IMAGE_QUALITY -> {
-                        val report = qualityReport
-                        if (report != null) {
-                            ImageQualityScreen(
-                                report = report,
-                                onProceed = { advance(step) },
-                                onRetake = { onCancel() },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Анализ качества изображения...")
-                        }
-                    }
+            // All steps auto-advance except EXPORT â€” show processing overlay
+            if (currentStep != ProcessingStep.EXPORT) {
+                // Full-screen progress overlay
+                AutoProgressOverlay(
+                    currentStep = currentStep,
+                    isProcessing = true,
+                )
 
-                    ProcessingStep.CROP_REVIEW -> {
-                        val result = cropResult
-                        if (result != null) {
-                            CropReviewScreen(
-                                cropResult = result,
-                                onAccept = { advance(step) },
-                                onRecrop = {
-                                    cropResult = null
-                                    perspectiveResult = null  // perspective depends on crop
-                                    documentBounds = null
-                                },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Определение границ документа...")
-                        }
-                    }
-
-                    ProcessingStep.PERSPECTIVE -> {
-                        val result = perspectiveResult
-                        if (result != null) {
-                            PerspectiveReviewScreen(
-                                result = result,
-                                onAccept = { advance(step) },
-                                onAdjustCorners = {
-                                    perspectiveResult = null
-                                },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Коррекция перспективы...")
-                        }
-                    }
-
-                    ProcessingStep.GRAPH_SELECTION -> {
-                        val result = graphResult
-                        if (result != null) {
-                            GraphSelectionScreen(
-                                imagePath = currentImagePath,
-                                result = result,
-                                onSelect = { selection ->
-                                    selectedRegion = selection.region
-                                    advance(step)
-                                },
-                                onEditRoi = { currentStep = ProcessingStep.GRAPH_ROI },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Поиск графиков на изображении...")
-                        }
-                    }
-
-                    ProcessingStep.GRAPH_ROI -> {
-                        val result = graphResult
-                        if (result != null) {
-                            GraphRoiEditorScreen(
-                                imagePath = currentImagePath,
-                                autoResult = result,
-                                onAccept = { region ->
-                                    selectedRegion = region
-                                    advance(step)
-                                },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Поиск графиков...")
-                        }
-                    }
-
-                    ProcessingStep.AXIS_DETECTION -> {
-                        val result = axesResult
-                        if (result != null) {
-                            AxisEditorScreen(
-                                imagePath = currentImagePath,
-                                graphRegion = selectedRegion,
-                                autoResult = result,
-                                onAccept = { axes ->
-                                    axesResult = axes
-                                    advance(step)
-                                },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Определение осей...")
-                        }
-                    }
-
-                    ProcessingStep.X_CALIBRATION -> {
-                        val axes = axesResult ?: fallbackAxesResult()
-                        XCalibrationScreen(
-                            imagePath = currentImagePath,
-                            graphRegion = selectedRegion,
-                            axes = axes,
-                            ocrSuggestion = ocrResult,
-                            onAccept = { cal ->
-                                xCalibration = cal
-                                advance(step)
-                            },
-                            onSkip = { advance(step) },
-                            onBack = { goBack(step) },
-                        )
-                    }
-
-                    ProcessingStep.Y_CALIBRATION -> {
-                        val axes = axesResult ?: fallbackAxesResult()
-                        YCalibrationScreen(
-                            imagePath = currentImagePath,
-                            graphRegion = selectedRegion,
-                            axes = axes,
-                            ocrSuggestion = ocrResult,
-                            onAccept = { cal ->
-                                yCalibration = cal
-                                // Build unified PixelCalibration from X + Y
-                                val xCal = xCalibration
-                                if (xCal != null) {
-                                    val origin = axesResult?.origin
-                                    pixelCalibration = PixelCalibration.from(
-                                        xAxis = xCal,
-                                        yAxis = cal,
-                                        originPixelX = origin?.x ?: 0f,
-                                        originPixelY = origin?.y ?: imageHeight.toFloat(),
-                                    )
-                                }
-                                advance(step)
-                            },
-                            onSkip = { advance(step) },
-                            onBack = { goBack(step) },
-                        )
-                    }
-
-                    ProcessingStep.OCR_SUGGESTION -> {
-                        val result = ocrResult
-                        if (result != null) {
-                            OcrSuggestionScreen(
-                                ocrResult = result,
-                                onAccept = { accepted ->
-                                    ocrResult = accepted
-                                    advance(step)
-                                },
-                                onSkip = { advance(step) },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Распознавание подписей осей...")
-                        }
-                    }
-
-                    ProcessingStep.CURVE_EXTRACTION -> {
-                        val result = curveExtractionResult
-                        if (result != null) {
-                            CurveOverlayScreen(
-                                graphImagePath = currentImagePath,
-                                result = result,
-                                graphWidth = selectedRegion.width,
-                                graphHeight = selectedRegion.height,
-                                onAccept = { advance(step) },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Извлечение кривой хроматограммы...")
-                        }
-                    }
-
-                    ProcessingStep.CURVE_EDITOR -> {
-                        CurveEditorScreen(
-                            graphImagePath = currentImagePath,
-                            initialPoints = curvePoints,
-                            graphWidth = selectedRegion.width,
-                            graphHeight = selectedRegion.height,
-                            onAccept = { points, _ ->
-                                curvePoints = points
-                                advance(step)
-                            },
-                            onBack = { goBack(step) },
-                        )
-                    }
-
-                    ProcessingStep.SIGNAL_PREVIEW -> {
-                        val signal = smoothedSignal
-                        if (signal != null) {
-                            SignalPreviewScreen(
-                                smoothedSignal = signal,
-                                graphImagePath = currentImagePath,
-                                graphWidth = selectedRegion.width,
-                                graphHeight = selectedRegion.height,
-                                onAccept = { advance(step) },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Подготовка цифрового сигнала...")
-                        }
-                    }
-
-                    ProcessingStep.QUALITY_REPORT -> {
-                        val report = digitizationReport
-                        if (report != null) {
-                            QualityReportContent(
-                                report = report,
-                                onAccept = { advance(step) },
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            ProcessingIndicator("Формирование отчёта о качестве...")
-                        }
-                    }
-
-                    ProcessingStep.EXPORT -> {
-                        val signal = smoothedSignal?.smoothed
-                        if (signal != null) {
-                            val cal = pixelCalibration ?: fallbackCalibration(
-                                imageWidth, imageHeight,
-                            )
-                            val bundle = ExportBundle(
-                                signal = signal,
-                                calibration = cal,
-                                processingParams = ProcessingParams(
-                                    calibration = cal,
-                                    smoothingParams = smoothedSignal?.params ?: SmoothingParams(),
-                                    timestamp = System.currentTimeMillis(),
-                                ),
-                                timestamp = System.currentTimeMillis(),
-                            )
-                            val writer = remember { SessionWriter(outputDir) }
-                            ExportScreen(
-                                signal = signal,
-                                bundle = bundle,
-                                sessionWriter = writer,
-                                onBack = { goBack(step) },
-                            )
-                        } else {
-                            StepPlaceholder(
-                                step = step,
-                                onAccept = { advance(step) },
-                                onBack = { goBack(step) },
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Loading overlay during processing
-            if (isProcessing) {
-                if (currentStep.autoAdvance != AutoAdvancePolicy.NEVER) {
-                    // Auto-advance steps get the full progress overlay
-                    AutoProgressOverlay(
-                        currentStep = currentStep,
-                        isProcessing = true,
-                    )
-                } else {
-                    // Manual steps get a simple spinner
+                // Error overlay on top
+                val error = processingError
+                if (error != null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(Spacing.lg),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                            ),
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(Spacing.lg),
+                                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            ) {
+                                Text(
+                                    "Ошибка: ${currentStep.label}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                                Text(
+                                    error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                                ) {
+                                    OutlinedButton(onClick = { onCancel() }) {
+                                        Text("Отмена")
+                                    }
+                                    Button(onClick = {
+                                        processingError = null
+                                        val s = currentStep
+                                        currentStep = ProcessingStep.FIRST
+                                        currentStep = s
+                                    }) {
+                                        Text("Повторить")
+                                    }
+                                    TextButton(onClick = {
+                                        processingError = null
+                                        advance(currentStep)
+                                    }) {
+                                        Text("Пропустить")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
-            }
-
-            // Error recovery overlay
-            val error = processingError
-            if (error != null && !isProcessing) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(Spacing.lg),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
+            } else {
+                // EXPORT: the final results dashboard â€” only screen the user sees
+                val signal = smoothedSignal?.smoothed
+                if (signal != null) {
+                    val cal = pixelCalibration ?: fallbackCalibration(
+                        imageWidth, imageHeight,
+                    )
+                    val bundle = ExportBundle(
+                        signal = signal,
+                        calibration = cal,
+                        processingParams = ProcessingParams(
+                            calibration = cal,
+                            smoothingParams = smoothedSignal?.params ?: SmoothingParams(),
+                            timestamp = System.currentTimeMillis(),
                         ),
+                        timestamp = System.currentTimeMillis(),
+                    )
+                    val writer = remember { SessionWriter(outputDir) }
+                    ExportScreen(
+                        signal = signal,
+                        bundle = bundle,
+                        sessionWriter = writer,
+                        onBack = { onCancel() },
+                    )
+                } else {
+                    // Pipeline produced no signal â€” show error
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Column(
-                            modifier = Modifier.padding(Spacing.lg),
-                            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
                             Text(
-                                "Ошибка обработки",
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                "ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¸Ð·Ð²Ð»ÐµÑ‡ÑŒ ÑÐ¸Ð³Ð½Ð°Ð»",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.error,
                             )
                             Text(
-                                error,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                "ÐŸÐ¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ´ÐµÐ»Ð°Ñ‚ÑŒ Ð±Ð¾Ð»ÐµÐµ Ñ‡Ñ‘Ñ‚ÐºÐ¾Ðµ Ñ„Ð¾Ñ‚Ð¾",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                            ) {
-                                OutlinedButton(onClick = { goBack(currentStep) }) {
-                                    Text("Назад")
-                                }
-                                Button(onClick = {
-                                    processingError = null
-                                    // Re-trigger LaunchedEffect by toggling step
-                                    val step = currentStep
-                                    currentStep = ProcessingStep.FIRST
-                                    currentStep = step
-                                }) {
-                                    Text("Повторить")
-                                }
-                                TextButton(onClick = {
-                                    processingError = null
-                                    advance(currentStep)
-                                }) {
-                                    Text("Пропустить")
-                                }
+                            Button(onClick = { onCancel() }) {
+                                Text("Ð’ÐµÑ€Ð½ÑƒÑ‚ÑŒÑÑ")
                             }
                         }
                     }
@@ -841,7 +682,7 @@ private fun StepPlaceholder(
             StepBottomBar(
                 onAccept = onAccept,
                 onBack = onBack,
-                acceptLabel = if (step.next() != null) "Принять" else "Завершить",
+                acceptLabel = if (step.next() != null) "ÐŸÑ€Ð¸Ð½ÑÑ‚ÑŒ" else "Ð—Ð°Ð²ÐµÑ€ÑˆÐ¸Ñ‚ÑŒ",
             )
         },
     ) { padding ->
@@ -855,7 +696,7 @@ private fun StepPlaceholder(
         ) {
             Text(step.label, style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Будет реализовано в следующей фазе",
+                "Ð‘ÑƒÐ´ÐµÑ‚ Ñ€ÐµÐ°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð¾ Ð² ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ¹ Ñ„Ð°Ð·Ðµ",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -863,7 +704,7 @@ private fun StepPlaceholder(
     }
 }
 
-// ─── Fallback data when processing fails or isn't applicable ────────
+// â”€â”€â”€ Fallback data when processing fails or isn't applicable â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
     val width = w.coerceAtLeast(1)
