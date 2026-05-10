@@ -174,72 +174,18 @@ fun ProcessingFlowScreen(
                     ProcessingStep.CROP_REVIEW -> {
                         if (cropResult == null) {
                             currentImagePath = normalizedPath
-
-                            // If image was pre-processed by ML Kit Scanner,
-                            // skip document detection â€” it's already cropped and clean.
-                            val isPreScanned = currentImagePath.contains("mlkit_scanned")
-
-                            if (isPreScanned) {
-                                // ML Kit already cropped + deskewed â€” use as-is
-                                cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
-                            } else {
-                                val bounds = documentDetector.detect(currentImagePath)
-                                documentBounds = bounds
-                                if (bounds != null) {
-                                    val c = bounds.corners
-                                    val x1 = min(c.topLeft.x, c.bottomLeft.x).roundToInt()
-                                    val y1 = min(c.topLeft.y, c.topRight.y).roundToInt()
-                                    val x2 = max(c.topRight.x, c.bottomRight.x).roundToInt()
-                                    val y2 = max(c.bottomLeft.y, c.bottomRight.y).roundToInt()
-                                    val rect = CropRect(
-                                        x = x1.coerceAtLeast(0),
-                                        y = y1.coerceAtLeast(0),
-                                        width = (x2 - x1).coerceAtLeast(1),
-                                        height = (y2 - y1).coerceAtLeast(1),
-                                    )
-                                    val result = imageCropper.crop(currentImagePath, rect, outputDir)
-                                    if (result != null) {
-                                        cropResult = result
-                                        currentImagePath = result.croppedPath
-                                    } else {
-                                        cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
-                                    }
-                                } else {
-                                    cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
-                                }
-                            }
+                            // Auto-pipeline: skip document detection
+                            // ML Kit images are pre-cropped, gallery images are user-selected
+                            cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
                         }
                     }
 
                     ProcessingStep.PERSPECTIVE -> {
                         if (perspectiveResult == null) {
-                            val isPreScanned = currentImagePath.contains("mlkit_scanned")
-
-                            if (isPreScanned) {
-                                // ML Kit already deskewed â€” skip perspective correction
-                                perspectiveResult = fallbackPerspectiveResult(
-                                    currentImagePath, imageWidth, imageHeight,
-                                )
-                            } else {
-                                val bounds = documentBounds
-                                if (bounds != null) {
-                                    val result = perspectiveWarper.warp(
-                                        currentImagePath, bounds.corners, outputDir,
-                                    )
-                                    if (result != null) {
-                                        perspectiveResult = result
-                                        currentImagePath = result.correctedPath
-                                    } else {
-                                        perspectiveResult = fallbackPerspectiveResult(
-                                            currentImagePath, imageWidth, imageHeight,
-                                        )
-                                    }
-                                } else {
-                                    perspectiveResult = fallbackPerspectiveResult(
-                                        currentImagePath, imageWidth, imageHeight,
-                                    )
-                                }
-                            }
+                            // Auto-pipeline: skip perspective correction
+                            perspectiveResult = fallbackPerspectiveResult(
+                                currentImagePath, imageWidth, imageHeight,
+                            )
                         }
                     }
 
@@ -293,7 +239,7 @@ fun ProcessingFlowScreen(
                                         point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(px1, minVal),
                                         point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(px2, maxVal),
                                     ),
-                                    unit = ocr?.xUnit ?: "Ð¼Ð¸Ð½",
+                                    unit = ocr?.xUnit ?: "мин",
                                     timestamp = System.currentTimeMillis(),
                                 )
                             } else {
@@ -418,7 +364,7 @@ fun ProcessingFlowScreen(
                             val curveStage = curveExtractionResult?.let {
                                 QualityCalculator.curveExtraction(it)
                             } ?: com.chromalab.feature.processing.quality.StageQuality(
-                                "curve", 0f, listOf("ÐšÑ€Ð¸Ð²Ð°Ñ Ð½Ðµ Ð¸Ð·Ð²Ð»ÐµÑ‡ÐµÐ½Ð°"),
+                                "curve", 0f, listOf("Кривая не извлечена"),
                             )
                             digitizationReport = QualityCalculator.buildReport(
                                 imageStage, docStage, graphStage, calStage, curveStage,
@@ -429,7 +375,7 @@ fun ProcessingFlowScreen(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            processingError = "${currentStep.label}: ${e.message ?: "Ð½ÐµÐ¸Ð·Ð²ÐµÑÑ‚Ð½Ð°Ñ Ð¾ÑˆÐ¸Ð±ÐºÐ°"}"
+            processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
         }
         isProcessing = false
 
@@ -461,7 +407,7 @@ fun ProcessingFlowScreen(
             smoothedSignal?.let { processedSignals.add(it) }
             val totalRegions = graphResult?.regions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
-                // More regions â€” reset per-graph state and loop back
+                // More regions — reset per-graph state and loop back
                 currentGraphIndex++
                 val nextRegion = graphResult!!.regions[currentGraphIndex]
                 selectedRegion = nextRegion
@@ -478,13 +424,13 @@ fun ProcessingFlowScreen(
             } else if (next != null) {
                 currentStep = next
             } else {
-                // Shouldn't happen â€” EXPORT is after QUALITY_REPORT
+                // Shouldn't happen — EXPORT is after QUALITY_REPORT
                 currentStep = ProcessingStep.EXPORT
             }
         } else if (next != null) {
             currentStep = next
         } else {
-            // Last step â€” save signal to Room, then navigate
+            // Last step — save signal to Room, then navigate
             scope.launch {
                 val signal = smoothedSignal?.smoothed
                 val now = System.currentTimeMillis()
@@ -528,7 +474,7 @@ fun ProcessingFlowScreen(
     Column(modifier = modifier.fillMaxSize()) {
         // Step content
         Box(modifier = Modifier.weight(1f)) {
-            // All steps auto-advance except EXPORT â€” show processing overlay
+            // All steps auto-advance except EXPORT — show processing overlay
             if (currentStep != ProcessingStep.EXPORT) {
                 // Full-screen progress overlay
                 AutoProgressOverlay(
@@ -591,7 +537,7 @@ fun ProcessingFlowScreen(
                     }
                 }
             } else {
-                // EXPORT: the final results dashboard â€” only screen the user sees
+                // EXPORT: the final results dashboard — only screen the user sees
                 val signal = smoothedSignal?.smoothed
                 if (signal != null) {
                     val cal = pixelCalibration ?: fallbackCalibration(
@@ -615,7 +561,7 @@ fun ProcessingFlowScreen(
                         onBack = { onCancel() },
                     )
                 } else {
-                    // Pipeline produced no signal â€” show error
+                    // Pipeline produced no signal — show error
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
@@ -625,17 +571,17 @@ fun ProcessingFlowScreen(
                             verticalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
                             Text(
-                                "ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð¸Ð·Ð²Ð»ÐµÑ‡ÑŒ ÑÐ¸Ð³Ð½Ð°Ð»",
+                                "Не удалось извлечь сигнал",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.error,
                             )
                             Text(
-                                "ÐŸÐ¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ´ÐµÐ»Ð°Ñ‚ÑŒ Ð±Ð¾Ð»ÐµÐµ Ñ‡Ñ‘Ñ‚ÐºÐ¾Ðµ Ñ„Ð¾Ñ‚Ð¾",
+                                "Попробуйте сделать более чёткое фото",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Button(onClick = { onCancel() }) {
-                                Text("Ð’ÐµÑ€Ð½ÑƒÑ‚ÑŒÑÑ")
+                                Text("Вернуться")
                             }
                         }
                     }
@@ -682,7 +628,7 @@ private fun StepPlaceholder(
             StepBottomBar(
                 onAccept = onAccept,
                 onBack = onBack,
-                acceptLabel = if (step.next() != null) "ÐŸÑ€Ð¸Ð½ÑÑ‚ÑŒ" else "Ð—Ð°Ð²ÐµÑ€ÑˆÐ¸Ñ‚ÑŒ",
+                acceptLabel = if (step.next() != null) "Принять" else "Завершить",
             )
         },
     ) { padding ->
@@ -696,7 +642,7 @@ private fun StepPlaceholder(
         ) {
             Text(step.label, style = MaterialTheme.typography.headlineSmall)
             Text(
-                "Ð‘ÑƒÐ´ÐµÑ‚ Ñ€ÐµÐ°Ð»Ð¸Ð·Ð¾Ð²Ð°Ð½Ð¾ Ð² ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ¹ Ñ„Ð°Ð·Ðµ",
+                "Будет реализовано в следующей фазе",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -704,7 +650,7 @@ private fun StepPlaceholder(
     }
 }
 
-// â”€â”€â”€ Fallback data when processing fails or isn't applicable â”€â”€â”€â”€â”€â”€â”€â”€
+// --- Fallback data when processing fails or isn't applicable --------
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
     val width = w.coerceAtLeast(1)
