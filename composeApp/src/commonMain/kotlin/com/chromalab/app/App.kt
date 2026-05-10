@@ -110,18 +110,7 @@ fun App() {
                     )
                 }
 
-                // --- Projects ---
-                composable<Route.ProjectDetail> {
-                    PlaceholderScreen("Проект — детали")
-                }
-                composable<Route.SampleDetail> {
-                    PlaceholderScreen("Образец — детали")
-                }
-                composable<Route.NewProject> {
-                    PlaceholderScreen("Новый проект")
-                }
-
-                // --- Capture ---
+                // --- Capture flow ---
                 composable<Route.Camera> {
                     CameraScreen(
                         onImageCaptured = { path ->
@@ -132,7 +121,6 @@ fun App() {
                         onBack = { navController.popBackStack() },
                     )
                 }
-
                 composable<Route.FileImport> {
                     PlaceholderScreen("Импорт файла")
                 }
@@ -142,7 +130,6 @@ fun App() {
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = { signalId ->
-                            // Phase 1→2 bridge: navigate to analysis with Room signal ID
                             navController.navigate(Route.Analysis(signalId.toString())) {
                                 popUpTo(Route.Capture) { inclusive = false }
                             }
@@ -153,10 +140,7 @@ fun App() {
                     )
                 }
 
-                // --- Calculations ---
-                composable<Route.ChromatogramView> {
-                    PlaceholderScreen("Хроматограмма")
-                }
+                // --- Analysis ---
                 composable<Route.Analysis> { backStackEntry ->
                     val route = backStackEntry.toRoute<Route.Analysis>()
                     val signalId = route.signalId
@@ -170,20 +154,8 @@ fun App() {
                         },
                     )
                 }
-                composable<Route.IonRatio> {
-                    PlaceholderScreen("Ion Ratio")
-                }
-                composable<Route.Calibration> {
-                    PlaceholderScreen("Калибровка")
-                }
 
                 // --- More ---
-                composable<Route.Reports> {
-                    PlaceholderScreen("Отчёты")
-                }
-                composable<Route.Settings> {
-                    PlaceholderScreen(Strings.settingsAbout)
-                }
                 composable<Route.Language> {
                     LanguageScreen(
                         onBack = { navController.popBackStack() },
