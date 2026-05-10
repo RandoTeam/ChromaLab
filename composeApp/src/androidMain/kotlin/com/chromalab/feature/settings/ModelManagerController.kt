@@ -145,6 +145,14 @@ class ModelManagerController(
         }
     }
 
+    /** Deactivate (unload) the current model without deleting files. */
+    fun deactivate() {
+        VlmEngineHolder.activeEngine = null
+        manager.clearActiveModel()
+        refresh()
+        println("MODEL[CTRL] Model deactivated")
+    }
+
     /** Delete a downloaded model. */
     fun delete(modelId: String) {
         // Unload engine if this is the active model

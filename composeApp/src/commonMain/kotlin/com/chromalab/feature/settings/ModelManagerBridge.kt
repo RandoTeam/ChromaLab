@@ -13,6 +13,7 @@ data class ModelManagerActions(
     val download: (ModelInfo) -> Unit = {},
     val cancelDownload: () -> Unit = {},
     val activate: (String) -> Unit = {},
+    val deactivate: () -> Unit = {},
     val delete: (String) -> Unit = {},
     val setThreadCount: (Int) -> Unit = {},
     val onImport: () -> Unit = {},

@@ -26,6 +26,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             download = { controller.download(it) },
             cancelDownload = { controller.cancelDownload() },
             activate = { controller.activate(it) },
+            deactivate = { controller.deactivate() },
             delete = { controller.delete(it) },
             setThreadCount = { controller.setThreadCount(it) },
             onImport = { println("MODEL[BRIDGE] Import requested — file picker not yet wired") },

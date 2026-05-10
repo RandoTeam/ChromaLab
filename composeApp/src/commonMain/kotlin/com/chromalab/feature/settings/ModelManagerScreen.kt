@@ -55,6 +55,7 @@ fun ModelManagerScreen(
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
     onActivate: (String) -> Unit,
+    onDeactivate: () -> Unit = {},
     onCancelDownload: () -> Unit = {},
     onImport: () -> Unit,
     onBack: () -> Unit,
@@ -91,7 +92,7 @@ fun ModelManagerScreen(
                 item {
                     ActiveModelBanner(
                         model = activeModel,
-                        onDeactivate = { deleteConfirmId = activeModel.id },
+                        onDeactivate = onDeactivate,
                     )
                 }
             }
@@ -652,6 +653,14 @@ private fun ActiveModelBanner(
                         "$runtime · ${formatBytes(model.totalSizeBytes)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                // Deactivate button
+                IconButton(onClick = onDeactivate) {
+                    Icon(
+                        Icons.Filled.PowerSettingsNew,
+                        contentDescription = "Выгрузить",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

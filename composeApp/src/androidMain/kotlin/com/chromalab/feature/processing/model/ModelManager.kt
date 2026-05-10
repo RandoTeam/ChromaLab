@@ -92,6 +92,14 @@ class ModelManager(private val context: Context) {
     }
 
     /**
+     * Clear the active model (deactivate without deleting).
+     */
+    fun clearActiveModel() {
+        prefs.edit().remove(KEY_ACTIVE_MODEL).apply()
+        println("MODEL[MGR] Active model cleared")
+    }
+
+    /**
      * Get the active model ID from preferences.
      */
     fun getActiveModelId(): String? = prefs.getString(KEY_ACTIVE_MODEL, null)
