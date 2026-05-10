@@ -20,6 +20,7 @@ import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
 import com.chromalab.feature.processing.flow.ProcessingFlowScreen
 import com.chromalab.feature.calculation.flow.AnalysisFlowScreen
+import com.chromalab.feature.calculation.screen.CalculationsListScreen
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
@@ -97,7 +98,11 @@ fun App() {
                     )
                 }
                 composable<Route.Calculations> {
-                    PlaceholderScreen(Strings.tabCalculations)
+                    CalculationsListScreen(
+                        onAnalyze = { signalId ->
+                            navController.navigate(Route.Analysis(signalId))
+                        },
+                    )
                 }
                 composable<Route.More> {
                     MoreScreen(
