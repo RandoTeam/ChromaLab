@@ -102,6 +102,7 @@ fun App() {
                 composable<Route.More> {
                     MoreScreen(
                         activeModelName = modelState.activeModelName,
+                        activeModelSummary = modelState.activeModelSummary,
                         threadCount = modelState.threadCount,
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                         onOpenLanguage = { navController.navigate(Route.Language) },

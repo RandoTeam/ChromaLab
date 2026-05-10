@@ -52,6 +52,14 @@ class ModelManagerController(
                 downloadedModelIds = downloaded.map { m -> m.info.id }.toSet(),
                 activeModelId = active?.info?.id,
                 activeModelName = active?.info?.displayName,
+                activeModelSummary = active?.let { m ->
+                    val runtime = when (m.info.runtime) {
+                        ModelRuntime.LITERT_LM -> "LiteRT GPU"
+                        ModelRuntime.LLAMA_CPP -> "llama.cpp"
+                    }
+                    val sizeGb = m.info.totalSizeBytes / 1_000_000_000f
+                    "$runtime · %.1f GB".format(sizeGb)
+                },
                 deviceRamMb = manager.getDeviceRamMb(),
                 availableStorageGb = manager.getAvailableStorageBytes() / (1024f * 1024 * 1024),
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),

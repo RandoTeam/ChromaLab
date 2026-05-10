@@ -10,6 +10,8 @@ data class ModelManagerState(
     val downloadedModelIds: Set<String> = emptySet(),
     val activeModelId: String? = null,
     val activeModelName: String? = null,
+    /** Short summary for MoreScreen: e.g. "LiteRT GPU · 2.6 GB" */
+    val activeModelSummary: String? = null,
     val downloadingModelId: String? = null,
     val downloadProgress: Float = 0f,
     val downloadSpeedMbps: Float = 0f,

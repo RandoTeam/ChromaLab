@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun MoreScreen(
     activeModelName: String?,
+    activeModelSummary: String?,
     threadCount: Int,
     onOpenModelManager: () -> Unit,
     onOpenLanguage: () -> Unit,
@@ -44,10 +45,15 @@ fun MoreScreen(
         }
 
         item {
+            val subtitle = if (activeModelName != null) {
+                "$activeModelName · ${activeModelSummary ?: ""}"
+            } else {
+                "Не выбрана"
+            }
             SettingsCard(
                 icon = Icons.Filled.Psychology,
                 title = "Модели ИИ",
-                subtitle = activeModelName ?: "Не выбрана",
+                subtitle = subtitle,
                 onClick = onOpenModelManager,
             )
         }
