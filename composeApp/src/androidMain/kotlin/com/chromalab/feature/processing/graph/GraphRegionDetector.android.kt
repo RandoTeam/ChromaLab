@@ -34,6 +34,8 @@ actual class GraphRegionDetector actual constructor() {
         bitmap.recycle()
         val scale = options.inSampleSize.toFloat()
 
+        println("GRAPH[DETECT] image=${imageWidth}x${imageHeight}, downsampled=${w}x${h}, scale=$scale")
+
         // Grayscale
         val gray = IntArray(w * h) { i ->
             val p = pixels[i]
@@ -44,17 +46,27 @@ actual class GraphRegionDetector actual constructor() {
 
         // Try method 1: Line-based detection (axes)
         val lineResult = tryLineDetection(gray, w, h, scale, imageWidth, imageHeight)
-        if (lineResult != null) return lineResult
+        if (lineResult != null) {
+            println("GRAPH[RESULT] method=LINE, regions=${lineResult.regions.size}, confidence=${lineResult.confidence}")
+            return lineResult
+        }
 
         // Try method 2: Contour-based detection
         val contourResult = tryContourDetection(gray, w, h, scale, imageWidth, imageHeight)
-        if (contourResult != null) return contourResult
+        if (contourResult != null) {
+            println("GRAPH[RESULT] method=CONTOUR, regions=${contourResult.regions.size}, confidence=${contourResult.confidence}")
+            return contourResult
+        }
 
         // Try method 3: Ink density projection
         val densityResult = tryDensityDetection(gray, w, h, scale, imageWidth, imageHeight)
-        if (densityResult != null) return densityResult
+        if (densityResult != null) {
+            println("GRAPH[RESULT] method=DENSITY, regions=${densityResult.regions.size}, confidence=${densityResult.confidence}")
+            return densityResult
+        }
 
         // Method 4: Margin-based fallback — always succeeds
+        println("GRAPH[RESULT] method=FALLBACK")
         return marginFallback(imageWidth, imageHeight)
     }
 
@@ -108,6 +120,8 @@ actual class GraphRegionDetector actual constructor() {
 
         val hLines = findPeaks(smoothedH, hThreshold, h / 20)
         val vLines = findPeaks(smoothedV, vThreshold, w / 20)
+
+        println("GRAPH[LINE] hLines=${hLines.size} at rows=${hLines.map { (it * scale).toInt() }}, vLines=${vLines.size}")
 
         if (hLines.size < 2 || vLines.isEmpty()) return null
 
@@ -170,6 +184,7 @@ actual class GraphRegionDetector actual constructor() {
 
     /**
      * Method 2: Find rectangular contours via edge detection.
+     * Now with multi-graph splitting via valley detection.
      */
     private fun tryContourDetection(
         gray: IntArray, w: Int, h: Int, scale: Float,
@@ -193,7 +208,6 @@ actual class GraphRegionDetector actual constructor() {
             (0 until h).count { y -> edges[y * w + x] > 0 }
         }
 
-        // Lowered from 5% to 3% — catches sparser edge distributions on photos
         val edgeThresholdRow = (w * 0.03f).toInt()
         val edgeThresholdCol = (h * 0.03f).toInt()
 
@@ -205,20 +219,30 @@ actual class GraphRegionDetector actual constructor() {
         if (topY < 0 || bottomY < 0 || leftX < 0 || rightX < 0) return null
         if (bottomY - topY < h / 8 || rightX - leftX < w / 8) return null
 
-        val region = GraphRegion(
-            x = (leftX * scale).roundToInt(),
-            y = (topY * scale).roundToInt(),
-            width = ((rightX - leftX) * scale).roundToInt().coerceAtLeast(1),
-            height = ((bottomY - topY) * scale).roundToInt().coerceAtLeast(1),
+        println("GRAPH[CONTOUR] bounds: top=$topY, bottom=$bottomY, left=$leftX, right=$rightX")
+
+        // Try to split into multiple graphs by finding valleys in row edge density
+        val regions = splitByValleys(
+            rowDensity = rowEdges,
+            topY = topY, bottomY = bottomY,
+            leftX = leftX, rightX = rightX,
+            w = w, h = h, scale = scale,
         )
 
+        if (regions.isEmpty()) return null
+
+        val confidence = if (regions.size > 1) DetectionConfidence.HIGH else DetectionConfidence.MEDIUM
+        val warnings = if (regions.size == 1) {
+            listOf("Область графика определена приблизительно — проверьте границы")
+        } else emptyList()
+
         return GraphRegionResult(
-            regions = listOf(region),
+            regions = regions,
             detectionMethod = DetectionMethod.AUTO,
-            confidence = DetectionConfidence.MEDIUM,
+            confidence = confidence,
             imageWidth = imgW,
             imageHeight = imgH,
-            warnings = listOf("Область графика определена приблизительно — проверьте границы"),
+            warnings = warnings,
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -253,26 +277,30 @@ actual class GraphRegionDetector actual constructor() {
         if (topY < 0 || bottomY < 0 || leftX < 0 || rightX < 0) return null
         if (bottomY - topY < h / 8 || rightX - leftX < w / 8) return null
 
-        // Add small padding (3%)
-        val padX = (w * 0.03f).toInt()
-        val padY = (h * 0.03f).toInt()
-        val region = GraphRegion(
-            x = (max(0, leftX - padX) * scale).roundToInt(),
-            y = (max(0, topY - padY) * scale).roundToInt(),
-            width = (min(w, rightX - leftX + padX * 2) * scale).roundToInt().coerceAtLeast(1),
-            height = (min(h, bottomY - topY + padY * 2) * scale).roundToInt().coerceAtLeast(1),
+        println("GRAPH[DENSITY] bounds: top=$topY, bottom=$bottomY, left=$leftX, right=$rightX")
+
+        // Try to split into multiple graphs by finding valleys
+        val regions = splitByValleys(
+            rowDensity = rowDensity,
+            topY = topY, bottomY = bottomY,
+            leftX = leftX, rightX = rightX,
+            w = w, h = h, scale = scale,
         )
 
+        if (regions.isEmpty()) return null
+
+        val confidence = if (regions.size > 1) DetectionConfidence.MEDIUM else DetectionConfidence.LOW
+
         return GraphRegionResult(
-            regions = listOf(region),
+            regions = regions,
             detectionMethod = DetectionMethod.AUTO,
-            confidence = DetectionConfidence.LOW,
+            confidence = confidence,
             imageWidth = imgW,
             imageHeight = imgH,
-            warnings = listOf(
+            warnings = if (regions.size == 1) listOf(
                 "Область определена по плотности содержимого",
                 "Рекомендуется проверить и при необходимости скорректировать",
-            ),
+            ) else emptyList(),
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -338,5 +366,93 @@ actual class GraphRegionDetector actual constructor() {
             }
         }
         return peaks
+    }
+
+    /**
+     * Split a detected bounding box into multiple graph regions by finding
+     * horizontal "valleys" (empty bands) in the row density profile.
+     *
+     * Chromatogram sheets with 2-3 stacked graphs always have a clear
+     * empty horizontal separator between them (axis labels, whitespace).
+     *
+     * Algorithm:
+     * 1. Smooth the row density profile to reduce noise
+     * 2. Compute a threshold = 20% of max density in the region
+     * 3. Find contiguous runs of rows below threshold ("valleys")
+     * 4. Keep only valleys wider than 3% of the region height
+     * 5. Split at valley centers to create sub-regions
+     */
+    private fun splitByValleys(
+        rowDensity: IntArray,
+        topY: Int, bottomY: Int,
+        leftX: Int, rightX: Int,
+        w: Int, h: Int, scale: Float,
+    ): List<GraphRegion> {
+        val regionH = bottomY - topY
+        if (regionH < 20) return emptyList()
+
+        // Smooth the density profile within the content bounds
+        val smoothed = smooth1D(
+            IntArray(regionH) { rowDensity[topY + it] },
+            sigma = 5,
+        )
+
+        // Threshold = 20% of max density in the region
+        val maxDensity = smoothed.maxOrNull() ?: return emptyList()
+        val valleyThreshold = (maxDensity * 0.20f).toInt()
+
+        // Minimum valley width = 3% of region height
+        val minValleyWidth = (regionH * 0.03f).toInt().coerceAtLeast(3)
+
+        // Find valleys: contiguous runs below threshold
+        val valleyCenters = mutableListOf<Int>()
+        var i = 0
+        while (i < smoothed.size) {
+            if (smoothed[i] <= valleyThreshold) {
+                val start = i
+                while (i < smoothed.size && smoothed[i] <= valleyThreshold) i++
+                val end = i
+                val width = end - start
+                if (width >= minValleyWidth) {
+                    val center = topY + (start + end) / 2
+                    // Don't split too close to edges
+                    if (center - topY > regionH / 10 && bottomY - center > regionH / 10) {
+                        valleyCenters.add(center)
+                    }
+                }
+            } else {
+                i++
+            }
+        }
+
+        println("GRAPH[SPLIT] regionH=$regionH, maxDensity=$maxDensity, valleyThreshold=$valleyThreshold, minValleyWidth=$minValleyWidth")
+        println("GRAPH[SPLIT] valleys=${valleyCenters.size} at rows=${valleyCenters.map { (it * scale).toInt() }}")
+
+        // Build regions from split points
+        val splitPoints = mutableListOf(topY)
+        splitPoints.addAll(valleyCenters)
+        splitPoints.add(bottomY)
+
+        val padX = (w * 0.01f).toInt()
+        val padY = (h * 0.01f).toInt()
+
+        val regions = mutableListOf<GraphRegion>()
+        for (idx in 0 until splitPoints.size - 1) {
+            val rTop = splitPoints[idx]
+            val rBottom = splitPoints[idx + 1]
+            if (rBottom - rTop < regionH / 10) continue // too small
+
+            val region = GraphRegion(
+                x = (max(0, leftX - padX) * scale).roundToInt(),
+                y = (max(0, rTop - padY) * scale).roundToInt(),
+                width = (min(w, rightX - leftX + padX * 2) * scale).roundToInt().coerceAtLeast(1),
+                height = ((rBottom - rTop + padY * 2).coerceAtMost(h - rTop) * scale).roundToInt().coerceAtLeast(1),
+                label = if (valleyCenters.isNotEmpty()) "График ${idx + 1}" else "",
+            )
+            regions.add(region)
+            println("GRAPH[SPLIT] region ${idx + 1}: (${region.x},${region.y}) ${region.width}x${region.height}")
+        }
+
+        return regions
     }
 }

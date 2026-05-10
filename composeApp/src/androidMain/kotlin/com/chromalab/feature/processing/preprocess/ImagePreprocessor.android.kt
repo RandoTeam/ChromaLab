@@ -19,7 +19,20 @@ actual class ImagePreprocessor actual constructor() {
         outputDir: String,
         params: PreprocessingParams,
     ): PreprocessingResult? {
-        val bitmap = BitmapFactory.decodeFile(imagePath) ?: return null
+        // Decode with downsampling if image is too large (prevents OOM)
+        val maxDim = 2560
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imagePath, opts)
+        val rawW = opts.outWidth
+        val rawH = opts.outHeight
+        var sampleSize = 1
+        while (rawW / sampleSize > maxDim || rawH / sampleSize > maxDim) {
+            sampleSize *= 2
+        }
+        val decodeOpts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
+        println("PIPELINE[PREPROCESS] raw=${rawW}x${rawH}, sample=$sampleSize, decoded=${bitmap.width}x${bitmap.height}")
+
         val w = bitmap.width
         val h = bitmap.height
         val pixels = IntArray(w * h)

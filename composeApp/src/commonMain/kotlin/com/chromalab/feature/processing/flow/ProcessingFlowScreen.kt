@@ -204,7 +204,12 @@ fun ProcessingFlowScreen(
                             val h = imageHeight.takeIf { it > 0 } ?: 1080
                             graphResult = graphDetector.detect(currentImagePath, w, h)
                             graphResult?.selectedRegion?.let { selectedRegion = it }
-                            println("PIPELINE[GRAPH] regions=${graphResult?.regions?.size}, confidence=${graphResult?.confidence}, selected=${selectedRegion}")
+                            val allRegions = graphResult?.sortedRegions ?: emptyList()
+                            println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
+                            allRegions.forEachIndexed { idx, r ->
+                                println("PIPELINE[GRAPH]   [$idx] (${r.x},${r.y}) ${r.width}x${r.height} area=${r.area} label='${r.label}'")
+                            }
+                            println("PIPELINE[GRAPH] selected=${selectedRegion}")
                         }
                     }
 

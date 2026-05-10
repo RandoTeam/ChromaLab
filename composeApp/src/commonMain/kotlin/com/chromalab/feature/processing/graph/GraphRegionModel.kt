@@ -60,6 +60,10 @@ data class GraphRegionResult(
             return regions.maxByOrNull { it.width.toLong() * it.height.toLong() }
         }
 
+    /** Regions sorted top-to-bottom (by Y coordinate) — natural reading order */
+    val sortedRegions: List<GraphRegion>
+        get() = regions.sortedBy { it.y }
+
     /** Always true — we never block the user */
     val canProceed: Boolean get() = true
 

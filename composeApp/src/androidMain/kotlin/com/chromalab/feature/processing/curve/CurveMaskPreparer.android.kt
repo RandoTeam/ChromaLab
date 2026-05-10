@@ -30,14 +30,32 @@ actual class CurveMaskPreparer actual constructor() {
         axes: AxesResult,
         outputDir: String,
     ): CurveMaskResult {
-        val bitmap = BitmapFactory.decodeFile(imagePath)
+        // Determine if we need to downsample (prevents OOM on large images)
+        val maxMaskDim = 2048
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imagePath, opts)
+        val rawW = opts.outWidth
+        val rawH = opts.outHeight
+        var sampleSize = 1
+        // Check if the crop region would be too large
+        val cropW = graphRegion.width.coerceAtMost(rawW)
+        val cropH = graphRegion.height.coerceAtMost(rawH)
+        while (cropW / sampleSize > maxMaskDim || cropH / sampleSize > maxMaskDim) {
+            sampleSize *= 2
+        }
+
+        val decodeOpts = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        val bitmap = BitmapFactory.decodeFile(imagePath, decodeOpts)
             ?: return emptyResult(graphRegion)
 
-        // Crop to graph region
-        val rx = graphRegion.x.coerceIn(0, bitmap.width - 1)
-        val ry = graphRegion.y.coerceIn(0, bitmap.height - 1)
-        val rw = graphRegion.width.coerceIn(1, bitmap.width - rx)
-        val rh = graphRegion.height.coerceIn(1, bitmap.height - ry)
+        println("MASK[LOAD] raw=${rawW}x${rawH}, sample=$sampleSize, decoded=${bitmap.width}x${bitmap.height}")
+
+        // Adjust crop coordinates for downsampled image
+        val scale = 1.0f / sampleSize
+        val rx = (graphRegion.x * scale).toInt().coerceIn(0, bitmap.width - 1)
+        val ry = (graphRegion.y * scale).toInt().coerceIn(0, bitmap.height - 1)
+        val rw = (graphRegion.width * scale).toInt().coerceIn(1, bitmap.width - rx)
+        val rh = (graphRegion.height * scale).toInt().coerceIn(1, bitmap.height - ry)
 
         val cropped = Bitmap.createBitmap(bitmap, rx, ry, rw, rh)
         bitmap.recycle()
