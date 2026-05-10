@@ -21,28 +21,29 @@
 
 > Ядро приложения — от фото до массива точек (35 секций, 250+ задач).
 
-- [ ] Камера: CameraX Preview + ImageCapture, рамка, фокус, вспышка, зум
-- [ ] Проверка качества фото: blur, brightness, contrast, glare, shadow
-- [ ] Импорт из галереи + подгонка под рамку
-- [ ] Нормализация: EXIF, ориентация, единый формат
-- [ ] Crop по рамке + CoordinateTransform
-- [ ] Определение листа: OpenCV contours + manual fallback
-- [ ] Perspective correction: homography + ручная коррекция углов
-- [ ] Предобработка: grayscale → CLAHE → threshold → morphology
-- [ ] Определение области графика: Hough lines + manual ROI
-- [ ] Поддержка нескольких графиков на листе
-- [ ] Определение осей X/Y: auto + manual editor
-- [ ] Калибровка осей: 2-point linear transform
-- [ ] OCR осей: ML Kit как подсказка + подтверждение пользователя
-- [ ] Извлечение кривой: column scan + contour + skeletonization
-- [ ] Ручная проверка и коррекция кривой
-- [ ] Преобразование в цифровой сигнал: GraphPoint[]
-- [ ] Savitzky-Golay smoothing
-- [ ] Предпросмотр цифрового графика
-- [ ] Индикатор качества оцифровки + предупреждения
-- [ ] Сохранение промежуточных файлов
-- [ ] Экспорт массива точек: CSV + JSON
-- [ ] Debug mode
+- [x] Камера: CameraX Preview + ImageCapture, рамка, фокус, вспышка, зум
+- [x] Камера: Smart Scan auto-launch (ML Kit Document Scanner, убрана ручная съёмка)
+- [x] Проверка качества фото: blur, brightness, contrast, glare, shadow
+- [x] Импорт из галереи + подгонка под рамку
+- [x] Нормализация: EXIF, ориентация, единый формат
+- [x] Crop по рамке + CoordinateTransform
+- [x] Определение листа: OpenCV contours + manual fallback
+- [x] Perspective correction: homography + ручная коррекция углов
+- [x] Предобработка: grayscale → CLAHE → threshold → morphology
+- [x] Определение области графика: Hough lines + manual ROI
+- [x] Поддержка нескольких графиков на листе
+- [x] Определение осей X/Y: auto + manual editor
+- [x] Калибровка осей: 2-point linear transform
+- [x] OCR осей: ML Kit + 3-level filter (spatial + IQR) + 2-pass targeted crop
+- [x] Извлечение кривой: column scan + contour + skeletonization
+- [x] Ручная проверка и коррекция кривой
+- [x] Преобразование в цифровой сигнал: GraphPoint[]
+- [x] Savitzky-Golay smoothing
+- [x] Предпросмотр цифрового графика
+- [x] Индикатор качества оцифровки + предупреждения
+- [x] Сохранение промежуточных файлов
+- [x] Экспорт массива точек: CSV + JSON
+- [x] Debug mode
 - [ ] Детерминированность: pipelineVersion, fixed params, determinism test
 - [ ] Тестирование: синтетические данные + 20–30 реальных фото
 
