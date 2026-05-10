@@ -77,6 +77,8 @@ kotlin {
 
             // ML Kit Text Recognition (OCR)
             implementation(libs.mlkit.text)
+            // ML Kit Document Scanner (crop + deskew + shadow removal)
+            implementation(libs.mlkit.document.scanner)
         }
 
         val desktopMain by getting {

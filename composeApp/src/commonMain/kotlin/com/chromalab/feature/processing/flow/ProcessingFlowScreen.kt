@@ -173,56 +173,72 @@ fun ProcessingFlowScreen(
 
                     ProcessingStep.CROP_REVIEW -> {
                         if (cropResult == null) {
-                            // Reset to normalized path (in case of recrop)
                             currentImagePath = normalizedPath
-                            val bounds = documentDetector.detect(currentImagePath)
-                            documentBounds = bounds  // cache for perspective step
-                            if (bounds != null) {
-                                val c = bounds.corners
-                                val x1 = min(c.topLeft.x, c.bottomLeft.x).roundToInt()
-                                val y1 = min(c.topLeft.y, c.topRight.y).roundToInt()
-                                val x2 = max(c.topRight.x, c.bottomRight.x).roundToInt()
-                                val y2 = max(c.bottomLeft.y, c.bottomRight.y).roundToInt()
-                                val rect = CropRect(
-                                    x = x1.coerceAtLeast(0),
-                                    y = y1.coerceAtLeast(0),
-                                    width = (x2 - x1).coerceAtLeast(1),
-                                    height = (y2 - y1).coerceAtLeast(1),
-                                )
-                                val result = imageCropper.crop(currentImagePath, rect, outputDir)
-                                if (result != null) {
-                                    cropResult = result
-                                    currentImagePath = result.croppedPath
+
+                            // If image was pre-processed by ML Kit Scanner,
+                            // skip document detection — it's already cropped and clean.
+                            val isPreScanned = currentImagePath.contains("mlkit_scanned")
+
+                            if (isPreScanned) {
+                                // ML Kit already cropped + deskewed — use as-is
+                                cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
+                            } else {
+                                val bounds = documentDetector.detect(currentImagePath)
+                                documentBounds = bounds
+                                if (bounds != null) {
+                                    val c = bounds.corners
+                                    val x1 = min(c.topLeft.x, c.bottomLeft.x).roundToInt()
+                                    val y1 = min(c.topLeft.y, c.topRight.y).roundToInt()
+                                    val x2 = max(c.topRight.x, c.bottomRight.x).roundToInt()
+                                    val y2 = max(c.bottomLeft.y, c.bottomRight.y).roundToInt()
+                                    val rect = CropRect(
+                                        x = x1.coerceAtLeast(0),
+                                        y = y1.coerceAtLeast(0),
+                                        width = (x2 - x1).coerceAtLeast(1),
+                                        height = (y2 - y1).coerceAtLeast(1),
+                                    )
+                                    val result = imageCropper.crop(currentImagePath, rect, outputDir)
+                                    if (result != null) {
+                                        cropResult = result
+                                        currentImagePath = result.croppedPath
+                                    } else {
+                                        cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
+                                    }
                                 } else {
                                     cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
                                 }
-                            } else {
-                                // No document found — proceed with full image
-                                cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
                             }
                         }
                     }
 
                     ProcessingStep.PERSPECTIVE -> {
                         if (perspectiveResult == null) {
-                            // Reuse cached bounds from crop step (avoid double detect)
-                            val bounds = documentBounds
-                            if (bounds != null) {
-                                val result = perspectiveWarper.warp(
-                                    currentImagePath, bounds.corners, outputDir,
+                            val isPreScanned = currentImagePath.contains("mlkit_scanned")
+
+                            if (isPreScanned) {
+                                // ML Kit already deskewed — skip perspective correction
+                                perspectiveResult = fallbackPerspectiveResult(
+                                    currentImagePath, imageWidth, imageHeight,
                                 )
-                                if (result != null) {
-                                    perspectiveResult = result
-                                    currentImagePath = result.correctedPath
+                            } else {
+                                val bounds = documentBounds
+                                if (bounds != null) {
+                                    val result = perspectiveWarper.warp(
+                                        currentImagePath, bounds.corners, outputDir,
+                                    )
+                                    if (result != null) {
+                                        perspectiveResult = result
+                                        currentImagePath = result.correctedPath
+                                    } else {
+                                        perspectiveResult = fallbackPerspectiveResult(
+                                            currentImagePath, imageWidth, imageHeight,
+                                        )
+                                    }
                                 } else {
                                     perspectiveResult = fallbackPerspectiveResult(
                                         currentImagePath, imageWidth, imageHeight,
                                     )
                                 }
-                            } else {
-                                perspectiveResult = fallbackPerspectiveResult(
-                                    currentImagePath, imageWidth, imageHeight,
-                                )
                             }
                         }
                     }
