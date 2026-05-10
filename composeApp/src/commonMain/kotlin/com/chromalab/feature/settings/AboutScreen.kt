@@ -52,7 +52,7 @@ fun AboutScreen(
         ) {
             Spacer(Modifier.height(24.dp))
 
-            // App icon placeholder
+            // App icon
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,

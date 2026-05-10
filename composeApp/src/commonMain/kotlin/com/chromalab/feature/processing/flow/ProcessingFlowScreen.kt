@@ -771,64 +771,7 @@ fun ProcessingFlowScreen(
     }
 }
 
-/**
- * Loading indicator shown while a processor runs.
- */
-@Composable
-private fun ProcessingIndicator(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.height(Spacing.md))
-            Text(
-                message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
 
-/**
- * Fallback placeholder for steps not yet fully wired.
- */
-@Composable
-private fun StepPlaceholder(
-    step: ProcessingStep,
-    onAccept: () -> Unit,
-    onBack: () -> Unit,
-) {
-    Scaffold(
-        bottomBar = {
-            StepBottomBar(
-                onAccept = onAccept,
-                onBack = onBack,
-                acceptLabel = if (step.next() != null) "Принять" else "Завершить",
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(Spacing.lg),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(step.label, style = MaterialTheme.typography.headlineSmall)
-            Text(
-                "Будет реализовано в следующей фазе",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
 
 // --- Fallback data when processing fails or isn't applicable --------
 
