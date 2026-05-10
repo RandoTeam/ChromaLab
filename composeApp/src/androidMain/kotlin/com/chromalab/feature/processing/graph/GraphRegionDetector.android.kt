@@ -59,43 +59,55 @@ actual class GraphRegionDetector actual constructor() {
     }
 
     /**
-     * Method 1: Find horizontal and vertical lines (Sobel + accumulator).
-     * If we find clear axis lines, the graph is bounded by them.
-     * When ≥3 horizontal lines are found, this indicates multiple stacked graphs
-     * (e.g., upper = Ion 217, lower = Ion 218).
+     * Method 1: Enhanced line detection via edge projection + peak finding.
+     *
+     * Improvements over original:
+     * - Lower edge threshold (20 vs 30) to catch thin lines on photos
+     * - Gaussian-smoothed projection to reduce noise peaks
+     * - Lower peak threshold (15% vs 30%) to catch faint axis lines
+     * - Multi-graph support: detects stacked graphs separated by axes
      */
     private fun tryLineDetection(
         gray: IntArray, w: Int, h: Int, scale: Float,
         imgW: Int, imgH: Int,
     ): GraphRegionResult? {
-        // Horizontal edge scan — looking for strong horizontal lines
+        // Sobel edges with lower threshold for photos
+        val edgeThreshold = 20
+
+        // Horizontal projection: count strong vertical gradient per row
+        // (catches horizontal lines like X-axes)
         val hProjection = IntArray(h)
         for (y in 1 until h - 1) {
-            var edgeCount = 0
+            var count = 0
             for (x in 1 until w - 1) {
                 val gy = abs(gray[(y + 1) * w + x] - gray[(y - 1) * w + x])
-                if (gy > 30) edgeCount++
+                if (gy > edgeThreshold) count++
             }
-            hProjection[y] = edgeCount
+            hProjection[y] = count
         }
 
-        // Vertical edge scan
+        // Vertical projection: count strong horizontal gradient per column
+        // (catches vertical lines like Y-axes)
         val vProjection = IntArray(w)
         for (x in 1 until w - 1) {
-            var edgeCount = 0
+            var count = 0
             for (y in 1 until h - 1) {
                 val gx = abs(gray[y * w + x + 1] - gray[y * w + x - 1])
-                if (gx > 30) edgeCount++
+                if (gx > edgeThreshold) count++
             }
-            vProjection[x] = edgeCount
+            vProjection[x] = count
         }
 
-        // Find strong line peaks (>30% of width/height have edges)
-        val hThreshold = (w * 0.3f).toInt()
-        val vThreshold = (h * 0.3f).toInt()
+        // Smooth projections with 1D Gaussian (σ=3) to reduce noise
+        val smoothedH = smooth1D(hProjection, sigma = 3)
+        val smoothedV = smooth1D(vProjection, sigma = 3)
 
-        val hLines = findPeaks(hProjection, hThreshold, h / 20)
-        val vLines = findPeaks(vProjection, vThreshold, w / 20)
+        // Find peaks: 15% of width/height (vs old 30%)
+        val hThreshold = (w * 0.15f).toInt()
+        val vThreshold = (h * 0.15f).toInt()
+
+        val hLines = findPeaks(smoothedH, hThreshold, h / 20)
+        val vLines = findPeaks(smoothedV, vThreshold, w / 20)
 
         if (hLines.size < 2 || vLines.isEmpty()) return null
 
@@ -107,7 +119,7 @@ actual class GraphRegionDetector actual constructor() {
         for (i in 0 until hLines.size - 1) {
             val topLine = hLines[i]
             val bottomLine = hLines[i + 1]
-            if (bottomLine - topLine < h / 10) continue // Too narrow
+            if (bottomLine - topLine < h / 10) continue
 
             val region = GraphRegion(
                 x = (leftLine * scale).roundToInt(),
@@ -118,7 +130,7 @@ actual class GraphRegionDetector actual constructor() {
             )
 
             val areaRatio = region.area.toFloat() / (imgW * imgH)
-            if (areaRatio >= 0.03f) { // Even small graphs are valid
+            if (areaRatio >= 0.03f) {
                 regions.add(region)
             }
         }
@@ -136,24 +148,44 @@ actual class GraphRegionDetector actual constructor() {
     }
 
     /**
+     * 1D Gaussian smoothing to reduce noise in projection profiles.
+     */
+    private fun smooth1D(data: IntArray, sigma: Int): IntArray {
+        val kernel = (2 * sigma + 1)
+        val result = IntArray(data.size)
+        for (i in data.indices) {
+            var sum = 0L
+            var count = 0
+            for (k in -sigma..sigma) {
+                val idx = i + k
+                if (idx in data.indices) {
+                    sum += data[idx]
+                    count++
+                }
+            }
+            result[i] = (sum / count).toInt()
+        }
+        return result
+    }
+
+    /**
      * Method 2: Find rectangular contours via edge detection.
      */
     private fun tryContourDetection(
         gray: IntArray, w: Int, h: Int, scale: Float,
         imgW: Int, imgH: Int,
     ): GraphRegionResult? {
-        // Simple edge detection
+        // Edge detection with lower threshold (30 vs 50) for photos
         val edges = IntArray(w * h)
         for (y in 1 until h - 1) {
             for (x in 1 until w - 1) {
                 val gx = abs(gray[y * w + x + 1] - gray[y * w + x - 1])
                 val gy = abs(gray[(y + 1) * w + x] - gray[(y - 1) * w + x])
-                edges[y * w + x] = if (gx + gy > 50) 255 else 0
+                edges[y * w + x] = if (gx + gy > 30) 255 else 0
             }
         }
 
         // Find bounding box of dense edge clusters
-        // Use row/column projection of edges
         val rowEdges = IntArray(h) { y ->
             (0 until w).count { x -> edges[y * w + x] > 0 }
         }
@@ -161,8 +193,9 @@ actual class GraphRegionDetector actual constructor() {
             (0 until h).count { y -> edges[y * w + x] > 0 }
         }
 
-        val edgeThresholdRow = (w * 0.05f).toInt() // At least 5% of row has edges
-        val edgeThresholdCol = (h * 0.05f).toInt()
+        // Lowered from 5% to 3% — catches sparser edge distributions on photos
+        val edgeThresholdRow = (w * 0.03f).toInt()
+        val edgeThresholdCol = (h * 0.03f).toInt()
 
         val topY = rowEdges.indexOfFirst { it > edgeThresholdRow }
         val bottomY = rowEdges.indexOfLast { it > edgeThresholdRow }
@@ -170,7 +203,7 @@ actual class GraphRegionDetector actual constructor() {
         val rightX = colEdges.indexOfLast { it > edgeThresholdCol }
 
         if (topY < 0 || bottomY < 0 || leftX < 0 || rightX < 0) return null
-        if (bottomY - topY < h / 6 || rightX - leftX < w / 6) return null
+        if (bottomY - topY < h / 8 || rightX - leftX < w / 8) return null
 
         val region = GraphRegion(
             x = (leftX * scale).roundToInt(),

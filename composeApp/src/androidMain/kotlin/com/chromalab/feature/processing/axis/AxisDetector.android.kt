@@ -52,13 +52,23 @@ actual class AxisDetector actual constructor() {
                 0.114 * (p and 0xFF)).toInt()
         }
 
-        // Edge detection (Sobel magnitude)
-        val edgesH = IntArray(w * h) // Horizontal edges (for finding horizontal lines)
-        val edgesV = IntArray(w * h) // Vertical edges (for finding vertical lines)
+        // Sobel edge detection — separate horizontal/vertical components
+        // Using 3×3 Sobel for better noise rejection vs simple difference
+        val edgesH = IntArray(w * h) // Vertical gradient magnitude (finds horizontal lines)
+        val edgesV = IntArray(w * h) // Horizontal gradient magnitude (finds vertical lines)
         for (y in 1 until h - 1) {
             for (x in 1 until w - 1) {
-                val gy = abs(gray[(y + 1) * w + x] - gray[(y - 1) * w + x])
-                val gx = abs(gray[y * w + x + 1] - gray[y * w + x - 1])
+                // Sobel Y: finds horizontal lines
+                val gy = abs(
+                    -gray[(y-1)*w+x-1] - 2*gray[(y-1)*w+x] - gray[(y-1)*w+x+1] +
+                     gray[(y+1)*w+x-1] + 2*gray[(y+1)*w+x] + gray[(y+1)*w+x+1]
+                )
+                // Sobel X: finds vertical lines
+                val gx = abs(
+                    -gray[(y-1)*w+x-1] + gray[(y-1)*w+x+1] +
+                    -2*gray[y*w+x-1] + 2*gray[y*w+x+1] +
+                    -gray[(y+1)*w+x-1] + gray[(y+1)*w+x+1]
+                )
                 edgesH[y * w + x] = gy
                 edgesV[y * w + x] = gx
             }
@@ -72,8 +82,9 @@ actual class AxisDetector actual constructor() {
             sum
         }
 
-        // X axis is typically in the bottom 60% of the graph
-        val xSearchStart = (h * 0.4f).toInt()
+        // X axis is typically in the bottom 70% of the graph
+        // (widened from 60% to catch graphs with high baselines)
+        val xSearchStart = (h * 0.3f).toInt()
         val xAxisY = findStrongestLine(hProjection, xSearchStart, h - 1)
 
         // --- Find Y axis (strongest vertical line) ---
@@ -84,8 +95,9 @@ actual class AxisDetector actual constructor() {
             sum
         }
 
-        // Y axis is typically in the left 40% of the graph
-        val ySearchEnd = (w * 0.4f).toInt()
+        // Y axis is typically in the left 50% of the graph
+        // (widened from 40% to catch offset layouts)
+        val ySearchEnd = (w * 0.5f).toInt()
         val yAxisX = findStrongestLine(vProjection, 0, ySearchEnd)
 
         // Convert back to full image coordinates
@@ -150,8 +162,9 @@ actual class AxisDetector actual constructor() {
         val maxVal = projection.slice(from..to).maxOrNull() ?: return -1
         val avgVal = projection.slice(from..to).average()
 
-        // Line must be significantly above average (>2x)
-        if (maxVal < avgVal * 2) return -1
+        // Line must be above average (>1.5x) — relaxed from 2x
+        // to catch thinner axis lines on photos
+        if (maxVal < avgVal * 1.5) return -1
 
         // Find the peak
         for (i in from..to) {

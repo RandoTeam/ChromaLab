@@ -55,10 +55,20 @@ actual class CurveMaskPreparer actual constructor() {
                 0.587 * ((p shr 8) and 0xFF) +
                 0.114 * (p and 0xFF)).toInt()
         }
+        // --- Dual-strategy mask ---
+        // Strategy 1: Canny edge detection (best for photos — thin, precise edges)
+        val cannyMask = cannyEdges(gray, w, h, lowThreshold = 20, highThreshold = 50)
+        // Dilate Canny edges by 1px to form connected curve
+        dilate(cannyMask, w, h)
 
-        // Adaptive threshold → raw mask
-        // Use integral image for local mean
-        val rawMask = adaptiveThreshold(gray, w, h, blockSize = 31, c = 10)
+        // Strategy 2: Adaptive threshold (good for high-contrast scans)
+        val adaptiveMask = adaptiveThreshold(gray, w, h, blockSize = 31, c = 10)
+
+        // Combine: use Canny as primary (less noise), add adaptive where Canny found edges
+        // This catches the curve strongly while ignoring faint background noise
+        val rawMask = BooleanArray(w * h) { i ->
+            cannyMask[i] || (adaptiveMask[i] && hasNeighbor(cannyMask, w, h, i % w, i / w, radius = 3))
+        }
         val rawCount = rawMask.count { it }
 
         // Save raw mask
@@ -319,6 +329,143 @@ actual class CurveMaskPreparer actual constructor() {
 
     companion object {
         private val NEIGHBORS_4 = listOf(0 to -1, 0 to 1, -1 to 0, 1 to 0)
+    }
+
+    /**
+     * Canny edge detection with hysteresis thresholding.
+     *
+     * Steps:
+     * 1. Gaussian blur (3×3) to suppress noise
+     * 2. Sobel gradient magnitude
+     * 3. Non-maximum suppression (thin edges to 1px)
+     * 4. Hysteresis thresholding (strong edges + connected weak edges)
+     */
+    private fun cannyEdges(
+        gray: IntArray, w: Int, h: Int,
+        lowThreshold: Int, highThreshold: Int,
+    ): BooleanArray {
+        // 1. Gaussian blur 3×3
+        val blurred = IntArray(w * h)
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                blurred[y * w + x] = (
+                    gray[(y-1)*w+x-1] + 2*gray[(y-1)*w+x] + gray[(y-1)*w+x+1] +
+                    2*gray[y*w+x-1] + 4*gray[y*w+x] + 2*gray[y*w+x+1] +
+                    gray[(y+1)*w+x-1] + 2*gray[(y+1)*w+x] + gray[(y+1)*w+x+1]
+                ) / 16
+            }
+        }
+
+        // 2. Sobel magnitude + direction
+        val magnitude = IntArray(w * h)
+        val direction = IntArray(w * h) // 0=horizontal, 1=45°, 2=vertical, 3=135°
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val gx = -blurred[(y-1)*w+x-1] + blurred[(y-1)*w+x+1] +
+                         -2*blurred[y*w+x-1] + 2*blurred[y*w+x+1] +
+                         -blurred[(y+1)*w+x-1] + blurred[(y+1)*w+x+1]
+                val gy = -blurred[(y-1)*w+x-1] - 2*blurred[(y-1)*w+x] - blurred[(y-1)*w+x+1] +
+                         blurred[(y+1)*w+x-1] + 2*blurred[(y+1)*w+x] + blurred[(y+1)*w+x+1]
+                magnitude[y * w + x] = abs(gx) + abs(gy) // L1 norm (fast)
+
+                // Quantize gradient direction to 4 bins
+                val absGx = abs(gx)
+                val absGy = abs(gy)
+                direction[y * w + x] = when {
+                    absGy < absGx / 3 -> 0    // ~horizontal edge
+                    absGx < absGy / 3 -> 2    // ~vertical edge
+                    (gx > 0 && gy > 0) || (gx < 0 && gy < 0) -> 1 // 45°
+                    else -> 3 // 135°
+                }
+            }
+        }
+
+        // 3. Non-maximum suppression
+        val nms = IntArray(w * h)
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val mag = magnitude[y * w + x]
+                if (mag == 0) continue
+
+                val (n1, n2) = when (direction[y * w + x]) {
+                    0 -> magnitude[y*w+x-1] to magnitude[y*w+x+1]
+                    1 -> magnitude[(y-1)*w+x+1] to magnitude[(y+1)*w+x-1]
+                    2 -> magnitude[(y-1)*w+x] to magnitude[(y+1)*w+x]
+                    else -> magnitude[(y-1)*w+x-1] to magnitude[(y+1)*w+x+1]
+                }
+                nms[y * w + x] = if (mag >= n1 && mag >= n2) mag else 0
+            }
+        }
+
+        // 4. Hysteresis thresholding
+        val result = BooleanArray(w * h)
+        val strong = BooleanArray(w * h)
+
+        // Mark strong edges
+        for (i in nms.indices) {
+            if (nms[i] >= highThreshold) {
+                strong[i] = true
+                result[i] = true
+            }
+        }
+
+        // Connect weak edges adjacent to strong edges (BFS)
+        val queue = ArrayDeque<Int>()
+        for (i in strong.indices) {
+            if (strong[i]) queue.addLast(i)
+        }
+
+        while (queue.isNotEmpty()) {
+            val idx = queue.removeFirst()
+            val cx = idx % w
+            val cy = idx / w
+            for (dy in -1..1) {
+                for (dx in -1..1) {
+                    if (dx == 0 && dy == 0) continue
+                    val nx = cx + dx
+                    val ny = cy + dy
+                    if (nx !in 0 until w || ny !in 0 until h) continue
+                    val ni = ny * w + nx
+                    if (!result[ni] && nms[ni] >= lowThreshold) {
+                        result[ni] = true
+                        queue.addLast(ni)
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * Dilate boolean mask by 1 pixel (4-connected).
+     */
+    private fun dilate(mask: BooleanArray, w: Int, h: Int) {
+        val copy = mask.copyOf()
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                if (copy[y * w + x]) {
+                    mask[(y-1)*w+x] = true
+                    mask[(y+1)*w+x] = true
+                    mask[y*w+x-1] = true
+                    mask[y*w+x+1] = true
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if any pixel in the reference mask is set within radius of (x,y).
+     */
+    private fun hasNeighbor(ref: BooleanArray, w: Int, h: Int, x: Int, y: Int, radius: Int): Boolean {
+        for (dy in -radius..radius) {
+            for (dx in -radius..radius) {
+                val nx = x + dx
+                val ny = y + dy
+                if (nx in 0 until w && ny in 0 until h && ref[ny * w + nx]) return true
+            }
+        }
+        return false
     }
 
     /**
