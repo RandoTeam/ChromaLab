@@ -1,116 +1,276 @@
 /**
- * llama_bridge.cpp — JNI bridge between Kotlin and llama.cpp
+ * llama_bridge.cpp — JNI bridge between Kotlin and llama.cpp + mtmd (multimodal).
  *
- * This is a STUB implementation for Phase 1.
- * Full llama.cpp integration requires:
- *   1. Cloning llama.cpp into the project (or as submodule)
- *   2. Building with CMake + Android NDK
- *   3. Linking against ggml + llama static libraries
+ * Uses the current (b9101, May 2026) API:
+ *   - llama_model_load_from_file / llama_model_free
+ *   - llama_init_from_model / llama_free
+ *   - mtmd_init_from_file / mtmd_free (vision via mmproj)
+ *   - mtmd_helper_bitmap_init_from_file + mtmd_tokenize + mtmd_helper_eval_chunks
  *
- * Vision (multimodal) support requires llava/clip headers from llama.cpp.
+ * Thread safety: each ModelContext is used from a single thread at a time.
+ * The Kotlin side ensures this via Dispatchers.IO + single-job pattern.
  */
 
 #include <jni.h>
 #include <string>
+#include <vector>
 #include <android/log.h>
 
+#include "llama.h"
+#include "mtmd.h"
+#include "mtmd-helper.h"
+
 #define LOG_TAG "LlamaBridge"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+/**
+ * Holds all state for a loaded model + vision encoder.
+ * Pointer cast to jlong for JNI handle.
+ */
+struct ModelContext {
+    llama_model   *model   = nullptr;
+    llama_context *ctx     = nullptr;
+    mtmd_context  *mtmd    = nullptr;   // null if no mmproj provided
+    int            n_ctx   = 0;
+};
 
 extern "C" {
 
-/**
- * Returns available acceleration backends on this device.
- * 0=CPU, 1=Vulkan, 2=OpenCL, 3=Hexagon
- */
+// ===== nativeGetAvailableBackends =====
+
 JNIEXPORT jintArray JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeGetAvailableBackends(
     JNIEnv *env, jobject /* this */) {
 
-    LOGI("nativeGetAvailableBackends called");
-
-    // TODO: Probe actual device capabilities (Vulkan support, OpenCL, Hexagon)
-    // For now, report CPU only
-    jint backends[] = { 0 }; // CPU=0
+    // For now, report CPU only. Vulkan probing can be added later.
+    jint backends[] = { 0 }; // 0=CPU
     int count = 1;
-
     jintArray result = env->NewIntArray(count);
     env->SetIntArrayRegion(result, 0, count, backends);
     return result;
 }
 
-/**
- * Load a GGUF model + vision projector.
- * Returns a handle (pointer cast to jlong), or 0 on failure.
- */
+// ===== nativeLoadModel =====
+
 JNIEXPORT jlong JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeLoadModel(
     JNIEnv *env, jobject /* this */,
     jstring basePath, jstring mmprojPath,
     jint threads, jint backendCode) {
 
-    const char *base = env->GetStringUTFChars(basePath, nullptr);
+    const char *base   = env->GetStringUTFChars(basePath, nullptr);
     const char *mmproj = env->GetStringUTFChars(mmprojPath, nullptr);
 
-    LOGI("nativeLoadModel: base=%s, mmproj=%s, threads=%d, backend=%d",
-         base, mmproj, threads, backendCode);
+    LOGI("nativeLoadModel: base=%s, threads=%d", base, threads);
 
-    // TODO: Actual llama.cpp integration:
-    // 1. llama_model_params params = llama_model_default_params();
-    // 2. params.n_gpu_layers = (backendCode > 0) ? 99 : 0;
-    // 3. llama_model *model = llama_model_load_from_file(base, params);
-    // 4. Load mmproj via clip_model_load()
-    // 5. Return model pointer as handle
+    // Init backend once (idempotent)
+    static bool backend_inited = false;
+    if (!backend_inited) {
+        llama_backend_init();
+        backend_inited = true;
+    }
+
+    auto *mc = new ModelContext();
+
+    // 1) Load model
+    llama_model_params model_params = llama_model_default_params();
+    model_params.n_gpu_layers = 0; // CPU only for now
+    mc->model = llama_model_load_from_file(base, model_params);
+    if (!mc->model) {
+        LOGE("Failed to load model: %s", base);
+        env->ReleaseStringUTFChars(basePath, base);
+        env->ReleaseStringUTFChars(mmprojPath, mmproj);
+        delete mc;
+        return 0;
+    }
+
+    // 2) Create context
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.n_ctx     = 4096;
+    ctx_params.n_batch   = 512;
+    ctx_params.n_threads = (threads > 0) ? threads : 4;
+    ctx_params.n_threads_batch = ctx_params.n_threads;
+    mc->ctx = llama_init_from_model(mc->model, ctx_params);
+    if (!mc->ctx) {
+        LOGE("Failed to create context");
+        llama_model_free(mc->model);
+        env->ReleaseStringUTFChars(basePath, base);
+        env->ReleaseStringUTFChars(mmprojPath, mmproj);
+        delete mc;
+        return 0;
+    }
+    mc->n_ctx = (int)llama_n_ctx(mc->ctx);
+    LOGI("Context created: n_ctx=%d", mc->n_ctx);
+
+    // 3) Load vision encoder (mmproj) if provided
+    if (mmproj && strlen(mmproj) > 0) {
+        mtmd_context_params mtmd_params = mtmd_context_params_default();
+        mtmd_params.n_threads = ctx_params.n_threads;
+        mtmd_params.use_gpu = false; // CPU for now
+        mc->mtmd = mtmd_init_from_file(mmproj, mc->model, mtmd_params);
+        if (mc->mtmd) {
+            LOGI("MTMD vision encoder loaded: %s", mmproj);
+        } else {
+            LOGE("Failed to load mmproj: %s (continuing text-only)", mmproj);
+        }
+    }
 
     env->ReleaseStringUTFChars(basePath, base);
     env->ReleaseStringUTFChars(mmprojPath, mmproj);
 
-    // Stub: return a non-zero placeholder handle
-    LOGI("nativeLoadModel: STUB — returning placeholder handle");
-    return (jlong) 1;
+    LOGI("Model loaded OK, handle=%p", mc);
+    return reinterpret_cast<jlong>(mc);
 }
 
-/**
- * Unload model and free resources.
- */
+// ===== nativeUnloadModel =====
+
 JNIEXPORT void JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeUnloadModel(
     JNIEnv *env, jobject /* this */, jlong handle) {
 
-    LOGI("nativeUnloadModel: handle=%lld", (long long) handle);
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc) return;
 
-    // TODO: llama_model_free((llama_model*) handle);
-    LOGI("nativeUnloadModel: STUB — freed");
+    LOGI("Unloading model, handle=%p", mc);
+
+    if (mc->mtmd) { mtmd_free(mc->mtmd); mc->mtmd = nullptr; }
+    if (mc->ctx)  { llama_free(mc->ctx);  mc->ctx  = nullptr; }
+    if (mc->model){ llama_model_free(mc->model); mc->model = nullptr; }
+
+    delete mc;
+    LOGI("Model unloaded");
 }
 
+// ===== nativeInferWithImage =====
+
 /**
- * Run inference with an image + text prompt.
- * Returns the model's text response.
+ * Run multimodal inference: image + text prompt → text response.
+ *
+ * Flow:
+ * 1. Load image via mtmd_helper_bitmap_init_from_file
+ * 2. Build prompt with <__media__> marker
+ * 3. mtmd_tokenize → chunks (text + image tokens)
+ * 4. mtmd_helper_eval_chunks → populate KV cache
+ * 5. Greedy decode loop → collect output tokens
+ * 6. Return decoded text
  */
 JNIEXPORT jstring JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeInferWithImage(
     JNIEnv *env, jobject /* this */,
     jlong handle, jstring imagePath, jstring prompt) {
 
-    const char *img = env->GetStringUTFChars(imagePath, nullptr);
-    const char *pmt = env->GetStringUTFChars(prompt, nullptr);
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc || !mc->ctx || !mc->model) {
+        LOGE("Invalid model context");
+        return env->NewStringUTF("{\"x\": [], \"y\": []}");
+    }
 
-    LOGI("nativeInferWithImage: handle=%lld, image=%s", (long long) handle, img);
+    const char *img_path = env->GetStringUTFChars(imagePath, nullptr);
+    const char *pmt      = env->GetStringUTFChars(prompt, nullptr);
 
-    // TODO: Actual inference:
-    // 1. Load image via stb_image or Android bitmap
-    // 2. Encode via clip_image_encode()
-    // 3. Build prompt with image embeddings
-    // 4. llama_decode() loop to generate tokens
-    // 5. Collect output text
+    LOGI("Infer: image=%s", img_path);
 
-    env->ReleaseStringUTFChars(imagePath, img);
+    std::string result_text;
+
+    if (mc->mtmd) {
+        // ---- Multimodal path (VLM with vision) ----
+
+        // 1. Load image
+        mtmd_bitmap *bitmap = mtmd_helper_bitmap_init_from_file(mc->mtmd, img_path);
+        if (!bitmap) {
+            LOGE("Failed to load image: %s", img_path);
+            env->ReleaseStringUTFChars(imagePath, img_path);
+            env->ReleaseStringUTFChars(prompt, pmt);
+            return env->NewStringUTF("{\"x\": [], \"y\": []}");
+        }
+
+        // 2. Build prompt with media marker
+        const char *marker = mtmd_default_marker();
+        std::string full_prompt = std::string(marker) + "\n" + pmt;
+
+        // 3. Tokenize
+        mtmd_input_text input_text;
+        input_text.text = full_prompt.c_str();
+        input_text.add_special = true;
+        input_text.parse_special = true;
+
+        const mtmd_bitmap *bitmaps[] = { bitmap };
+
+        mtmd_input_chunks *chunks = mtmd_input_chunks_init();
+        int32_t tok_result = mtmd_tokenize(mc->mtmd, chunks, &input_text, bitmaps, 1);
+        mtmd_bitmap_free(bitmap);
+
+        if (tok_result != 0) {
+            LOGE("mtmd_tokenize failed: %d", tok_result);
+            mtmd_input_chunks_free(chunks);
+            env->ReleaseStringUTFChars(imagePath, img_path);
+            env->ReleaseStringUTFChars(prompt, pmt);
+            return env->NewStringUTF("{\"x\": [], \"y\": []}");
+        }
+
+        // 4. Clear KV cache and eval chunks
+        llama_memory_clear(llama_get_memory(mc->ctx), true);
+
+        llama_pos n_past = 0;
+        int32_t eval_result = mtmd_helper_eval_chunks(
+            mc->mtmd, mc->ctx, chunks,
+            n_past, 0, 512, true, &n_past
+        );
+        mtmd_input_chunks_free(chunks);
+
+        if (eval_result != 0) {
+            LOGE("mtmd_helper_eval_chunks failed: %d", eval_result);
+            env->ReleaseStringUTFChars(imagePath, img_path);
+            env->ReleaseStringUTFChars(prompt, pmt);
+            return env->NewStringUTF("{\"x\": [], \"y\": []}");
+        }
+
+        // 5. Decode loop using sampler chain (canonical llama.cpp approach)
+        const llama_vocab *vocab = llama_model_get_vocab(mc->model);
+        const int max_tokens = 512;
+
+        // Create sampler chain: greedy sampling
+        llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
+        sparams.no_perf = true;
+        llama_sampler *smpl = llama_sampler_chain_init(sparams);
+        llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+
+        for (int i = 0; i < max_tokens; i++) {
+            // Sample token using sampler chain (-1 = last logits)
+            llama_token token_id = llama_sampler_sample(smpl, mc->ctx, -1);
+
+            // Check end-of-generation
+            if (llama_vocab_is_eog(vocab, token_id)) {
+                break;
+            }
+
+            // Decode token to text
+            char buf[256];
+            int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
+            if (len > 0) {
+                result_text.append(buf, len);
+            }
+
+            // Prepare next batch — single token
+            llama_batch batch = llama_batch_get_one(&token_id, 1);
+            if (llama_decode(mc->ctx, batch) != 0) {
+                LOGE("llama_decode failed at token %d", i);
+                break;
+            }
+        }
+
+        llama_sampler_free(smpl);
+        LOGI("Generated %zu chars", result_text.size());
+    } else {
+        // ---- Text-only fallback (no vision encoder) ----
+        LOGI("No mtmd loaded, returning empty result");
+        result_text = "{\"x\": [], \"y\": []}";
+    }
+
+    env->ReleaseStringUTFChars(imagePath, img_path);
     env->ReleaseStringUTFChars(prompt, pmt);
-
-    // Stub response
-    LOGI("nativeInferWithImage: STUB — returning empty JSON");
-    return env->NewStringUTF("{\"x\": [], \"y\": []}");
+    return env->NewStringUTF(result_text.c_str());
 }
 
 } // extern "C"
