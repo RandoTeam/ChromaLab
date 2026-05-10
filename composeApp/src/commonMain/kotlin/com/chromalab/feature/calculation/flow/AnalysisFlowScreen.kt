@@ -32,6 +32,7 @@ import com.chromalab.feature.calculation.ui.PeakTableSort
 import com.chromalab.feature.calculation.ui.PeakTableFilter
 import com.chromalab.feature.calculation.ui.PeakDetailsContent
 import com.chromalab.feature.calculation.ui.PeakDetailsData
+import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -359,10 +360,17 @@ private fun AnalysisStepContent(
                 }
 
                 // Chart — flexible height, shrinks when table visible
-                val chartWeight = if (
-                    step == AnalysisStep.PEAK_REVIEW ||
-                    step == AnalysisStep.RESULTS
-                ) 0.5f else 1f
+                val showTable = step == AnalysisStep.PEAK_REVIEW ||
+                    step == AnalysisStep.PEAK_CORRECTION
+                val chartWeight = if (showTable) 0.5f else 1f
+
+                // RESULTS step: render full ResultsSummaryScreen replacing chart+table
+                if (step == AnalysisStep.RESULTS && calculationRun != null) {
+                    ResultsSummaryScreen(
+                        run = calculationRun,
+                        modifier = Modifier.weight(1f),
+                    )
+                } else {
 
                 ChromatogramChart(
                     state = chartState,
@@ -423,8 +431,8 @@ private fun AnalysisStepContent(
                     }
 
                     else -> {
-                        // PEAK_REVIEW, RESULTS — show PeakTable
-                        if (calculationRun != null && calculationRun.peaks.isNotEmpty()) {
+                        // PEAK_REVIEW, PEAK_CORRECTION — show PeakTable
+                        if (showTable && calculationRun != null && calculationRun.peaks.isNotEmpty()) {
                             val tableRows = remember(calculationRun) {
                                 buildPeakTableRows(calculationRun.peaks)
                             }
@@ -444,6 +452,7 @@ private fun AnalysisStepContent(
                         }
                     }
                 }
+                } // close else (non-RESULTS)
 
                 // Signal ID footer
                 Text(
