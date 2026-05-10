@@ -96,6 +96,7 @@ fun App() {
                 composable<Route.Capture> {
                     CaptureHubScreen(
                         onCamera = { navController.navigate(Route.Camera) },
+                        onImportFile = { navController.navigate(Route.FileImport) },
                     )
                 }
                 composable<Route.Calculations> {

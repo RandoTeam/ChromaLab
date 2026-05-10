@@ -3,6 +3,7 @@ package com.chromalab.feature.capture
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,11 +14,15 @@ import com.chromalab.core.ui.theme.Spacing
 
 /**
  * Capture hub — entry point for the digitization pipeline.
- * Offers camera capture or gallery import.
+ *
+ * Offers two paths:
+ * - Camera capture → ProcessingFlowScreen
+ * - CSV/JSON file import → FileImportScreen
  */
 @Composable
 fun CaptureHubScreen(
     onCamera: () -> Unit,
+    onImportFile: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -36,34 +41,52 @@ fun CaptureHubScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Сфотографируйте хроматограмму или выберите из галереи камеры",
+            "Сфотографируйте хроматограмму или импортируйте файл данных",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(Spacing.xl))
 
-        CaptureOptionCard(
-            icon = Icons.Filled.PhotoCamera,
-            label = "Камера",
-            onClick = onCamera,
-            modifier = Modifier.fillMaxWidth(0.5f),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        ) {
+            CaptureOptionCard(
+                icon = Icons.Filled.PhotoCamera,
+                label = "Камера",
+                onClick = onCamera,
+                modifier = Modifier.weight(1f),
+            )
+            CaptureOptionCard(
+                icon = Icons.Filled.UploadFile,
+                label = "Импорт CSV",
+                onClick = onImportFile,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
+/**
+ * Square card with an icon and label for a capture option.
+ */
 @Composable
 private fun CaptureOptionCard(
     icon: ImageVector,
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primaryContainer,
+    contentColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
 ) {
     Card(
         onClick = onClick,
         modifier = modifier.aspectRatio(1f),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            containerColor = containerColor,
         ),
     ) {
         Column(
@@ -77,13 +100,13 @@ private fun CaptureOptionCard(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = contentColor,
             )
             Spacer(modifier = Modifier.height(Spacing.sm))
             Text(
                 label,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = contentColor,
             )
         }
     }
