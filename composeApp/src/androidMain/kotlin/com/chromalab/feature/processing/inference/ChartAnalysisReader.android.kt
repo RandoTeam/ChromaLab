@@ -35,12 +35,10 @@ actual class ChartAnalysisReader actual constructor() {
                 val backend = engine.getBackendName()
                 println("VLM[READER] Trying VLM analysis ($backend)...")
 
-                // Select prompt based on model's template requirement
-                val prompt = if (config?.useChatML == true) {
-                    ChartPrompts.AXIS_EXTRACTION
-                } else {
-                    ChartPrompts.AXIS_EXTRACTION_RAW
-                }
+                // Select prompt based on model's prompt style
+                val style = config?.promptStyle ?: PromptStyle.RAW
+                val prompt = ChartPrompts.axisExtractionPrompt(style)
+                println("VLM[READER] PromptStyle=$style, prompt=${prompt.take(60)}...")
 
                 VlmEngineHolder.isInferring = true
                 val analysis = try {
@@ -100,11 +98,9 @@ actual class ChartAnalysisReader actual constructor() {
         return try {
             println("VLM[REGION] Detecting graph region via VLM...")
 
-            val prompt = if (config?.useChatML == true) {
-                ChartPrompts.GRAPH_REGION
-            } else {
-                ChartPrompts.GRAPH_REGION_RAW
-            }
+            val style = config?.promptStyle ?: PromptStyle.RAW
+            val prompt = ChartPrompts.graphRegionPrompt(style)
+            println("VLM[REGION] PromptStyle=$style, prompt=${prompt.take(60)}...")
 
             VlmEngineHolder.isInferring = true
             val rawResponse = try {
@@ -145,11 +141,9 @@ actual class ChartAnalysisReader actual constructor() {
         return try {
             println("VLM[STRUCT] Detecting axis structure...")
 
-            val prompt = if (config?.useChatML == true) {
-                ChartPrompts.AXIS_STRUCTURE
-            } else {
-                ChartPrompts.AXIS_STRUCTURE_RAW
-            }
+            val style = config?.promptStyle ?: PromptStyle.RAW
+            val prompt = ChartPrompts.axisStructurePrompt(style)
+            println("VLM[STRUCT] PromptStyle=$style, prompt=${prompt.take(60)}...")
 
             VlmEngineHolder.isInferring = true
             val rawResponse = try {

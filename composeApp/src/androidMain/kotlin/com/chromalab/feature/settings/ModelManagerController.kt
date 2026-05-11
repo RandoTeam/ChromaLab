@@ -204,7 +204,7 @@ class ModelManagerController(
                 if (engine != null) {
                     VlmEngineHolder.activeEngine = engine
                     VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
-                    println("MODEL[CTRL] Engine activated: ${model.info.displayName} (family=${model.info.family}, chatML=${VlmEngineHolder.activeConfig?.useChatML})")
+                    println("MODEL[CTRL] Engine activated: ${model.info.displayName} (family=${model.info.family}, promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
                 }
 
                 _state.update { it.copy(activatingModelId = null, activationError = null) }
@@ -398,7 +398,7 @@ class ModelManagerController(
                 VlmEngineHolder.activeEngine = engine
                 VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
                 onProgress?.invoke("AI модель готова")
-                println("MODEL[LAZY] Loaded: ${model.info.displayName} (chatML=${VlmEngineHolder.activeConfig?.useChatML})")
+                println("MODEL[LAZY] Loaded: ${model.info.displayName} (promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
                 // Schedule auto-unload timer
                 scheduleAutoUnload()
                 true

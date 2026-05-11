@@ -18,9 +18,13 @@ package com.chromalab.feature.processing.inference
  * 4. **Output format last** — the model remembers the end of the prompt best
  *    (recency bias). Place the JSON schema right before generation starts.
  *
- * 5. **ChatML template** — Qwen2.5-VL / Qwen3.5-VL expect ChatML format:
- *    <|im_start|>system\n...<|im_end|>\n<|im_start|>user\n...<|im_end|>\n<|im_start|>assistant\n
- *    Without this, Instruct-tuned models produce degraded output.
+ * 5. **Per-model prompt format** — each model family has its own expected format:
+ *    - Qwen: ChatML (<|im_start|>system/user/assistant)
+ *    - PaddleOCR-VL: Trigger phrases ("Chart Recognition:")
+ *    - DeepSeek-OCR: Grounding marker (<|grounding|>)
+ *    - Moondream2: Direct question (no roles)
+ *    - SmolVLM2: Raw system+user concatenation
+ *    See [PromptStyle] for the full mapping.
  *
  * 6. **Greedy sampling (temp=0)** — set at the C++ sampler level.
  *    The prompt does NOT control sampling, but is designed for deterministic output.
@@ -145,6 +149,91 @@ Valid values:
 
     val AXIS_STRUCTURE: String = chatML(STRUCTURE_SYSTEM, STRUCTURE_USER)
     val AXIS_STRUCTURE_RAW: String = "$STRUCTURE_SYSTEM\n\n$STRUCTURE_USER"
+
+    // ─── PaddleOCR-VL trigger prompts ───────────────────────────
+    //
+    // PaddleOCR-VL 1.5 uses task-specific trigger phrases as the ENTIRE prompt.
+    // No system/user roles. The trigger phrase routes the model's behavior.
+    // Reference: https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5
+
+    /** PaddleOCR-VL: detect chart area and read structure. */
+    val PADDLE_CHART = "Chart Recognition:"
+    /** PaddleOCR-VL: pure text OCR (axis labels, numbers). */
+    val PADDLE_OCR = "OCR:"
+
+    // ─── DeepSeek-OCR prompts ───────────────────────────────────
+    //
+    // DeepSeek-OCR requires <|grounding|> prefix marker.
+    // Outputs Markdown-structured text with layout info.
+    // Reference: https://huggingface.co/deepseek-ai/DeepSeek-OCR
+
+    /** DeepSeek-OCR: full document/chart to markdown. */
+    val DEEPSEEK_CHART = "<|grounding|>Convert the document to markdown."
+    /** DeepSeek-OCR: plain text extraction. */
+    val DEEPSEEK_OCR_TEXT = "<|grounding|>Free OCR."
+
+    // ─── Moondream2 direct prompts ──────────────────────────────
+    //
+    // Moondream2 uses plain question strings, no roles.
+    // For structured output, ask for JSON explicitly.
+    // Reference: https://github.com/vikhyat/moondream
+
+    private val MOONDREAM_REGION = """
+Locate the chart plot area in this image. The plot area is the rectangle where the data curve is drawn, bounded by the axes.
+Respond with ONLY this JSON: {"left_pct": <0-100>, "top_pct": <0-100>, "right_pct": <0-100>, "bottom_pct": <0-100>, "num_graphs": <integer>}
+""".trimIndent()
+
+    private val MOONDREAM_AXIS = """
+Read all numeric tick labels on the X-axis and Y-axis of this chromatography chart.
+Report ONLY numbers that are actually printed as tick labels. Do NOT invent values.
+Respond with ONLY this JSON: {"x": [<numbers>], "y": [<numbers>], "x_unit": "<unit or null>", "y_unit": "<unit or null>"}
+""".trimIndent()
+
+    private val MOONDREAM_STRUCTURE = """
+Describe the axis structure of this chart.
+Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "left", "has_secondary_y": false, "grid_visible": true}
+""".trimIndent()
+
+    // ─── Prompt routing ─────────────────────────────────────────
+    //
+    // These functions select the correct prompt variant based on
+    // the model's PromptStyle. Called from ChartAnalysisReader.
+
+    /**
+     * Select the graph region detection prompt for this model.
+     */
+    fun graphRegionPrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> GRAPH_REGION
+        PromptStyle.TRIGGER -> PADDLE_CHART
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_CHART
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_REGION
+        PromptStyle.RAW -> GRAPH_REGION_RAW
+        PromptStyle.LITERT -> GRAPH_REGION_RAW
+    }
+
+    /**
+     * Select the axis extraction prompt for this model.
+     */
+    fun axisExtractionPrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> AXIS_EXTRACTION
+        PromptStyle.TRIGGER -> PADDLE_OCR
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_OCR_TEXT
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_AXIS
+        PromptStyle.RAW -> AXIS_EXTRACTION_RAW
+        PromptStyle.LITERT -> AXIS_EXTRACTION_RAW
+    }
+
+    /**
+     * Select the axis structure prompt for this model.
+     */
+    fun axisStructurePrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> AXIS_STRUCTURE
+        PromptStyle.TRIGGER -> PADDLE_CHART
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_CHART
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_STRUCTURE
+        PromptStyle.RAW -> AXIS_STRUCTURE_RAW
+        PromptStyle.LITERT -> AXIS_STRUCTURE_RAW
+    }
 
     // ─── Response parsing ───────────────────────────────────────
 
