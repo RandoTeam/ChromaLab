@@ -174,7 +174,16 @@ class ModelManager(private val context: Context) {
                     "Поддерживаются: .gguf, .litertlm",
                 )
 
-            val modelId = targetModelId ?: "custom_${System.currentTimeMillis()}"
+            // Try to match to a known builtin model by filename
+            val matchedBuiltin = ModelRegistry.findByFileName(fileName)
+            val modelId = targetModelId
+                ?: matchedBuiltin?.id
+                ?: "custom_${System.currentTimeMillis()}"
+
+            if (matchedBuiltin != null) {
+                println("MODEL[MGR] Matched import to builtin: ${matchedBuiltin.displayName} (${matchedBuiltin.id})")
+            }
+
             val dir = getModelDir(modelId)
             val targetFile = File(dir, fileName)
 
@@ -223,21 +232,19 @@ class ModelManager(private val context: Context) {
                 }
             }
 
-            // Build model info
-            val family = GgufValidator.matchFamily(fileName, ggufInfo?.architecture)
-            val info = buildCustomModelInfo(dir) ?: run {
-                // Clean up if can't build info
-                dir.deleteRecursively()
-                return@withContext ModelImportResult.IoError("Не удалось создать запись модели")
+            // Build model info — use builtin if matched, else create custom
+            val finalInfo = if (matchedBuiltin != null) {
+                matchedBuiltin
+            } else {
+                val family = GgufValidator.matchFamily(fileName, ggufInfo?.architecture)
+                val info = buildCustomModelInfo(dir) ?: run {
+                    dir.deleteRecursively()
+                    return@withContext ModelImportResult.IoError("Не удалось создать запись модели")
+                }
+                if (family != null) {
+                    info.copy(family = family, description = "Импортированная модель ($family)")
+                } else info
             }
-
-            // Override family if detected
-            val finalInfo = if (family != null) {
-                info.copy(
-                    family = family,
-                    description = "Импортированная модель ($family)",
-                )
-            } else info
 
             ModelImportResult.Success(
                 modelInfo = finalInfo,

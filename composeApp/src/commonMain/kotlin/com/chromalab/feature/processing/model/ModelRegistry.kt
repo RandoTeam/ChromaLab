@@ -285,4 +285,14 @@ object ModelRegistry {
         fileName.endsWith(".gguf") -> ModelFileType.GGUF_BASE
         else -> null
     }
+
+    /**
+     * Match an imported file to its builtin model by filename.
+     * Returns the ModelInfo if any builtin model contains a file with this exact name.
+     * This enables re-importing exported models back to their correct registry slot.
+     */
+    fun findByFileName(fileName: String): ModelInfo? =
+        builtinModels.find { model ->
+            model.files.any { it.fileName == fileName }
+        }
 }
