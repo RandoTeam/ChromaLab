@@ -73,11 +73,11 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
         exportIndex.intValue = idx + 1
     }
 
-    // Auto-launch next file picker when index advances
+    // Auto-launch NEXT file picker when index advances (idx > 0 only)
     LaunchedEffect(exportIndex.intValue) {
         val files = exportFiles.value
         val idx = exportIndex.intValue
-        if (idx in files.indices) {
+        if (idx > 0 && idx < files.size) {
             exportLauncher.launch(files[idx].first)
         } else if (idx > 0 && idx >= files.size) {
             // All done — reset
@@ -107,7 +107,8 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
                     if (filePairs.isNotEmpty()) {
                         exportFiles.value = filePairs
                         exportIndex.intValue = 0
-                        // First file picker is launched by LaunchedEffect
+                        // Launch first file picker directly
+                        exportLauncher.launch(filePairs.first().first)
                     }
                 }
             },

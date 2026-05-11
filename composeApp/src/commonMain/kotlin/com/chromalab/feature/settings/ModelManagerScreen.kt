@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -31,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.model.ModelFileType
+import com.chromalab.feature.processing.model.ModelGroup
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelRegistry
 
@@ -63,8 +66,6 @@ fun ModelManagerScreen(
     onImport: () -> Unit,
     onBack: () -> Unit,
 ) {
-    val models = remember { ModelRegistry.builtinModels }
-    val grouped = remember { ModelRegistry.groupedByRuntime() }
     var deleteConfirmId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
@@ -91,7 +92,7 @@ fun ModelManagerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // ===== Active Model Banner =====
-            val activeModel = models.find { it.id == activeModelId }
+            val activeModel = activeModelId?.let { ModelRegistry.findById(it) }
             if (activeModel != null) {
                 item {
                     ActiveModelBanner(
@@ -111,7 +112,7 @@ fun ModelManagerScreen(
                 )
             }
 
-            val liteRTModels = grouped[ModelRuntime.LITERT_LM] ?: emptyList()
+            val liteRTModels = ModelRegistry.standaloneModels(ModelRuntime.LITERT_LM)
             items(liteRTModels, key = { it.id }) { model ->
                 ModelCard(
                     model = model,
@@ -130,7 +131,7 @@ fun ModelManagerScreen(
                 )
             }
 
-            // ===== GGUF Section =====
+            // ===== GGUF Section — expandable groups =====
             item { Spacer(Modifier.height(4.dp)) }
             item {
                 SectionHeader(
@@ -141,8 +142,31 @@ fun ModelManagerScreen(
                 )
             }
 
-            val ggufModels = grouped[ModelRuntime.LLAMA_CPP] ?: emptyList()
-            items(ggufModels, key = { it.id }) { model ->
+            // Expandable model groups (3B, 7B)
+            val ggufGroups = ModelRegistry.groupsForRuntime(ModelRuntime.LLAMA_CPP)
+            for (group in ggufGroups) {
+                item(key = "group_${group.groupId}") {
+                    ExpandableModelGroup(
+                        group = group,
+                        downloadedModelIds = downloadedModelIds,
+                        activeModelId = activeModelId,
+                        downloadingModelId = downloadingModelId,
+                        downloadProgress = downloadProgress,
+                        downloadSpeedMbps = downloadSpeedMbps,
+                        activatingModelId = activatingModelId,
+                        deviceRamMb = deviceRamMb,
+                        onDownload = onDownload,
+                        onDelete = { deleteConfirmId = it },
+                        onActivate = onActivate,
+                        onExport = onExport,
+                        onCancelDownload = onCancelDownload,
+                    )
+                }
+            }
+
+            // Standalone GGUF models (e.g. Qwen3.5-VL-9B)
+            val standaloneGguf = ModelRegistry.standaloneModels(ModelRuntime.LLAMA_CPP)
+            items(standaloneGguf, key = { it.id }) { model ->
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
@@ -238,7 +262,7 @@ fun ModelManagerScreen(
 
     // ===== Delete Confirmation Dialog =====
     deleteConfirmId?.let { modelId ->
-        val model = models.find { it.id == modelId }
+        val model = ModelRegistry.findById(modelId)
         AlertDialog(
             onDismissRequest = { deleteConfirmId = null },
             icon = { Icon(Icons.Filled.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
@@ -316,6 +340,307 @@ private fun SectionHeader(
                     )
                 )
         )
+    }
+}
+
+/**
+ * Expandable group card for a model family (e.g. Qwen2.5-VL 3B).
+ * Shows a header with model name, tapping expands to show quantization variants.
+ */
+@Composable
+private fun ExpandableModelGroup(
+    group: ModelGroup,
+    downloadedModelIds: Set<String>,
+    activeModelId: String?,
+    downloadingModelId: String?,
+    downloadProgress: Float,
+    downloadSpeedMbps: Float,
+    activatingModelId: String?,
+    deviceRamMb: Int,
+    onDownload: (ModelInfo) -> Unit,
+    onDelete: (String) -> Unit,
+    onActivate: (String) -> Unit,
+    onExport: (String) -> Unit,
+    onCancelDownload: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    // Count how many variants are downloaded
+    val downloadedCount = group.variants.count { it.id in downloadedModelIds }
+    val hasActive = group.variants.any { it.id == activeModelId }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (hasActive)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            else MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column {
+            // Group header — tap to expand
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Runtime chip
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                ) {
+                    Text(
+                        "GGUF",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        group.displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "${group.variants.size} квантизаций" +
+                            if (downloadedCount > 0) " · $downloadedCount загружено" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                if (group.supportsVision) {
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.Visibility,
+                                null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.tertiary,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "Vision",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.tertiary,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(8.dp))
+                }
+
+                // Expand/collapse icon with animation
+                val rotation by animateFloatAsState(
+                    targetValue = if (expanded) 180f else 0f,
+                    label = "chevron",
+                )
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = if (expanded) "Свернуть" else "Развернуть",
+                    modifier = Modifier.rotate(rotation),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            // Expanded variants
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    group.variants.forEach { variant ->
+                        QuantVariantCard(
+                            variant = variant,
+                            isDownloaded = variant.id in downloadedModelIds,
+                            isActive = variant.id == activeModelId,
+                            isDownloading = variant.id == downloadingModelId,
+                            isActivating = variant.id == activatingModelId,
+                            downloadProgress = if (variant.id == downloadingModelId) downloadProgress else 0f,
+                            downloadSpeedMbps = if (variant.id == downloadingModelId) downloadSpeedMbps else 0f,
+                            deviceRamMb = deviceRamMb,
+                            onDownload = { onDownload(variant) },
+                            onDelete = { onDelete(variant.id) },
+                            onActivate = { onActivate(variant.id) },
+                            onExport = { onExport(variant.id) },
+                            onCancelDownload = onCancelDownload,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact card for a quantization variant within an expanded group.
+ */
+@Composable
+private fun QuantVariantCard(
+    variant: ModelInfo,
+    isDownloaded: Boolean,
+    isActive: Boolean,
+    isDownloading: Boolean,
+    isActivating: Boolean,
+    downloadProgress: Float,
+    downloadSpeedMbps: Float,
+    deviceRamMb: Int,
+    onDownload: () -> Unit,
+    onDelete: () -> Unit,
+    onActivate: () -> Unit,
+    onExport: () -> Unit,
+    onCancelDownload: () -> Unit,
+) {
+    val ramOk = deviceRamMb >= variant.minRamMb
+    val animatedProgress by animateFloatAsState(targetValue = downloadProgress, label = "dl")
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isActive) Modifier.border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp),
+                ) else Modifier
+            ),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isActive)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            else MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Quant label
+                Text(
+                    variant.quantLabel ?: variant.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                )
+                if (isActive) {
+                    Spacer(Modifier.width(6.dp))
+                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                        Text("✓", modifier = Modifier.padding(horizontal = 2.dp))
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                // Size + RAM info
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        formatBytes(variant.totalSizeBytes),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (!ramOk) {
+                        Text(
+                            "Нужно ${variant.minRamMb / 1024} GB RAM",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+
+            // Description
+            Text(
+                variant.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+
+            // Download progress (compact)
+            if (isDownloading) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "${(animatedProgress * 100).toInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+
+            // Action buttons (compact row)
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                when {
+                    isDownloading -> {
+                        TextButton(onClick = onCancelDownload, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Icon(Icons.Filled.Close, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Отмена", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    isDownloaded -> {
+                        TextButton(onClick = onExport, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Icon(Icons.Filled.Upload, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text("Выгрузить", style = MaterialTheme.typography.labelSmall)
+                        }
+                        TextButton(onClick = onDelete, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Icon(Icons.Filled.Delete, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text("Удалить", style = MaterialTheme.typography.labelSmall)
+                        }
+                        if (!isActive && !isActivating) {
+                            Spacer(Modifier.width(4.dp))
+                            ActivateButton(isActivating = false, onActivate = onActivate)
+                        }
+                    }
+                    isActivating -> {
+                        ActivateButton(isActivating = true, onActivate = {})
+                    }
+                    else -> {
+                        FilledTonalButton(
+                            onClick = onDownload,
+                            enabled = ramOk,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        ) {
+                            Icon(Icons.Filled.Download, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Скачать", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
