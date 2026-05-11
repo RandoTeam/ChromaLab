@@ -31,7 +31,7 @@ package com.chromalab.feature.processing.inference
  *
  * | Model               | maxTokens | repeatPenalty | repeatLastN | contextSize |
  * |---------------------|-----------|---------------|-------------|-------------|
- * | Qwen2.5-VL (3B/7B)  | 768       | 1.1           | 64          | 4096        |
+ * | Qwen3-VL (2B/4B/8B) | 768       | 1.1           | 64          | 4096        |
  * | Qwen3.5-VL (9B)     | 768       | 1.1           | 64          | 4096        |
  * | Gemma 4 (LiteRT)    | 768       | 1.0 (SDK)     | 0           | 4096        |
  * | User-imported        | 512       | 1.15          | 64          | 4096        |
@@ -83,9 +83,24 @@ data class InferenceConfig(
         )
 
         /**
+         * Preset for Qwen3-VL models (2B, 4B, 8B).
+         *
+         * Same ChatML template as Qwen2.5-VL.
+         * Qwen3 may emit <think>...</think> blocks — parser strips them.
+         */
+        val QWEN3_VL = InferenceConfig(
+            maxTokens = 768,
+            repeatPenalty = 1.1f,
+            repeatLastN = 64,
+            contextSize = 4096,
+            batchSize = 512,
+            useChatML = true,
+        )
+
+        /**
          * Preset for Qwen3.5-VL models (9B).
          *
-         * Same as Qwen2.5-VL — both use ChatML template.
+         * Same as Qwen3-VL — both use ChatML template.
          * Qwen3.5 may emit <think>...</think> blocks — parser strips them.
          */
         val QWEN35_VL = InferenceConfig(
@@ -131,11 +146,12 @@ data class InferenceConfig(
          * Select the optimal config for a model by its family.
          */
         fun forModelFamily(family: String): InferenceConfig = when {
-            family.contains("qwen3", ignoreCase = true) -> QWEN35_VL
+            family.contains("qwen3.5", ignoreCase = true) -> QWEN35_VL
+            family.contains("qwen3", ignoreCase = true) -> QWEN3_VL
             family.contains("qwen2", ignoreCase = true) -> QWEN25_VL
-            family.contains("qwen", ignoreCase = true) -> QWEN25_VL
+            family.contains("qwen", ignoreCase = true) -> QWEN3_VL
             family.contains("gemma", ignoreCase = true) -> GEMMA
-            family.contains("llava", ignoreCase = true) -> DEFAULT // LLaVA uses own template
+            family.contains("llava", ignoreCase = true) -> DEFAULT
             else -> DEFAULT
         }
     }

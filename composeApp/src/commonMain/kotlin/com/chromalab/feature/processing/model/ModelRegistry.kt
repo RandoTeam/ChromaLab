@@ -67,8 +67,8 @@ data class ModelGroup(
  *
  * Available models:
  *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB)
- *   llama.cpp:  Qwen2.5-VL-3B (6 quants), Qwen2.5-VL-7B (6 quants),
- *               Qwen3.5-VL-9B (Q4_K_M)
+ *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
+ *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M)
  */
 object ModelRegistry {
 
@@ -76,20 +76,28 @@ object ModelRegistry {
     private const val UNSLOTH = "$HF_BASE/unsloth"
     private const val GGML_ORG = "$HF_BASE/ggml-org"
 
-    // ===== Shared mmproj files (one per model family, Q8_0 quality) =====
+    // ===== Shared mmproj files per Qwen3-VL model size =====
+    // Source: unsloth/Qwen3-VL-*-Instruct-GGUF (BF16 quality)
 
-    private val mmproj3B = ModelFile(
-        fileName = "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
-        sizeBytes = 844_757_728L,
+    private val mmproj2B = ModelFile(
+        fileName = "mmproj-Qwen3-VL-2B-BF16.gguf",
+        sizeBytes = 822_540_960L,
         type = ModelFileType.GGUF_MMPROJ,
-        downloadUrl = "$GGML_ORG/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+        downloadUrl = "$UNSLOTH/Qwen3-VL-2B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
     )
 
-    private val mmproj7B = ModelFile(
-        fileName = "mmproj-Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
-        sizeBytes = 853_119_712L,
+    private val mmproj4B = ModelFile(
+        fileName = "mmproj-Qwen3-VL-4B-BF16.gguf",
+        sizeBytes = 839_326_368L,
         type = ModelFileType.GGUF_MMPROJ,
-        downloadUrl = "$GGML_ORG/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+        downloadUrl = "$UNSLOTH/Qwen3-VL-4B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
+    )
+
+    private val mmproj8B = ModelFile(
+        fileName = "mmproj-Qwen3-VL-8B-BF16.gguf",
+        sizeBytes = 1_162_569_280L,
+        type = ModelFileType.GGUF_MMPROJ,
+        downloadUrl = "$UNSLOTH/Qwen3-VL-8B-Instruct-GGUF/resolve/main/mmproj-BF16.gguf",
     )
 
     // ===== LiteRT-LM models (Gemma 4 family) =====
@@ -132,69 +140,101 @@ object ModelRegistry {
         description = "Высокая точность с NPU/GPU. 12+ GB RAM. ~12.9 GB.",
     )
 
-    // ===== Qwen2.5-VL-3B quantization variants =====
-    // Source: unsloth/Qwen2.5-VL-3B-Instruct-GGUF
+    // ===== Qwen3-VL-2B quantization variants =====
+    // Source: unsloth/Qwen3-VL-2B-Instruct-GGUF (32K downloads)
 
-    private fun qwen3BVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
-        id = "qwen25vl-3b-${quant.lowercase().replace("_", "")}",
-        displayName = "3B · $quant",
-        family = "qwen2.5-vl",
+    private fun qwen3vl2BVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
+        id = "qwen3vl-2b-${quant.lowercase().replace("_", "")}",
+        displayName = "2B · $quant",
+        family = "qwen3-vl",
         runtime = ModelRuntime.LLAMA_CPP,
         files = listOf(
             ModelFile(
-                fileName = "Qwen2.5-VL-3B-Instruct-$quant.gguf",
+                fileName = "Qwen3-VL-2B-Instruct-$quant.gguf",
                 sizeBytes = sizeBytes,
                 type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$UNSLOTH/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/Qwen2.5-VL-3B-Instruct-$quant.gguf",
+                downloadUrl = "$UNSLOTH/Qwen3-VL-2B-Instruct-GGUF/resolve/main/Qwen3-VL-2B-Instruct-$quant.gguf",
             ),
-            mmproj3B,
+            mmproj2B,
         ),
         minRamMb = minRam,
         isBuiltin = true,
         supportsVision = true,
         description = desc,
-        groupId = "qwen25vl-3b",
+        groupId = "qwen3vl-2b",
         quantLabel = quant,
     )
 
-    private val qwen3B_Q2_K   = qwen3BVariant("Q2_K",   1_274_754_400L, 2048,  "Минимальный. ~1.2 GB. Низкое качество.")
-    private val qwen3B_Q3_K_M = qwen3BVariant("Q3_K_M", 1_590_474_080L, 3072,  "Лёгкий. ~1.5 GB. Приемлемое качество.")
-    private val qwen3B_Q4_K_M = qwen3BVariant("Q4_K_M", 1_929_901_408L, 4096,  "Оптимальный баланс. ~1.8 GB.")
-    private val qwen3B_Q5_K_M = qwen3BVariant("Q5_K_M", 2_224_813_408L, 4096,  "Высокое качество. ~2.1 GB.")
-    private val qwen3B_Q6_K   = qwen3BVariant("Q6_K",   2_538_157_408L, 6144,  "Очень высокое качество. ~2.4 GB.")
-    private val qwen3B_Q8_0   = qwen3BVariant("Q8_0",   3_285_474_656L, 6144,  "Максимальное качество. ~3.1 GB.")
+    private val qwen3vl2B_Q2_K   = qwen3vl2BVariant("Q2_K",     777_797_312L, 2048, "Минимальный. ~742 MB. Низкое качество.")
+    private val qwen3vl2B_Q3_K_M = qwen3vl2BVariant("Q3_K_M",   939_540_160L, 3072, "Лёгкий. ~896 MB. Приемлемое качество.")
+    private val qwen3vl2B_Q4_K_M = qwen3vl2BVariant("Q4_K_M", 1_107_410_624L, 3072, "Оптимальный баланс. ~1.1 GB.")
+    private val qwen3vl2B_Q5_K_M = qwen3vl2BVariant("Q5_K_M", 1_257_881_280L, 4096, "Высокое качество. ~1.2 GB.")
+    private val qwen3vl2B_Q6_K   = qwen3vl2BVariant("Q6_K",   1_417_756_352L, 4096, "Очень высокое качество. ~1.4 GB.")
+    private val qwen3vl2B_Q8_0   = qwen3vl2BVariant("Q8_0",   1_834_428_096L, 6144, "Максимальное качество. ~1.7 GB.")
 
-    // ===== Qwen2.5-VL-7B quantization variants =====
-    // Source: unsloth/Qwen2.5-VL-7B-Instruct-GGUF
+    // ===== Qwen3-VL-4B quantization variants =====
+    // Source: unsloth/Qwen3-VL-4B-Instruct-GGUF (107K downloads)
 
-    private fun qwen7BVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
-        id = "qwen25vl-7b-${quant.lowercase().replace("_", "")}",
-        displayName = "7B · $quant",
-        family = "qwen2.5-vl",
+    private fun qwen3vl4BVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
+        id = "qwen3vl-4b-${quant.lowercase().replace("_", "")}",
+        displayName = "4B · $quant",
+        family = "qwen3-vl",
         runtime = ModelRuntime.LLAMA_CPP,
         files = listOf(
             ModelFile(
-                fileName = "Qwen2.5-VL-7B-Instruct-$quant.gguf",
+                fileName = "Qwen3-VL-4B-Instruct-$quant.gguf",
                 sizeBytes = sizeBytes,
                 type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$UNSLOTH/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-$quant.gguf",
+                downloadUrl = "$UNSLOTH/Qwen3-VL-4B-Instruct-GGUF/resolve/main/Qwen3-VL-4B-Instruct-$quant.gguf",
             ),
-            mmproj7B,
+            mmproj4B,
         ),
         minRamMb = minRam,
         isBuiltin = true,
         supportsVision = true,
         description = desc,
-        groupId = "qwen25vl-7b",
+        groupId = "qwen3vl-4b",
         quantLabel = quant,
     )
 
-    private val qwen7B_Q2_K   = qwen7BVariant("Q2_K",   3_015_938_944L, 6144,  "Минимальный. ~2.8 GB. Низкое качество.")
-    private val qwen7B_Q3_K_M = qwen7BVariant("Q3_K_M", 3_808_390_016L, 6144,  "Лёгкий. ~3.5 GB. Приемлемое качество.")
-    private val qwen7B_Q4_K_M = qwen7BVariant("Q4_K_M", 4_683_072_384L, 8192,  "Оптимальный баланс. ~4.4 GB.")
-    private val qwen7B_Q5_K_M = qwen7BVariant("Q5_K_M", 5_444_830_080L, 8192,  "Высокое качество. ~5.1 GB.")
-    private val qwen7B_Q6_K   = qwen7BVariant("Q6_K",   6_254_197_632L, 10240, "Очень высокое качество. ~5.8 GB.")
-    private val qwen7B_Q8_0   = qwen7BVariant("Q8_0",   8_098_524_032L, 12288, "Максимальное качество. ~7.5 GB.")
+    private val qwen3vl4B_Q2_K   = qwen3vl4BVariant("Q2_K",   1_669_501_216L, 4096,  "Минимальный. ~1.6 GB. Низкое качество.")
+    private val qwen3vl4B_Q3_K_M = qwen3vl4BVariant("Q3_K_M", 2_075_619_616L, 4096,  "Лёгкий. ~2.0 GB. Приемлемое качество.")
+    private val qwen3vl4B_Q4_K_M = qwen3vl4BVariant("Q4_K_M", 2_497_282_336L, 6144,  "Оптимальный баланс. ~2.4 GB.")
+    private val qwen3vl4B_Q5_K_M = qwen3vl4BVariant("Q5_K_M", 2_889_515_296L, 6144,  "Высокое качество. ~2.8 GB.")
+    private val qwen3vl4B_Q6_K   = qwen3vl4BVariant("Q6_K",   3_306_262_816L, 8192,  "Очень высокое качество. ~3.2 GB.")
+    private val qwen3vl4B_Q8_0   = qwen3vl4BVariant("Q8_0",   4_280_406_816L, 8192,  "Максимальное качество. ~4.1 GB.")
+
+    // ===== Qwen3-VL-8B quantization variants =====
+    // Source: unsloth/Qwen3-VL-8B-Instruct-GGUF (50K downloads)
+
+    private fun qwen3vl8BVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
+        id = "qwen3vl-8b-${quant.lowercase().replace("_", "")}",
+        displayName = "8B · $quant",
+        family = "qwen3-vl",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "Qwen3-VL-8B-Instruct-$quant.gguf",
+                sizeBytes = sizeBytes,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$UNSLOTH/Qwen3-VL-8B-Instruct-GGUF/resolve/main/Qwen3-VL-8B-Instruct-$quant.gguf",
+            ),
+            mmproj8B,
+        ),
+        minRamMb = minRam,
+        isBuiltin = true,
+        supportsVision = true,
+        description = desc,
+        groupId = "qwen3vl-8b",
+        quantLabel = quant,
+    )
+
+    private val qwen3vl8B_Q2_K   = qwen3vl8BVariant("Q2_K",   3_281_734_496L,  6144, "Минимальный. ~3.1 GB. Низкое качество.")
+    private val qwen3vl8B_Q3_K_M = qwen3vl8BVariant("Q3_K_M", 4_124_162_912L,  8192, "Лёгкий. ~3.9 GB. Приемлемое качество.")
+    private val qwen3vl8B_Q4_K_M = qwen3vl8BVariant("Q4_K_M", 5_027_785_568L,  8192, "Оптимальный баланс. ~4.8 GB.")
+    private val qwen3vl8B_Q5_K_M = qwen3vl8BVariant("Q5_K_M", 5_851_114_336L, 10240, "Высокое качество. ~5.6 GB.")
+    private val qwen3vl8B_Q6_K   = qwen3vl8BVariant("Q6_K",   6_725_901_152L, 10240, "Очень высокое качество. ~6.4 GB.")
+    private val qwen3vl8B_Q8_0   = qwen3vl8BVariant("Q8_0",   8_709_520_224L, 12288, "Максимальное качество. ~8.3 GB.")
 
     // ===== Qwen3.5-VL-9B (single quant from jc-builds) =====
 
@@ -211,7 +251,7 @@ object ModelRegistry {
                 downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf",
             ),
             ModelFile(
-                fileName = "mmproj-F16.gguf",
+                fileName = "mmproj-Qwen35-9B-F16.gguf",
                 sizeBytes = 918_166_080L,
                 type = ModelFileType.GGUF_MMPROJ,
                 downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/mmproj-F16.gguf",
@@ -230,33 +270,44 @@ object ModelRegistry {
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
         gemma4E4B,
-        // 3B variants
-        qwen3B_Q2_K, qwen3B_Q3_K_M, qwen3B_Q4_K_M, qwen3B_Q5_K_M, qwen3B_Q6_K, qwen3B_Q8_0,
-        // 7B variants
-        qwen7B_Q2_K, qwen7B_Q3_K_M, qwen7B_Q4_K_M, qwen7B_Q5_K_M, qwen7B_Q6_K, qwen7B_Q8_0,
-        // 9B
+        // Qwen3-VL 2B variants
+        qwen3vl2B_Q2_K, qwen3vl2B_Q3_K_M, qwen3vl2B_Q4_K_M, qwen3vl2B_Q5_K_M, qwen3vl2B_Q6_K, qwen3vl2B_Q8_0,
+        // Qwen3-VL 4B variants
+        qwen3vl4B_Q2_K, qwen3vl4B_Q3_K_M, qwen3vl4B_Q4_K_M, qwen3vl4B_Q5_K_M, qwen3vl4B_Q6_K, qwen3vl4B_Q8_0,
+        // Qwen3-VL 8B variants
+        qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0,
+        // Qwen3.5-VL 9B
         qwen35vl9b,
     )
 
     /** Model groups for expandable UI. */
     val modelGroups: List<ModelGroup> = listOf(
         ModelGroup(
-            groupId = "qwen25vl-3b",
-            displayName = "Qwen2.5-VL 3B",
-            family = "qwen2.5-vl",
+            groupId = "qwen3vl-2b",
+            displayName = "Qwen3-VL 2B",
+            family = "qwen3-vl",
             runtime = ModelRuntime.LLAMA_CPP,
-            description = "Лёгкая VLM модель. 6 вариантов квантизации.",
+            description = "Лёгкая VLM модель нового поколения. 6 квантов.",
             supportsVision = true,
-            variants = listOf(qwen3B_Q2_K, qwen3B_Q3_K_M, qwen3B_Q4_K_M, qwen3B_Q5_K_M, qwen3B_Q6_K, qwen3B_Q8_0),
+            variants = listOf(qwen3vl2B_Q2_K, qwen3vl2B_Q3_K_M, qwen3vl2B_Q4_K_M, qwen3vl2B_Q5_K_M, qwen3vl2B_Q6_K, qwen3vl2B_Q8_0),
         ),
         ModelGroup(
-            groupId = "qwen25vl-7b",
-            displayName = "Qwen2.5-VL 7B",
-            family = "qwen2.5-vl",
+            groupId = "qwen3vl-4b",
+            displayName = "Qwen3-VL 4B",
+            family = "qwen3-vl",
             runtime = ModelRuntime.LLAMA_CPP,
-            description = "Высокое качество. 6 вариантов квантизации.",
+            description = "Оптимальный баланс точности и скорости. 6 квантов.",
             supportsVision = true,
-            variants = listOf(qwen7B_Q2_K, qwen7B_Q3_K_M, qwen7B_Q4_K_M, qwen7B_Q5_K_M, qwen7B_Q6_K, qwen7B_Q8_0),
+            variants = listOf(qwen3vl4B_Q2_K, qwen3vl4B_Q3_K_M, qwen3vl4B_Q4_K_M, qwen3vl4B_Q5_K_M, qwen3vl4B_Q6_K, qwen3vl4B_Q8_0),
+        ),
+        ModelGroup(
+            groupId = "qwen3vl-8b",
+            displayName = "Qwen3-VL 8B",
+            family = "qwen3-vl",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "Высокое качество. 8+ GB RAM. 6 квантов.",
+            supportsVision = true,
+            variants = listOf(qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0),
         ),
     )
 
