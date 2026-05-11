@@ -15,6 +15,8 @@ data class ModelManagerState(
     val downloadingModelId: String? = null,
     val downloadProgress: Float = 0f,
     val downloadSpeedMbps: Float = 0f,
+    val downloadFileName: String = "",
+    val downloadError: String? = null,
     val deviceRamMb: Int = 4096,
     val availableStorageGb: Float = 0f,
     val totalModelDiskUsageGb: Float = 0f,

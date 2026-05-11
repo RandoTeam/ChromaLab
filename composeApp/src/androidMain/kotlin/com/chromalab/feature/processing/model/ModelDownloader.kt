@@ -18,6 +18,9 @@ data class DownloadProgress(
     val speedBytesPerSec: Long,
     val fileIndex: Int,       // which file in the model (0-based)
     val totalFiles: Int,
+    val currentFileName: String = "",
+    val phase: DownloadPhase = DownloadPhase.DOWNLOADING,
+    val error: String? = null,
 ) {
     val fraction: Float
         get() = if (totalBytes > 0) bytesDownloaded.toFloat() / totalBytes else 0f
@@ -25,6 +28,14 @@ data class DownloadProgress(
         get() = speedBytesPerSec / (1024f * 1024f)
     val percentInt: Int
         get() = (fraction * 100).toInt()
+}
+
+enum class DownloadPhase {
+    CONNECTING,
+    DOWNLOADING,
+    VALIDATING,
+    COMPLETE,
+    ERROR,
 }
 
 /**
@@ -69,6 +80,19 @@ class ModelDownloader {
 
             println("MODEL[DL] Downloading ${index + 1}/${model.files.size}: ${file.fileName}")
 
+            // Report connecting phase
+            onProgress(
+                DownloadProgress(
+                    bytesDownloaded = cumulativeDownloaded,
+                    totalBytes = totalSize,
+                    speedBytesPerSec = 0L,
+                    fileIndex = index,
+                    totalFiles = model.files.size,
+                    currentFileName = file.fileName,
+                    phase = DownloadPhase.CONNECTING,
+                )
+            )
+
             downloadSingleFile(
                 url = file.downloadUrl,
                 targetFile = targetFile,
@@ -82,15 +106,63 @@ class ModelDownloader {
                         speedBytesPerSec = speedBps,
                         fileIndex = index,
                         totalFiles = model.files.size,
+                        currentFileName = file.fileName,
+                        phase = DownloadPhase.DOWNLOADING,
                     )
                 )
             }
 
+            // Validate downloaded file
+            onProgress(
+                DownloadProgress(
+                    bytesDownloaded = cumulativeDownloaded + targetFile.length(),
+                    totalBytes = totalSize,
+                    speedBytesPerSec = 0L,
+                    fileIndex = index,
+                    totalFiles = model.files.size,
+                    currentFileName = file.fileName,
+                    phase = DownloadPhase.VALIDATING,
+                )
+            )
+
+            val validationError = validateDownloadedFile(targetFile, file)
+            if (validationError != null) {
+                println("MODEL[DL] Validation FAILED: ${file.fileName}: $validationError")
+                // Clean up corrupt file
+                targetFile.delete()
+                tempFile.delete()
+                onProgress(
+                    DownloadProgress(
+                        bytesDownloaded = cumulativeDownloaded,
+                        totalBytes = totalSize,
+                        speedBytesPerSec = 0L,
+                        fileIndex = index,
+                        totalFiles = model.files.size,
+                        currentFileName = file.fileName,
+                        phase = DownloadPhase.ERROR,
+                        error = validationError,
+                    )
+                )
+                throw RuntimeException("Файл ${file.fileName}: $validationError")
+            }
+
             cumulativeDownloaded += targetFile.length()
-            println("MODEL[DL] Completed: ${file.fileName} (${targetFile.length()} bytes)")
+            println("MODEL[DL] Completed + validated: ${file.fileName} (${targetFile.length()} bytes)")
         }
 
-        println("MODEL[DL] All files downloaded for: ${model.displayName}")
+        // Final complete callback
+        onProgress(
+            DownloadProgress(
+                bytesDownloaded = totalSize,
+                totalBytes = totalSize,
+                speedBytesPerSec = 0L,
+                fileIndex = model.files.size - 1,
+                totalFiles = model.files.size,
+                phase = DownloadPhase.COMPLETE,
+            )
+        )
+
+        println("MODEL[DL] All files downloaded and validated for: ${model.displayName}")
     }
 
     /**
@@ -217,6 +289,59 @@ class ModelDownloader {
         } finally {
             connection.disconnect()
         }
+    }
+
+    /**
+     * Validate a downloaded file for integrity.
+     * Returns error message or null if valid.
+     */
+    private fun validateDownloadedFile(file: File, modelFile: ModelFile): String? {
+        if (!file.exists()) {
+            return "Файл не найден после загрузки"
+        }
+
+        // Size check (allow 5% tolerance for HF size estimates)
+        val minExpected = (modelFile.sizeBytes * 0.95).toLong()
+        if (file.length() < minExpected) {
+            val actualMb = file.length() / (1024 * 1024)
+            val expectedMb = modelFile.sizeBytes / (1024 * 1024)
+            return "Неполная загрузка: ${actualMb} MB из ${expectedMb} MB"
+        }
+
+        // GGUF magic bytes check
+        if (file.name.endsWith(".gguf")) {
+            try {
+                java.io.RandomAccessFile(file, "r").use { raf ->
+                    val buf = java.nio.ByteBuffer.allocate(4)
+                        .order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                    raf.channel.read(buf)
+                    buf.flip()
+                    val magic = buf.int
+                    if (magic != 0x46554747) { // "GGUF"
+                        return "Повреждённый файл: неверные magic bytes (не GGUF)"
+                    }
+                }
+            } catch (e: Exception) {
+                return "Ошибка проверки: ${e.message}"
+            }
+        }
+
+        // LiteRT bundle check
+        if (file.name.endsWith(".litertlm")) {
+            try {
+                java.io.RandomAccessFile(file, "r").use { raf ->
+                    val b1 = raf.read()
+                    val b2 = raf.read()
+                    if (b1 != 0x50 || b2 != 0x4B) { // PK (zip)
+                        return "Повреждённый файл: не ZIP/LiteRT формат"
+                    }
+                }
+            } catch (e: Exception) {
+                return "Ошибка проверки: ${e.message}"
+            }
+        }
+
+        return null // valid
     }
 
     /**

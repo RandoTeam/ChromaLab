@@ -73,7 +73,13 @@ class ModelManagerController(
         if (downloadJob?.isActive == true) return // one at a time
 
         _state.update {
-            it.copy(downloadingModelId = model.id, downloadProgress = 0f, downloadSpeedMbps = 0f)
+            it.copy(
+                downloadingModelId = model.id,
+                downloadProgress = 0f,
+                downloadSpeedMbps = 0f,
+                downloadFileName = "",
+                downloadError = null,
+            )
         }
 
         downloadJob = scope.launch {
@@ -84,15 +90,33 @@ class ModelManagerController(
                         it.copy(
                             downloadProgress = progress.fraction,
                             downloadSpeedMbps = progress.speedMbPerSec,
+                            downloadFileName = progress.currentFileName,
+                            downloadError = progress.error,
                         )
                     }
                 }
                 println("MODEL[CTRL] Download complete: ${model.id}")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                println("MODEL[CTRL] Download cancelled: ${model.id}")
+                // Clean up partial download
+                manager.delete(model.id)
             } catch (e: Exception) {
                 println("MODEL[CTRL] Download failed: ${e.message}")
+                _state.update {
+                    it.copy(
+                        downloadError = e.message ?: "Неизвестная ошибка загрузки",
+                    )
+                }
+                // Clean up corrupt files
+                manager.delete(model.id)
             } finally {
                 _state.update {
-                    it.copy(downloadingModelId = null, downloadProgress = 0f, downloadSpeedMbps = 0f)
+                    it.copy(
+                        downloadingModelId = null,
+                        downloadProgress = 0f,
+                        downloadSpeedMbps = 0f,
+                        downloadFileName = "",
+                    )
                 }
                 refresh()
             }

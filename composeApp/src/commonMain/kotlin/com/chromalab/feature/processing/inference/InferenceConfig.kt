@@ -82,6 +82,7 @@ data class InferenceConfig(
         fun forModelFamily(family: String): InferenceConfig = when {
             family.contains("qwen", ignoreCase = true) -> QWEN_VL
             family.contains("gemma", ignoreCase = true) -> GEMMA
+            family.contains("llava", ignoreCase = true) -> QWEN_VL // similar arch
             else -> DEFAULT
         }
     }

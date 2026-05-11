@@ -44,9 +44,14 @@ data class ModelInfo(
 
 /**
  * Registry of all known built-in models.
- * 2 LiteRT-LM (Gemma 4) + 4 llama.cpp GGUF (Qwen3.5-VL).
  *
- * HF CDN URLs verified May 2026.
+ * URLs verified against HuggingFace API on 2026-05-11.
+ * All repos confirmed to exist with correct file names and sizes.
+ *
+ * Available models:
+ *   LiteRT-LM:  Gemma 4 E2B (2.59 GB)
+ *   llama.cpp:  Qwen2.5-VL-3B (1.93+0.84 GB), Qwen2.5-VL-7B (4.68+0.85 GB),
+ *               Qwen3.5-VL-9B (5.68+0.92 GB)
  */
 object ModelRegistry {
 
@@ -62,7 +67,7 @@ object ModelRegistry {
         files = listOf(
             ModelFile(
                 fileName = "gemma-4-E2B-it.litertlm",
-                sizeBytes = 2_590_000_000L, // ~2.59 GB
+                sizeBytes = 2_588_147_712L,
                 type = ModelFileType.LITERT_BUNDLE,
                 downloadUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
             ),
@@ -73,103 +78,58 @@ object ModelRegistry {
         description = "Быстрая модель с NPU/GPU ускорением. Рекомендуется для большинства устройств.",
     )
 
-    private val gemma4E4B = ModelInfo(
-        id = "gemma4-e4b",
-        displayName = "Gemma 4 E4B",
-        family = "gemma-4",
-        runtime = ModelRuntime.LITERT_LM,
-        files = listOf(
-            ModelFile(
-                fileName = "gemma-4-E4B-it.litertlm",
-                sizeBytes = 3_500_000_000L, // ~3.5 GB
-                type = ModelFileType.LITERT_BUNDLE,
-                downloadUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
-            ),
-        ),
-        minRamMb = 6144,
-        isBuiltin = true,
-        supportsVision = true,
-        description = "Более точная модель с NPU/GPU. Требует 6+ GB RAM.",
-    )
+    // ===== llama.cpp GGUF models =====
+    // Source: ggml-org (official llama.cpp GGUF repos), jc-builds (Qwen3.5)
+    // All URLs verified via HuggingFace API 2026-05-11
 
-    // ===== llama.cpp GGUF models (Qwen3.5-VL family) =====
-    // Note: Qwen3.5-VL GGUF models are provided by community (unsloth, jc-builds).
-    // URLs are placeholders for 0.8B/2B/4B as official GGUF repos may vary.
-    // The 9B model has a confirmed repo: jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF
-
-    private val qwen35vl08b = ModelInfo(
-        id = "qwen35vl-08b",
-        displayName = "Qwen3.5-VL 0.8B",
-        family = "qwen3.5-vl",
+    private val qwen25vl3b = ModelInfo(
+        id = "qwen25vl-3b",
+        displayName = "Qwen2.5-VL 3B",
+        family = "qwen2.5-vl",
         runtime = ModelRuntime.LLAMA_CPP,
         files = listOf(
             ModelFile(
-                fileName = "qwen3.5-vl-0.8b-q4_k_m.gguf",
-                sizeBytes = 500_000_000L,
+                fileName = "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+                sizeBytes = 1_929_901_056L,
                 type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-0.8B-GGUF/resolve/main/Qwen3.5-VL-0.8B-Q4_K_M.gguf",
+                downloadUrl = "$HF_BASE/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
             ),
             ModelFile(
-                fileName = "qwen3.5-vl-0.8b-mmproj.gguf",
-                sizeBytes = 150_000_000L,
+                fileName = "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+                sizeBytes = 844_757_728L,
                 type = ModelFileType.GGUF_MMPROJ,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-0.8B-GGUF/resolve/main/mmproj-Qwen3.5-VL-0.8B-f16.gguf",
+                downloadUrl = "$HF_BASE/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
             ),
         ),
         minRamMb = 4096,
         isBuiltin = true,
         supportsVision = true,
-        description = "Самая лёгкая модель. Подходит для устройств с 4 GB RAM.",
+        description = "Лёгкая VLM модель. Q4_K_M квантизация. 4+ GB RAM.",
     )
 
-    private val qwen35vl2b = ModelInfo(
-        id = "qwen35vl-2b",
-        displayName = "Qwen3.5-VL 2B",
-        family = "qwen3.5-vl",
+    private val qwen25vl7b = ModelInfo(
+        id = "qwen25vl-7b",
+        displayName = "Qwen2.5-VL 7B",
+        family = "qwen2.5-vl",
         runtime = ModelRuntime.LLAMA_CPP,
         files = listOf(
             ModelFile(
-                fileName = "qwen3.5-vl-2b-q4_k_m.gguf",
-                sizeBytes = 1_200_000_000L,
+                fileName = "Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+                sizeBytes = 4_683_072_032L,
                 type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-2B-GGUF/resolve/main/Qwen3.5-VL-2B-Q4_K_M.gguf",
+                downloadUrl = "$HF_BASE/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
             ),
             ModelFile(
-                fileName = "qwen3.5-vl-2b-mmproj.gguf",
-                sizeBytes = 300_000_000L,
+                fileName = "mmproj-Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+                sizeBytes = 853_119_712L,
                 type = ModelFileType.GGUF_MMPROJ,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-2B-GGUF/resolve/main/mmproj-Qwen3.5-VL-2B-f16.gguf",
+                downloadUrl = "$HF_BASE/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
             ),
         ),
-        minRamMb = 4096,
+        minRamMb = 8192,
         isBuiltin = true,
         supportsVision = true,
-        description = "Баланс качества и скорости. 4+ GB RAM.",
-    )
-
-    private val qwen35vl4b = ModelInfo(
-        id = "qwen35vl-4b",
-        displayName = "Qwen3.5-VL 4B",
-        family = "qwen3.5-vl",
-        runtime = ModelRuntime.LLAMA_CPP,
-        files = listOf(
-            ModelFile(
-                fileName = "qwen3.5-vl-4b-q4_k_m.gguf",
-                sizeBytes = 2_500_000_000L,
-                type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-4B-GGUF/resolve/main/Qwen3.5-VL-4B-Q4_K_M.gguf",
-            ),
-            ModelFile(
-                fileName = "qwen3.5-vl-4b-mmproj.gguf",
-                sizeBytes = 400_000_000L,
-                type = ModelFileType.GGUF_MMPROJ,
-                downloadUrl = "$HF_BASE/unsloth/Qwen3.5-VL-4B-GGUF/resolve/main/mmproj-Qwen3.5-VL-4B-f16.gguf",
-            ),
-        ),
-        minRamMb = 6144,
-        isBuiltin = true,
-        supportsVision = true,
-        description = "Высокое качество распознавания. 6+ GB RAM.",
+        description = "Высокое качество распознавания. Q4_K_M. 8+ GB RAM.",
     )
 
     private val qwen35vl9b = ModelInfo(
@@ -179,16 +139,16 @@ object ModelRegistry {
         runtime = ModelRuntime.LLAMA_CPP,
         files = listOf(
             ModelFile(
-                fileName = "qwen3.5-vl-9b-q4_k_m.gguf",
-                sizeBytes = 5_000_000_000L,
+                fileName = "Qwen3.5-9B-Q4_K_M.gguf",
+                sizeBytes = 5_680_522_464L,
                 type = ModelFileType.GGUF_BASE,
-                downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/Qwen3.5-9B-VLM-Q4_K_M.gguf",
+                downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/Qwen3.5-9B-Q4_K_M.gguf",
             ),
             ModelFile(
-                fileName = "qwen3.5-vl-9b-mmproj.gguf",
-                sizeBytes = 500_000_000L,
+                fileName = "mmproj-F16.gguf",
+                sizeBytes = 918_166_080L,
                 type = ModelFileType.GGUF_MMPROJ,
-                downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/mmproj-Qwen3.5-9B-f16.gguf",
+                downloadUrl = "$HF_BASE/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF/resolve/main/mmproj-F16.gguf",
             ),
         ),
         minRamMb = 12288,
@@ -199,13 +159,11 @@ object ModelRegistry {
 
     // ===== Public API =====
 
-    /** All 6 built-in models. LiteRT first (recommended), then GGUF. */
+    /** All built-in models. LiteRT first (recommended), then GGUF by size. */
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
-        gemma4E4B,
-        qwen35vl08b,
-        qwen35vl2b,
-        qwen35vl4b,
+        qwen25vl3b,
+        qwen25vl7b,
         qwen35vl9b,
     )
 
