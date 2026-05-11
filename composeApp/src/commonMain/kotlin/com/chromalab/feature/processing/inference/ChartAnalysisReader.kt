@@ -12,6 +12,11 @@ import com.chromalab.feature.processing.ocr.AxisOcrResult
  *
  * This is the primary entry point for chart axis recognition
  * in the processing pipeline.
+ *
+ * VLM tasks provided:
+ * 1. readAxisLabels — axis tick label OCR (VLM-first, ML Kit fallback)
+ * 2. detectGraphRegion — chart plot area bounding box detection
+ * 3. detectAxisStructure — axis position/grid metadata detection
  */
 expect class ChartAnalysisReader() {
     /**
@@ -19,4 +24,23 @@ expect class ChartAnalysisReader() {
      * VLM-first on Android, ML Kit OCR fallback always available.
      */
     suspend fun readAxisLabels(imagePath: String, graphRegion: GraphRegion): AxisOcrResult
+
+    /**
+     * Detect the graph plot area bounding box via VLM.
+     * Strategy A: always try VLM first.
+     *
+     * @return GraphBounds (percentage-based) if VLM succeeds, null on desktop or failure
+     */
+    suspend fun detectGraphRegion(
+        imagePath: String,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphBounds?
+
+    /**
+     * Detect axis structure (positions, grid) via VLM.
+     *
+     * @return AxisStructure if VLM succeeds, null on desktop or failure
+     */
+    suspend fun detectAxisStructure(imagePath: String): AxisStructure?
 }

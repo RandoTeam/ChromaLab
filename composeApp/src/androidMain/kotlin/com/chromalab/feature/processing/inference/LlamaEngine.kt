@@ -108,6 +108,20 @@ class LlamaEngine : InferenceEngine {
         }
     }
 
+    override suspend fun inferRaw(imagePath: String, prompt: String): String {
+        check(loaded && nativeLoaded) { "Model not loaded" }
+
+        return withContext(Dispatchers.IO) {
+            println("LLAMA[RAW] Inferring: $imagePath")
+            val responseText = nativeInferWithImage(
+                modelHandle, imagePath, prompt,
+                config.maxTokens, config.repeatPenalty, config.repeatLastN,
+            )
+            println("LLAMA[RAW] Response length: ${responseText.length}")
+            responseText
+        }
+    }
+
     override fun isLoaded(): Boolean = loaded && nativeLoaded
 
     override fun unload() {

@@ -16,4 +16,14 @@ actual class ChartAnalysisReader actual constructor() {
         imagePath: String,
         graphRegion: GraphRegion,
     ): AxisOcrResult = fallbackOcr.readAxisLabels(imagePath, graphRegion)
+
+    /** No VLM on desktop — always returns null. */
+    actual suspend fun detectGraphRegion(
+        imagePath: String,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphBounds? = null
+
+    /** No VLM on desktop — always returns null. */
+    actual suspend fun detectAxisStructure(imagePath: String): AxisStructure? = null
 }

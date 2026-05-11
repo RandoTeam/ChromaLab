@@ -164,21 +164,48 @@ class AutoSweepEngine {
         val w = imageWidth.takeIf { it > 0 } ?: 1920
         val h = imageHeight.takeIf { it > 0 } ?: 1080
 
-        // Graph detection — reuse cached result if available (multi-graph)
+        // === Strategy A: VLM-first graph detection (always try) ===
+        // VLM provides structural understanding of the image;
+        // CV refines with pixel-level precision.
+        var vlmBounds: com.chromalab.feature.processing.inference.GraphBounds? = null
+        var vlmRegion: GraphRegion? = null
+        try {
+            onProgress(SweepProgress(0, configs.size, "VLM: определение графика", "vlm_region"))
+            vlmBounds = ocrReader.detectGraphRegion(imagePath, w, h)
+            if (vlmBounds != null) {
+                // Convert percentage bounds to pixel coordinates
+                val left = (vlmBounds.leftPct / 100f * w).toInt().coerceIn(0, w)
+                val top = (vlmBounds.topPct / 100f * h).toInt().coerceIn(0, h)
+                val right = (vlmBounds.rightPct / 100f * w).toInt().coerceIn(left + 1, w)
+                val bottom = (vlmBounds.bottomPct / 100f * h).toInt().coerceIn(top + 1, h)
+                vlmRegion = GraphRegion(
+                    x = left, y = top,
+                    width = right - left, height = bottom - top,
+                    label = "VLM detected",
+                )
+                println("SWEEP[VLM] Graph region: ${vlmRegion.x},${vlmRegion.y} ${vlmRegion.width}x${vlmRegion.height} (${vlmBounds.numGraphs} graphs)")
+            }
+        } catch (e: Exception) {
+            println("SWEEP[VLM] Graph detection failed: ${e.message}")
+        }
+
+        // CV graph detection — always run for precision refinement
         val graphRes = cachedGraphResult ?: run {
-            onProgress(SweepProgress(0, configs.size, "Определение графика", "detect"))
+            onProgress(SweepProgress(0, configs.size, "CV: определение графика", "detect"))
             try {
                 graphDetector.detect(imagePath, w, h)
             } catch (e: Exception) {
-                println("SWEEP[GRAPH] detection failed: ${e.message}")
+                println("SWEEP[GRAPH] CV detection failed: ${e.message}")
                 null
             }
         }
-        val region = overrideRegion ?: graphRes?.selectedRegion
-        println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} regions, selected=$region")
+
+        // Region selection priority: override > VLM > CV
+        val region = overrideRegion ?: vlmRegion ?: graphRes?.selectedRegion
+        println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} CV regions, VLM=${vlmRegion != null}, selected=$region")
 
         if (region == null) {
-            println("SWEEP[ABORT] No graph region found")
+            println("SWEEP[ABORT] No graph region found (both VLM and CV failed)")
             return emptyList()
         }
 

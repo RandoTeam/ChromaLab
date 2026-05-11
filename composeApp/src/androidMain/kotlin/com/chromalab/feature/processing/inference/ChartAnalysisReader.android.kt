@@ -8,14 +8,14 @@ import com.chromalab.feature.processing.ocr.OcrStatus
 /**
  * Android implementation of ChartAnalysisReader.
  *
- * VLM-first pipeline:
+ * VLM-first pipeline (Strategy A — always VLM first):
  *   1. Check if a VLM engine is loaded (via VlmEngineHolder singleton)
  *   2. If yes → run VLM chart analysis → convert to AxisOcrResult
  *   3. If VLM fails or unavailable → fall back to ML Kit OCR
  *
  * Prompt selection:
- *   - Qwen VL Instruct models → ChatML-wrapped prompt (AXIS_EXTRACTION)
- *   - Gemma / other models → raw prompt (AXIS_EXTRACTION_RAW)
+ *   - Qwen VL Instruct models → ChatML-wrapped prompt
+ *   - Gemma / other models → raw prompt
  *   - Controlled by InferenceConfig.useChatML flag
  */
 actual class ChartAnalysisReader actual constructor() {
@@ -26,7 +26,7 @@ actual class ChartAnalysisReader actual constructor() {
         imagePath: String,
         graphRegion: GraphRegion,
     ): AxisOcrResult {
-        // === Strategy 1: VLM inference ===
+        // === Strategy A: VLM always first ===
         val engine = VlmEngineHolder.activeEngine
         val config = VlmEngineHolder.activeConfig
 
@@ -37,10 +37,8 @@ actual class ChartAnalysisReader actual constructor() {
 
                 // Select prompt based on model's template requirement
                 val prompt = if (config?.useChatML == true) {
-                    println("VLM[READER] Using ChatML-wrapped prompt")
                     ChartPrompts.AXIS_EXTRACTION
                 } else {
-                    println("VLM[READER] Using raw prompt (non-ChatML model)")
                     ChartPrompts.AXIS_EXTRACTION_RAW
                 }
 
@@ -64,27 +62,37 @@ actual class ChartAnalysisReader actual constructor() {
             println("VLM[READER] No model loaded, using ML Kit OCR")
         }
 
-        // === Strategy 2: ML Kit OCR fallback ===
+        // === Fallback: ML Kit OCR ===
         return fallbackOcr.readAxisLabels(imagePath, graphRegion)
     }
 
     /**
      * VLM-based graph region detection.
-     * Returns bounding box hint for the CV-based GraphRegionDetector.
+     * Strategy A: always try VLM first, return null if unavailable.
      *
-     * @return GraphBounds if VLM succeeds, null otherwise
+     * Returns bounding box hint for the CV-based GraphRegionDetector.
+     * The CV detector will use this as a prior to refine its own detection.
+     *
+     * @param imagePath path to the chart image
+     * @param imageWidth image width in pixels (for converting % to px)
+     * @param imageHeight image height in pixels
+     * @return GraphBounds if VLM succeeds, null if VLM unavailable or fails
      */
-    suspend fun detectGraphRegion(imagePath: String): GraphBounds? {
+    actual suspend fun detectGraphRegion(
+        imagePath: String,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphBounds? {
         val engine = VlmEngineHolder.activeEngine
         val config = VlmEngineHolder.activeConfig
 
         if (engine == null || !engine.isLoaded()) {
-            println("VLM[REGION] No model loaded, skipping")
+            println("VLM[REGION] No model loaded, skipping VLM graph detection")
             return null
         }
 
         return try {
-            println("VLM[REGION] Detecting graph region...")
+            println("VLM[REGION] Detecting graph region via VLM...")
 
             val prompt = if (config?.useChatML == true) {
                 ChartPrompts.GRAPH_REGION
@@ -92,19 +100,51 @@ actual class ChartAnalysisReader actual constructor() {
                 ChartPrompts.GRAPH_REGION_RAW
             }
 
-            val analysis = engine.analyzeChart(
-                imagePath = imagePath,
-                prompt = prompt,
-            )
+            val rawResponse = engine.inferRaw(imagePath, prompt)
+            println("VLM[REGION] Raw response: ${rawResponse.take(200)}")
 
-            // Parse the raw response for graph bounds
-            // The analyzeChart response goes through axis parser by default,
-            // so we need the raw response. For now, re-run with structure prompt.
-            // TODO: Add separate raw-response method to InferenceEngine
-            println("VLM[REGION] Parsing graph bounds from response")
-            null // Placeholder — requires raw response method
+            val bounds = ChartPrompts.parseGraphRegion(rawResponse)
+            if (bounds != null) {
+                println("VLM[REGION] Detected: L=${bounds.leftPct}% T=${bounds.topPct}% R=${bounds.rightPct}% B=${bounds.bottomPct}% graphs=${bounds.numGraphs}")
+            } else {
+                println("VLM[REGION] Failed to parse graph bounds")
+            }
+            bounds
         } catch (e: Exception) {
-            println("VLM[REGION] Failed: ${e.message}")
+            println("VLM[REGION] Error: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * VLM-based axis structure detection.
+     * Provides hints about axis positions and grid visibility.
+     *
+     * @return AxisStructure if VLM succeeds, null otherwise
+     */
+    actual suspend fun detectAxisStructure(imagePath: String): AxisStructure? {
+        val engine = VlmEngineHolder.activeEngine
+        val config = VlmEngineHolder.activeConfig
+
+        if (engine == null || !engine.isLoaded()) {
+            return null
+        }
+
+        return try {
+            println("VLM[STRUCT] Detecting axis structure...")
+
+            val prompt = if (config?.useChatML == true) {
+                ChartPrompts.AXIS_STRUCTURE
+            } else {
+                ChartPrompts.AXIS_STRUCTURE_RAW
+            }
+
+            val rawResponse = engine.inferRaw(imagePath, prompt)
+            println("VLM[STRUCT] Raw response: ${rawResponse.take(200)}")
+
+            ChartPrompts.parseAxisStructure(rawResponse)
+        } catch (e: Exception) {
+            println("VLM[STRUCT] Error: ${e.message}")
             null
         }
     }

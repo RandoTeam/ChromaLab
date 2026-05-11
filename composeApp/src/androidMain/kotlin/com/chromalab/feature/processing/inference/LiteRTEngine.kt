@@ -119,6 +119,36 @@ class LiteRTEngine : InferenceEngine {
 
     override fun isLoaded(): Boolean = loaded
 
+    override suspend fun inferRaw(imagePath: String, prompt: String): String {
+        val eng = engine
+        check(loaded && eng != null) { "LiteRT model not loaded" }
+
+        return withContext(Dispatchers.IO) {
+            println("LITERT[RAW] Inferring: $imagePath")
+            val conversation = eng.createConversation()
+            try {
+                val imageFile = File(imagePath)
+                val contents: Contents = if (imageFile.exists()) {
+                    Contents.of(
+                        Content.ImageFile(imagePath),
+                        Content.Text(prompt),
+                    )
+                } else {
+                    Contents.of(Content.Text(prompt))
+                }
+                val response: Message = conversation.sendMessage(contents)
+                val responseText = extractText(response)
+                println("LITERT[RAW] Response: ${responseText.length} chars")
+                responseText
+            } catch (e: Exception) {
+                println("LITERT[RAW] Error: ${e.message}")
+                ""
+            } finally {
+                (conversation as? AutoCloseable)?.close()
+            }
+        }
+    }
+
     override fun unload() {
         try {
             engine?.close()
