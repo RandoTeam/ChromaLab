@@ -59,6 +59,7 @@ fun ModelManagerScreen(
     onActivate: (String) -> Unit,
     onDeactivate: () -> Unit = {},
     onCancelDownload: () -> Unit = {},
+    onExport: (String) -> Unit = {},
     onImport: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -124,6 +125,7 @@ fun ModelManagerScreen(
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
                     onActivate = { onActivate(model.id) },
+                    onExport = { onExport(model.id) },
                     onCancelDownload = onCancelDownload,
                 )
             }
@@ -153,6 +155,7 @@ fun ModelManagerScreen(
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
                     onActivate = { onActivate(model.id) },
+                    onExport = { onExport(model.id) },
                     onCancelDownload = onCancelDownload,
                 )
             }
@@ -329,6 +332,7 @@ private fun ModelCard(
     onDownload: () -> Unit,
     onDelete: () -> Unit,
     onActivate: () -> Unit,
+    onExport: () -> Unit = {},
     onCancelDownload: () -> Unit = {},
 ) {
     val ramOk = deviceRamMb >= model.minRamMb
@@ -568,6 +572,12 @@ private fun ModelCard(
                         }
                     }
                     isDownloaded && isActive -> {
+                        TextButton(onClick = onExport) {
+                            Icon(Icons.Filled.Upload, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Выгрузить")
+                        }
+                        Spacer(Modifier.width(8.dp))
                         TextButton(onClick = onDelete) {
                             Icon(Icons.Filled.Delete, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
@@ -575,6 +585,12 @@ private fun ModelCard(
                         }
                     }
                     isDownloaded && !isActive && !isActivating -> {
+                        TextButton(onClick = onExport) {
+                            Icon(Icons.Filled.Upload, null, Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Выгрузить")
+                        }
+                        Spacer(Modifier.width(8.dp))
                         TextButton(onClick = onDelete) {
                             Icon(Icons.Filled.Delete, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))

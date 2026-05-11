@@ -201,6 +201,7 @@ fun App() {
                         onActivate = { modelActions.activate(it) },
                         onDeactivate = { modelActions.deactivate() },
                         onCancelDownload = { modelActions.cancelDownload() },
+                        onExport = { modelActions.onExport(it) },
                         onImport = { modelActions.onImport() },
                         onBack = { navController.popBackStack() },
                     )

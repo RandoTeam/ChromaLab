@@ -18,6 +18,8 @@ data class ModelManagerActions(
     val setThreadCount: (Int) -> Unit = {},
     val setAutoUnloadMinutes: (Int) -> Unit = {},
     val onImport: () -> Unit = {},
+    /** Export model files to user-chosen location. */
+    val onExport: (String) -> Unit = {},
 )
 
 /**

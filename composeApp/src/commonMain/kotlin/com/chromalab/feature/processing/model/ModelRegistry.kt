@@ -49,7 +49,7 @@ data class ModelInfo(
  * All repos confirmed to exist with correct file names and sizes.
  *
  * Available models:
- *   LiteRT-LM:  Gemma 4 E2B (2.59 GB)
+ *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB)
  *   llama.cpp:  Qwen2.5-VL-3B (1.93+0.84 GB), Qwen2.5-VL-7B (4.68+0.85 GB),
  *               Qwen3.5-VL-9B (5.68+0.92 GB)
  */
@@ -76,6 +76,25 @@ object ModelRegistry {
         isBuiltin = true,
         supportsVision = true,
         description = "Быстрая модель с NPU/GPU ускорением. Рекомендуется для большинства устройств.",
+    )
+
+    private val gemma4E4B = ModelInfo(
+        id = "gemma4-e4b",
+        displayName = "Gemma 4 E4B",
+        family = "gemma-4",
+        runtime = ModelRuntime.LITERT_LM,
+        files = listOf(
+            ModelFile(
+                fileName = "gemma-4-E4B-it.litertlm",
+                sizeBytes = 13_887_717_376L,
+                type = ModelFileType.LITERT_BUNDLE,
+                downloadUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
+            ),
+        ),
+        minRamMb = 12288,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Высокая точность с NPU/GPU. 12+ GB RAM. ~12.9 GB.",
     )
 
     // ===== llama.cpp GGUF models =====
@@ -162,6 +181,7 @@ object ModelRegistry {
     /** All built-in models. LiteRT first (recommended), then GGUF by size. */
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
+        gemma4E4B,
         qwen25vl3b,
         qwen25vl7b,
         qwen35vl9b,
