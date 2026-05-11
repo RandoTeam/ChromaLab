@@ -11,6 +11,7 @@ import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.model.ModelDownloader
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelManager
+import com.chromalab.feature.processing.model.ModelRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,6 +49,19 @@ class ModelManagerController(
     fun refresh() {
         val downloaded = manager.getDownloadedModels()
         val active = manager.getActiveModel()
+        val builtinIds = ModelRegistry.builtinModels.map { it.id }.toSet()
+
+        // Build list of custom (non-builtin) models for UI
+        val customs = downloaded
+            .filter { it.info.id !in builtinIds }
+            .map { m ->
+                CustomModelEntry(
+                    id = m.info.id,
+                    displayName = m.info.displayName,
+                    sizeBytes = m.info.totalSizeBytes,
+                    description = m.info.description,
+                )
+            }
 
         _state.update {
             it.copy(
@@ -67,6 +81,7 @@ class ModelManagerController(
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),
                 threadCount = manager.threadCount,
                 autoUnloadMinutes = manager.autoUnloadMinutes,
+                customModels = customs,
             )
         }
     }
@@ -284,6 +299,7 @@ class ModelManagerController(
     fun importFile(uri: Uri) {
         scope.launch {
             try {
+                _state.update { it.copy(isImporting = true) }
                 println("MODEL[CTRL] Importing file: $uri")
                 val result = manager.importFile(uri)
                 if (result != null) {
@@ -294,6 +310,8 @@ class ModelManagerController(
                 refresh()
             } catch (e: Exception) {
                 println("MODEL[CTRL] Import error: ${e.message}")
+            } finally {
+                _state.update { it.copy(isImporting = false) }
             }
         }
     }

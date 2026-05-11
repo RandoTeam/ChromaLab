@@ -57,6 +57,8 @@ fun ModelManagerScreen(
     deviceRamMb: Int,
     availableStorageGb: Float,
     totalModelDiskUsageGb: Float,
+    customModels: List<CustomModelEntry> = emptyList(),
+    isImporting: Boolean = false,
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
     onActivate: (String) -> Unit,
@@ -194,6 +196,46 @@ fun ModelManagerScreen(
                     color = MaterialTheme.colorScheme.tertiary,
                 )
             }
+
+            // Import progress indicator
+            if (isImporting) {
+                item {
+                    ElevatedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "Импорт модели…",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Imported custom models
+            items(customModels, key = { it.id }) { custom ->
+                CustomModelCard(
+                    custom = custom,
+                    isActive = custom.id == activeModelId,
+                    isActivating = custom.id == activatingModelId,
+                    onActivate = { onActivate(custom.id) },
+                    onDelete = { deleteConfirmId = custom.id },
+                    onExport = { onExport(custom.id) },
+                )
+            }
+
+            // Import button
             item {
                 OutlinedCard(
                     onClick = onImport,
@@ -1032,6 +1074,104 @@ private fun ActiveModelBanner(
                         contentDescription = "Выгрузить",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Card for a custom/imported model.
+ */
+@Composable
+private fun CustomModelCard(
+    custom: CustomModelEntry,
+    isActive: Boolean,
+    isActivating: Boolean,
+    onActivate: () -> Unit,
+    onDelete: () -> Unit,
+    onExport: () -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isActive) Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(16.dp),
+                ) else Modifier
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = if (isActive)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            else MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.FolderOpen,
+                    null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        custom.displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    if (custom.description.isNotEmpty()) {
+                        Text(
+                            custom.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                }
+                if (isActive) {
+                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
+                        Text("Активна", modifier = Modifier.padding(horizontal = 4.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                formatBytes(custom.sizeBytes),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            // Action buttons
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onExport, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Icon(Icons.Filled.Upload, null, Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("Выгрузить", style = MaterialTheme.typography.labelSmall)
+                }
+                TextButton(onClick = onDelete, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                    Icon(Icons.Filled.Delete, null, Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("Удалить", style = MaterialTheme.typography.labelSmall)
+                }
+                if (!isActive && !isActivating) {
+                    Spacer(Modifier.width(4.dp))
+                    ActivateButton(isActivating = false, onActivate = onActivate)
+                } else if (isActivating) {
+                    Spacer(Modifier.width(4.dp))
+                    ActivateButton(isActivating = true, onActivate = {})
                 }
             }
         }

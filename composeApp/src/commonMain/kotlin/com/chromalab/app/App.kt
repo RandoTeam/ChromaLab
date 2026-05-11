@@ -196,6 +196,8 @@ fun App() {
                         deviceRamMb = modelState.deviceRamMb,
                         availableStorageGb = modelState.availableStorageGb,
                         totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,
+                        customModels = modelState.customModels,
+                        isImporting = modelState.isImporting,
                         onDownload = { modelActions.download(it) },
                         onDelete = { modelActions.delete(it) },
                         onActivate = { modelActions.activate(it) },

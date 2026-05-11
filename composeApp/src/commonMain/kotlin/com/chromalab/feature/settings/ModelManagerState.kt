@@ -27,4 +27,19 @@ data class ModelManagerState(
     val threadCount: Int = 4,
     /** Auto-unload VLM model after N minutes of inactivity (1–30, 0 = disabled). */
     val autoUnloadMinutes: Int = 5,
+    /** Custom (imported) models that aren't in the builtin registry. */
+    val customModels: List<CustomModelEntry> = emptyList(),
+    /** True while an import is in progress. */
+    val isImporting: Boolean = false,
+)
+
+/**
+ * Minimal info about a custom/imported model for UI display.
+ * Kept separate from ModelInfo to avoid commonMain depending on android types.
+ */
+data class CustomModelEntry(
+    val id: String,
+    val displayName: String,
+    val sizeBytes: Long,
+    val description: String = "",
 )
