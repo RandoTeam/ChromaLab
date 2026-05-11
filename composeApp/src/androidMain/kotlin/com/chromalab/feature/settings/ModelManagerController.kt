@@ -281,6 +281,16 @@ class ModelManagerController(
             kotlinx.coroutines.delay(minutes * 60_000L)
             val engine = VlmEngineHolder.activeEngine
             if (engine != null && engine.isLoaded()) {
+                if (VlmEngineHolder.isInferring) {
+                    // Inference running — defer unload, retry in 1 min
+                    println("MODEL[TIMER] Inference active, deferring auto-unload by 1 min")
+                    kotlinx.coroutines.delay(60_000L)
+                    if (VlmEngineHolder.isInferring) {
+                        println("MODEL[TIMER] Still inferring, rescheduling")
+                        scheduleAutoUnload()
+                        return@launch
+                    }
+                }
                 println("MODEL[TIMER] Auto-unloading model after $minutes min of inactivity")
                 VlmEngineHolder.activeEngine = null
                 VlmEngineHolder.activeConfig = null

@@ -42,10 +42,15 @@ actual class ChartAnalysisReader actual constructor() {
                     ChartPrompts.AXIS_EXTRACTION_RAW
                 }
 
-                val analysis = engine.analyzeChart(
-                    imagePath = imagePath,
-                    prompt = prompt,
-                )
+                VlmEngineHolder.isInferring = true
+                val analysis = try {
+                    engine.analyzeChart(
+                        imagePath = imagePath,
+                        prompt = prompt,
+                    )
+                } finally {
+                    VlmEngineHolder.isInferring = false
+                }
 
                 if (analysis.confidence > 0.5f &&
                     (analysis.xValues.isNotEmpty() || analysis.yValues.isNotEmpty())
@@ -56,6 +61,7 @@ actual class ChartAnalysisReader actual constructor() {
 
                 println("VLM[READER] Low confidence (${analysis.confidence}), falling back to ML Kit OCR")
             } catch (e: Exception) {
+                VlmEngineHolder.isInferring = false
                 println("VLM[READER] Failed: ${e.message}, falling back to ML Kit OCR")
             }
         } else {
@@ -212,6 +218,10 @@ object VlmEngineHolder {
 
     /** Active model's inference config (for prompt format selection). */
     var activeConfig: InferenceConfig? = null
+
+    /** True while inference is running — prevents auto-unload. */
+    @Volatile
+    var isInferring: Boolean = false
 
     /**
      * Reference to ModelManagerController for lazy loading.
