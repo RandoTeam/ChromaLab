@@ -43,6 +43,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             deactivate = { controller.deactivate() },
             delete = { controller.delete(it) },
             setThreadCount = { controller.setThreadCount(it) },
+            setAutoUnloadMinutes = { controller.setAutoUnloadMinutes(it) },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
         )
     }

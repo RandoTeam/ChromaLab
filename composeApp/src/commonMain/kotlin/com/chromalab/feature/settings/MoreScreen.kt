@@ -22,10 +22,12 @@ fun MoreScreen(
     activeModelName: String?,
     activeModelSummary: String?,
     threadCount: Int,
+    autoUnloadMinutes: Int,
     onOpenModelManager: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenAbout: () -> Unit,
     onThreadCountChange: (Int) -> Unit,
+    onAutoUnloadChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -62,6 +64,13 @@ fun MoreScreen(
             ThreadSliderCard(
                 threadCount = threadCount,
                 onThreadCountChange = onThreadCountChange,
+            )
+        }
+
+        item {
+            AutoUnloadSliderCard(
+                autoUnloadMinutes = autoUnloadMinutes,
+                onAutoUnloadChange = onAutoUnloadChange,
             )
         }
 
@@ -189,6 +198,55 @@ private fun ThreadSliderCard(
                 onValueChange = { onThreadCountChange(it.toInt()) },
                 valueRange = 1f..maxThreads.toFloat(),
                 steps = maxThreads - 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AutoUnloadSliderCard(
+    autoUnloadMinutes: Int,
+    onAutoUnloadChange: (Int) -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Timer,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Автовыгрузка модели",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        if (autoUnloadMinutes == 0) "Выключено"
+                        else "Через $autoUnloadMinutes мин после использования",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Slider(
+                value = autoUnloadMinutes.toFloat(),
+                onValueChange = { onAutoUnloadChange(it.toInt()) },
+                valueRange = 0f..30f,
+                steps = 29,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

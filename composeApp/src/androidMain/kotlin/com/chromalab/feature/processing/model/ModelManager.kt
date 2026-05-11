@@ -50,6 +50,7 @@ class ModelManager(private val context: Context) {
         private const val KEY_ACTIVE_MODEL = "active_model_id"
         private const val KEY_THREAD_COUNT = "thread_count"
         private const val KEY_ACCEL_BACKEND = "accel_backend"
+        private const val KEY_AUTO_UNLOAD_MINUTES = "auto_unload_minutes"
     }
 
     // ===== Model Query =====
@@ -285,6 +286,11 @@ class ModelManager(private val context: Context) {
     var accelBackend: String
         get() = prefs.getString(KEY_ACCEL_BACKEND, "CPU") ?: "CPU"
         set(value) = prefs.edit().putString(KEY_ACCEL_BACKEND, value).apply()
+
+    /** Auto-unload VLM model after N minutes of inactivity (0 = disabled). */
+    var autoUnloadMinutes: Int
+        get() = prefs.getInt(KEY_AUTO_UNLOAD_MINUTES, 5)
+        set(value) = prefs.edit().putInt(KEY_AUTO_UNLOAD_MINUTES, value.coerceIn(0, 30)).apply()
 
     // ===== Device Info =====
 

@@ -1,6 +1,5 @@
 package com.chromalab.app
 
-import android.content.ComponentCallbacks2
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,7 +26,8 @@ class MainActivity : ComponentActivity() {
     // 25.2C: Unload VLM model under memory pressure to prevent OOM
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+        // TRIM_MEMORY_RUNNING_LOW = 10
+        if (level >= 10) {
             val engine = VlmEngineHolder.activeEngine
             if (engine != null && engine.isLoaded()) {
                 println("VLM[MEMORY] Unloading model due to TRIM_MEMORY (level=$level)")

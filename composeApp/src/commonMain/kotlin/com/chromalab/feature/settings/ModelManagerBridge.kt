@@ -16,6 +16,7 @@ data class ModelManagerActions(
     val deactivate: () -> Unit = {},
     val delete: (String) -> Unit = {},
     val setThreadCount: (Int) -> Unit = {},
+    val setAutoUnloadMinutes: (Int) -> Unit = {},
     val onImport: () -> Unit = {},
 )
 

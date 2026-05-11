@@ -112,10 +112,12 @@ fun App() {
                         activeModelName = modelState.activeModelName,
                         activeModelSummary = modelState.activeModelSummary,
                         threadCount = modelState.threadCount,
+                        autoUnloadMinutes = modelState.autoUnloadMinutes,
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                         onOpenLanguage = { navController.navigate(Route.Language) },
                         onOpenAbout = { navController.navigate(Route.About) },
                         onThreadCountChange = { modelActions.setThreadCount(it) },
+                        onAutoUnloadChange = { modelActions.setAutoUnloadMinutes(it) },
                     )
                 }
 

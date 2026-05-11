@@ -38,6 +38,7 @@ class ModelManagerController(
     val state: StateFlow<ModelManagerState> = _state.asStateFlow()
 
     private var downloadJob: Job? = null
+    private var unloadTimerJob: Job? = null
 
     init {
         refresh()
@@ -65,6 +66,7 @@ class ModelManagerController(
                 availableStorageGb = manager.getAvailableStorageBytes() / (1024f * 1024 * 1024),
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),
                 threadCount = manager.threadCount,
+                autoUnloadMinutes = manager.autoUnloadMinutes,
             )
         }
     }
@@ -232,6 +234,52 @@ class ModelManagerController(
         _state.update { it.copy(threadCount = count) }
     }
 
+    /** Update auto-unload timeout (minutes). 0 = disabled. */
+    fun setAutoUnloadMinutes(minutes: Int) {
+        val clamped = minutes.coerceIn(0, 30)
+        manager.autoUnloadMinutes = clamped
+        _state.update { it.copy(autoUnloadMinutes = clamped) }
+        // Reschedule timer if model is loaded
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+            scheduleAutoUnload()
+        }
+        println("MODEL[TIMER] Auto-unload set to $clamped min")
+    }
+
+    /**
+     * Schedule auto-unload of VLM model after configured timeout.
+     * Cancels any existing timer, starts a new one.
+     * Called after pipeline completes or when setting changes.
+     */
+    fun scheduleAutoUnload() {
+        unloadTimerJob?.cancel()
+        val minutes = manager.autoUnloadMinutes
+        if (minutes <= 0) {
+            println("MODEL[TIMER] Auto-unload disabled")
+            return
+        }
+        if (VlmEngineHolder.activeEngine?.isLoaded() != true) {
+            return  // No model loaded — nothing to schedule
+        }
+        println("MODEL[TIMER] Scheduling auto-unload in $minutes min")
+        unloadTimerJob = scope.launch {
+            kotlinx.coroutines.delay(minutes * 60_000L)
+            val engine = VlmEngineHolder.activeEngine
+            if (engine != null && engine.isLoaded()) {
+                println("MODEL[TIMER] Auto-unloading model after $minutes min of inactivity")
+                VlmEngineHolder.activeEngine = null
+                VlmEngineHolder.activeConfig = null
+                refresh()
+            }
+        }
+    }
+
+    /** Cancel the auto-unload timer (called when pipeline starts). */
+    fun cancelAutoUnloadTimer() {
+        unloadTimerJob?.cancel()
+        unloadTimerJob = null
+    }
+
     /** Import a model file from a user-selected URI. */
     fun importFile(uri: Uri) {
         scope.launch {
@@ -269,6 +317,8 @@ class ModelManagerController(
         // Already loaded?
         if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
             println("MODEL[LAZY] Already loaded")
+            // Reset auto-unload timer (model is being used)
+            cancelAutoUnloadTimer()
             return true
         }
 
@@ -321,6 +371,8 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
                 onProgress?.invoke("AI модель готова")
                 println("MODEL[LAZY] Loaded: ${model.info.displayName} (chatML=${VlmEngineHolder.activeConfig?.useChatML})")
+                // Schedule auto-unload timer
+                scheduleAutoUnload()
                 true
             } else {
                 false
