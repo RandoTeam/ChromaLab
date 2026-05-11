@@ -29,8 +29,12 @@ class LiteRTEngine : InferenceEngine {
     /**
      * Load a .litertlm model file.
      *
+     * Tries backends in order: NPU → GPU → CPU.
+     * NPU is fastest on Snapdragon (QNN) / MediaTek (NeuroPilot).
+     * GPU uses OpenCL/OpenGL via ML Drift engine.
+     * CPU is the universal fallback.
+     *
      * @param modelPath absolute path to .litertlm file
-     * @param preferGpu try GPU backend, fall back to CPU if unavailable
      */
     suspend fun loadModel(
         modelPath: String,
@@ -39,28 +43,45 @@ class LiteRTEngine : InferenceEngine {
         // Unload previous model if any
         unload()
 
-        println("LITERT[LOAD] Loading model: $modelPath, preferGpu=$preferGpu")
+        println("LITERT[LOAD] Loading model: $modelPath")
 
-        val backend = if (preferGpu) Backend.GPU() else Backend.CPU()
+        // Try backends from fastest to slowest
+        val backends = if (preferGpu) {
+            listOf("NPU" to Backend.NPU(), "GPU" to Backend.GPU(), "CPU" to Backend.CPU())
+        } else {
+            listOf("CPU" to Backend.CPU())
+        }
 
-        // visionBackend must be set for multimodal (image) support
-        val engineConfig = EngineConfig(
-            modelPath,
-            backend,       // backend
-            backend,       // visionBackend — same as main for image processing
-            null,          // audioBackend
-            null,          // maxNumTokens
-            1,             // maxNumImages
-            null,          // cacheDir
-        )
+        var lastError: Exception? = null
+        for ((name, backend) in backends) {
+            try {
+                println("LITERT[LOAD] Trying $name backend...")
 
-        val eng = Engine(engineConfig)
-        eng.initialize()
+                val engineConfig = EngineConfig(
+                    modelPath,
+                    backend,       // backend
+                    backend,       // visionBackend — same as main for image processing
+                    null,          // audioBackend
+                    null,          // maxNumTokens
+                    1,             // maxNumImages
+                    null,          // cacheDir
+                )
 
-        engine = eng
-        backendName = "LiteRT ${if (preferGpu) "GPU" else "CPU"}"
-        loaded = true
-        println("LITERT[LOAD] Model loaded ($backendName)")
+                val eng = Engine(engineConfig)
+                eng.initialize()
+
+                engine = eng
+                backendName = "LiteRT $name"
+                loaded = true
+                println("LITERT[LOAD] Model loaded ($backendName)")
+                return@withContext
+            } catch (e: Exception) {
+                println("LITERT[LOAD] $name failed: ${e.message}")
+                lastError = e
+            }
+        }
+
+        throw lastError ?: IllegalStateException("No backend available")
     }
 
     override suspend fun analyzeChart(imagePath: String, prompt: String): ChartAnalysis {
