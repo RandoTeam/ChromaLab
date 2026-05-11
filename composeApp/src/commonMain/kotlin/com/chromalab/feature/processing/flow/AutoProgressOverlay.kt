@@ -9,24 +9,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.sweep.AutoSweepEngine
 
 // ─── Premium Color Palette ──────────────────────────────────────────
@@ -124,25 +119,16 @@ fun AutoProgressOverlay(
                     label = "glow_alpha",
                 )
 
-                // Spinner rotation for active state
-                val spinnerAngle by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(3000, easing = LinearEasing),
-                    ),
-                    label = "spinner",
-                )
-
                 Box(
                     modifier = Modifier.size(200.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     // Background ring
-                    Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                    val canvasPadding = 8.dp
+                    Canvas(modifier = Modifier.fillMaxSize().padding(canvasPadding)) {
                         val strokeWidth = 10.dp.toPx()
                         val ringSize = Size(size.width - strokeWidth, size.height - strokeWidth)
-                        val offset = Offset(strokeWidth / 2, strokeWidth / 2)
+                        val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
 
                         // Track (dark)
                         drawArc(
@@ -150,7 +136,7 @@ fun AutoProgressOverlay(
                             startAngle = 0f,
                             sweepAngle = 360f,
                             useCenter = false,
-                            topLeft = offset,
+                            topLeft = topLeft,
                             size = ringSize,
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                         )
@@ -166,15 +152,17 @@ fun AutoProgressOverlay(
                             startAngle = -90f,
                             sweepAngle = sweepAngle,
                             useCenter = false,
-                            topLeft = offset,
+                            topLeft = topLeft,
                             size = ringSize,
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                         )
 
-                        // Glow dot at the tip of progress
-                        val glowAngle = -90f + sweepAngle
-                        val cx = center.x + (ringSize.width / 2) * kotlin.math.cos(Math.toRadians(glowAngle.toDouble())).toFloat()
-                        val cy = center.y + (ringSize.height / 2) * kotlin.math.sin(Math.toRadians(glowAngle.toDouble())).toFloat()
+                        // Glow dot at the tip of progress arc
+                        // Radius from center to the middle of the stroke
+                        val glowAngleRad = Math.toRadians((-90f + sweepAngle).toDouble())
+                        val ringRadius = ringSize.width / 2
+                        val cx = center.x + ringRadius * kotlin.math.cos(glowAngleRad).toFloat()
+                        val cy = center.y + ringRadius * kotlin.math.sin(glowAngleRad).toFloat()
                         drawCircle(
                             color = ChromaGlow.copy(alpha = glowAlpha),
                             radius = strokeWidth * 1.5f,
@@ -221,19 +209,27 @@ fun AutoProgressOverlay(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Step description hint
-                Text(
-                    stepDescription(currentStep),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = ChromaTextDim,
-                )
+                // Step description hint — crossfade in sync with label above
+                AnimatedContent(
+                    targetState = stepDescription(currentStep),
+                    transitionSpec = {
+                        fadeIn(tween(400)) togetherWith fadeOut(tween(200))
+                    },
+                    label = "step_desc",
+                ) { desc ->
+                    Text(
+                        desc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = ChromaTextDim,
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // ─── Horizontal progress bar ───
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.85f)
+                        .fillMaxWidth(0.9f)
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(ChromaTrack),
@@ -284,7 +280,7 @@ fun AutoProgressOverlay(
                         if (bestSweepConfig != null) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
-                                modifier = Modifier.padding(start = 28.dp),
+                                modifier = Modifier.padding(start = 30.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Icon(
@@ -427,13 +423,13 @@ private fun PremiumStepRow(step: ProcessingStep, state: StepVisualState) {
             modifier = Modifier.weight(1f),
         )
 
-        // Done badge
-        if (step.autoAdvance == AutoAdvancePolicy.ALWAYS && state == StepVisualState.DONE) {
-            Text(
-                "авто",
-                style = MaterialTheme.typography.labelSmall,
-                color = ChromaTextDim.copy(alpha = 0.5f),
-                fontSize = 9.sp,
+        // Trailing icon: done checkmark for completed, clock for pending
+        if (state == StepVisualState.DONE) {
+            Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = ChromaDone.copy(alpha = 0.4f),
+                modifier = Modifier.size(12.dp),
             )
         }
     }
