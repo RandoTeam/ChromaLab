@@ -71,6 +71,7 @@ import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -95,6 +96,21 @@ fun ProcessingFlowScreen(
 ) {
     var currentStep by remember { mutableStateOf(ProcessingStep.FIRST) }
     var isProcessing by remember { mutableStateOf(false) }
+    var elapsedSeconds by remember { mutableIntStateOf(0) }
+
+    // Elapsed time counter — ticks every second while processing
+    LaunchedEffect(isProcessing, currentStep) {
+        if (isProcessing) {
+            elapsedSeconds = 0
+            while (true) {
+                delay(1000L)
+                elapsedSeconds++
+            }
+        }
+    }
+
+    // Keep screen on during processing
+    KeepScreenOn(isProcessing)
 
     // Working directory for intermediate files
     val outputDir = remember {
@@ -707,6 +723,7 @@ fun ProcessingFlowScreen(
                     currentGraphIndex = currentGraphIndex,
                     totalGraphs = graphResult?.filteredRegions?.size ?: 1,
                     vlmLoadingStatus = vlmLoadingStatus,
+                    elapsedSeconds = elapsedSeconds,
                 )
 
                 // Error overlay on top

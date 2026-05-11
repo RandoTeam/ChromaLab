@@ -59,6 +59,7 @@ fun AutoProgressOverlay(
     currentGraphIndex: Int = 0,
     totalGraphs: Int = 1,
     vlmLoadingStatus: String? = null,
+    elapsedSeconds: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val isAutoStep = currentStep.autoAdvance != AutoAdvancePolicy.NEVER
@@ -184,6 +185,31 @@ fun AutoProgressOverlay(
                         Text(
                             "%",
                             style = MaterialTheme.typography.titleSmall,
+                            color = ChromaTextDim,
+                        )
+                    }
+                }
+
+                // ─── Elapsed time ───
+                if (elapsedSeconds > 0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val mins = elapsedSeconds / 60
+                    val secs = elapsedSeconds % 60
+                    val timeStr = if (mins > 0) "${mins} мин ${secs.toString().padStart(2, '0')} сек"
+                        else "${secs} сек"
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Timer,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = ChromaTextDim,
+                        )
+                        Text(
+                            timeStr,
+                            style = MaterialTheme.typography.labelMedium,
                             color = ChromaTextDim,
                         )
                     }
