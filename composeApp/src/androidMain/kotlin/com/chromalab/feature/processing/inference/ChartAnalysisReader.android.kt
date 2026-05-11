@@ -170,6 +170,31 @@ actual class ChartAnalysisReader actual constructor() {
             timestamp = System.currentTimeMillis(),
         )
     }
+
+    /**
+     * Ensure a VLM model is loaded (lazy loading).
+     * Delegates to ModelManagerController.activateForPipeline().
+     */
+    actual suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)?): Boolean {
+        // Already loaded?
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+            return true
+        }
+
+        // Try lazy loading via controller
+        val controller = VlmEngineHolder.controller
+        if (controller == null) {
+            println("VLM[LAZY] No controller — cannot auto-load model")
+            return false
+        }
+
+        return try {
+            controller.activateForPipeline(onProgress)
+        } catch (e: Exception) {
+            println("VLM[LAZY] Auto-load failed: ${e.message}")
+            false
+        }
+    }
 }
 
 /**
@@ -187,4 +212,11 @@ object VlmEngineHolder {
 
     /** Active model's inference config (for prompt format selection). */
     var activeConfig: InferenceConfig? = null
+
+    /**
+     * Reference to ModelManagerController for lazy loading.
+     * Set once during app initialization (from ModelManagerScreen or App).
+     */
+    var controller: com.chromalab.feature.settings.ModelManagerController? = null
 }
+

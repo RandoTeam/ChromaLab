@@ -83,6 +83,7 @@
 - [x] ResultsSummaryScreen: 11 секций профессионального отчёта
 - [x] Интерактивный tap на пики → PeakDetailsBottomSheet
 - [x] ExportScreen → fallback-only: auto-save → AnalysisFlowScreen (25.2A)
+- [x] Lazy VLM loading: auto-load model at pipeline start + progress indicator (25.2B)
 
 ### Phase 26: VLM Professional Integration
 - [x] ChatML template для Qwen2.5-VL / Qwen3.5-VL Instruct моделей

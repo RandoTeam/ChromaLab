@@ -148,6 +148,10 @@ fun ProcessingFlowScreen(
     var currentGraphIndex by remember { mutableIntStateOf(0) }
     val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
 
+    // VLM model loading status (25.2B: lazy loading)
+    var vlmLoadingStatus by remember { mutableStateOf<String?>(null) }
+    var vlmReady by remember { mutableStateOf(false) }
+
     // --- Run real processing on step entry ---
     var processingError by remember { mutableStateOf<String?>(null) }
     var savedSignalId by remember { mutableStateOf<Long?>(null) }
@@ -164,6 +168,16 @@ fun ProcessingFlowScreen(
             withContext(Dispatchers.Default) {
                 when (currentStep) {
                     ProcessingStep.IMAGE_QUALITY -> {
+                        // 25.2B: Lazy VLM model loading at pipeline start
+                        if (!vlmReady) {
+                            vlmLoadingStatus = "Загрузка AI модели..."
+                            vlmReady = chartReader.ensureModelLoaded { status ->
+                                vlmLoadingStatus = status
+                            }
+                            vlmLoadingStatus = if (vlmReady) "AI модель готова" else null
+                            println("PIPELINE[VLM] Model ready: $vlmReady")
+                        }
+
                         // Normalize first: fix EXIF orientation
                         if (normalizedResult == null) {
                             val norm = imageNormalizer.normalize(imagePath, outputDir)
@@ -692,6 +706,7 @@ fun ProcessingFlowScreen(
                     bestSweepConfig = bestSweepConfig,
                     currentGraphIndex = currentGraphIndex,
                     totalGraphs = graphResult?.filteredRegions?.size ?: 1,
+                    vlmLoadingStatus = vlmLoadingStatus,
                 )
 
                 // Error overlay on top

@@ -26,4 +26,7 @@ actual class ChartAnalysisReader actual constructor() {
 
     /** No VLM on desktop — always returns null. */
     actual suspend fun detectAxisStructure(imagePath: String): AxisStructure? = null
+
+    /** No VLM on desktop — always returns false. */
+    actual suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)?): Boolean = false
 }

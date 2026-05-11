@@ -58,6 +58,7 @@ fun AutoProgressOverlay(
     bestSweepConfig: String? = null,
     currentGraphIndex: Int = 0,
     totalGraphs: Int = 1,
+    vlmLoadingStatus: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val isAutoStep = currentStep.autoAdvance != AutoAdvancePolicy.NEVER
@@ -222,6 +223,28 @@ fun AutoProgressOverlay(
                         style = MaterialTheme.typography.bodySmall,
                         color = ChromaTextDim,
                     )
+                }
+
+                // 25.2B: VLM model loading status
+                val vlmStatus = vlmLoadingStatus
+                if (vlmStatus != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Memory,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = ChromaAccent,
+                        )
+                        Text(
+                            vlmStatus,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ChromaAccent,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

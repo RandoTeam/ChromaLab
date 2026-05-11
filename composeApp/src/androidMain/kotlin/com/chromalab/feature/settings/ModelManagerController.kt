@@ -249,4 +249,86 @@ class ModelManagerController(
             }
         }
     }
+
+    /**
+     * Activate the best available model for pipeline use (lazy loading).
+     * Called automatically at pipeline start if no model is loaded.
+     *
+     * Strategy:
+     * 1. Check if a model is already loaded → skip
+     * 2. Check previously active model (saved in prefs) → load it
+     * 3. Find any downloaded model → load it
+     * 4. No models available → return false (pipeline continues without VLM)
+     *
+     * @param onProgress optional callback for progress reporting
+     * @return true if a model is loaded and ready
+     */
+    suspend fun activateForPipeline(
+        onProgress: ((String) -> Unit)? = null,
+    ): Boolean {
+        // Already loaded?
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+            println("MODEL[LAZY] Already loaded")
+            return true
+        }
+
+        // Find model to load
+        val models = manager.getDownloadedModels()
+        if (models.isEmpty()) {
+            println("MODEL[LAZY] No models downloaded")
+            return false
+        }
+
+        // Priority: previously active > first available
+        val activeId = manager.getActiveModelId()
+        val model = models.find { it.info.id == activeId } ?: models.first()
+
+        println("MODEL[LAZY] Auto-loading: ${model.info.displayName} (${model.info.family})")
+        onProgress?.invoke("Загрузка AI модели: ${model.info.displayName}")
+
+        return try {
+            manager.setActiveModel(model.info.id)
+
+            val engine: InferenceEngine? = when (model.info.runtime) {
+                ModelRuntime.LLAMA_CPP -> {
+                    onProgress?.invoke("Загрузка GGUF модели...")
+                    val llama = LlamaEngine()
+                    withContext(Dispatchers.IO) {
+                        llama.loadModel(
+                            basePath = model.primaryPath,
+                            mmprojPath = model.mmprojPath ?: "",
+                            threads = manager.threadCount,
+                            modelFamily = model.info.family,
+                        )
+                    }
+                    llama
+                }
+                ModelRuntime.LITERT_LM -> {
+                    onProgress?.invoke("Загрузка LiteRT модели...")
+                    val liteRT = LiteRTEngine()
+                    withContext(Dispatchers.IO) {
+                        liteRT.loadModel(
+                            modelPath = model.primaryPath,
+                            preferGpu = true,
+                        )
+                    }
+                    liteRT
+                }
+            }
+
+            if (engine != null) {
+                VlmEngineHolder.activeEngine = engine
+                VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
+                onProgress?.invoke("AI модель готова")
+                println("MODEL[LAZY] Loaded: ${model.info.displayName} (chatML=${VlmEngineHolder.activeConfig?.useChatML})")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            println("MODEL[LAZY] Auto-load failed: ${e.message}")
+            manager.clearActiveModel()
+            false
+        }
+    }
 }

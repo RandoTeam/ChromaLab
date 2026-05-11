@@ -43,4 +43,14 @@ expect class ChartAnalysisReader() {
      * @return AxisStructure if VLM succeeds, null on desktop or failure
      */
     suspend fun detectAxisStructure(imagePath: String): AxisStructure?
+
+    /**
+     * Ensure a VLM model is loaded (lazy loading).
+     * If no model is loaded, auto-loads the best available model.
+     * Called at pipeline start to avoid manual model activation.
+     *
+     * @param onProgress optional callback for progress reporting
+     * @return true if VLM is ready, false if no model available
+     */
+    suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)? = null): Boolean
 }

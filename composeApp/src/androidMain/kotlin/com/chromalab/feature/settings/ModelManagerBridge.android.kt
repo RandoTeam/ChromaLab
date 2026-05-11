@@ -21,7 +21,9 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
     val scope = rememberCoroutineScope()
 
     val controller = remember {
-        ModelManagerController(context.applicationContext, scope)
+        ModelManagerController(context.applicationContext, scope).also {
+            com.chromalab.feature.processing.inference.VlmEngineHolder.controller = it
+        }
     }
 
     val state by controller.state.collectAsState()
