@@ -150,6 +150,12 @@ fun ProcessingFlowScreen(
 
     // --- Run real processing on step entry ---
     var processingError by remember { mutableStateOf<String?>(null) }
+    var savedSignalId by remember { mutableStateOf<Long?>(null) }
+
+    // When signal is saved, navigate to analysis
+    LaunchedEffect(savedSignalId) {
+        savedSignalId?.let { onFinish(it) }
+    }
 
     LaunchedEffect(currentStep) {
         isProcessing = true
@@ -541,9 +547,46 @@ fun ProcessingFlowScreen(
                         bestSweepConfig = null
                         currentStep = ProcessingStep.GRAPH_ROI
                     } else {
-                        // All graphs processed → go to EXPORT
-                        val next = currentStep.next()
-                        if (next != null) currentStep = next
+                        // All graphs processed → auto-save to Room + navigate to Analysis
+                        // (25.2A: skip ExportScreen, go directly to AnalysisFlowScreen)
+                        println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
+                        val now = System.currentTimeMillis()
+                        try {
+                            val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                            var firstId: Long? = null
+                            for ((idx, ss) in processedSignals.withIndex()) {
+                                val signal = ss.smoothed
+                                val entity = ChromatogramEntity(
+                                    sampleId = 0,
+                                    sourceType = SourceType.PHOTO,
+                                    filePath = currentImagePath,
+                                    timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
+                                    timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
+                                    intensityUnit = signal.intensityUnit,
+                                    qualityScore = null,
+                                    dataPoints = kotlinx.serialization.json.Json.encodeToString(
+                                        kotlinx.serialization.builtins.ListSerializer(
+                                            com.chromalab.feature.processing.signal.GraphPoint.serializer(),
+                                        ),
+                                        signal.points,
+                                    ),
+                                    createdAt = now,
+                                    updatedAt = now,
+                                )
+                                val id = dao.insert(entity)
+                                if (firstId == null) firstId = id
+                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                            }
+                            val navId = firstId ?: now
+                            println("PIPELINE[AUTO-SAVE] Done, navigating to Analysis (id=$navId)")
+                            savedSignalId = navId
+                        } catch (e: Exception) {
+                            println("PIPELINE[AUTO-SAVE] Error: ${e.message}, falling back to EXPORT")
+                            e.printStackTrace()
+                            // Fallback: show ExportScreen on save error
+                            val next = currentStep.next()
+                            if (next != null) currentStep = next
+                        }
                     }
                 } else {
                     val next = currentStep.next()
@@ -553,13 +596,7 @@ fun ProcessingFlowScreen(
         }
     }
 
-    var savedSignalId by remember { mutableStateOf<Long?>(null) }
     val scope = rememberCoroutineScope()
-
-    // When signal is saved, navigate to analysis
-    LaunchedEffect(savedSignalId) {
-        savedSignalId?.let { onFinish(it) }
-    }
 
     val advance = { step: ProcessingStep ->
         val next = step.next()
@@ -645,7 +682,7 @@ fun ProcessingFlowScreen(
     Column(modifier = modifier.fillMaxSize()) {
         // Step content
         Box(modifier = Modifier.weight(1f)) {
-            // All steps auto-advance except EXPORT — show processing overlay
+            // All steps auto-advance — show processing overlay
             if (currentStep != ProcessingStep.EXPORT) {
                 // Full-screen progress overlay
                 AutoProgressOverlay(
@@ -712,8 +749,9 @@ fun ProcessingFlowScreen(
                     }
                 }
             } else {
-                // EXPORT: the final results dashboard — only screen the user sees
-                // Collect all signals: processedSignals already has them from multi-graph loop
+                // EXPORT: error fallback only (25.2A)
+                // Shown only when auto-save to Room failed.
+                // Normal flow: QUALITY_REPORT → auto-save → onFinish → AnalysisFlowScreen
                 val allSignals = remember(processedSignals.size) {
                     processedSignals.map { it.smoothed }
                 }

@@ -17,7 +17,8 @@ enum class AutoAdvancePolicy {
  *
  * Auto-advance policy: ALL steps auto-advance.
  * The pipeline runs fully automatically from photo to results.
- * User only stops at EXPORT to see the final dashboard.
+ * After QUALITY_REPORT: auto-save → onFinish → AnalysisFlowScreen.
+ * EXPORT is only shown as a fallback if auto-save fails.
  */
 enum class ProcessingStep(
     val index: Int,
@@ -37,7 +38,7 @@ enum class ProcessingStep(
     CURVE_EDITOR(10, "Коррекция кривой", AutoAdvancePolicy.ALWAYS),
     SIGNAL_PREVIEW(11, "Цифровой график", AutoAdvancePolicy.ALWAYS),
     QUALITY_REPORT(12, "Качество оцифровки", AutoAdvancePolicy.ALWAYS),
-    EXPORT(13, "Результат", AutoAdvancePolicy.NEVER),
+    EXPORT(13, "Результат", AutoAdvancePolicy.NEVER), // error fallback only (25.2A)
     ;
 
     val totalSteps: Int get() = entries.size
