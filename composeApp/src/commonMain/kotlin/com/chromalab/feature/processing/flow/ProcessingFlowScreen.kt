@@ -578,42 +578,68 @@ fun ProcessingFlowScreen(
                         currentStep = ProcessingStep.GRAPH_ROI
                     } else {
                         // All graphs processed → auto-save to Room + navigate to Analysis
-                        // (25.2A: skip ExportScreen, go directly to AnalysisFlowScreen)
                         println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
-                        val now = System.currentTimeMillis()
-                        try {
-                            val dao = DatabaseProvider.getDatabase().chromatogramDao()
-                            var firstId: Long? = null
-                            for ((idx, ss) in processedSignals.withIndex()) {
-                                val signal = ss.smoothed
-                                val entity = ChromatogramEntity(
-                                    sampleId = 0,
-                                    sourceType = SourceType.PHOTO,
-                                    filePath = currentImagePath,
-                                    timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
-                                    timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
-                                    intensityUnit = signal.intensityUnit,
-                                    qualityScore = null,
-                                    dataPoints = kotlinx.serialization.json.Json.encodeToString(
-                                        kotlinx.serialization.builtins.ListSerializer(
-                                            com.chromalab.feature.processing.signal.GraphPoint.serializer(),
-                                        ),
-                                        signal.points,
-                                    ),
-                                    createdAt = now,
-                                    updatedAt = now,
+                        val saveResult = withContext(Dispatchers.IO) {
+                            val now = System.currentTimeMillis()
+                            try {
+                                val db = DatabaseProvider.getDatabase()
+
+                                // Create parent Project + Sample to satisfy FK constraints
+                                val projectId = db.projectDao().insert(
+                                    com.chromalab.core.data.entity.ProjectEntity(
+                                        name = "Фото-анализ",
+                                        date = now,
+                                        createdAt = now,
+                                        updatedAt = now,
+                                    )
                                 )
-                                val id = dao.insert(entity)
-                                if (firstId == null) firstId = id
-                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                                val sId = db.sampleDao().insert(
+                                    com.chromalab.core.data.entity.SampleEntity(
+                                        projectId = projectId,
+                                        name = "Образец ${java.text.SimpleDateFormat("dd.MM HH:mm", java.util.Locale.getDefault()).format(now)}",
+                                        createdAt = now,
+                                        updatedAt = now,
+                                    )
+                                )
+                                println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sId")
+
+                                var firstId: Long? = null
+                                for ((idx, ss) in processedSignals.withIndex()) {
+                                    val signal = ss.smoothed
+                                    val entity = ChromatogramEntity(
+                                        sampleId = sId,
+                                        sourceType = SourceType.PHOTO,
+                                        filePath = currentImagePath,
+                                        timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
+                                        timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
+                                        intensityUnit = signal.intensityUnit,
+                                        qualityScore = null,
+                                        dataPoints = kotlinx.serialization.json.Json.encodeToString(
+                                            kotlinx.serialization.builtins.ListSerializer(
+                                                com.chromalab.feature.processing.signal.GraphPoint.serializer(),
+                                            ),
+                                            signal.points,
+                                        ),
+                                        createdAt = now,
+                                        updatedAt = now,
+                                    )
+                                    val id = db.chromatogramDao().insert(entity)
+                                    if (firstId == null) firstId = id
+                                    println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                                }
+                                firstId ?: now
+                            } catch (e: Exception) {
+                                println("PIPELINE[AUTO-SAVE] Error: ${e.message}")
+                                e.printStackTrace()
+                                null
                             }
-                            val navId = firstId ?: now
-                            println("PIPELINE[AUTO-SAVE] Done, navigating to Analysis (id=$navId)")
-                            savedSignalId = navId
-                        } catch (e: Exception) {
-                            println("PIPELINE[AUTO-SAVE] Error: ${e.message}, falling back to EXPORT")
-                            e.printStackTrace()
-                            // Fallback: show ExportScreen on save error
+                        }
+                        // Back on Main — navigate or fallback
+                        if (saveResult != null) {
+                            println("PIPELINE[AUTO-SAVE] Success! Navigating to Analysis, signalId=$saveResult")
+                            savedSignalId = saveResult
+                        } else {
+                            println("PIPELINE[AUTO-SAVE] Failed, falling back to EXPORT")
                             val next = currentStep.next()
                             if (next != null) currentStep = next
                         }
