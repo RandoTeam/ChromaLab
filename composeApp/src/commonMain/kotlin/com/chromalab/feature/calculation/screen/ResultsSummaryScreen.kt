@@ -53,6 +53,7 @@ import com.chromalab.feature.calculation.ui.ChromatogramChart
 @Composable
 fun ResultsSummaryScreen(
     run: CalculationRun,
+    onPeakTap: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -68,7 +69,7 @@ fun ResultsSummaryScreen(
         SummarySection(run)
 
         // Section 2: Chromatogram
-        ChartSection(run)
+        ChartSection(run, onPeakTap)
 
         // Section 3: Peak results table
         PeakResultsTableSection(run.peaks)
@@ -155,7 +156,7 @@ private fun SummarySection(run: CalculationRun) {
 // ─── Section 2: Chart ───────────────────────────────────────────
 
 @Composable
-private fun ChartSection(run: CalculationRun) {
+private fun ChartSection(run: CalculationRun, onPeakTap: ((Int) -> Unit)? = null) {
     SectionHeader("Хроматограмма")
 
     val chartState = remember(run) {
@@ -173,6 +174,7 @@ private fun ChartSection(run: CalculationRun) {
     ) {
         ChromatogramChart(
             state = chartState,
+            onPeakTap = onPeakTap,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)

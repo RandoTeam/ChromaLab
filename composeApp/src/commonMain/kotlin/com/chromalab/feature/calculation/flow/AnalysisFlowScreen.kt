@@ -1,19 +1,26 @@
 package com.chromalab.feature.calculation.flow
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
@@ -25,11 +32,6 @@ import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.algorithm.*
-import com.chromalab.feature.calculation.ui.ChromatogramChart
-import com.chromalab.feature.calculation.ui.PeakTable
-import com.chromalab.feature.calculation.ui.PeakTableRow
-import com.chromalab.feature.calculation.ui.PeakTableSort
-import com.chromalab.feature.calculation.ui.PeakTableFilter
 import com.chromalab.feature.calculation.ui.PeakDetailsContent
 import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
@@ -40,23 +42,29 @@ import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
 import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
 import com.chromalab.feature.calculation.algorithm.CompoundSource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.ListSerializer
 
+// ─── Premium overlay palette (matches AutoProgressOverlay) ──────
+private val AnalysisSurface    = Color(0xFF0F172A)
+private val AnalysisSurfaceAlt = Color(0xFF1E293B)
+private val AnalysisGradStart  = Color(0xFF0D9488)
+private val AnalysisGradMid    = Color(0xFF6D28D9)
+private val AnalysisGradEnd    = Color(0xFF7C3AED)
+private val AnalysisGlow       = Color(0xFF2DD4BF)
+private val AnalysisDone       = Color(0xFF10B981)
+private val AnalysisAccent     = Color(0xFFF59E0B)
+private val AnalysisTrack      = Color(0xFF334155)
+private val AnalysisText       = Color(0xFFF1F5F9)
+private val AnalysisTextDim    = Color(0xFF94A3B8)
+
 /**
- * Analysis flow orchestrator — Phase 2 user scenario.
+ * Analysis flow — fully automatic.
  *
- * Scenario:
- * 1. Open signal → see chart
- * 2. Toggle layers (raw / smoothed / baseline / corrected / peaks)
- * 3. Press "Найти пики" → peaks appear
- * 4. Tap peak → PeakDetails card (RT, height, area, width, S/N)
- * 5. Drag boundaries / add / reject peaks
- * 6. Choose noise region, change baseline
- * 7. Metrics recalculate after every edit
- * 8. Save CalculationRun → Export CSV/JSON
+ * Flow: load signal → auto-calculate → show report.
+ * No manual steps. The user sees a premium loading overlay,
+ * then the full results report with interactive chart and peak details.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,30 +74,27 @@ fun AnalysisFlowScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var currentStep by remember { mutableStateOf(AnalysisStep.FIRST) }
-    var peaksFound by remember { mutableStateOf(false) }
-
-    // Signal loaded from Room
+    // ─── State ───
     var signal by remember { mutableStateOf<DigitalSignal?>(null) }
-    var entity by remember { mutableStateOf<ChromatogramEntity?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
-
-    // Phase 2 calculation result
     var calculationRun by remember { mutableStateOf<CalculationRun?>(null) }
-    var isCalculating by remember { mutableStateOf(false) }
-    val calcScope = rememberCoroutineScope()
+    var calcPhase by remember { mutableStateOf("Загрузка сигнала…") }
+    var showExport by remember { mutableStateOf(false) }
 
-    // Peak selection state
+    // Peak details state
     var selectedPeakIndex by remember { mutableStateOf(-1) }
     var showPeakSheet by remember { mutableStateOf(false) }
 
-    // Load signal from Room on first composition
+    // ─── Auto-pipeline: load signal → run calculation ───
     LaunchedEffect(signalId) {
         val id = signalId.toLongOrNull()
         if (id == null) {
             loadError = "Некорректный ID сигнала"
             return@LaunchedEffect
         }
+
+        // Phase 1: Load from Room
+        calcPhase = "Загрузка сигнала…"
         try {
             val loaded = withContext(Dispatchers.IO) {
                 DatabaseProvider.getDatabase().chromatogramDao().getById(id)
@@ -98,166 +103,157 @@ fun AnalysisFlowScreen(
                 loadError = "Сигнал ID=$id не найден в базе"
                 return@LaunchedEffect
             }
-            entity = loaded
-            // Deserialize dataPoints JSON → List<GraphPoint>
+
             val json = loaded.dataPoints
-            if (json != null) {
-                val points = Json.decodeFromString(
-                    ListSerializer(GraphPoint.serializer()), json,
-                )
-                signal = DigitalSignal(
-                    points = points,
-                    timeUnit = "мин",
-                    intensityUnit = loaded.intensityUnit ?: "mAU",
-                    metadata = SignalMetadata(
-                        sourceImage = loaded.filePath ?: "",
-                        totalPoints = points.size,
-                        duplicatesRemoved = 0,
-                        gapCount = 0,
-                        sortValid = true,
-                        timestamp = loaded.createdAt,
-                    ),
-                )
-            } else {
+            if (json == null) {
                 loadError = "Нет данных в записи ID=$id"
+                return@LaunchedEffect
             }
+
+            val points = Json.decodeFromString(
+                ListSerializer(GraphPoint.serializer()), json,
+            )
+            val sig = DigitalSignal(
+                points = points,
+                timeUnit = "мин",
+                intensityUnit = loaded.intensityUnit ?: "mAU",
+                metadata = SignalMetadata(
+                    sourceImage = loaded.filePath ?: "",
+                    totalPoints = points.size,
+                    duplicatesRemoved = 0,
+                    gapCount = 0,
+                    sortValid = true,
+                    timestamp = loaded.createdAt,
+                ),
+            )
+            signal = sig
+
+            // Phase 2: Smoothing + Baseline
+            calcPhase = "Сглаживание и baseline…"
+            val run = withContext(Dispatchers.Default) {
+                CalculationEngine.execute(
+                    signal = sig,
+                    sourceId = signalId,
+                    params = CalculationParams(),
+                )
+            }
+
+            // Phase 3: Distribution analysis
+            calcPhase = "Статистика распределения…"
+            val dist = withContext(Dispatchers.Default) {
+                DistributionAnalyzer.analyze(run.peaks)
+            }
+
+            // Phase 4: Pattern analysis
+            calcPhase = "Анализ паттернов…"
+            val patt = withContext(Dispatchers.Default) {
+                PatternAnalyzer.analyze(run.peaks, run.signals)
+            }
+
+            // Phase 5: Method quality
+            calcPhase = "Оценка качества метода…"
+            val mq = withContext(Dispatchers.Default) {
+                MethodQualityAnalyzer.analyze(run.peaks, run.signals)
+            }
+
+            // Phase 6: Geochemistry + auto-label
+            calcPhase = "Геохимические индексы…"
+            val sortedPeaks = run.peaks.sortedBy { it.rtApex }
+            val geochem = if (patt?.homologousSeries?.detected == true) {
+                withContext(Dispatchers.Default) {
+                    GeochemicalCalculator.calculate(sortedPeaks)
+                }
+            } else null
+
+            // Auto-label peaks with carbon numbers if series detected
+            val labeledPeaks = if (geochem != null) {
+                sortedPeaks.mapIndexed { i, p ->
+                    val cn = geochem.firstCarbonNumber + i
+                    p.copy(
+                        compoundName = "C$cn",
+                        compoundSource = CompoundSource.AUTO_SERIES,
+                    )
+                }
+            } else run.peaks
+
+            calculationRun = run.copy(
+                peaks = labeledPeaks,
+                distribution = dist,
+                pattern = patt,
+                methodQuality = mq,
+                geochemistry = geochem,
+            )
+
         } catch (e: Exception) {
             e.printStackTrace()
-            loadError = "Ошибка загрузки: ${e.message}"
+            loadError = "Ошибка анализа: ${e.message}"
         }
     }
 
+    // ─── UI ───
+    val isCalculating = signal == null || (loadError == null && calculationRun == null)
+
     Scaffold(
-        topBar = {
-            Column {
-                LinearProgressIndicator(
-                    progress = { (currentStep.index + 1).toFloat() / currentStep.totalSteps },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = Spacing.md, vertical = Spacing.xs),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Шаг ${currentStep.index + 1} / ${currentStep.totalSteps}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        currentStep.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-        },
         bottomBar = {
-            Surface(
-                tonalElevation = 3.dp,
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = Spacing.md, vertical = Spacing.sm),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    verticalAlignment = Alignment.CenterVertically,
+            // Show bottom bar only when report is ready
+            if (calculationRun != null && !showExport) {
+                Surface(
+                    tonalElevation = 3.dp,
+                    color = MaterialTheme.colorScheme.surface,
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            val prev = currentStep.prev()
-                            if (prev != null) currentStep = prev else onCancel()
-                        },
-                        modifier = Modifier.height(48.dp),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Назад")
-                    }
-
-                    // "Find peaks" button on PEAK_DETECTION step
-                    if (currentStep == AnalysisStep.PEAK_DETECTION && !peaksFound) {
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(
-                            onClick = {
-                                val sig = signal ?: return@Button
-                                isCalculating = true
-                                calcScope.launch {
-                                    try {
-                                        val run = withContext(Dispatchers.Default) {
-                                            CalculationEngine.execute(
-                                                signal = sig,
-                                                sourceId = signalId,
-                                                params = CalculationParams(),
-                                            )
-                                        }
-                                        // Attach extended analytics
-                                        val dist = DistributionAnalyzer.analyze(run.peaks)
-                                        val patt = PatternAnalyzer.analyze(run.peaks, run.signals)
-                                        val mq = MethodQualityAnalyzer.analyze(run.peaks, run.signals)
-
-                                        // Phase 16: geochemistry + auto-label if homologous
-                                        val sortedPeaks = run.peaks.sortedBy { it.rtApex }
-                                        val geochem = if (patt?.homologousSeries?.detected == true) {
-                                            GeochemicalCalculator.calculate(sortedPeaks)
-                                        } else null
-
-                                        // Auto-label peaks with carbon numbers if series detected
-                                        val labeledPeaks = if (geochem != null) {
-                                            sortedPeaks.mapIndexed { i, p ->
-                                                val cn = geochem.firstCarbonNumber + i
-                                                p.copy(
-                                                    compoundName = "C\u2080${cn}".let { "C$cn" },
-                                                    compoundSource = CompoundSource.AUTO_SERIES,
-                                                )
-                                            }
-                                        } else run.peaks
-
-                                        calculationRun = run.copy(
-                                            peaks = labeledPeaks,
-                                            distribution = dist,
-                                            pattern = patt,
-                                            methodQuality = mq,
-                                            geochemistry = geochem,
-                                        )
-                                        peaksFound = true
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    } finally {
-                                        isCalculating = false
-                                    }
-                                }
-                            },
-                            enabled = signal != null && !isCalculating,
+                        OutlinedButton(
+                            onClick = onCancel,
                             modifier = Modifier.height(48.dp),
                         ) {
-                            if (isCalculating) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp,
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Анализ...")
-                            } else {
-                                Icon(Icons.Filled.Search, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Найти пики")
-                            }
+                            Icon(Icons.Filled.ArrowBack, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Назад")
                         }
-                    } else {
                         Spacer(modifier = Modifier.weight(1f))
                         Button(
-                            onClick = {
-                                val next = currentStep.next()
-                                if (next != null) currentStep = next else onFinish()
-                            },
+                            onClick = { showExport = true },
                             modifier = Modifier.height(48.dp),
                         ) {
-                            Text(if (currentStep.next() != null) "Далее" else "Завершить")
+                            Icon(Icons.Filled.Share, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Экспорт")
+                        }
+                    }
+                }
+            } else if (showExport) {
+                Surface(
+                    tonalElevation = 3.dp,
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        OutlinedButton(
+                            onClick = { showExport = false },
+                            modifier = Modifier.height(48.dp),
+                        ) {
+                            Text("← Отчёт")
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = onFinish,
+                            modifier = Modifier.height(48.dp),
+                        ) {
+                            Icon(Icons.Filled.Done, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Завершить")
                         }
                     }
                 }
@@ -270,32 +266,56 @@ fun AnalysisFlowScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            AnimatedContent(
-                targetState = currentStep,
-                transitionSpec = {
-                    if (targetState.index > initialState.index) {
-                        slideInHorizontally { it / 3 } + fadeIn() togetherWith
-                            slideOutHorizontally { -it / 3 } + fadeOut()
-                    } else {
-                        slideInHorizontally { -it / 3 } + fadeIn() togetherWith
-                            slideOutHorizontally { it / 3 } + fadeOut()
+            when {
+                // Error state
+                loadError != null -> {
+                    ErrorContent(
+                        message = loadError!!,
+                        onRetry = onCancel,
+                    )
+                }
+
+                // Calculating — premium overlay
+                isCalculating -> {
+                    AnalysisProgressOverlay(
+                        phase = calcPhase,
+                    )
+                }
+
+                // Report ready
+                calculationRun != null -> {
+                    AnimatedContent(
+                        targetState = showExport,
+                        transitionSpec = {
+                            if (targetState) {
+                                slideInHorizontally { it / 3 } + fadeIn() togetherWith
+                                    slideOutHorizontally { -it / 3 } + fadeOut()
+                            } else {
+                                slideInHorizontally { -it / 3 } + fadeIn() togetherWith
+                                    slideOutHorizontally { it / 3 } + fadeOut()
+                            }
+                        },
+                        label = "report_export",
+                    ) { isExport ->
+                        if (isExport) {
+                            ExportCalculationScreen(
+                                run = calculationRun!!,
+                                onFileSave = { _: String, _: String -> },
+                                onShare = { _: String, _: String -> },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            ResultsSummaryScreen(
+                                run = calculationRun!!,
+                                onPeakTap = { idx ->
+                                    selectedPeakIndex = idx
+                                    showPeakSheet = true
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
-                },
-                label = "analysis_step",
-            ) { step ->
-                AnalysisStepContent(
-                    step = step,
-                    signalId = signalId,
-                    signal = signal,
-                    loadError = loadError,
-                    calculationRun = calculationRun,
-                    peaksFound = peaksFound,
-                    selectedPeakIndex = selectedPeakIndex,
-                    onPeakSelected = { idx ->
-                        selectedPeakIndex = idx
-                        showPeakSheet = true
-                    },
-                )
+                }
             }
         }
     }
@@ -319,219 +339,278 @@ fun AnalysisFlowScreen(
     }
 }
 
-@Composable
-private fun AnalysisStepContent(
-    step: AnalysisStep,
-    signalId: String,
-    signal: DigitalSignal?,
-    loadError: String?,
-    calculationRun: CalculationRun?,
-    peaksFound: Boolean,
-    selectedPeakIndex: Int = -1,
-    onPeakSelected: ((Int) -> Unit)? = null,
-) {
-    // Layer visibility state — persisted across steps
-    var visibleLayers by remember {
-        mutableStateOf(setOf("raw", "corrected"))
-    }
+// ─── Premium Analysis Progress Overlay ──────────────────────────
 
-    Column(
+/**
+ * Full-screen overlay shown while auto-calculation runs.
+ * Matches the AutoProgressOverlay design language.
+ */
+@Composable
+private fun AnalysisProgressOverlay(
+    phase: String,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "analysis")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "glow",
+    )
+    val ringRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2500, easing = LinearEasing),
+        ),
+        label = "rotation",
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            .background(AnalysisSurface),
+        contentAlignment = Alignment.Center,
     ) {
-        // Step title
-        Text(
-            step.label,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            // ─── Animated ring ───
+            Box(
+                modifier = Modifier.size(160.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+                    val strokeWidth = 8.dp.toPx()
+                    val ringSize = Size(size.width - strokeWidth, size.height - strokeWidth)
+                    val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
 
-        Spacer(modifier = Modifier.height(Spacing.xs))
+                    // Track
+                    drawArc(
+                        color = AnalysisTrack,
+                        startAngle = 0f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = ringSize,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                    )
 
-        when {
-            // Error state
-            loadError != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        loadError,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
+                    // Spinning gradient arc (120° segment)
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            0f to AnalysisGradStart,
+                            0.5f to AnalysisGradMid,
+                            1f to AnalysisGradEnd,
+                        ),
+                        startAngle = ringRotation,
+                        sweepAngle = 120f,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = ringSize,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                    )
+
+                    // Glow dot at arc tip
+                    val tipAngleRad = Math.toRadians((ringRotation + 120f).toDouble())
+                    val r = ringSize.width / 2
+                    val cx = center.x + r * kotlin.math.cos(tipAngleRad).toFloat()
+                    val cy = center.y + r * kotlin.math.sin(tipAngleRad).toFloat()
+                    drawCircle(
+                        color = AnalysisGlow.copy(alpha = glowAlpha),
+                        radius = strokeWidth * 1.5f,
+                        center = Offset(cx, cy),
                     )
                 }
-            }
 
-            // Loading state
-            signal == null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        Text("Загрузка сигнала...")
-                    }
-                }
-            }
-
-            // Signal loaded — show chart
-            else -> {
-                // Build chart state based on current step
-                val chartState = remember(calculationRun, visibleLayers, peaksFound, selectedPeakIndex) {
-                    if (calculationRun != null) {
-                        CalculationToChartMapper.buildChartState(
-                            run = calculationRun,
-                            visibleLayers = visibleLayers,
-                            selectedPeakIndex = selectedPeakIndex,
-                        )
-                    } else {
-                        CalculationToChartMapper.buildRawChartState(signal)
-                    }
-                }
-
-                // Chart — flexible height, shrinks when table visible
-                val showTable = step == AnalysisStep.PEAK_REVIEW ||
-                    step == AnalysisStep.PEAK_CORRECTION
-                val chartWeight = if (showTable) 0.5f else 1f
-
-                // RESULTS step: render full ResultsSummaryScreen replacing chart+table
-                if (step == AnalysisStep.RESULTS && calculationRun != null) {
-                    ResultsSummaryScreen(
-                        run = calculationRun,
-                        modifier = Modifier.weight(1f),
-                    )
-                } else if (step == AnalysisStep.EXPORT && calculationRun != null) {
-                    ExportCalculationScreen(
-                        run = calculationRun,
-                        onFileSave = { _: String, _: String -> /* platform file save */ },
-                        onShare = { _: String, _: String -> /* platform share */ },
-                        modifier = Modifier.weight(1f),
-                    )
-                } else {
-
-                ChromatogramChart(
-                    state = chartState,
-                    onPeakTap = onPeakSelected,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(chartWeight),
+                // Center icon
+                Icon(
+                    Icons.Filled.Science,
+                    contentDescription = null,
+                    tint = AnalysisGlow.copy(alpha = 0.7f),
+                    modifier = Modifier.size(40.dp),
                 )
+            }
 
-                Spacer(modifier = Modifier.height(Spacing.sm))
+            Spacer(modifier = Modifier.height(28.dp))
 
-                // Step-specific bottom content
-                when (step) {
-                    AnalysisStep.SIGNAL_OVERVIEW -> {
-                        // Signal summary card
-                        SignalSummaryCard(signal)
-                    }
+            // Title
+            Text(
+                "Полный анализ",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = AnalysisText,
+            )
 
-                    AnalysisStep.LAYER_SELECTION -> {
-                        // Layer toggle chips
-                        LayerToggleChips(
-                            hasSmoothed = calculationRun?.signals?.smoothed != null,
-                            hasBaseline = calculationRun?.signals?.baseline != null,
-                            hasCorrected = calculationRun?.signals?.baselineCorrected != null,
-                            visibleLayers = visibleLayers,
-                            onToggle = { layerId ->
-                                visibleLayers = if (layerId in visibleLayers) {
-                                    visibleLayers - layerId
-                                } else {
-                                    visibleLayers + layerId
-                                }
-                            },
-                        )
-                    }
+            Spacer(modifier = Modifier.height(8.dp))
 
-                    AnalysisStep.PEAK_DETECTION -> {
-                        if (peaksFound && calculationRun != null) {
-                            Text(
-                                "Найдено пиков: ${calculationRun.peaks.size}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        } else {
-                            Text(
-                                "Нажмите «Найти пики» для запуска анализа",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    AnalysisStep.NOISE_BASELINE -> {
-                        Text(
-                            "Выберите noise region, смените baseline method",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-
-                    else -> {
-                        // PEAK_REVIEW, PEAK_CORRECTION — show PeakTable
-                        if (showTable && calculationRun != null && calculationRun.peaks.isNotEmpty()) {
-                            val tableRows = remember(calculationRun) {
-                                buildPeakTableRows(calculationRun.peaks)
-                            }
-                            var tableSort by remember { mutableStateOf(PeakTableSort.RT_ASC) }
-                            var tableFilter by remember { mutableStateOf(PeakTableFilter.ALL) }
-
-                            PeakTable(
-                                rows = tableRows,
-                                sort = tableSort,
-                                filter = tableFilter,
-                                selectedIndex = selectedPeakIndex,
-                                onRowTap = { onPeakSelected?.invoke(it) },
-                                onSortChange = { tableSort = it },
-                                onFilterChange = { tableFilter = it },
-                                modifier = Modifier.weight(0.5f),
-                            )
-                        }
-                    }
-                }
-                } // close else (non-RESULTS)
-
-                // Signal ID footer
+            // Current phase — animated crossfade
+            AnimatedContent(
+                targetState = phase,
+                transitionSpec = {
+                    fadeIn(tween(400)) togetherWith fadeOut(tween(200))
+                },
+                label = "phase",
+            ) { text ->
                 Text(
-                    "Signal ID: ${signalId.toLongOrNull() ?: "\u2014"}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(top = Spacing.xs),
+                    text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AnalysisTextDim,
                 )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Steps checklist
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = AnalysisSurfaceAlt,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val steps = listOf(
+                        "Загрузка сигнала" to Icons.Filled.Download,
+                        "Сглаживание и baseline" to Icons.Filled.Tune,
+                        "Поиск пиков" to Icons.Filled.Search,
+                        "Статистика распределения" to Icons.Filled.BarChart,
+                        "Анализ паттернов" to Icons.Filled.Insights,
+                        "Оценка качества метода" to Icons.Filled.VerifiedUser,
+                        "Геохимические индексы" to Icons.Filled.Science,
+                    )
+
+                    val currentIdx = when {
+                        phase.startsWith("Загрузка") -> 0
+                        phase.startsWith("Сглаживание") -> 1
+                        phase.startsWith("Поиск") || phase.contains("baseline") -> 2
+                        phase.startsWith("Статистика") -> 3
+                        phase.startsWith("Анализ") -> 4
+                        phase.startsWith("Оценка") -> 5
+                        phase.startsWith("Геохим") -> 6
+                        else -> 1
+                    }
+
+                    steps.forEachIndexed { i, (label, icon) ->
+                        val isDone = i < currentIdx
+                        val isActive = i == currentIdx
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                        ) {
+                            // Status indicator
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        when {
+                                            isDone -> AnalysisDone.copy(alpha = 0.15f)
+                                            isActive -> AnalysisGradStart.copy(alpha = 0.2f)
+                                            else -> Color(0xFF475569).copy(alpha = 0.2f)
+                                        }
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                when {
+                                    isDone -> Icon(
+                                        Icons.Filled.Check,
+                                        null,
+                                        tint = AnalysisDone,
+                                        modifier = Modifier.size(12.dp),
+                                    )
+                                    isActive -> CircularProgressIndicator(
+                                        modifier = Modifier.size(12.dp),
+                                        strokeWidth = 1.5.dp,
+                                        color = AnalysisGlow,
+                                    )
+                                    else -> Icon(
+                                        icon,
+                                        null,
+                                        tint = Color(0xFF475569),
+                                        modifier = Modifier.size(10.dp),
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when {
+                                    isDone -> AnalysisDone
+                                    isActive -> AnalysisText
+                                    else -> Color(0xFF475569)
+                                },
+                                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+
+                            if (isDone) {
+                                Spacer(Modifier.weight(1f))
+                                Icon(
+                                    Icons.Filled.CheckCircle,
+                                    null,
+                                    tint = AnalysisDone.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(12.dp),
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-// \u2500\u2500\u2500 PeakResult \u2192 PeakTableRow mapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── Error Content ──────────────────────────────────────────────
 
-private fun buildPeakTableRows(peaks: List<PeakResult>): List<PeakTableRow> {
-    val totalArea = peaks.sumOf { it.area }
-    return peaks.mapIndexed { i, p ->
-        PeakTableRow(
-            index = i,
-            rtApex = p.rtApex,
-            height = p.height,
-            area = p.area,
-            areaPercent = if (totalArea > 0) p.area / totalArea * 100.0 else 0.0,
-            widthBase = p.widthBase,
-            snr = p.snr,
-            prominence = p.height, // use height as proxy when prominence not in PeakResult
-            tailingFactor = p.tailingFactor,
-            confidenceGrade = p.confidence,
-            overlapStatus = p.overlapStatus,
-            isManuallyEdited = p.status == com.chromalab.feature.calculation.core.PeakStatus.MANUAL ||
-                p.status == com.chromalab.feature.calculation.core.PeakStatus.CORRECTED,
-            warningCount = p.warnings.size,
-        )
+@Composable
+private fun ErrorContent(
+    message: String,
+    onRetry: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Icon(
+                Icons.Filled.ErrorOutline,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(48.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Ошибка анализа",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onRetry) {
+                Text("Назад")
+            }
+        }
     }
 }
 
-// \u2500\u2500\u2500 PeakResult \u2192 PeakDetailsData mapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ─── PeakResult → PeakDetailsData mapper ────────────────────────
 
 private fun buildPeakDetailsData(peak: PeakResult): PeakDetailsData {
     return PeakDetailsData(
@@ -586,121 +665,3 @@ private fun buildPeakDetailsData(peak: PeakResult): PeakDetailsData {
         baselineMethod = peak.baselineMethod,
     )
 }
-
-// ─── Signal Summary Card ────────────────────────────────────────
-
-@Composable
-private fun SignalSummaryCard(signal: DigitalSignal) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            SummaryRow("Точек", "${signal.points.size}")
-            SummaryRow(
-                "Время",
-                "${"%.2f".format(signal.points.firstOrNull()?.time ?: 0f)} — " +
-                    "${"%.2f".format(signal.points.lastOrNull()?.time ?: 0f)} ${signal.timeUnit}",
-            )
-            SummaryRow(
-                "Интенсивность",
-                "${"%.1f".format(signal.minIntensity)} — " +
-                    "${"%.1f".format(signal.maxIntensity)} ${signal.intensityUnit}",
-            )
-        }
-    }
-}
-
-@Composable
-private fun SummaryRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-        )
-    }
-}
-
-// ─── Layer Toggle Chips ─────────────────────────────────────────
-
-@Composable
-private fun LayerToggleChips(
-    hasSmoothed: Boolean,
-    hasBaseline: Boolean,
-    hasCorrected: Boolean,
-    visibleLayers: Set<String>,
-    onToggle: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Text(
-            "Слои сигнала",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            LayerChip("Raw", "raw", Color(0xFF42A5F5), visibleLayers, onToggle)
-            if (hasSmoothed) {
-                LayerChip("Smoothed", "smoothed", Color(0xFF80DEEA), visibleLayers, onToggle)
-            }
-            if (hasBaseline) {
-                LayerChip("Baseline", "baseline", Color(0xFF9E9E9E), visibleLayers, onToggle)
-            }
-            if (hasCorrected) {
-                LayerChip("Corrected", "corrected", Color(0xFF66BB6A), visibleLayers, onToggle)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LayerChip(
-    label: String,
-    layerId: String,
-    color: Color,
-    visibleLayers: Set<String>,
-    onToggle: (String) -> Unit,
-) {
-    FilterChip(
-        selected = layerId in visibleLayers,
-        onClick = { onToggle(layerId) },
-        label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-        leadingIcon = {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        color = if (layerId in visibleLayers) color else color.copy(alpha = 0.3f),
-                        shape = androidx.compose.foundation.shape.CircleShape,
-                    ),
-            )
-        },
-    )
-}
-
-private fun stepDescription(step: AnalysisStep, peaksFound: Boolean): String = when (step) {
-    AnalysisStep.SIGNAL_OVERVIEW -> "Загрузка и валидация оцифрованного сигнала"
-    AnalysisStep.LAYER_SELECTION -> "Переключатели: raw / smoothed / baseline / corrected / peaks"
-    AnalysisStep.PEAK_DETECTION ->
-        if (peaksFound) "Пики найдены — нажмите Далее для просмотра"
-        else "Нажмите «Найти пики» для запуска анализа"
-    AnalysisStep.PEAK_REVIEW -> "Нажмите на пик для просмотра RT, height, area, width, S/N"
-    AnalysisStep.PEAK_CORRECTION -> "Двигайте границы, добавляйте/отклоняйте пики"
-    AnalysisStep.NOISE_BASELINE -> "Выберите noise region, смените baseline method"
-    AnalysisStep.RESULTS -> "Таблица пиков — метрики пересчитаны"
-    AnalysisStep.EXPORT -> "Сохранение CalculationRun и экспорт CSV/JSON"
-}
-
