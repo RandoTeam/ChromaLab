@@ -656,52 +656,49 @@ fun ProcessingFlowScreen(
                 sweepProgress = null
                 bestSweepConfig = null
                 currentStep = ProcessingStep.GRAPH_ROI
-            } else if (next != null) {
-                currentStep = next
             } else {
-                // Shouldn't happen — EXPORT is after QUALITY_REPORT
-                currentStep = ProcessingStep.EXPORT
+                // All graphs done — auto-save to Room, then navigate to Analysis
+                println("PIPELINE[SAVE] All ${processedSignals.size} graphs done, saving to Room...")
+                scope.launch {
+                    val now = System.currentTimeMillis()
+                    try {
+                        val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                        var firstId: Long? = null
+                        for ((idx, ss) in processedSignals.withIndex()) {
+                            val signal = ss.smoothed
+                            val entity = ChromatogramEntity(
+                                sampleId = 0,
+                                sourceType = SourceType.PHOTO,
+                                filePath = currentImagePath,
+                                timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
+                                timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
+                                intensityUnit = signal.intensityUnit,
+                                qualityScore = null,
+                                dataPoints = kotlinx.serialization.json.Json.encodeToString(
+                                    kotlinx.serialization.builtins.ListSerializer(
+                                        com.chromalab.feature.processing.signal.GraphPoint.serializer(),
+                                    ),
+                                    signal.points,
+                                ),
+                                createdAt = now,
+                                updatedAt = now,
+                            )
+                            val id = dao.insert(entity)
+                            if (firstId == null) firstId = id
+                            println("PIPELINE[SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                        }
+                        // Trigger navigation to AnalysisFlowScreen
+                        savedSignalId = firstId ?: now
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        println("PIPELINE[SAVE] Failed: ${e.message}, falling back to ExportScreen")
+                        // Save failed — fall back to ExportScreen
+                        currentStep = ProcessingStep.EXPORT
+                    }
+                }
             }
         } else if (next != null) {
             currentStep = next
-        } else {
-            // Last step — save all signals to Room, then navigate
-            // Add last graph's signal to the batch
-            smoothedSignal?.let { processedSignals.add(it) }
-            scope.launch {
-                val now = System.currentTimeMillis()
-                try {
-                    val dao = DatabaseProvider.getDatabase().chromatogramDao()
-                    var firstId: Long? = null
-                    for ((idx, ss) in processedSignals.withIndex()) {
-                        val signal = ss.smoothed
-                        val entity = ChromatogramEntity(
-                            sampleId = 0,
-                            sourceType = SourceType.PHOTO,
-                            filePath = currentImagePath,
-                            timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
-                            timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
-                            intensityUnit = signal.intensityUnit,
-                            qualityScore = null,
-                            dataPoints = kotlinx.serialization.json.Json.encodeToString(
-                                kotlinx.serialization.builtins.ListSerializer(
-                                    com.chromalab.feature.processing.signal.GraphPoint.serializer(),
-                                ),
-                                signal.points,
-                            ),
-                            createdAt = now,
-                            updatedAt = now,
-                        )
-                        val id = dao.insert(entity)
-                        if (firstId == null) firstId = id
-                        println("PIPELINE[SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
-                    }
-                    savedSignalId = firstId ?: now
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    savedSignalId = now
-                }
-            }
         }
     }
     val goBack = { step: ProcessingStep ->
