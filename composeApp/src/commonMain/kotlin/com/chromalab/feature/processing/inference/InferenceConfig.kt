@@ -3,17 +3,42 @@ package com.chromalab.feature.processing.inference
 /**
  * Inference configuration — per-model sampling and context parameters.
  *
- * All models use GREEDY sampling (temperature=0) for deterministic, factual output.
- * This is critical for chromatogram analysis where accuracy is paramount.
+ * ## Sampling Strategy
  *
- * Parameters tuned per model family:
- * - Qwen3.5-VL:  repeat_penalty=1.1, n_predict=512
- * - Gemma 4:      managed by LiteRT SDK (greedy by default)
- * - User-imported: conservative defaults
+ * All models use **GREEDY sampling (temperature=0)** for deterministic, factual output.
+ * This is enforced at the C++ sampler level (llama_sampler_init_greedy).
+ *
+ * For chromatogram OCR, ANY temperature > 0 introduces randomness into numeric values,
+ * making the output non-reproducible. Greedy is the only correct choice.
+ *
+ * ## Repeat Penalty
+ *
+ * Mild repeat penalty (1.1) prevents degenerate loops in JSON output
+ * (e.g. model repeating the same number array indefinitely).
+ * Values > 1.2 risk distorting legitimate repeated numbers (e.g. [0, 0, 100, 200]).
+ *
+ * ## Token Budget
+ *
+ * maxTokens is sized for the expected output format:
+ * - Axis extraction JSON: ~100-300 tokens (depending on number of tick labels)
+ * - Graph region JSON: ~30 tokens
+ * - Axis structure JSON: ~30 tokens
+ *
+ * We set generous limits (768) to accommodate charts with many labels
+ * and models that emit thinking tokens or preamble before JSON.
+ *
+ * ## Parameters tuned per model family
+ *
+ * | Model               | maxTokens | repeatPenalty | repeatLastN | contextSize |
+ * |---------------------|-----------|---------------|-------------|-------------|
+ * | Qwen2.5-VL (3B/7B)  | 768       | 1.1           | 64          | 4096        |
+ * | Qwen3.5-VL (9B)     | 768       | 1.1           | 64          | 4096        |
+ * | Gemma 4 (LiteRT)    | 768       | 1.0 (SDK)     | 0           | 4096        |
+ * | User-imported        | 512       | 1.15          | 64          | 4096        |
  */
 data class InferenceConfig(
-    /** Maximum tokens to generate. OCR/JSON extraction rarely exceeds 256. */
-    val maxTokens: Int = 512,
+    /** Maximum tokens to generate. */
+    val maxTokens: Int = 768,
     /**
      * Repetition penalty to prevent loops. 1.0 = disabled.
      * For structured JSON output, mild penalty (1.1) prevents degenerate repetitions
@@ -27,62 +52,90 @@ data class InferenceConfig(
     val repeatLastN: Int = 64,
     /**
      * Context window size. Must accommodate image tokens + prompt + response.
-     * Qwen3.5-VL: ~1800 image tokens + prompt ≈ 2000, response ≈ 256.
+     * Qwen2.5-VL: ~1800 image tokens + ~200 prompt tokens + ~300 response ≈ 2300.
      * 4096 is safe for all supported models.
      */
     val contextSize: Int = 4096,
     /** Batch size for prompt processing. */
     val batchSize: Int = 512,
+    /**
+     * Whether the model expects ChatML template wrapping.
+     * True for Qwen VL Instruct models, false for Gemma (LiteRT handles internally).
+     */
+    val useChatML: Boolean = true,
 ) {
     companion object {
         /**
-         * Preset for Qwen3.5-VL models (all sizes: 0.8B, 2B, 4B, 9B).
+         * Preset for Qwen2.5-VL models (3B, 7B).
          *
          * Greedy sampling (handled in C++ via llama_sampler_init_greedy).
          * Repeat penalty 1.1 — prevents JSON value duplication.
-         * Max tokens 512 — sufficient for axis extraction JSON.
+         * Max tokens 768 — sufficient for complex charts with many labels.
+         * ChatML template required for Instruct-tuned models.
          */
-        val QWEN_VL = InferenceConfig(
-            maxTokens = 512,
+        val QWEN25_VL = InferenceConfig(
+            maxTokens = 768,
             repeatPenalty = 1.1f,
             repeatLastN = 64,
             contextSize = 4096,
             batchSize = 512,
+            useChatML = true,
+        )
+
+        /**
+         * Preset for Qwen3.5-VL models (9B).
+         *
+         * Same as Qwen2.5-VL — both use ChatML template.
+         * Qwen3.5 may emit <think>...</think> blocks — parser strips them.
+         */
+        val QWEN35_VL = InferenceConfig(
+            maxTokens = 768,
+            repeatPenalty = 1.1f,
+            repeatLastN = 64,
+            contextSize = 4096,
+            batchSize = 512,
+            useChatML = true,
         )
 
         /**
          * Preset for Gemma 4 models (E2B, E4B).
          *
-         * LiteRT SDK manages sampling internally (greedy by default).
+         * LiteRT SDK manages sampling and chat template internally (greedy by default).
          * These params are stored for reference but not passed to native.
+         * useChatML = false — Gemma uses its own format via LiteRT SDK.
          */
         val GEMMA = InferenceConfig(
-            maxTokens = 512,
+            maxTokens = 768,
             repeatPenalty = 1.0f, // LiteRT handles this
             repeatLastN = 0,
             contextSize = 4096,
             batchSize = 512,
+            useChatML = false,
         )
 
         /**
          * Conservative default for user-imported models.
          * Slightly stricter repeat penalty to handle unknown model behaviors.
+         * No ChatML — unknown template format.
          */
         val DEFAULT = InferenceConfig(
-            maxTokens = 384,
+            maxTokens = 512,
             repeatPenalty = 1.15f,
             repeatLastN = 64,
             contextSize = 4096,
             batchSize = 256,
+            useChatML = false,
         )
 
         /**
          * Select the optimal config for a model by its family.
          */
         fun forModelFamily(family: String): InferenceConfig = when {
-            family.contains("qwen", ignoreCase = true) -> QWEN_VL
+            family.contains("qwen3", ignoreCase = true) -> QWEN35_VL
+            family.contains("qwen2", ignoreCase = true) -> QWEN25_VL
+            family.contains("qwen", ignoreCase = true) -> QWEN25_VL
             family.contains("gemma", ignoreCase = true) -> GEMMA
-            family.contains("llava", ignoreCase = true) -> QWEN_VL // similar arch
+            family.contains("llava", ignoreCase = true) -> DEFAULT // LLaVA uses own template
             else -> DEFAULT
         }
     }

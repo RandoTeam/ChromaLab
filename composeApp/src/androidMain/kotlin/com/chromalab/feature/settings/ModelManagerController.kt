@@ -2,6 +2,7 @@ package com.chromalab.feature.settings
 
 import android.content.Context
 import android.net.Uri
+import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
 import com.chromalab.feature.processing.inference.LiteRTEngine
@@ -185,7 +186,8 @@ class ModelManagerController(
 
                 if (engine != null) {
                     VlmEngineHolder.activeEngine = engine
-                    println("MODEL[CTRL] Engine activated: ${model.info.displayName}")
+                    VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
+                    println("MODEL[CTRL] Engine activated: ${model.info.displayName} (family=${model.info.family}, chatML=${VlmEngineHolder.activeConfig?.useChatML})")
                 }
 
                 _state.update { it.copy(activatingModelId = null, activationError = null) }
@@ -207,6 +209,7 @@ class ModelManagerController(
     /** Deactivate (unload) the current model without deleting files. */
     fun deactivate() {
         VlmEngineHolder.activeEngine = null
+        VlmEngineHolder.activeConfig = null
         manager.clearActiveModel()
         refresh()
         println("MODEL[CTRL] Model deactivated")
@@ -217,6 +220,7 @@ class ModelManagerController(
         // Unload engine if this is the active model
         if (manager.getActiveModelId() == modelId) {
             VlmEngineHolder.activeEngine = null
+            VlmEngineHolder.activeConfig = null
         }
         manager.delete(modelId)
         refresh()

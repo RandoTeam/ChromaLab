@@ -12,6 +12,11 @@ import com.chromalab.feature.processing.ocr.OcrStatus
  *   1. Check if a VLM engine is loaded (via VlmEngineHolder singleton)
  *   2. If yes → run VLM chart analysis → convert to AxisOcrResult
  *   3. If VLM fails or unavailable → fall back to ML Kit OCR
+ *
+ * Prompt selection:
+ *   - Qwen VL Instruct models → ChatML-wrapped prompt (AXIS_EXTRACTION)
+ *   - Gemma / other models → raw prompt (AXIS_EXTRACTION_RAW)
+ *   - Controlled by InferenceConfig.useChatML flag
  */
 actual class ChartAnalysisReader actual constructor() {
 
@@ -23,13 +28,25 @@ actual class ChartAnalysisReader actual constructor() {
     ): AxisOcrResult {
         // === Strategy 1: VLM inference ===
         val engine = VlmEngineHolder.activeEngine
+        val config = VlmEngineHolder.activeConfig
+
         if (engine != null && engine.isLoaded()) {
             try {
-                println("VLM[READER] Trying VLM analysis (${engine.getBackendName()})...")
+                val backend = engine.getBackendName()
+                println("VLM[READER] Trying VLM analysis ($backend)...")
+
+                // Select prompt based on model's template requirement
+                val prompt = if (config?.useChatML == true) {
+                    println("VLM[READER] Using ChatML-wrapped prompt")
+                    ChartPrompts.AXIS_EXTRACTION
+                } else {
+                    println("VLM[READER] Using raw prompt (non-ChatML model)")
+                    ChartPrompts.AXIS_EXTRACTION_RAW
+                }
 
                 val analysis = engine.analyzeChart(
                     imagePath = imagePath,
-                    prompt = ChartPrompts.AXIS_EXTRACTION,
+                    prompt = prompt,
                 )
 
                 if (analysis.confidence > 0.5f &&
@@ -49,6 +66,47 @@ actual class ChartAnalysisReader actual constructor() {
 
         // === Strategy 2: ML Kit OCR fallback ===
         return fallbackOcr.readAxisLabels(imagePath, graphRegion)
+    }
+
+    /**
+     * VLM-based graph region detection.
+     * Returns bounding box hint for the CV-based GraphRegionDetector.
+     *
+     * @return GraphBounds if VLM succeeds, null otherwise
+     */
+    suspend fun detectGraphRegion(imagePath: String): GraphBounds? {
+        val engine = VlmEngineHolder.activeEngine
+        val config = VlmEngineHolder.activeConfig
+
+        if (engine == null || !engine.isLoaded()) {
+            println("VLM[REGION] No model loaded, skipping")
+            return null
+        }
+
+        return try {
+            println("VLM[REGION] Detecting graph region...")
+
+            val prompt = if (config?.useChatML == true) {
+                ChartPrompts.GRAPH_REGION
+            } else {
+                ChartPrompts.GRAPH_REGION_RAW
+            }
+
+            val analysis = engine.analyzeChart(
+                imagePath = imagePath,
+                prompt = prompt,
+            )
+
+            // Parse the raw response for graph bounds
+            // The analyzeChart response goes through axis parser by default,
+            // so we need the raw response. For now, re-run with structure prompt.
+            // TODO: Add separate raw-response method to InferenceEngine
+            println("VLM[REGION] Parsing graph bounds from response")
+            null // Placeholder — requires raw response method
+        } catch (e: Exception) {
+            println("VLM[REGION] Failed: ${e.message}")
+            null
+        }
     }
 
     private fun chartAnalysisToOcrResult(analysis: ChartAnalysis): AxisOcrResult {
@@ -86,4 +144,7 @@ object VlmEngineHolder {
             field = value
             println("VLM[HOLDER] Active engine: ${value?.getBackendName() ?: "none"}")
         }
+
+    /** Active model's inference config (for prompt format selection). */
+    var activeConfig: InferenceConfig? = null
 }
