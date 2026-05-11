@@ -135,10 +135,25 @@ class ModelManagerController(
 
     /** Activate a downloaded model — creates inference engine + sets VlmEngineHolder. */
     fun activate(modelId: String) {
+        // Don't activate if already activating
+        if (_state.value.activatingModelId != null) return
+
+        _state.update {
+            it.copy(activatingModelId = modelId, activationError = null)
+        }
+
         scope.launch {
             try {
                 val model = manager.getDownloadedModels().find { it.info.id == modelId }
-                    ?: return@launch
+                    ?: run {
+                        _state.update {
+                            it.copy(
+                                activatingModelId = null,
+                                activationError = "Модель не найдена",
+                            )
+                        }
+                        return@launch
+                    }
 
                 manager.setActiveModel(modelId)
 
@@ -173,9 +188,18 @@ class ModelManagerController(
                     println("MODEL[CTRL] Engine activated: ${model.info.displayName}")
                 }
 
+                _state.update { it.copy(activatingModelId = null, activationError = null) }
                 refresh()
             } catch (e: Exception) {
                 println("MODEL[CTRL] Activate failed: ${e.message}")
+                manager.clearActiveModel()
+                _state.update {
+                    it.copy(
+                        activatingModelId = null,
+                        activationError = e.message ?: "Ошибка активации",
+                    )
+                }
+                refresh()
             }
         }
     }

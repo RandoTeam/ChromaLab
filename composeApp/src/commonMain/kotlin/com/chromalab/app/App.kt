@@ -189,6 +189,8 @@ fun App() {
                         downloadingModelId = modelState.downloadingModelId,
                         downloadProgress = modelState.downloadProgress,
                         downloadSpeedMbps = modelState.downloadSpeedMbps,
+                        activatingModelId = modelState.activatingModelId,
+                        activationError = modelState.activationError,
                         deviceRamMb = modelState.deviceRamMb,
                         availableStorageGb = modelState.availableStorageGb,
                         totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,

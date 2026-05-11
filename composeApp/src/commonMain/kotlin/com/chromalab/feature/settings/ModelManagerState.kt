@@ -17,6 +17,10 @@ data class ModelManagerState(
     val downloadSpeedMbps: Float = 0f,
     val downloadFileName: String = "",
     val downloadError: String? = null,
+    /** Non-null while a model is being loaded into RAM (activate in progress). */
+    val activatingModelId: String? = null,
+    /** Error message from last activation attempt. */
+    val activationError: String? = null,
     val deviceRamMb: Int = 4096,
     val availableStorageGb: Float = 0f,
     val totalModelDiskUsageGb: Float = 0f,

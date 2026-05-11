@@ -49,6 +49,8 @@ fun ModelManagerScreen(
     downloadingModelId: String?,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
+    activatingModelId: String?,
+    activationError: String?,
     deviceRamMb: Int,
     availableStorageGb: Float,
     totalModelDiskUsageGb: Float,
@@ -79,6 +81,7 @@ fun ModelManagerScreen(
             )
         },
     ) { padding ->
+        Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,6 +117,7 @@ fun ModelManagerScreen(
                     isDownloaded = model.id in downloadedModelIds,
                     isActive = model.id == activeModelId,
                     isDownloading = model.id == downloadingModelId,
+                    isActivating = model.id == activatingModelId,
                     downloadProgress = if (model.id == downloadingModelId) downloadProgress else 0f,
                     downloadSpeedMbps = if (model.id == downloadingModelId) downloadSpeedMbps else 0f,
                     deviceRamMb = deviceRamMb,
@@ -142,6 +146,7 @@ fun ModelManagerScreen(
                     isDownloaded = model.id in downloadedModelIds,
                     isActive = model.id == activeModelId,
                     isDownloading = model.id == downloadingModelId,
+                    isActivating = model.id == activatingModelId,
                     downloadProgress = if (model.id == downloadingModelId) downloadProgress else 0f,
                     downloadSpeedMbps = if (model.id == downloadingModelId) downloadSpeedMbps else 0f,
                     deviceRamMb = deviceRamMb,
@@ -208,6 +213,24 @@ fun ModelManagerScreen(
                 )
             }
         }
+
+        // Error Snackbar at bottom
+        if (activationError != null) {
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Error, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(activationError, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        } // Box
     }
 
     // ===== Delete Confirmation Dialog =====
@@ -299,6 +322,7 @@ private fun ModelCard(
     isDownloaded: Boolean,
     isActive: Boolean,
     isDownloading: Boolean,
+    isActivating: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
     deviceRamMb: Int,
@@ -550,18 +574,23 @@ private fun ModelCard(
                             Text("Удалить")
                         }
                     }
-                    isDownloaded && !isActive -> {
+                    isDownloaded && !isActive && !isActivating -> {
                         TextButton(onClick = onDelete) {
                             Icon(Icons.Filled.Delete, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
                             Text("Удалить")
                         }
                         Spacer(Modifier.width(8.dp))
-                        FilledTonalButton(onClick = onActivate) {
-                            Icon(Icons.Filled.PlayArrow, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Активировать")
-                        }
+                        ActivateButton(
+                            isActivating = isActivating,
+                            onActivate = onActivate,
+                        )
+                    }
+                    isActivating -> {
+                        ActivateButton(
+                            isActivating = true,
+                            onActivate = {},
+                        )
                     }
                     else -> {
                         FilledTonalButton(
@@ -775,6 +804,81 @@ private fun DeviceInfoCard(
                     fontWeight = FontWeight.Medium,
                 )
             }
+        }
+    }
+}
+
+/**
+ * Capsule "Activate" button with animated gradient fill during loading.
+ *
+ * Normal: "▶ Активировать" (tonal button)
+ * Loading: Animated gradient fill left→right + spinner + "Загрузка..."
+ */
+@Composable
+private fun ActivateButton(
+    isActivating: Boolean,
+    onActivate: () -> Unit,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "activate")
+    val fillOffset by infiniteTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+        ),
+        label = "fill",
+    )
+
+    Box(
+        modifier = Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(20.dp)),
+    ) {
+        FilledTonalButton(
+            onClick = onActivate,
+            enabled = !isActivating,
+            modifier = Modifier.height(40.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.filledTonalButtonColors(
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+        ) {
+            if (isActivating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text("Загрузка…")
+            } else {
+                Icon(Icons.Filled.PlayArrow, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Активировать")
+            }
+        }
+
+        // Animated gradient overlay during activation
+        if (isActivating) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                Color.Transparent,
+                            ),
+                            startX = fillOffset * 200f,
+                            endX = (fillOffset + 0.5f) * 200f,
+                        )
+                    ),
+            )
         }
     }
 }
