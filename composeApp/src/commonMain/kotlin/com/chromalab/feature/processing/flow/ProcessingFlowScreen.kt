@@ -658,16 +658,35 @@ fun ProcessingFlowScreen(
                 currentStep = ProcessingStep.GRAPH_ROI
             } else {
                 // All graphs done — auto-save to Room, then navigate to Analysis
-                println("PIPELINE[SAVE] All ${processedSignals.size} graphs done, saving to Room...")
+                println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                 scope.launch {
                     val now = System.currentTimeMillis()
                     try {
-                        val dao = DatabaseProvider.getDatabase().chromatogramDao()
+                        val db = DatabaseProvider.getDatabase()
+
+                        // Create parent Project + Sample to satisfy FK constraints
+                        val projectId = db.projectDao().insert(
+                            com.chromalab.core.data.entity.ProjectEntity(
+                                name = "Фото-анализ",
+                                date = now,
+                                createdAt = now,
+                                updatedAt = now,
+                            )
+                        )
+                        val sampleId = db.sampleDao().insert(
+                            com.chromalab.core.data.entity.SampleEntity(
+                                projectId = projectId,
+                                name = "Образец ${java.text.SimpleDateFormat("dd.MM HH:mm", java.util.Locale.getDefault()).format(now)}",
+                                createdAt = now,
+                                updatedAt = now,
+                            )
+                        )
+
                         var firstId: Long? = null
                         for ((idx, ss) in processedSignals.withIndex()) {
                             val signal = ss.smoothed
                             val entity = ChromatogramEntity(
-                                sampleId = 0,
+                                sampleId = sampleId,
                                 sourceType = SourceType.PHOTO,
                                 filePath = currentImagePath,
                                 timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
@@ -683,15 +702,16 @@ fun ProcessingFlowScreen(
                                 createdAt = now,
                                 updatedAt = now,
                             )
-                            val id = dao.insert(entity)
+                            val id = db.chromatogramDao().insert(entity)
                             if (firstId == null) firstId = id
-                            println("PIPELINE[SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                            println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
                         }
                         // Trigger navigation to AnalysisFlowScreen
                         savedSignalId = firstId ?: now
+                        println("PIPELINE[AUTO-SAVE] Success! Navigating to Analysis, signalId=$savedSignalId")
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        println("PIPELINE[SAVE] Failed: ${e.message}, falling back to ExportScreen")
+                        println("PIPELINE[AUTO-SAVE] Error: ${e.message}, falling back to EXPORT")
                         // Save failed — fall back to ExportScreen
                         currentStep = ProcessingStep.EXPORT
                     }
