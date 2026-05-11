@@ -162,11 +162,15 @@ data class InferenceConfig(
          */
         fun forModelFamily(family: String): InferenceConfig = when {
             family.contains("paddleocr", ignoreCase = true) -> PADDLEOCR_VL
+            family.contains("dots", ignoreCase = true) -> PADDLEOCR_VL // similar OCR backbone
+            family.contains("deepseek-ocr", ignoreCase = true) -> PADDLEOCR_VL
             family.contains("qwen3.5", ignoreCase = true) -> QWEN35_VL
             family.contains("qwen3", ignoreCase = true) -> QWEN3_VL
             family.contains("qwen2", ignoreCase = true) -> QWEN25_VL
             family.contains("qwen", ignoreCase = true) -> QWEN3_VL
             family.contains("gemma", ignoreCase = true) -> GEMMA
+            family.contains("smolvlm", ignoreCase = true) -> DEFAULT
+            family.contains("moondream", ignoreCase = true) -> DEFAULT
             family.contains("llava", ignoreCase = true) -> DEFAULT
             else -> DEFAULT
         }

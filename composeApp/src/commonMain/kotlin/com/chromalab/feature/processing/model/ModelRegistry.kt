@@ -68,7 +68,12 @@ data class ModelGroup(
  * Available models:
  *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB)
  *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
- *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M)
+ *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M),
+ *               PaddleOCR-VL-1.5 (Q8_0, BF16),
+ *               dots.mocr (Q5_K_M, Q8_0, BF16),
+ *               DeepSeek-OCR (Q8_0),
+ *               SmolVLM2-2.2B (Q4_K_M, Q8_0),
+ *               Moondream2 (F16)
  */
 object ModelRegistry {
 
@@ -319,6 +324,135 @@ object ModelRegistry {
         quantLabel = "BF16",
     )
 
+    // ===== dots.mocr (document/chart→structure parser) =====
+    // Source: lodrick-the-lafted/dots.mocr-gguf (llama.cpp b8731+)
+
+    private val mmprojDotsMocr = ModelFile(
+        fileName = "mmproj-dotsmocr-q8_0.gguf",
+        sizeBytes = 1_344_068_544L,
+        type = ModelFileType.GGUF_MMPROJ,
+        downloadUrl = "$HF_BASE/lodrick-the-lafted/dots.mocr-gguf/resolve/main/mmproj-dotsmocr-q8_0.gguf",
+    )
+
+    private fun dotsMocrVariant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
+        id = "dotsmocr-${quant.lowercase().replace("_", "")}",
+        displayName = "1.8B · $quant",
+        family = "dots-mocr",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "dotsmocr-1.8b-${quant.lowercase().replace("_", "_")}.gguf",
+                sizeBytes = sizeBytes,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$HF_BASE/lodrick-the-lafted/dots.mocr-gguf/resolve/main/dotsmocr-1.8b-${quant.lowercase()}.gguf",
+            ),
+            mmprojDotsMocr,
+        ),
+        minRamMb = minRam,
+        isBuiltin = true,
+        supportsVision = true,
+        description = desc,
+        groupId = "dots-mocr",
+        quantLabel = quant,
+    )
+
+    private val dotsMocr_Q5_K_M = dotsMocrVariant("q5_k_m", 1_285_492_512L, 3072, "Оптимальный баланс. ~1.2 GB.")
+    private val dotsMocr_Q8_0   = dotsMocrVariant("q8_0",   1_894_530_336L, 4096, "Высокое качество. ~1.8 GB.")
+    private val dotsMocr_BF16   = dotsMocrVariant("bf16",   3_560_414_496L, 6144, "Максимальное качество. ~3.4 GB.")
+
+    // ===== DeepSeek-OCR (document OCR, 3B MoE) =====
+    // Source: ggml-org/DeepSeek-OCR-GGUF (14K downloads)
+
+    private val deepSeekOCR = ModelInfo(
+        id = "deepseek-ocr-q80",
+        displayName = "DeepSeek-OCR",
+        family = "deepseek-ocr",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "DeepSeek-OCR-Q8_0.gguf",
+                sizeBytes = 3_126_139_712L,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$GGML_ORG/DeepSeek-OCR-GGUF/resolve/main/DeepSeek-OCR-Q8_0.gguf",
+            ),
+            ModelFile(
+                fileName = "mmproj-DeepSeek-OCR-Q8_0.gguf",
+                sizeBytes = 447_856_768L,
+                type = ModelFileType.GGUF_MMPROJ,
+                downloadUrl = "$GGML_ORG/DeepSeek-OCR-GGUF/resolve/main/mmproj-DeepSeek-OCR-Q8_0.gguf",
+            ),
+        ),
+        minRamMb = 6144,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "OCR-модель для документов. ~3.0 GB + 427 MB mmproj. Q8_0.",
+        quantLabel = "Q8_0",
+    )
+
+    // ===== SmolVLM2-2.2B (lightweight multimodal) =====
+    // Source: ggml-org/SmolVLM2-2.2B-Instruct-GGUF (official)
+
+    private val mmprojSmolVLM2 = ModelFile(
+        fileName = "mmproj-SmolVLM2-2.2B-Instruct-Q8_0.gguf",
+        sizeBytes = 592_523_200L,
+        type = ModelFileType.GGUF_MMPROJ,
+        downloadUrl = "$GGML_ORG/SmolVLM2-2.2B-Instruct-GGUF/resolve/main/mmproj-SmolVLM2-2.2B-Instruct-Q8_0.gguf",
+    )
+
+    private fun smolVLM2Variant(quant: String, sizeBytes: Long, minRam: Int, desc: String) = ModelInfo(
+        id = "smolvlm2-${quant.lowercase().replace("_", "")}",
+        displayName = "2.2B · $quant",
+        family = "smolvlm2",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "SmolVLM2-2.2B-Instruct-$quant.gguf",
+                sizeBytes = sizeBytes,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$GGML_ORG/SmolVLM2-2.2B-Instruct-GGUF/resolve/main/SmolVLM2-2.2B-Instruct-$quant.gguf",
+            ),
+            mmprojSmolVLM2,
+        ),
+        minRamMb = minRam,
+        isBuiltin = true,
+        supportsVision = true,
+        description = desc,
+        groupId = "smolvlm2",
+        quantLabel = quant,
+    )
+
+    private val smolVLM2_Q4_K_M = smolVLM2Variant("Q4_K_M", 1_112_602_656L, 3072, "Оптимальный баланс. ~1.1 GB.")
+    private val smolVLM2_Q8_0   = smolVLM2Variant("Q8_0",   1_927_933_984L, 4096, "Высокое качество. ~1.8 GB.")
+
+    // ===== Moondream2 (fast tiny VLM) =====
+    // Source: ggml-org/moondream2-20250414-GGUF (30K downloads)
+
+    private val moondream2 = ModelInfo(
+        id = "moondream2-f16",
+        displayName = "Moondream2",
+        family = "moondream",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "moondream2-text-model-f16_ct-vicuna.gguf",
+                sizeBytes = 2_839_535_072L,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$GGML_ORG/moondream2-20250414-GGUF/resolve/main/moondream2-text-model-f16_ct-vicuna.gguf",
+            ),
+            ModelFile(
+                fileName = "moondream2-mmproj-f16.gguf",
+                sizeBytes = 909_777_984L,
+                type = ModelFileType.GGUF_MMPROJ,
+                downloadUrl = "$GGML_ORG/moondream2-20250414-GGUF/resolve/main/moondream2-mmproj-f16-20250414.gguf",
+            ),
+        ),
+        minRamMb = 4096,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Быстрая лёгкая VLM. ~2.7 GB + 868 MB mmproj. F16.",
+        quantLabel = "F16",
+    )
+
     // ===== Public API =====
 
     /** All built-in models. LiteRT first, then GGUF variants. */
@@ -327,6 +461,14 @@ object ModelRegistry {
         gemma4E4B,
         // PaddleOCR-VL (specialized OCR)
         paddleOCR_Q8_0, paddleOCR_BF16,
+        // dots.mocr (chart→structure)
+        dotsMocr_Q5_K_M, dotsMocr_Q8_0, dotsMocr_BF16,
+        // DeepSeek-OCR
+        deepSeekOCR,
+        // SmolVLM2
+        smolVLM2_Q4_K_M, smolVLM2_Q8_0,
+        // Moondream2
+        moondream2,
         // Qwen3-VL 2B variants
         qwen3vl2B_Q2_K, qwen3vl2B_Q3_K_M, qwen3vl2B_Q4_K_M, qwen3vl2B_Q5_K_M, qwen3vl2B_Q6_K, qwen3vl2B_Q8_0,
         // Qwen3-VL 4B variants
@@ -374,6 +516,24 @@ object ModelRegistry {
             description = "OCR-специалист для документов и графиков. 0.9B.",
             supportsVision = true,
             variants = listOf(paddleOCR_Q8_0, paddleOCR_BF16),
+        ),
+        ModelGroup(
+            groupId = "dots-mocr",
+            displayName = "dots.mocr",
+            family = "dots-mocr",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "Chart→Markdown/SVG парсер. 1.8B.",
+            supportsVision = true,
+            variants = listOf(dotsMocr_Q5_K_M, dotsMocr_Q8_0, dotsMocr_BF16),
+        ),
+        ModelGroup(
+            groupId = "smolvlm2",
+            displayName = "SmolVLM2 2.2B",
+            family = "smolvlm2",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "Лёгкая мультимодальная модель. 2 кванта.",
+            supportsVision = true,
+            variants = listOf(smolVLM2_Q4_K_M, smolVLM2_Q8_0),
         ),
     )
 
