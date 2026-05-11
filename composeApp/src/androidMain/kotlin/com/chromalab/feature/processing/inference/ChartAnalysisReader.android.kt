@@ -106,7 +106,12 @@ actual class ChartAnalysisReader actual constructor() {
                 ChartPrompts.GRAPH_REGION_RAW
             }
 
-            val rawResponse = engine.inferRaw(imagePath, prompt)
+            VlmEngineHolder.isInferring = true
+            val rawResponse = try {
+                engine.inferRaw(imagePath, prompt)
+            } finally {
+                VlmEngineHolder.isInferring = false
+            }
             println("VLM[REGION] Raw response: ${rawResponse.take(200)}")
 
             val bounds = ChartPrompts.parseGraphRegion(rawResponse)
@@ -117,6 +122,7 @@ actual class ChartAnalysisReader actual constructor() {
             }
             bounds
         } catch (e: Exception) {
+            VlmEngineHolder.isInferring = false
             println("VLM[REGION] Error: ${e.message}")
             null
         }
@@ -145,11 +151,17 @@ actual class ChartAnalysisReader actual constructor() {
                 ChartPrompts.AXIS_STRUCTURE_RAW
             }
 
-            val rawResponse = engine.inferRaw(imagePath, prompt)
+            VlmEngineHolder.isInferring = true
+            val rawResponse = try {
+                engine.inferRaw(imagePath, prompt)
+            } finally {
+                VlmEngineHolder.isInferring = false
+            }
             println("VLM[STRUCT] Raw response: ${rawResponse.take(200)}")
 
             ChartPrompts.parseAxisStructure(rawResponse)
         } catch (e: Exception) {
+            VlmEngineHolder.isInferring = false
             println("VLM[STRUCT] Error: ${e.message}")
             null
         }
