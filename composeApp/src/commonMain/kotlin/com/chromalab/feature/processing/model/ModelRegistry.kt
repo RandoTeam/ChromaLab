@@ -264,12 +264,69 @@ object ModelRegistry {
         quantLabel = "Q4_K_M",
     )
 
+    // ===== PaddleOCR-VL-1.5 (specialized OCR model) =====
+    // Official: PaddlePaddle/PaddleOCR-VL-1.5-GGUF (1M+ downloads)
+    // Community quants: noctrex/PaddleOCR-VL-1.5-GGUF
+
+    private val mmprojPaddleOCR = ModelFile(
+        fileName = "mmproj-PaddleOCR-VL-BF16.gguf",
+        sizeBytes = 881_770_496L,
+        type = ModelFileType.GGUF_MMPROJ,
+        downloadUrl = "$HF_BASE/PaddlePaddle/PaddleOCR-VL-1.5-GGUF/resolve/main/PaddleOCR-VL-1.5-mmproj.gguf",
+    )
+
+    private val paddleOCR_Q8_0 = ModelInfo(
+        id = "paddleocr-vl-q80",
+        displayName = "0.9B · Q8_0",
+        family = "paddleocr-vl",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "PaddleOCR-VL-1.5-Q8_0.gguf",
+                sizeBytes = 498_316_224L,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$HF_BASE/noctrex/PaddleOCR-VL-1.5-GGUF/resolve/main/PaddleOCR-VL-1.5-Q8_0.gguf",
+            ),
+            mmprojPaddleOCR,
+        ),
+        minRamMb = 2048,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Высокое качество OCR. ~475 MB + 841 MB mmproj.",
+        groupId = "paddleocr-vl",
+        quantLabel = "Q8_0",
+    )
+
+    private val paddleOCR_BF16 = ModelInfo(
+        id = "paddleocr-vl-bf16",
+        displayName = "0.9B · BF16",
+        family = "paddleocr-vl",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "PaddleOCR-VL-1.5-BF16.gguf",
+                sizeBytes = 935_769_024L,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$HF_BASE/noctrex/PaddleOCR-VL-1.5-GGUF/resolve/main/PaddleOCR-VL-1.5-BF16.gguf",
+            ),
+            mmprojPaddleOCR,
+        ),
+        minRamMb = 2048,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Максимальное качество OCR. ~892 MB + 841 MB mmproj.",
+        groupId = "paddleocr-vl",
+        quantLabel = "BF16",
+    )
+
     // ===== Public API =====
 
     /** All built-in models. LiteRT first, then GGUF variants. */
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
         gemma4E4B,
+        // PaddleOCR-VL (specialized OCR)
+        paddleOCR_Q8_0, paddleOCR_BF16,
         // Qwen3-VL 2B variants
         qwen3vl2B_Q2_K, qwen3vl2B_Q3_K_M, qwen3vl2B_Q4_K_M, qwen3vl2B_Q5_K_M, qwen3vl2B_Q6_K, qwen3vl2B_Q8_0,
         // Qwen3-VL 4B variants
@@ -308,6 +365,15 @@ object ModelRegistry {
             description = "Высокое качество. 8+ GB RAM. 6 квантов.",
             supportsVision = true,
             variants = listOf(qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0),
+        ),
+        ModelGroup(
+            groupId = "paddleocr-vl",
+            displayName = "PaddleOCR-VL 1.5",
+            family = "paddleocr-vl",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "OCR-специалист для документов и графиков. 0.9B.",
+            supportsVision = true,
+            variants = listOf(paddleOCR_Q8_0, paddleOCR_BF16),
         ),
     )
 

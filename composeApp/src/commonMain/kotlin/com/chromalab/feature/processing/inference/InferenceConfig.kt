@@ -143,9 +143,25 @@ data class InferenceConfig(
         )
 
         /**
+         * Preset for PaddleOCR-VL models.
+         *
+         * Uses Qwen2 backbone with ChatML. Optimized for OCR output.
+         * Smaller context (2048) — OCR output is compact.
+         */
+        val PADDLEOCR_VL = InferenceConfig(
+            maxTokens = 512,
+            repeatPenalty = 1.1f,
+            repeatLastN = 64,
+            contextSize = 2048,
+            batchSize = 512,
+            useChatML = true,
+        )
+
+        /**
          * Select the optimal config for a model by its family.
          */
         fun forModelFamily(family: String): InferenceConfig = when {
+            family.contains("paddleocr", ignoreCase = true) -> PADDLEOCR_VL
             family.contains("qwen3.5", ignoreCase = true) -> QWEN35_VL
             family.contains("qwen3", ignoreCase = true) -> QWEN3_VL
             family.contains("qwen2", ignoreCase = true) -> QWEN25_VL
