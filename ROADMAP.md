@@ -70,6 +70,34 @@
 
 ---
 
+## Фаза 2.5: Pipeline Professionalization + VLM (Неделя 9.5) ✅
+
+> Автоматизация полного пайплайна "Фото → Отчёт" и профессиональная интеграция VLM.
+
+### Phase 25: Seamless Auto-Pipeline
+- [x] AutoProgressOverlay: premium redesign (анимации, Material иконки, глобальный glow)
+- [x] Auto-save в Room после обработки (без ручного экспорта)
+- [x] AnalysisFlowScreen: полная автоматика (убраны 8 ручных шагов)
+- [x] Auto-calculate: smoothing → baseline → peaks → distribution → patterns → geochemistry
+- [x] Premium AnalysisProgressOverlay с animated ring и step checklist
+- [x] ResultsSummaryScreen: 11 секций профессионального отчёта
+- [x] Интерактивный tap на пики → PeakDetailsBottomSheet
+
+### Phase 26: VLM Professional Integration
+- [x] ChatML template для Qwen2.5-VL / Qwen3.5-VL Instruct моделей
+- [x] Профессиональный промпт: persona constraint, negative constraints, schema-only (без фейковых данных)
+- [x] 3 промпта: AXIS_EXTRACTION, GRAPH_REGION, AXIS_STRUCTURE
+- [x] ChatML vs raw prompt routing по useChatML flag
+- [x] maxTokens: 512 → 768 (сложные графики + thinking tokens)
+- [x] Раздельные пресеты: QWEN25_VL, QWEN35_VL, GEMMA, DEFAULT
+- [x] Парсер: стрипает \<think\>, ChatML artifacts, правильный brace matching
+- [x] inferRaw() для non-axis промптов
+- [x] VLM-first graph region detection (Strategy A: всегда VLM first, CV fallback)
+- [x] VlmEngineHolder.activeConfig для prompt format routing
+- [x] Аудит всех 10 параметров семплинга: greedy, repeat_penalty, context, batch
+
+---
+
 ## Фаза 3: Импорт файлов (Неделя 10–11)
 
 > CSV, PDF, mzML.
