@@ -209,7 +209,7 @@ class ModelManagerController(
 
                 _state.update { it.copy(activatingModelId = null, activationError = null) }
                 refresh()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 println("MODEL[CTRL] Activate failed: ${e.message}")
                 manager.clearActiveModel()
                 _state.update {
@@ -395,7 +395,7 @@ class ModelManagerController(
             } else {
                 false
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("MODEL[LAZY] Auto-load failed: ${e.message}")
             manager.clearActiveModel()
             false

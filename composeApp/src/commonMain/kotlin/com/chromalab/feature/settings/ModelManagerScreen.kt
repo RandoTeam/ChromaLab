@@ -634,6 +634,13 @@ private fun QuantVariantCard(
                         fontWeight = FontWeight.Bold,
                     )
                 }
+                if (downloadSpeedMbps > 0f) {
+                    Text(
+                        "%.1f MB/s".format(downloadSpeedMbps),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             // Action buttons (compact row)

@@ -65,6 +65,12 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
                         println("EXPORT[OK] $fileName exported")
                     } catch (e: Exception) {
                         println("EXPORT[ERROR] $fileName: ${e.message}")
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                context, "Ошибка экспорта: $fileName",
+                                android.widget.Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     }
                 }
             }
@@ -80,9 +86,15 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
         if (idx > 0 && idx < files.size) {
             exportLauncher.launch(files[idx].first)
         } else if (idx > 0 && idx >= files.size) {
-            // All done — reset
+            // All done — reset and show toast
+            val count = files.size
             exportFiles.value = emptyList()
             exportIndex.intValue = 0
+            android.widget.Toast.makeText(
+                context,
+                "Экспорт завершён ($count файл${if (count > 1) "ов" else ""})",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
         }
     }
 

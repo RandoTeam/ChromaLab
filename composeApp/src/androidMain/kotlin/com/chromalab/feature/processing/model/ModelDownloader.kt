@@ -326,18 +326,19 @@ class ModelDownloader {
             }
         }
 
-        // LiteRT bundle check
+        // LiteRT bundle check — non-fatal (format may vary)
         if (file.name.endsWith(".litertlm")) {
             try {
                 java.io.RandomAccessFile(file, "r").use { raf ->
                     val b1 = raf.read()
                     val b2 = raf.read()
                     if (b1 != 0x50 || b2 != 0x4B) { // PK (zip)
-                        return "Повреждённый файл: не ZIP/LiteRT формат"
+                        // Not a zip, but may still be valid LiteRT-LM
+                        println("MODEL[DL] Warning: ${file.name} is not ZIP-based (magic=0x${"%02X%02X".format(b1, b2)})")
                     }
                 }
             } catch (e: Exception) {
-                return "Ошибка проверки: ${e.message}"
+                println("MODEL[DL] Warning: LiteRT check failed: ${e.message}")
             }
         }
 

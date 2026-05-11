@@ -40,8 +40,8 @@ extern "C" {
 // ===== nativeGetAvailableBackends =====
 
 JNIEXPORT jintArray JNICALL
-Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeGetAvailableBackends(
-    JNIEnv *env, jobject /* this */) {
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeGetAvailableBackends(
+    JNIEnv *env, jclass /* clazz */) {
 
     // For now, report CPU only. Vulkan probing can be added later.
     jint backends[] = { 0 }; // 0=CPU
@@ -54,8 +54,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
 // ===== nativeLoadModel =====
 
 JNIEXPORT jlong JNICALL
-Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeLoadModel(
-    JNIEnv *env, jobject /* this */,
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
+    JNIEnv *env, jclass /* clazz */,
     jstring basePath, jstring mmprojPath,
     jint threads, jint backendCode) {
 
@@ -126,8 +126,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
 // ===== nativeUnloadModel =====
 
 JNIEXPORT void JNICALL
-Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeUnloadModel(
-    JNIEnv *env, jobject /* this */, jlong handle) {
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeUnloadModel(
+    JNIEnv *env, jclass /* clazz */, jlong handle) {
 
     auto *mc = reinterpret_cast<ModelContext *>(handle);
     if (!mc) return;
@@ -159,8 +159,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativ
  * Repeat penalty prevents degenerate JSON loops.
  */
 JNIEXPORT jstring JNICALL
-Java_com_chromalab_feature_processing_inference_LlamaEngine_00024Companion_nativeInferWithImage(
-    JNIEnv *env, jobject /* this */,
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage(
+    JNIEnv *env, jclass /* clazz */,
     jlong handle, jstring imagePath, jstring prompt,
     jint maxTokens, jfloat repeatPenalty, jint repeatLastN) {
 
