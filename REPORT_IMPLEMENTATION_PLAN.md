@@ -58,7 +58,7 @@ Goal: make camera and Smart Scan gallery input produce clean graph crops before 
 - [x] 3.2 Remove or avoid duplicate direct-photo flows that bypass the stronger preparation path.
 - [x] 3.3 Normalize EXIF orientation and source dimensions before all graph detection.
 - [x] 3.4 Test preprocessing variants: original, contrast, grayscale, sharpened, binary, scan-style.
-- [ ] 3.5 Select the best graph-preparation variant by measurable graph/axis/curve quality, not by visual guess.
+- [x] 3.5 Select the best graph-preparation variant by measurable graph/axis/curve quality, not by visual guess.
 - [ ] 3.6 Store the chosen variant and rejected variants in metadata for audit.
 
 Exit criteria:

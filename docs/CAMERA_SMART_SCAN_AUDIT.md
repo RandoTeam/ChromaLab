@@ -198,6 +198,16 @@ Implemented on 2026-05-12:
 - Sweep scoring records the selected variant in the score breakdown, so the winning path can be audited.
 - Desktop preprocessing stubs now expose the same variant file contract and preserve image dimensions.
 
+## Phase 3.5 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- Auto-sweep selection now scores each preparation with explicit graph, axis, OCR, and curve components.
+- Graph scoring includes crop confidence, plausible plot area, aspect ratio, image bounds, and graph warnings.
+- Axis scoring includes detector confidence, both-axis presence, origin presence, axis length coverage, alignment, and warnings.
+- Curve scoring now includes point density, extracted-column coverage, X coverage, continuity, high-confidence ratio, vertical signal span, interpolation penalty, outlier penalty, warnings, and usability penalty.
+- `scoreBreakdown` now records all components so the selected variant is explainable from logs and saved metadata once ranking persistence is added.
+
 Remaining later work:
 
-- Phase 3.5 must choose the best preparation by measurable graph/axis/curve quality and should persist enough ranking detail for audit.
+- Phase 3.6 must persist the chosen variant and rejected variants in metadata for audit.

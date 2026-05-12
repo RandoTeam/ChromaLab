@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.sweep
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.graph.DetectionConfidence
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
@@ -11,6 +12,7 @@ import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveExtractionResult
+import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.scaledCoordinates
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
@@ -19,7 +21,8 @@ import kotlin.math.roundToInt
 
 /**
  * Auto-Sweep Engine: tests multiple preprocessing configurations
- * on a single image and selects the best one based on OCR + curve quality.
+ * on a single image and selects the best one based on measured graph, axis,
+ * OCR, and curve quality.
  *
  * Flow:
  * 1. Graph detection — run ONCE (same image → same result)
@@ -27,7 +30,7 @@ import kotlin.math.roundToInt
  * 3. For each preprocessing config:
  *    a. Preprocess image
  *    b. Extract curve from preprocessed result
- *    c. Score: curve point count + continuity + coverage + OCR quality
+ *    c. Score: graph crop + axis geometry + OCR quality + curve integrity
  * 4. Return results sorted by score
  */
 class AutoSweepEngine {
@@ -292,9 +295,14 @@ class AutoSweepEngine {
             null
         }
 
-        // OCR base score (same for all configs)
+        // Shared quality scores (same for all configs, but included in the final
+        // preparation score so the selected variant remains auditable end-to-end).
+        val graphScore = calculateGraphScore(graphRes, region, w, h)
+        val axisScore = calculateAxisScore(axesRes, region)
         val ocrBaseScore = calculateOcrScore(ocrResult, graphRes, region)
-        println("SWEEP[OCR] base score=${ocrBaseScore.first} (${ocrBaseScore.second})")
+        println("SWEEP[GRAPH] score=${graphScore.first} (${graphScore.second})")
+        println("SWEEP[AXES] score=${axisScore.first} (${axisScore.second})")
+        println("SWEEP[OCR] score=${ocrBaseScore.first} (${ocrBaseScore.second})")
 
         // === PER-CONFIG: preprocess → curve extract → score ===
         val results = mutableListOf<SweepResult>()
@@ -327,11 +335,14 @@ class AutoSweepEngine {
                 null
             }
 
-            // Score: OCR base + curve quality
+            // Score: measured graph + axis + OCR + curve quality.
             val curveScore = calculateCurveScore(curveResult, region)
-            val totalScore = ocrBaseScore.first + curveScore.first
-            val breakdown = "${ocrBaseScore.second}, variant=${config.inputVariant.name.lowercase()}, ${curveScore.second}"
-            println("SWEEP[${config.name}] total=$totalScore (ocr=${ocrBaseScore.first} + curve=${curveScore.first})")
+            val totalScore = graphScore.first + axisScore.first + ocrBaseScore.first + curveScore.first
+            val breakdown = "${graphScore.second}, ${axisScore.second}, ${ocrBaseScore.second}, variant=${config.inputVariant.name.lowercase()}, ${curveScore.second}"
+            println(
+                "SWEEP[${config.name}] total=$totalScore " +
+                    "(graph=${graphScore.first} + axes=${axisScore.first} + ocr=${ocrBaseScore.first} + curve=${curveScore.first})",
+            )
 
             results.add(
                 SweepResult(
@@ -353,6 +364,109 @@ class AutoSweepEngine {
         println("SWEEP[DONE] Ranking: ${sorted.joinToString { "'${it.config.name}'=${it.score}" }}")
 
         return sorted
+    }
+
+    /**
+     * Graph crop quality score: confidence, plausible plot area, aspect ratio, and bounds.
+     */
+    private fun calculateGraphScore(
+        graphResult: GraphRegionResult?,
+        region: GraphRegion?,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): Pair<Float, String> {
+        if (graphResult == null || region == null) return 0f to "graph[none]"
+
+        val parts = mutableListOf<String>()
+        var score = when (graphResult.confidence) {
+            DetectionConfidence.HIGH -> 40f
+            DetectionConfidence.MEDIUM -> 28f
+            DetectionConfidence.MANUAL -> 24f
+            DetectionConfidence.LOW -> 12f
+        }
+        parts.add("conf=${graphResult.confidence}")
+
+        val imageArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
+        val areaRatio = (region.area.toFloat() / imageArea).coerceIn(0f, 1f)
+        val areaScore = when {
+            areaRatio < 0.03f -> 0f
+            areaRatio > 0.9f -> 5f
+            else -> 20f
+        }
+        score += areaScore
+        parts.add("area=${(areaRatio * 100f).roundToInt()}%")
+
+        val aspectScore = when (region.aspectRatio) {
+            in 1.0f..4.0f -> 15f
+            in 0.7f..5.0f -> 8f
+            else -> 0f
+        }
+        score += aspectScore
+        parts.add("aspect=${(region.aspectRatio * 100f).roundToInt() / 100f}")
+
+        val inBounds = region.x >= 0 &&
+            region.y >= 0 &&
+            region.right <= imageWidth &&
+            region.bottom <= imageHeight
+        if (inBounds) {
+            score += 10f
+            parts.add("bounds=ok")
+        } else {
+            parts.add("bounds=bad")
+        }
+
+        val warningPenalty = graphResult.warnings.size * 3f
+        if (warningPenalty > 0f) {
+            score -= warningPenalty
+            parts.add("warn=-${warningPenalty.roundToInt()}")
+        }
+
+        return score.coerceAtLeast(0f) to "graph[${parts.joinToString(",")}]"
+    }
+
+    /**
+     * Axis quality score: both axes, origin, geometric alignment, and length.
+     */
+    private fun calculateAxisScore(
+        axes: AxesResult?,
+        region: GraphRegion,
+    ): Pair<Float, String> {
+        if (axes == null) return 0f to "axes[none]"
+
+        val parts = mutableListOf<String>()
+        var score = (axes.confidence.coerceIn(0f, 1f) * 30f)
+        parts.add("conf=${(axes.confidence * 100f).roundToInt()}%")
+
+        axes.xAxis?.let { xAxis ->
+            score += 15f
+            val lengthRatio = (xAxis.length / region.width.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+            score += lengthRatio * 10f
+            if (xAxis.isHorizontal) score += 10f
+            parts.add("x=${(lengthRatio * 100f).roundToInt()}%")
+        } ?: parts.add("x=missing")
+
+        axes.yAxis?.let { yAxis ->
+            score += 15f
+            val lengthRatio = (yAxis.length / region.height.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+            score += lengthRatio * 10f
+            if (yAxis.isVertical) score += 10f
+            parts.add("y=${(lengthRatio * 100f).roundToInt()}%")
+        } ?: parts.add("y=missing")
+
+        if (axes.origin != null) {
+            score += 10f
+            parts.add("origin=ok")
+        } else {
+            parts.add("origin=missing")
+        }
+
+        val warningPenalty = axes.warnings.size * 3f
+        if (warningPenalty > 0f) {
+            score -= warningPenalty
+            parts.add("warn=-${warningPenalty.roundToInt()}")
+        }
+
+        return score.coerceAtLeast(0f) to "axes[${parts.joinToString(",")}]"
     }
 
     /**
@@ -401,7 +515,8 @@ class AutoSweepEngine {
     }
 
     /**
-     * Curve extraction quality score: point count, continuity, coverage.
+     * Curve extraction quality score: coverage, continuity, confidence,
+     * vertical signal span, interpolation, and outliers.
      */
     private fun calculateCurveScore(
         curve: CurveExtractionResult?,
@@ -413,21 +528,30 @@ class AutoSweepEngine {
         var score = 0f
         val points = curve.points
 
-        // Point count (1 pt per 10 points, max 50 pts)
-        val pointScore = (points.size / 10f).coerceAtMost(50f)
-        score += pointScore
+        // Point density relative to graph width (0-25 pts).
+        val pointDensity = if (region.width > 0) {
+            points.size.toFloat() / region.width.toFloat()
+        } else {
+            0f
+        }.coerceIn(0f, 1f)
+        score += pointDensity * 25f
         parts.add("pts=${points.size}")
 
-        // Coverage: what fraction of X range is covered (0-30 pts)
+        // Extracted-column coverage from the curve extractor (0-30 pts).
+        val extractionCoverage = curve.coverage.coerceIn(0f, 1f)
+        score += extractionCoverage * 30f
+        parts.add("extract=${(extractionCoverage * 100).roundToInt()}%")
+
+        // X coverage: what fraction of graph width is spanned (0-25 pts).
         if (points.size >= 2) {
             val xRange = (points.maxOf { it.pixelX } - points.minOf { it.pixelX }).toFloat()
             val coverage = (xRange / region.width.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-            val coveragePts = coverage * 30f
+            val coveragePts = coverage * 25f
             score += coveragePts
             parts.add("cov=${(coverage * 100).roundToInt()}%")
         }
 
-        // Continuity: percentage of columns that have a point (0-20 pts)
+        // Continuity: percentage of columns that have a point (0-20 pts).
         if (points.isNotEmpty() && region.width > 0) {
             val columnsWithData = points.map { it.pixelX }.distinct().size
             val continuity = columnsWithData.toFloat() / region.width.coerceAtLeast(1)
@@ -436,16 +560,45 @@ class AutoSweepEngine {
             parts.add("cont=${(continuity * 100).roundToInt()}%")
         }
 
-        // Interpolation penalty: high interpolation means gaps (0 to -10 pts)
+        if (points.isNotEmpty()) {
+            val highConfidenceRatio = points.count { it.confidence >= CurvePoint.HIGH_CONFIDENCE }.toFloat() / points.size
+            score += highConfidenceRatio.coerceIn(0f, 1f) * 10f
+            parts.add("hi=${(highConfidenceRatio * 100).roundToInt()}%")
+
+            val ySpan = points.maxOf { it.pixelY } - points.minOf { it.pixelY }
+            val ySpanRatio = (ySpan / region.height.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+            score += (ySpanRatio / 0.15f).coerceIn(0f, 1f) * 10f
+            parts.add("yspan=${(ySpanRatio * 100).roundToInt()}%")
+        }
+
+        // Interpolation penalty: high interpolation means gaps (0 to -20 pts).
         val interpolated = curve.interpolatedColumns
         if (points.isNotEmpty() && interpolated > 0) {
             val interpolationRatio = interpolated.toFloat() / (points.size + interpolated).coerceAtLeast(1)
-            val penalty = interpolationRatio * 10f
+            val penalty = interpolationRatio * 20f
             score -= penalty
             parts.add("interp=-${penalty.roundToInt()}")
         }
 
-        return score to "curve[${parts.joinToString(",")}]"
+        if (curve.outlierCount > 0) {
+            val outlierRatio = curve.outlierCount.toFloat() / (points.size + curve.outlierCount).coerceAtLeast(1)
+            val penalty = outlierRatio.coerceIn(0f, 1f) * 15f
+            score -= penalty
+            parts.add("out=-${penalty.roundToInt()}")
+        }
+
+        if (curve.warnings.isNotEmpty()) {
+            val penalty = curve.warnings.size * 3f
+            score -= penalty
+            parts.add("warn=-${penalty.roundToInt()}")
+        }
+
+        if (!curve.isUsable) {
+            score *= 0.25f
+            parts.add("usable=false")
+        }
+
+        return score.coerceAtLeast(0f) to "curve[${parts.joinToString(",")}]"
     }
 
     /**
