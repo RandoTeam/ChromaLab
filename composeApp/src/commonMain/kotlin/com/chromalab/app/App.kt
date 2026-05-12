@@ -47,9 +47,11 @@ fun App() {
 
         // Model Manager — platform-specific state + actions
         val (modelState, modelActions) = rememberModelManagerState()
+        val activeChatModelId = modelState.activeChatModelId()
+        val activeChatModelName = modelState.activeChatModelName()
         val (chatState, chatActions) = rememberChatState(
-            activeModelId = modelState.activeModelId,
-            activeModelName = modelState.activeModelName,
+            activeModelId = activeChatModelId,
+            activeModelName = activeChatModelName,
         )
 
         Scaffold(
@@ -242,7 +244,7 @@ fun App() {
 }
 
 private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
-    val builtinOptions = ModelRegistry.builtinModels
+    val builtinOptions = ModelRegistry.chatModels()
         .filter { it.id in downloadedModelIds }
         .map { model ->
             ChatModelOption(
@@ -255,6 +257,7 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
         }
 
     val customOptions = customModels
+        .filter { it.supportsTextChat }
         .filterNot { custom -> builtinOptions.any { it.id == custom.id } }
         .map { custom ->
             ChatModelOption(
@@ -271,6 +274,18 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
             .thenBy { it.name.lowercase() }
     )
 }
+
+private fun ModelManagerState.activeChatModelId(): String? {
+    val id = activeModelId ?: return null
+    val builtin = ModelRegistry.findById(id)
+    if (builtin != null) {
+        return id.takeIf { ModelRegistry.isChatModel(builtin) }
+    }
+    return id.takeIf { customModels.any { custom -> custom.id == id && custom.supportsTextChat } }
+}
+
+private fun ModelManagerState.activeChatModelName(): String? =
+    activeModelName.takeIf { activeChatModelId() != null }
 
 private fun ModelRuntime.shortLabel(): String = when (this) {
     ModelRuntime.LITERT_LM -> "LiteRT"

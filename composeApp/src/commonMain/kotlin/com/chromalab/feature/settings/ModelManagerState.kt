@@ -44,4 +44,5 @@ data class CustomModelEntry(
     val displayName: String,
     val sizeBytes: Long,
     val description: String = "",
+    val supportsTextChat: Boolean = true,
 )

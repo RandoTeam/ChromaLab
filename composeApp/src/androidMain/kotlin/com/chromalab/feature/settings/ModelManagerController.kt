@@ -62,6 +62,7 @@ class ModelManagerController(
                     displayName = m.info.displayName,
                     sizeBytes = m.info.totalSizeBytes,
                     description = m.info.description,
+                    supportsTextChat = ModelRegistry.isChatModel(m.info),
                 )
             }
 

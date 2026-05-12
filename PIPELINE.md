@@ -189,6 +189,7 @@ Generation settings:
 - repeat last N.
 
 Chat uses the same model pool as chromatogram analysis. A model can be downloaded/imported once and reused by the analysis pipeline or chat.
+Only chat-capable models are exposed to chat. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr remain available for specialized analysis tasks but are hidden from chat selection and are not passed to the chat runtime as normal assistants.
 
 ## Validation Gates
 

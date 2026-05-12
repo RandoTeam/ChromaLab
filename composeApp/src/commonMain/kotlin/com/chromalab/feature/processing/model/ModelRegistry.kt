@@ -548,9 +548,19 @@ object ModelRegistry {
 
     /** General chat/download list. Vision-only OCR models are excluded from default chat choices. */
     fun chatModels(): List<ModelInfo> =
-        builtinModels.filter { model ->
-            model.family !in setOf("paddleocr-vl", "dots-mocr", "deepseek-ocr")
-        }
+        builtinModels.filter(::isChatModel)
+
+    fun isChatModelId(modelId: String?): Boolean {
+        if (modelId == null) return false
+        val model = findById(modelId) ?: return true
+        return isChatModel(model)
+    }
+
+    fun isChatModel(model: ModelInfo): Boolean {
+        val family = model.family.lowercase()
+        if (family in nonChatFamilies) return false
+        return model.runtime == ModelRuntime.LITERT_LM || model.runtime == ModelRuntime.LLAMA_CPP
+    }
 
     fun isChromatogramVisionModel(model: ModelInfo): Boolean {
         if (!model.supportsVision) return false
@@ -575,6 +585,12 @@ object ModelRegistry {
             else -> 100
         }
     }
+
+    private val nonChatFamilies = setOf(
+        "paddleocr-vl",
+        "dots-mocr",
+        "deepseek-ocr",
+    )
 
     /** Group models by runtime for UI display. */
     fun groupedByRuntime(): Map<ModelRuntime, List<ModelInfo>> =
