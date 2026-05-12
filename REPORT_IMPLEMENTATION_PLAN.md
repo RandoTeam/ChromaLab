@@ -54,7 +54,7 @@ Exit criteria:
 
 Goal: make camera and Smart Scan gallery input produce clean graph crops before neural or deterministic analysis.
 
-- [ ] 3.1 Audit the current camera/Smart Scan path and document which platform scanner/crop/filter steps are used.
+- [x] 3.1 Audit the current camera/Smart Scan path and document which platform scanner/crop/filter steps are used.
 - [ ] 3.2 Remove or avoid duplicate direct-photo flows that bypass the stronger preparation path.
 - [ ] 3.3 Normalize EXIF orientation and source dimensions before all graph detection.
 - [ ] 3.4 Test preprocessing variants: original, contrast, grayscale, sharpened, binary, scan-style.
