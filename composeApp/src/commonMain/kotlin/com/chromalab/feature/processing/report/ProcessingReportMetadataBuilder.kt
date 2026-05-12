@@ -8,6 +8,7 @@ import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportStageTiming
+import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.StoredGraphReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadataCodec
@@ -34,6 +35,7 @@ fun buildProcessingReportMetadataConfig(
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: selectedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
+    graphWarnings: List<ReportWarning> = emptyList(),
 ): String =
     StoredReportMetadataCodec.encode(
         buildProcessingStoredReportMetadata(
@@ -58,6 +60,7 @@ fun buildProcessingReportMetadataConfig(
             executedRuntime = executedRuntime,
             deviceName = deviceName,
             stageTimings = stageTimings,
+            graphWarnings = graphWarnings,
         ),
     )
 
@@ -83,6 +86,7 @@ fun buildProcessingStoredReportMetadata(
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: selectedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
+    graphWarnings: List<ReportWarning> = emptyList(),
 ): StoredReportMetadata {
     val startedAt = analysisStartedAtEpochMillis.takeIf { it > 0 }
     val completedAt = analysisCompletedAtEpochMillis.takeIf { it > 0 }
@@ -110,6 +114,7 @@ fun buildProcessingStoredReportMetadata(
         graphs = listOf(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),
+                warnings = graphWarnings.toStoredGraphWarnings(graphIndex.coerceAtLeast(1)),
                 source = GraphSourceMetadata(
                     sourceImageBounds = sourceImageBounds,
                     detectedGraphBounds = detectedGraphBounds,
@@ -132,6 +137,21 @@ fun buildProcessingStoredReportMetadata(
         ),
     )
 }
+
+private fun List<ReportWarning>.toStoredGraphWarnings(graphIndex: Int): List<ReportWarning> =
+    filter { it.code.isNotBlank() && it.message.isNotBlank() }
+        .map { warning ->
+            warning.copy(graphIndex = warning.graphIndex ?: graphIndex)
+        }
+        .distinctBy { warning ->
+            listOf(
+                warning.code,
+                warning.stage.orEmpty(),
+                warning.graphIndex?.toString().orEmpty(),
+                warning.peakNumber?.toString().orEmpty(),
+                warning.message,
+            ).joinToString("|")
+        }
 
 private fun SourceType.toReportInputSourceType(): InputSourceType =
     when (this) {

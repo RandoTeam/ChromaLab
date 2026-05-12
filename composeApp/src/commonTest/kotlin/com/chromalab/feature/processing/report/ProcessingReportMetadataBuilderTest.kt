@@ -6,7 +6,9 @@ import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
+import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportStageTiming
+import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -50,6 +52,14 @@ class ProcessingReportMetadataBuilderTest {
                 ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
                 ReportStageTiming("OCR_SUGGESTION", "OCR_SUGGESTION", 450L),
             ),
+            graphWarnings = listOf(
+                ReportWarning(
+                    code = "axis.ocr_ticks_incomplete",
+                    message = "Axis OCR did not produce enough X/Y tick suggestions.",
+                    severity = ReportSeverity.WARNING,
+                    stage = "axis_ocr",
+                ),
+            ),
         )
 
         val metadata = StoredReportMetadataCodec.decodeOrNull(config)
@@ -76,6 +86,8 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(null, graph.source?.titleOcrConfidence)
         assertEquals(0.76, graph.source?.axisOcrConfidence)
         assertEquals(0.88, graph.source?.tickOcrConfidence)
+        assertEquals("axis.ocr_ticks_incomplete", graph.warnings.single().code)
+        assertEquals(2, graph.warnings.single().graphIndex)
         assertTrue(
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Digitized signal points: 512"),

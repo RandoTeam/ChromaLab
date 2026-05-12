@@ -54,7 +54,9 @@ import com.chromalab.feature.processing.quality.QualityLevel
 import com.chromalab.feature.processing.quality.QualityMetric
 import com.chromalab.feature.processing.quality.QualityCalculator
 import com.chromalab.feature.processing.quality.DigitizationQualityReport
+import com.chromalab.feature.processing.quality.QualityStatus
 import com.chromalab.feature.processing.quality.QualityReportContent
+import com.chromalab.feature.processing.quality.StageQuality
 import com.chromalab.feature.processing.export.ExportScreen
 import com.chromalab.feature.processing.export.ExportBundle
 import com.chromalab.feature.processing.storage.SessionWriter
@@ -75,7 +77,9 @@ import com.chromalab.feature.processing.report.currentReportDeviceName
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
+import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportStageTiming
+import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
@@ -174,6 +178,7 @@ fun ProcessingFlowScreen(
     // Multi-graph support
     var currentGraphIndex by remember { mutableIntStateOf(0) }
     val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
+    val processedGraphWarnings = remember { mutableStateListOf<List<ReportWarning>>() }
 
     // VLM model loading status (25.2B: lazy loading)
     var vlmLoadingStatus by remember { mutableStateOf<String?>(null) }
@@ -592,7 +597,17 @@ fun ProcessingFlowScreen(
                 kotlinx.coroutines.delay(150L)
                 if (currentStep == ProcessingStep.QUALITY_REPORT) {
                     // Multi-graph: check for more regions before advancing to EXPORT
-                    smoothedSignal?.let { processedSignals.add(it) }
+                    smoothedSignal?.let {
+                        processedSignals.add(it)
+                        processedGraphWarnings.add(
+                            buildReportGraphWarnings(
+                                graphIndex = currentGraphIndex + 1,
+                                digitizationReport = digitizationReport,
+                                graphResult = graphResult,
+                                ocrResult = ocrResult,
+                            ),
+                        )
+                    }
                     val totalRegions = graphResult?.filteredRegions?.size ?: 1
                     if (currentGraphIndex + 1 < totalRegions) {
                         currentGraphIndex++
@@ -617,7 +632,7 @@ fun ProcessingFlowScreen(
                         // All graphs processed → auto-save to Room + navigate to Analysis
                         println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                         val signalsToSave = processedSignals.toList()
-                            .filter { it.smoothed.points.size >= 10 }
+                            .toReportSaveEntries(processedGraphWarnings.toList())
                         val modelSnapshot = chartReader.currentModelSnapshot()
                         val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                         val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -668,8 +683,8 @@ fun ProcessingFlowScreen(
                                     preprocessingResult = preprocessingResult,
                                     bestSweepConfig = bestSweepConfig,
                                 )
-                                for ((idx, ss) in signalsToSave.withIndex()) {
-                                    val signal = ss.smoothed
+                                for ((idx, entry) in signalsToSave.withIndex()) {
+                                    val signal = entry.signal.smoothed
                                     val entity = ChromatogramEntity(
                                         sampleId = sId,
                                         sourceType = SourceType.PHOTO,
@@ -710,6 +725,7 @@ fun ProcessingFlowScreen(
                                             executedRuntime = executedRuntime,
                                             deviceName = reportDeviceName,
                                             stageTimings = reportStageTimings,
+                                            graphWarnings = entry.warnings.withReportGraphIndex(idx + 1),
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
@@ -750,7 +766,17 @@ fun ProcessingFlowScreen(
         // Multi-graph loop: after QUALITY_REPORT, check for more regions
         if (step == ProcessingStep.QUALITY_REPORT) {
             // Save current signal to the batch
-            smoothedSignal?.let { processedSignals.add(it) }
+            smoothedSignal?.let {
+                processedSignals.add(it)
+                processedGraphWarnings.add(
+                    buildReportGraphWarnings(
+                        graphIndex = currentGraphIndex + 1,
+                        digitizationReport = digitizationReport,
+                        graphResult = graphResult,
+                        ocrResult = ocrResult,
+                    ),
+                )
+            }
             val totalRegions = graphResult?.filteredRegions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
                 // More regions — reset per-graph state and loop back
@@ -778,7 +804,7 @@ fun ProcessingFlowScreen(
                 println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                 scope.launch {
                     val signalsToSave = processedSignals.toList()
-                        .filter { it.smoothed.points.size >= 10 }
+                        .toReportSaveEntries(processedGraphWarnings.toList())
                     val modelSnapshot = chartReader.currentModelSnapshot()
                     val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                     val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -829,8 +855,8 @@ fun ProcessingFlowScreen(
                                 preprocessingResult = preprocessingResult,
                                 bestSweepConfig = bestSweepConfig,
                             )
-                            for ((idx, ss) in signalsToSave.withIndex()) {
-                                val signal = ss.smoothed
+                            for ((idx, entry) in signalsToSave.withIndex()) {
+                                val signal = entry.signal.smoothed
                                 val entity = ChromatogramEntity(
                                     sampleId = sampleId,
                                     sourceType = SourceType.PHOTO,
@@ -871,6 +897,7 @@ fun ProcessingFlowScreen(
                                         executedRuntime = executedRuntime,
                                         deviceName = reportDeviceName,
                                         stageTimings = reportStageTimings,
+                                        graphWarnings = entry.warnings.withReportGraphIndex(idx + 1),
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
@@ -1154,6 +1181,136 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
             durationMillis = duration,
         )
     }
+
+private data class ReportSignalSaveEntry(
+    val signal: SmoothedSignal,
+    val warnings: List<ReportWarning>,
+)
+
+private fun List<SmoothedSignal>.toReportSaveEntries(
+    graphWarnings: List<List<ReportWarning>>,
+): List<ReportSignalSaveEntry> =
+    mapIndexedNotNull { index, signal ->
+        if (signal.smoothed.points.size < 10) {
+            null
+        } else {
+            ReportSignalSaveEntry(
+                signal = signal,
+                warnings = graphWarnings.getOrNull(index).orEmpty(),
+            )
+        }
+    }
+
+private fun buildReportGraphWarnings(
+    graphIndex: Int,
+    digitizationReport: DigitizationQualityReport?,
+    graphResult: GraphRegionResult?,
+    ocrResult: AxisOcrResult?,
+): List<ReportWarning> = buildList {
+    digitizationReport?.let { report ->
+        addAll(report.imageQuality.toReportWarnings("image_quality", graphIndex))
+        addAll(report.documentDetection.toReportWarnings("document_detection", graphIndex))
+        addAll(report.graphDetection.toReportWarnings("graph_detection", graphIndex))
+        addAll(report.axisCalibration.toReportWarnings("axis_calibration", graphIndex))
+        addAll(report.curveExtraction.toReportWarnings("curve_extraction", graphIndex))
+    }
+
+    graphResult?.warnings.orEmpty().forEachIndexed { index, message ->
+        add(
+            ReportWarning(
+                code = "graph.detector.warning_${index + 1}",
+                message = message,
+                severity = ReportSeverity.WARNING,
+                stage = "graph_detection",
+                graphIndex = graphIndex,
+            ),
+        )
+    }
+
+    when (graphResult?.confidence) {
+        DetectionConfidence.LOW -> add(
+            ReportWarning(
+                code = "graph.crop_confidence_low",
+                message = "Graph crop confidence is low.",
+                severity = ReportSeverity.SERIOUS,
+                stage = "graph_detection",
+                graphIndex = graphIndex,
+            ),
+        )
+        DetectionConfidence.MANUAL -> add(
+            ReportWarning(
+                code = "graph.crop_manual",
+                message = "Graph region was selected manually.",
+                severity = ReportSeverity.INFO,
+                stage = "graph_detection",
+                graphIndex = graphIndex,
+            ),
+        )
+        DetectionConfidence.HIGH,
+        DetectionConfidence.MEDIUM,
+        null -> Unit
+    }
+
+    if (ocrResult == null) {
+        add(
+            ReportWarning(
+                code = "axis.ocr_missing",
+                message = "Axis OCR result is missing.",
+                severity = ReportSeverity.WARNING,
+                stage = "axis_ocr",
+                graphIndex = graphIndex,
+            ),
+        )
+    } else {
+        if (!ocrResult.hasXSuggestions || !ocrResult.hasYSuggestions) {
+            add(
+                ReportWarning(
+                    code = "axis.ocr_ticks_incomplete",
+                    message = "Axis OCR did not produce enough X/Y tick suggestions.",
+                    severity = ReportSeverity.WARNING,
+                    stage = "axis_ocr",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
+        val confidence = ocrResult.confidence
+        if (confidence != null && confidence < 0.5f) {
+            add(
+                ReportWarning(
+                    code = "axis.ocr_confidence_low",
+                    message = "Axis OCR confidence is below 50%.",
+                    severity = ReportSeverity.WARNING,
+                    stage = "axis_ocr",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
+    }
+}.distinctBy { warning ->
+    listOf(warning.code, warning.stage.orEmpty(), warning.graphIndex.toString()).joinToString("|")
+}
+
+private fun StageQuality.toReportWarnings(stageId: String, graphIndex: Int): List<ReportWarning> =
+    warnings.mapIndexed { index, message ->
+        ReportWarning(
+            code = "processing.$stageId.warning_${index + 1}",
+            message = message,
+            severity = status.toReportSeverity(),
+            stage = stageId,
+            graphIndex = graphIndex,
+        )
+    }
+
+private fun QualityStatus.toReportSeverity(): ReportSeverity =
+    when (this) {
+        QualityStatus.GOOD -> ReportSeverity.INFO
+        QualityStatus.ACCEPTABLE -> ReportSeverity.WARNING
+        QualityStatus.RISKY -> ReportSeverity.SERIOUS
+        QualityStatus.FAILED -> ReportSeverity.FAILED
+    }
+
+private fun List<ReportWarning>.withReportGraphIndex(graphIndex: Int): List<ReportWarning> =
+    map { warning -> warning.copy(graphIndex = graphIndex) }
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
     val width = w.coerceAtLeast(1)
