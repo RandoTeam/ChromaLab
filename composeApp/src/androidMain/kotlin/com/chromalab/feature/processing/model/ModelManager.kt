@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.model
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.ModelRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -310,6 +311,108 @@ class ModelManager(private val context: Context) {
         return (memInfo.totalMem / (1024 * 1024)).toInt()
     }
 
+    /** Currently available RAM in MB. */
+    fun getAvailableRamMb(): Int {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE)
+            as android.app.ActivityManager
+        val memInfo = android.app.ActivityManager.MemoryInfo()
+        activityManager.getMemoryInfo(memInfo)
+        return (memInfo.availMem / (1024 * 1024)).toInt()
+    }
+
+    /** Conservative mode for older phones where accelerator probing can exhaust memory. */
+    fun isConservativeDevice(): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE)
+            as android.app.ActivityManager
+        return activityManager.isLowRamDevice || getDeviceRamMb() < 7000
+    }
+
+    /** Whether a model can be loaded for text/chat use on this device. */
+    fun canLoadForText(model: ModelInfo): Boolean {
+        val requiredRam = when (model.runtime) {
+            ModelRuntime.LITERT_LM -> 4096
+            ModelRuntime.LLAMA_CPP -> maxOf(model.minRamMb, baseModelSizeMb(model) + 768)
+        }
+        val availableRequired = if (isConservativeDevice()) 1800 else 1200
+        return getDeviceRamMb() >= requiredRam && getAvailableRamMb() >= availableRequired
+    }
+
+    /** Whether a model can safely receive image input on this device. */
+    fun canLoadForVision(model: ModelInfo): Boolean {
+        if (!model.supportsVision) return false
+        val conservative = isConservativeDevice()
+        val smallGgufVision = isSmallGgufVisionModel(model)
+        val requiredRam = when (model.runtime) {
+            ModelRuntime.LITERT_LM -> {
+                // Allow Gemma E2B on 6 GB phones via CPU fallback, but keep 4 GB devices out.
+                val floor = if (conservative) 5500 else 8192
+                maxOf(model.minRamMb, floor)
+            }
+            ModelRuntime.LLAMA_CPP -> {
+                // GGUF vision loads both the base model and mmproj into llama.cpp/mtmd.
+                // Small OCR/VLM packages are allowed on 6 GB class test devices; heavier
+                // models still need more headroom to avoid process kills.
+                if (conservative && !smallGgufVision) return false
+                val overhead = if (smallGgufVision) 900 else 1800
+                maxOf(model.minRamMb, visionPackageSizeMb(model) + overhead)
+            }
+        }
+        val availableRequired = when (model.runtime) {
+            ModelRuntime.LITERT_LM -> if (conservative) 2600 else 3000
+            ModelRuntime.LLAMA_CPP -> if (smallGgufVision) {
+                maxOf(1700, visionPackageSizeMb(model) / 2)
+            } else {
+                maxOf(2200, visionPackageSizeMb(model) / 2)
+            }
+        }
+        return getDeviceRamMb() >= requiredRam && getAvailableRamMb() >= availableRequired
+    }
+
+    fun canLoadForChromatogramVision(model: ModelInfo): Boolean =
+        canLoadForVision(model) &&
+            (ModelRegistry.isChromatogramVisionModel(model) || !model.isBuiltin)
+
+    fun liteRtPreferAccelerator(model: ModelInfo): Boolean =
+        model.runtime == ModelRuntime.LITERT_LM && !isConservativeDevice()
+
+    fun liteRtMaxTokens(model: ModelInfo): Int? =
+        if (model.runtime == ModelRuntime.LITERT_LM) {
+            InferenceConfig.forModelFamily(model.family).maxTokens
+        } else {
+            null
+        }
+
+    fun llamaShouldLoadVisionProjector(model: ModelInfo): Boolean =
+        model.runtime == ModelRuntime.LLAMA_CPP && canLoadForVision(model)
+
+    fun llamaContextSize(model: ModelInfo, forVision: Boolean): Int {
+        val config = InferenceConfig.forModelFamily(model.family)
+        return when {
+            isConservativeDevice() && !forVision -> 2048
+            forVision && model.family.contains("paddleocr", ignoreCase = true) -> 2048
+            else -> config.contextSize
+        }
+    }
+
+    fun llamaBatchSize(model: ModelInfo, forVision: Boolean): Int {
+        val config = InferenceConfig.forModelFamily(model.family)
+        return when {
+            isConservativeDevice() -> 128
+            forVision && model.family.contains("paddleocr", ignoreCase = true) -> 256
+            else -> config.batchSize
+        }
+    }
+
+    fun compatibilityMessage(model: ModelInfo, forVision: Boolean): String {
+        val total = getDeviceRamMb()
+        val available = getAvailableRamMb()
+        return if (forVision) {
+            "Vision model cannot be loaded for ${model.displayName}: RAM ${total} MB, available ${available} MB."
+        } else {
+            "Model is too heavy for this device: RAM ${total} MB, available ${available} MB."
+        }
+    }
+
     /** Available storage in bytes. */
     fun getAvailableStorageBytes(): Long = modelsDir.usableSpace
 
@@ -318,6 +421,23 @@ class ModelManager(private val context: Context) {
         getDownloadedModels().sumOf { it.diskSizeBytes }
 
     // ===== Internal =====
+
+    private fun baseModelSizeMb(model: ModelInfo): Int =
+        (model.files
+            .filterNot { it.type == ModelFileType.GGUF_MMPROJ }
+            .sumOf { it.sizeBytes } / (1024 * 1024)).toInt()
+
+    private fun visionPackageSizeMb(model: ModelInfo): Int =
+        (model.totalSizeBytes / (1024 * 1024)).toInt()
+
+    private fun isSmallGgufVisionModel(model: ModelInfo): Boolean {
+        if (model.runtime != ModelRuntime.LLAMA_CPP || !model.supportsVision) return false
+        val family = model.family.lowercase()
+        val id = model.id.lowercase()
+        return family.contains("paddleocr") ||
+            (family.contains("qwen3-vl") && id.contains("2b") && (id.contains("q2") || id.contains("q3"))) ||
+            (family.contains("smolvlm") && id.contains("q4"))
+    }
 
     private fun buildCustomModelInfo(dir: File): ModelInfo? {
         val files = dir.listFiles() ?: return null

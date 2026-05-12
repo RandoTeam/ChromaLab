@@ -72,7 +72,7 @@ class ModelManagerController(
                 activeModelName = active?.info?.displayName,
                 activeModelSummary = active?.let { m ->
                     val runtime = when (m.info.runtime) {
-                        ModelRuntime.LITERT_LM -> "LiteRT GPU"
+                        ModelRuntime.LITERT_LM -> "LiteRT"
                         ModelRuntime.LLAMA_CPP -> "llama.cpp"
                     }
                     val sizeGb = m.info.totalSizeBytes / 1_000_000_000f
@@ -236,29 +236,51 @@ class ModelManagerController(
                         return@launch
                     }
 
+                if (!manager.canLoadForText(model.info)) {
+                    _state.update {
+                        it.copy(
+                            activatingModelId = null,
+                            activationError = manager.compatibilityMessage(model.info, forVision = false),
+                        )
+                    }
+                    return@launch
+                }
+
                 manager.setActiveModel(modelId)
 
                 // Create engine based on runtime
                 val engine: InferenceEngine? = when (model.info.runtime) {
                     ModelRuntime.LLAMA_CPP -> {
                         val llama = LlamaEngine()
+                        val enableVision = manager.llamaShouldLoadVisionProjector(model.info)
                         withContext(Dispatchers.IO) {
                             llama.loadModel(
                                 basePath = model.primaryPath,
-                                mmprojPath = model.mmprojPath ?: "",
+                                mmprojPath = if (enableVision) model.mmprojPath ?: "" else "",
                                 threads = manager.threadCount,
                                 modelFamily = model.info.family,
+                                contextSize = manager.llamaContextSize(model.info, enableVision),
+                                batchSize = manager.llamaBatchSize(model.info, enableVision),
                             )
+                        }
+                        if (!enableVision && model.mmprojPath != null) {
+                            println("MODEL[CTRL] GGUF vision disabled for ${model.info.displayName} on this device; loaded text-only")
                         }
                         llama
                     }
                     ModelRuntime.LITERT_LM -> {
                         val liteRT = LiteRTEngine()
+                        val enableVision = manager.canLoadForVision(model.info)
                         withContext(Dispatchers.IO) {
                             liteRT.loadModel(
                                 modelPath = model.primaryPath,
-                                preferGpu = true,
+                                preferGpu = manager.liteRtPreferAccelerator(model.info),
+                                enableVision = enableVision,
+                                maxNumTokens = manager.liteRtMaxTokens(model.info),
                             )
+                        }
+                        if (!enableVision) {
+                            println("MODEL[CTRL] Vision disabled for ${model.info.displayName} on this device")
                         }
                         liteRT
                     }
@@ -406,23 +428,42 @@ class ModelManagerController(
         onProgress: ((String) -> Unit)? = null,
     ): Boolean {
         // Already loaded?
-        if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
+            VlmEngineHolder.activeEngine?.supportsImageInput() == true
+        ) {
             println("MODEL[LAZY] Already loaded")
             // Reset auto-unload timer (model is being used)
             cancelAutoUnloadTimer()
             return true
         }
 
-        // Find model to load
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
+            VlmEngineHolder.activeEngine?.supportsImageInput() != true
+        ) {
+            VlmEngineHolder.activeEngine = null
+            VlmEngineHolder.activeConfig = null
+        }
+
+        // Find a model to load for chromatogram vision. This path must never
+        // load a GGUF model text-only: photo analysis requires image input.
+        val activeId = manager.getActiveModelId()
         val models = manager.getDownloadedModels()
+            .filter { manager.canLoadForChromatogramVision(it.info) }
+            .sortedWith(
+                compareByDescending<com.chromalab.feature.processing.model.DownloadedModel> {
+                    it.info.id == activeId
+                }
+                    .thenBy { ModelRegistry.chromatogramVisionPriority(it.info) }
+                    .thenBy { it.info.totalSizeBytes }
+            )
         if (models.isEmpty()) {
-            println("MODEL[LAZY] No models downloaded")
+            println("MODEL[LAZY] No chromatogram vision model can be loaded on this device")
+            onProgress?.invoke("No loaded/downloaded chromatogram VLM fits this device")
             return false
         }
 
-        // Priority: previously active > first available
-        val activeId = manager.getActiveModelId()
-        val model = models.find { it.info.id == activeId } ?: models.first()
+        // Priority: active choice > chromatography ranking > package size.
+        val model = models.first()
 
         println("MODEL[LAZY] Auto-loading: ${model.info.displayName} (${model.info.family})")
         onProgress?.invoke("Загрузка AI модели: ${model.info.displayName}")
@@ -434,13 +475,23 @@ class ModelManagerController(
                 ModelRuntime.LLAMA_CPP -> {
                     onProgress?.invoke("Загрузка GGUF модели...")
                     val llama = LlamaEngine()
+                    val mmprojPath = model.mmprojPath
+                        ?: throw IllegalStateException("Vision projector is missing for ${model.info.displayName}")
+                    if (!manager.llamaShouldLoadVisionProjector(model.info)) {
+                        throw IllegalStateException(manager.compatibilityMessage(model.info, forVision = true))
+                    }
                     withContext(Dispatchers.IO) {
                         llama.loadModel(
                             basePath = model.primaryPath,
-                            mmprojPath = model.mmprojPath ?: "",
+                            mmprojPath = mmprojPath,
                             threads = manager.threadCount,
                             modelFamily = model.info.family,
+                            contextSize = manager.llamaContextSize(model.info, forVision = true),
+                            batchSize = manager.llamaBatchSize(model.info, forVision = true),
                         )
+                    }
+                    if (!llama.supportsImageInput()) {
+                        throw IllegalStateException("GGUF model loaded without vision support: ${model.info.displayName}")
                     }
                     llama
                 }
@@ -450,7 +501,9 @@ class ModelManagerController(
                     withContext(Dispatchers.IO) {
                         liteRT.loadModel(
                             modelPath = model.primaryPath,
-                            preferGpu = true,
+                            preferGpu = manager.liteRtPreferAccelerator(model.info),
+                            enableVision = true,
+                            maxNumTokens = manager.liteRtMaxTokens(model.info),
                         )
                     }
                     liteRT

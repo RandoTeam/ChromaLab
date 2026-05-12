@@ -30,7 +30,7 @@ actual class ChartAnalysisReader actual constructor() {
         val engine = VlmEngineHolder.activeEngine
         val config = VlmEngineHolder.activeConfig
 
-        if (engine != null && engine.isLoaded()) {
+        if (engine != null && engine.isLoaded() && engine.supportsImageInput()) {
             try {
                 val backend = engine.getBackendName()
                 println("VLM[READER] Trying VLM analysis ($backend)...")
@@ -42,10 +42,12 @@ actual class ChartAnalysisReader actual constructor() {
 
                 VlmEngineHolder.isInferring = true
                 val analysis = try {
-                    engine.analyzeChart(
+                    val rawResponse = engine.inferRaw(
                         imagePath = imagePath,
                         prompt = prompt,
+                        options = optionsFor(VlmTask.AxisExtraction, config),
                     )
+                    ChartPrompts.parseResponse(rawResponse)
                 } finally {
                     VlmEngineHolder.isInferring = false
                 }
@@ -57,16 +59,27 @@ actual class ChartAnalysisReader actual constructor() {
                     return chartAnalysisToOcrResult(analysis)
                 }
 
-                println("VLM[READER] Low confidence (${analysis.confidence}), falling back to ML Kit OCR")
+                val message = "AI axis extraction returned low confidence (${analysis.confidence})"
+                println("VLM[READER] $message")
+                if (VlmEngineHolder.requireVisionForAnalysis) {
+                    throw IllegalStateException(message)
+                }
             } catch (e: Exception) {
                 VlmEngineHolder.isInferring = false
-                println("VLM[READER] Failed: ${e.message}, falling back to ML Kit OCR")
+                println("VLM[READER] Failed: ${e.message}")
+                if (VlmEngineHolder.requireVisionForAnalysis) {
+                    throw IllegalStateException("AI axis extraction failed: ${e.message}", e)
+                }
             }
         } else {
-            println("VLM[READER] No model loaded, using ML Kit OCR")
+            val message = "AI vision model is not loaded for axis OCR"
+            println("VLM[READER] $message")
+            if (VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException(message)
+            }
         }
 
-        // === Fallback: ML Kit OCR ===
+        // === Diagnostic fallback only when strict photo analysis is disabled ===
         return fallbackOcr.readAxisLabels(imagePath, graphRegion)
     }
 
@@ -90,8 +103,12 @@ actual class ChartAnalysisReader actual constructor() {
         val engine = VlmEngineHolder.activeEngine
         val config = VlmEngineHolder.activeConfig
 
-        if (engine == null || !engine.isLoaded()) {
-            println("VLM[REGION] No model loaded, skipping VLM graph detection")
+        if (engine == null || !engine.isLoaded() || !engine.supportsImageInput()) {
+            val message = "AI vision model is not loaded for graph detection"
+            println("VLM[REGION] $message")
+            if (VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException(message)
+            }
             return null
         }
 
@@ -104,7 +121,11 @@ actual class ChartAnalysisReader actual constructor() {
 
             VlmEngineHolder.isInferring = true
             val rawResponse = try {
-                engine.inferRaw(imagePath, prompt)
+                engine.inferRaw(
+                    imagePath = imagePath,
+                    prompt = prompt,
+                    options = optionsFor(VlmTask.GraphRegion, config),
+                )
             } finally {
                 VlmEngineHolder.isInferring = false
             }
@@ -114,12 +135,19 @@ actual class ChartAnalysisReader actual constructor() {
             if (bounds != null) {
                 println("VLM[REGION] Detected: L=${bounds.leftPct}% T=${bounds.topPct}% R=${bounds.rightPct}% B=${bounds.bottomPct}% graphs=${bounds.numGraphs}")
             } else {
-                println("VLM[REGION] Failed to parse graph bounds")
+                val message = "AI graph detection did not return parseable bounds"
+                println("VLM[REGION] $message")
+                if (VlmEngineHolder.requireVisionForAnalysis) {
+                    throw IllegalStateException(message)
+                }
             }
             bounds
         } catch (e: Exception) {
             VlmEngineHolder.isInferring = false
             println("VLM[REGION] Error: ${e.message}")
+            if (VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException("AI graph detection failed: ${e.message}", e)
+            }
             null
         }
     }
@@ -134,7 +162,10 @@ actual class ChartAnalysisReader actual constructor() {
         val engine = VlmEngineHolder.activeEngine
         val config = VlmEngineHolder.activeConfig
 
-        if (engine == null || !engine.isLoaded()) {
+        if (engine == null || !engine.isLoaded() || !engine.supportsImageInput()) {
+            if (VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException("AI vision model is not loaded for axis structure detection")
+            }
             return null
         }
 
@@ -147,16 +178,27 @@ actual class ChartAnalysisReader actual constructor() {
 
             VlmEngineHolder.isInferring = true
             val rawResponse = try {
-                engine.inferRaw(imagePath, prompt)
+                engine.inferRaw(
+                    imagePath = imagePath,
+                    prompt = prompt,
+                    options = optionsFor(VlmTask.AxisStructure, config),
+                )
             } finally {
                 VlmEngineHolder.isInferring = false
             }
             println("VLM[STRUCT] Raw response: ${rawResponse.take(200)}")
 
-            ChartPrompts.parseAxisStructure(rawResponse)
+            val structure = ChartPrompts.parseAxisStructure(rawResponse)
+            if (structure == null && VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException("AI axis structure response was not parseable")
+            }
+            structure
         } catch (e: Exception) {
             VlmEngineHolder.isInferring = false
             println("VLM[STRUCT] Error: ${e.message}")
+            if (VlmEngineHolder.requireVisionForAnalysis) {
+                throw IllegalStateException("AI axis structure detection failed: ${e.message}", e)
+            }
             null
         }
     }
@@ -180,7 +222,9 @@ actual class ChartAnalysisReader actual constructor() {
      */
     actual suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)?): Boolean {
         // Already loaded?
-        if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+        if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
+            VlmEngineHolder.activeEngine?.supportsImageInput() == true
+        ) {
             return true
         }
 
@@ -198,6 +242,34 @@ actual class ChartAnalysisReader actual constructor() {
             false
         }
     }
+}
+
+private enum class VlmTask {
+    GraphRegion,
+    AxisExtraction,
+    AxisStructure,
+}
+
+private fun optionsFor(task: VlmTask, config: InferenceConfig?): GenerationOptions {
+    val familyLimit = config?.maxTokens ?: 768
+    val maxTokens = when (task) {
+        VlmTask.GraphRegion -> maxOf(familyLimit, 512)
+        VlmTask.AxisExtraction -> maxOf(familyLimit, 768)
+        VlmTask.AxisStructure -> maxOf(familyLimit, 512)
+    }.coerceAtMost(2048)
+    return GenerationOptions(
+        maxTokens = maxTokens,
+        timeoutMs = when (task) {
+            VlmTask.GraphRegion -> 300_000L
+            VlmTask.AxisExtraction -> 420_000L
+            VlmTask.AxisStructure -> 300_000L
+        },
+        temperature = 0f,
+        topP = 1f,
+        topK = 0,
+        repeatPenalty = config?.repeatPenalty ?: 1.1f,
+        repeatLastN = config?.repeatLastN ?: 64,
+    )
 }
 
 /**
@@ -219,6 +291,13 @@ object VlmEngineHolder {
     /** True while inference is running — prevents auto-unload. */
     @Volatile
     var isInferring: Boolean = false
+
+    /**
+     * Photo chromatogram analysis must not silently fall back to deterministic OCR
+     * when the required vision model fails.
+     */
+    @Volatile
+    var requireVisionForAnalysis: Boolean = true
 
     /**
      * Reference to ModelManagerController for lazy loading.

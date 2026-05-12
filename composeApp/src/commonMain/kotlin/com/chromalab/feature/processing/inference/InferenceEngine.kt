@@ -1,5 +1,6 @@
 package com.chromalab.feature.processing.inference
 
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,8 +23,30 @@ interface InferenceEngine {
         options: GenerationOptions = GenerationOptions(),
     ): String
 
+    /**
+     * Run raw inference and report incremental text updates when the runtime supports streaming.
+     * Runtimes without token callbacks use a small chunked fallback so the chat UI can keep one
+     * rendering path.
+     */
+    suspend fun inferRawStreaming(
+        imagePath: String,
+        prompt: String,
+        options: GenerationOptions = GenerationOptions(),
+        onPartial: (String) -> Unit,
+    ): String {
+        val response = inferRaw(imagePath, prompt, options)
+        response.chunked(8).forEach { chunk ->
+            onPartial(chunk)
+            delay(12)
+        }
+        return response
+    }
+
     /** Whether a model is currently loaded and ready. */
     fun isLoaded(): Boolean
+
+    /** Whether the loaded runtime can accept image input without falling back to text-only mode. */
+    fun supportsImageInput(): Boolean = true
 
     /** Unload the current model and free resources. */
     fun unload()
@@ -40,6 +63,7 @@ interface InferenceEngine {
  */
 data class GenerationOptions(
     val maxTokens: Int? = null,
+    val timeoutMs: Long? = null,
     val temperature: Float? = null,
     val topP: Float? = null,
     val topK: Int? = null,
