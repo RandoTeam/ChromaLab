@@ -179,9 +179,7 @@ fun ProcessingFlowScreen(
 
     // Multi-graph support
     var currentGraphIndex by remember { mutableIntStateOf(0) }
-    val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
-    val processedGraphWarnings = remember { mutableStateListOf<List<ReportWarning>>() }
-    val processedPreparationVariants = remember { mutableStateListOf<List<GraphPreparationVariantMetadata>>() }
+    val processedGraphs = remember { mutableStateListOf<ProcessedGraphSnapshot>() }
 
     // VLM model loading status (25.2B: lazy loading)
     var vlmLoadingStatus by remember { mutableStateOf<String?>(null) }
@@ -190,6 +188,30 @@ fun ProcessingFlowScreen(
     // --- Run real processing on step entry ---
     var processingError by remember { mutableStateOf<String?>(null) }
     var savedSignalId by remember { mutableStateOf<Long?>(null) }
+
+    val captureCurrentGraphSnapshot = {
+        smoothedSignal?.let { signal ->
+            val graphNumber = currentGraphIndex + 1
+            processedGraphs.removeAll { it.graphIndex == graphNumber }
+            processedGraphs.add(
+                ProcessedGraphSnapshot(
+                    graphIndex = graphNumber,
+                    signal = signal,
+                    selectedRegion = selectedRegion,
+                    ocrResult = ocrResult,
+                    preprocessingResult = preprocessingResult,
+                    bestSweepConfig = bestSweepConfig,
+                    warnings = buildReportGraphWarnings(
+                        graphIndex = graphNumber,
+                        digitizationReport = digitizationReport,
+                        graphResult = graphResult,
+                        ocrResult = ocrResult,
+                    ),
+                    preparationVariants = sweepPreparationVariants,
+                ),
+            )
+        }
+    }
 
     // When signal is saved, navigate to analysis
     LaunchedEffect(savedSignalId) {
@@ -268,10 +290,11 @@ fun ProcessingFlowScreen(
                                 ?: error("Normalized image width is required before graph detection.")
                             val h = imageHeight.takeIf { it > 0 }
                                 ?: error("Normalized image height is required before graph detection.")
+                            val graphOutputDir = graphProcessingOutputDir(outputDir, currentGraphIndex)
 
                             val sweepResults = sweepEngine.sweep(
                                 imagePath = currentImagePath,
-                                outputDir = "$outputDir/graph_${currentGraphIndex}",
+                                outputDir = graphOutputDir,
                                 imageWidth = w,
                                 imageHeight = h,
                                 // Multi-graph: reuse graph detection, target specific region
@@ -520,16 +543,17 @@ fun ProcessingFlowScreen(
                             // Use contrast-enhanced image from preprocessing if available.
                             // CLAHE improves edge detection for Canny in CurveMaskPreparer.
                             val inputForMask = preprocessingResult?.contrastEnhancedPath ?: currentImagePath
+                            val graphOutputDir = graphProcessingOutputDir(outputDir, currentGraphIndex)
                             println("PIPELINE[CURVE] input=$inputForMask, region=$selectedRegion")
                             val mask = curveMaskPreparer.prepare(
                                 inputForMask, selectedRegion,
-                                axesResult!!, outputDir,
+                                axesResult!!, graphOutputDir,
                             )
                             println("PIPELINE[CURVE] mask: raw=${mask.rawMaskPath}, clean=${mask.cleanMaskPath}")
                             val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: inputForMask
                             curveExtractionResult = curveExtractor.extract(
                                 maskPath, selectedRegion.width,
-                                selectedRegion.height, outputDir,
+                                selectedRegion.height, graphOutputDir,
                             ).scaledCoordinates(mask.coordinateScale)
                             curvePoints = curveExtractionResult?.points ?: emptyList()
                             println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")
@@ -608,18 +632,7 @@ fun ProcessingFlowScreen(
                 kotlinx.coroutines.delay(150L)
                 if (currentStep == ProcessingStep.QUALITY_REPORT) {
                     // Multi-graph: check for more regions before advancing to EXPORT
-                    smoothedSignal?.let {
-                        processedSignals.add(it)
-                        processedGraphWarnings.add(
-                            buildReportGraphWarnings(
-                                graphIndex = currentGraphIndex + 1,
-                                digitizationReport = digitizationReport,
-                                graphResult = graphResult,
-                                ocrResult = ocrResult,
-                            ),
-                        )
-                        processedPreparationVariants.add(sweepPreparationVariants)
-                    }
+                    captureCurrentGraphSnapshot()
                     val totalRegions = graphResult?.filteredRegions?.size ?: 1
                     if (currentGraphIndex + 1 < totalRegions) {
                         currentGraphIndex++
@@ -643,12 +656,8 @@ fun ProcessingFlowScreen(
                         currentStep = ProcessingStep.GRAPH_ROI
                     } else {
                         // All graphs processed → auto-save to Room + navigate to Analysis
-                        println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
-                        val signalsToSave = processedSignals.toList()
-                            .toReportSaveEntries(
-                                graphWarnings = processedGraphWarnings.toList(),
-                                preparationVariants = processedPreparationVariants.toList(),
-                            )
+                        println("PIPELINE[AUTO-SAVE] All ${processedGraphs.size} graphs processed, saving to Room...")
+                        val graphsToSave = processedGraphs.toReportSaveEntries()
                         val modelSnapshot = chartReader.currentModelSnapshot()
                         val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                         val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -660,7 +669,7 @@ fun ProcessingFlowScreen(
                         val saveResult = withContext(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             try {
-                                if (signalsToSave.isEmpty()) {
+                                if (graphsToSave.isEmpty()) {
                                     println("PIPELINE[AUTO-SAVE] No usable signals to save")
                                     return@withContext null
                                 }
@@ -689,18 +698,18 @@ fun ProcessingFlowScreen(
                                 var firstId: Long? = null
                                 val detectedGraphCount = graphResult?.filteredRegions?.size
                                     ?.takeIf { it > 0 }
-                                    ?: signalsToSave.size
+                                    ?: graphsToSave.size
                                 val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
                                 val cropConfidence = graphResult?.confidence.toReportCropConfidence()
-                                val preprocessingSteps = buildReportPreprocessingSteps(
-                                    normalizedResult = normalizedResult,
-                                    cropResult = cropResult,
-                                    perspectiveResult = perspectiveResult,
-                                    preprocessingResult = preprocessingResult,
-                                    bestSweepConfig = bestSweepConfig,
-                                )
-                                for ((idx, entry) in signalsToSave.withIndex()) {
+                                for ((idx, entry) in graphsToSave.withIndex()) {
                                     val signal = entry.signal.smoothed
+                                    val preprocessingSteps = buildReportPreprocessingSteps(
+                                        normalizedResult = normalizedResult,
+                                        cropResult = cropResult,
+                                        perspectiveResult = perspectiveResult,
+                                        preprocessingResult = entry.preprocessingResult,
+                                        bestSweepConfig = entry.bestSweepConfig,
+                                    )
                                     val entity = ChromatogramEntity(
                                         sampleId = sId,
                                         sourceType = SourceType.PHOTO,
@@ -719,37 +728,32 @@ fun ProcessingFlowScreen(
                                             sourcePath = imagePath,
                                             processedPath = currentImagePath,
                                             sourceType = SourceType.PHOTO,
-                                            graphIndex = idx + 1,
+                                            graphIndex = entry.graphIndex,
                                             detectedGraphCount = detectedGraphCount,
                                             signalPointCount = signal.points.size,
                                             analysisStartedAtEpochMillis = flowStartedAt,
                                             analysisCompletedAtEpochMillis = now,
                                             sourceImageBounds = sourceImageBounds,
-                                            detectedGraphBounds = reportGraphBounds(
-                                                graphIndex = idx,
-                                                graphResult = graphResult,
-                                                selectedRegion = selectedRegion,
-                                                savedGraphCount = signalsToSave.size,
-                                            ),
+                                            detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
                                             cropConfidence = cropConfidence,
                                             preprocessingSteps = preprocessingSteps,
                                             preparationVariants = entry.preparationVariants,
                                             titleOcrConfidence = null,
-                                            axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
-                                            tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
+                                            axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
+                                            tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
                                             selectedModel = selectedReportModel,
                                             executedModel = executedReportModel,
                                             executedRuntime = executedRuntime,
                                             deviceName = reportDeviceName,
                                             stageTimings = reportStageTimings,
-                                            graphWarnings = entry.warnings.withReportGraphIndex(idx + 1),
+                                            graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
                                     )
                                     val id = db.chromatogramDao().insert(entity)
                                     if (firstId == null) firstId = id
-                                    println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${signalsToSave.size} saved, id=$id, points=${signal.points.size}")
+                                    println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${graphsToSave.size} saved, id=$id, points=${signal.points.size}")
                                 }
                                 firstId
                             } catch (e: Exception) {
@@ -783,18 +787,7 @@ fun ProcessingFlowScreen(
         // Multi-graph loop: after QUALITY_REPORT, check for more regions
         if (step == ProcessingStep.QUALITY_REPORT) {
             // Save current signal to the batch
-            smoothedSignal?.let {
-                processedSignals.add(it)
-                processedGraphWarnings.add(
-                    buildReportGraphWarnings(
-                        graphIndex = currentGraphIndex + 1,
-                        digitizationReport = digitizationReport,
-                        graphResult = graphResult,
-                        ocrResult = ocrResult,
-                    ),
-                )
-                processedPreparationVariants.add(sweepPreparationVariants)
-            }
+            captureCurrentGraphSnapshot()
             val totalRegions = graphResult?.filteredRegions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
                 // More regions — reset per-graph state and loop back
@@ -820,13 +813,9 @@ fun ProcessingFlowScreen(
                 currentStep = ProcessingStep.GRAPH_ROI
             } else {
                 // All graphs done — auto-save to Room, then navigate to Analysis
-                println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
+                println("PIPELINE[AUTO-SAVE] All ${processedGraphs.size} graphs processed, saving to Room...")
                 scope.launch {
-                    val signalsToSave = processedSignals.toList()
-                        .toReportSaveEntries(
-                            graphWarnings = processedGraphWarnings.toList(),
-                            preparationVariants = processedPreparationVariants.toList(),
-                        )
+                    val graphsToSave = processedGraphs.toReportSaveEntries()
                     val modelSnapshot = chartReader.currentModelSnapshot()
                     val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                     val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -838,7 +827,7 @@ fun ProcessingFlowScreen(
                     val resultId = withContext(Dispatchers.IO) {
                         val now = System.currentTimeMillis()
                         try {
-                            if (signalsToSave.isEmpty()) {
+                            if (graphsToSave.isEmpty()) {
                                 println("PIPELINE[AUTO-SAVE] No usable signals to save")
                                 return@withContext null
                             }
@@ -867,18 +856,18 @@ fun ProcessingFlowScreen(
                             var firstId: Long? = null
                             val detectedGraphCount = graphResult?.filteredRegions?.size
                                 ?.takeIf { it > 0 }
-                                ?: signalsToSave.size
+                                ?: graphsToSave.size
                             val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
                             val cropConfidence = graphResult?.confidence.toReportCropConfidence()
-                            val preprocessingSteps = buildReportPreprocessingSteps(
-                                normalizedResult = normalizedResult,
-                                cropResult = cropResult,
-                                perspectiveResult = perspectiveResult,
-                                preprocessingResult = preprocessingResult,
-                                bestSweepConfig = bestSweepConfig,
-                            )
-                            for ((idx, entry) in signalsToSave.withIndex()) {
+                            for ((idx, entry) in graphsToSave.withIndex()) {
                                 val signal = entry.signal.smoothed
+                                val preprocessingSteps = buildReportPreprocessingSteps(
+                                    normalizedResult = normalizedResult,
+                                    cropResult = cropResult,
+                                    perspectiveResult = perspectiveResult,
+                                    preprocessingResult = entry.preprocessingResult,
+                                    bestSweepConfig = entry.bestSweepConfig,
+                                )
                                 val entity = ChromatogramEntity(
                                     sampleId = sampleId,
                                     sourceType = SourceType.PHOTO,
@@ -897,37 +886,32 @@ fun ProcessingFlowScreen(
                                         sourcePath = imagePath,
                                         processedPath = currentImagePath,
                                         sourceType = SourceType.PHOTO,
-                                        graphIndex = idx + 1,
+                                        graphIndex = entry.graphIndex,
                                         detectedGraphCount = detectedGraphCount,
                                         signalPointCount = signal.points.size,
                                         analysisStartedAtEpochMillis = flowStartedAt,
                                         analysisCompletedAtEpochMillis = now,
                                         sourceImageBounds = sourceImageBounds,
-                                        detectedGraphBounds = reportGraphBounds(
-                                            graphIndex = idx,
-                                            graphResult = graphResult,
-                                            selectedRegion = selectedRegion,
-                                            savedGraphCount = signalsToSave.size,
-                                        ),
+                                        detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
                                         cropConfidence = cropConfidence,
                                         preprocessingSteps = preprocessingSteps,
                                         preparationVariants = entry.preparationVariants,
                                         titleOcrConfidence = null,
-                                        axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
-                                        tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
+                                        axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
+                                        tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
                                         selectedModel = selectedReportModel,
                                         executedModel = executedReportModel,
                                         executedRuntime = executedRuntime,
                                         deviceName = reportDeviceName,
                                         stageTimings = reportStageTimings,
-                                        graphWarnings = entry.warnings.withReportGraphIndex(idx + 1),
+                                        graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
                                 )
                                 val id = db.chromatogramDao().insert(entity)
                                 if (firstId == null) firstId = id
-                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${signalsToSave.size} saved, id=$id, points=${signal.points.size}")
+                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${graphsToSave.size} saved, id=$id, points=${signal.points.size}")
                             }
                             firstId
                         } catch (e: Exception) {
@@ -1031,8 +1015,8 @@ fun ProcessingFlowScreen(
                 // EXPORT: error fallback only (25.2A)
                 // Shown only when auto-save to Room failed.
                 // Normal flow: QUALITY_REPORT → auto-save → onFinish → AnalysisFlowScreen
-                val allSignals = remember(processedSignals.size) {
-                    processedSignals.map { it.smoothed }
+                val allSignals = remember(processedGraphs.size) {
+                    processedGraphs.sortedBy { it.graphIndex }.map { it.signal.smoothed }
                 }
                 val displaySignal = allSignals.lastOrNull() ?: smoothedSignal?.smoothed
                 if (displaySignal != null) {
@@ -1099,16 +1083,8 @@ private fun reportSourceImageBounds(width: Int, height: Int): PixelRect? =
         null
     }
 
-private fun reportGraphBounds(
-    graphIndex: Int,
-    graphResult: GraphRegionResult?,
-    selectedRegion: GraphRegion,
-    savedGraphCount: Int,
-): PixelRect? {
-    val region = graphResult?.filteredRegions?.getOrNull(graphIndex)
-        ?: selectedRegion.takeIf { savedGraphCount == 1 && it.width > 1 && it.height > 1 }
-    return region?.toReportPixelRect()
-}
+private fun graphProcessingOutputDir(outputDir: String, graphIndex: Int): String =
+    "$outputDir/graph_$graphIndex"
 
 private fun GraphRegion.toReportPixelRect(): PixelRect =
     PixelRect(x = x, y = y, width = width, height = height)
@@ -1205,27 +1181,19 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
         )
     }
 
-private data class ReportSignalSaveEntry(
+private data class ProcessedGraphSnapshot(
+    val graphIndex: Int,
     val signal: SmoothedSignal,
+    val selectedRegion: GraphRegion,
+    val ocrResult: AxisOcrResult?,
+    val preprocessingResult: PreprocessingResult?,
+    val bestSweepConfig: String?,
     val warnings: List<ReportWarning>,
     val preparationVariants: List<GraphPreparationVariantMetadata>,
 )
 
-private fun List<SmoothedSignal>.toReportSaveEntries(
-    graphWarnings: List<List<ReportWarning>>,
-    preparationVariants: List<List<GraphPreparationVariantMetadata>>,
-): List<ReportSignalSaveEntry> =
-    mapIndexedNotNull { index, signal ->
-        if (signal.smoothed.points.size < 10) {
-            null
-        } else {
-            ReportSignalSaveEntry(
-                signal = signal,
-                warnings = graphWarnings.getOrNull(index).orEmpty(),
-                preparationVariants = preparationVariants.getOrNull(index).orEmpty(),
-            )
-        }
-    }
+private fun List<ProcessedGraphSnapshot>.toReportSaveEntries(): List<ProcessedGraphSnapshot> =
+    sortedBy { it.graphIndex }.filter { it.signal.smoothed.points.size >= 10 }
 
 private fun List<AutoSweepEngine.SweepResult>.toGraphPreparationVariants(): List<GraphPreparationVariantMetadata> =
     mapIndexed { index, result ->

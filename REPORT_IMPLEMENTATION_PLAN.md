@@ -72,7 +72,7 @@ Goal: support one image or page containing multiple chromatogram graphs.
 
 - [x] 4.1 Detect all graph regions that pass quality filters.
 - [x] 4.2 Sort graphs in natural reading order.
-- [ ] 4.3 Run graph preparation, OCR, calibration, curve extraction, and calculation per graph.
+- [x] 4.3 Run graph preparation, OCR, calibration, curve extraction, and calculation per graph.
 - [ ] 4.4 Produce output as graph 1/report 1, graph 2/report 2, graph 3/report 3.
 - [ ] 4.5 Prevent cross-contamination between graph metadata, peaks, warnings, and model responses.
 
@@ -194,4 +194,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 2.1: write `StoredReportMetadata` from the processing flow at save time. Keep it narrow: persist only data that already exists in memory, then verify that structured report export reads it back.
+Start Phase 4.4: produce user-facing output as graph 1/report 1, graph 2/report 2, graph 3/report 3.

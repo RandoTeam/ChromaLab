@@ -249,3 +249,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Phase 4.3 should run graph preparation, OCR, calibration, curve extraction, and calculation independently for each ordered graph.
+
+## Phase 4.3 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- The photo pipeline now captures a separate processing snapshot for each graph before moving to the next graph.
+- Each snapshot preserves that graph's selected ROI, OCR result, preprocessing result, selected sweep config, preparation ranking, warnings, and smoothed signal.
+- Auto-save now writes each graph from its own snapshot instead of using the last graph's OCR/preprocessing state for every saved chromatogram.
+- Per-graph fallback curve extraction now writes into the same `graph_N` output directory as that graph's auto-sweep artifacts.
+
+Remaining later work:
+
+- Phase 4.4 should present saved multi-graph output as graph 1/report 1, graph 2/report 2, graph 3/report 3 in the user-facing result flow.
