@@ -1,0 +1,132 @@
+{
+  "fixtureId": "belyi_tigr_ion92_report_reference",
+  "phase": "1.2",
+  "purpose": "Report structure and completeness reference for the Belyi Tigr Ion 92 chromatogram case.",
+  "numericTruthStatus": "not_locked",
+  "assets": {
+    "image": {
+      "fileName": "photo_2026-05-10_06-16-01.jpg",
+      "committed": false,
+      "sha256": "D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE",
+      "width": 576,
+      "height": 1280,
+      "format": "jpeg",
+      "description": "Phone screenshot or photo of a document page containing one chromatogram graph."
+    },
+    "referenceAnalysis": {
+      "fileName": "reference_analysis.md.resolved",
+      "committed": false,
+      "sha256": "8D68B75738DD33DFFD74CFB83696F3485C46D3E8AE6A770CAA562A02D0404DB0",
+      "description": "Human-written reference for report depth, sections, and scientific explanation style."
+    }
+  },
+  "visibleFacts": {
+    "sourceKind": "screenshot_or_photo_of_document_page",
+    "requiresGraphCrop": true,
+    "graphCountExpected": 1,
+    "titleApprox": "Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\\data.ms",
+    "analysisTypeExpected": "GC-MS",
+    "chromatogramModeExpected": "EIC",
+    "ion": "m/z 92.00",
+    "ionRange": "91.70 to 92.70",
+    "sampleLabel": "BELIY TIGR_1.D\\data.ms",
+    "xAxis": {
+      "labelApprox": "Time",
+      "unit": "min",
+      "majorTicksApprox": [10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+    },
+    "yAxis": {
+      "labelApprox": "Abundance",
+      "unit": "counts",
+      "minApprox": 0,
+      "maxApprox": 10000
+    },
+    "signalNotes": [
+      "Low baseline compared with the highest peaks.",
+      "Many narrow peaks across the run.",
+      "A very tall early peak is visible near the left side of the plotted signal."
+    ]
+  },
+  "knownTensions": [
+    {
+      "id": "dominant_peak_location",
+      "referenceClaim": "Dominant peak near 49.0 min with height around 9500.",
+      "visualObservation": "The visually dominant peak in the supplied screenshot appears early near the left side of the plot.",
+      "requiredHandling": "Do not copy the reference claim as a numeric result unless extracted signal data supports it. Flag discrepancy when needed."
+    }
+  ],
+  "requiredReportSections": [
+    "overview",
+    "source_and_graph_preparation",
+    "axis_calibration",
+    "peak_table",
+    "interactive_or_rendered_graph",
+    "chromatographic_quality",
+    "kovats_index_analysis",
+    "distribution_and_chemical_interpretation",
+    "warnings_and_red_flags",
+    "technical_appendix"
+  ],
+  "requiredPeakColumns": [
+    "number",
+    "retention_time",
+    "height",
+    "area",
+    "area_percent",
+    "fwhm",
+    "width_at_base",
+    "signal_to_noise",
+    "asymmetry",
+    "probable_compound",
+    "formula",
+    "carbon_number",
+    "kovats_index",
+    "confidence",
+    "flags"
+  ],
+  "requiredMetadata": [
+    "app_version",
+    "report_schema_version",
+    "analysis_started_at",
+    "analysis_completed_at",
+    "total_analysis_duration",
+    "input_source_type",
+    "detected_graph_count",
+    "selected_model_id",
+    "selected_model_name",
+    "executed_model_id",
+    "executed_model_name",
+    "executed_runtime",
+    "device_name",
+    "processing_mode",
+    "warnings"
+  ],
+  "requiredWarnings": [
+    "low_confidence_crop",
+    "low_confidence_axis_extraction",
+    "model_runtime_mismatch",
+    "neural_vision_stage_failed",
+    "dominant_peak_reference_discrepancy",
+    "missing_kovats_reference_series",
+    "unsupported_model_for_task"
+  ],
+  "acceptanceChecklist": [
+    "Report treats the source as a screenshot/document-page image and records graph crop handling.",
+    "Report identifies title, ion/channel, sample label, X-axis, and Y-axis with confidence.",
+    "Report provides an RT-ordered peak table with all required columns.",
+    "Report includes baseline, noise, and chromatographic quality metrics.",
+    "Report includes Kovats index section even when values are marked not calculable.",
+    "Report includes model/runtime metadata and total analysis duration.",
+    "Report does not invent missing values.",
+    "Report distinguishes calculated numeric results from inferred chemical interpretation.",
+    "Report handles the early dominant peak versus reference-text tension explicitly."
+  ],
+  "outOfScopeForPhase12": [
+    "Exact graph crop coordinates.",
+    "Exact digitized signal points.",
+    "Exact peak list.",
+    "Validated compound assignments.",
+    "Production report UI.",
+    "Calculation engine changes."
+  ]
+}
