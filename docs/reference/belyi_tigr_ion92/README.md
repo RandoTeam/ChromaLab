@@ -103,3 +103,13 @@ This fixture should later become a regression case for:
 - warning generation.
 
 The fixture intentionally does not define exact final peak counts, areas, or compound assignments yet. Those belong to later phases after the image-to-signal extraction and calculation engine are validated against real data.
+
+## Executable Fixture
+
+The phase 1.5 Kotlin fixture lives at:
+
+```text
+composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/fixtures/BelyiTigrIon92ReportFixture.kt
+```
+
+It builds a structured `ChromatogramReport`, validates it with `ReportContractValidator`, and renders it with `ReportMarkdownRenderer`. Its representative numeric values are report-shape placeholders only; they are not calculation ground truth.
