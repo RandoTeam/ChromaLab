@@ -14,6 +14,8 @@
 #include <jni.h>
 #include <string>
 #include <vector>
+#include <cstring>
+#include <algorithm>
 #include <android/log.h>
 
 #include "llama.h"
@@ -33,7 +35,145 @@ struct ModelContext {
     llama_context *ctx     = nullptr;
     mtmd_context  *mtmd    = nullptr;   // null if no mmproj provided
     int            n_ctx   = 0;
+    int            n_batch = 512;
 };
+
+static llama_sampler * create_sampler(
+    float temperature,
+    float topP,
+    int topK,
+    float repeatPenalty,
+    int repeatLastN) {
+
+    const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+
+    llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
+    sparams.no_perf = true;
+    llama_sampler *smpl = llama_sampler_chain_init(sparams);
+
+    if (rep_penalty > 1.0f) {
+        llama_sampler_chain_add(smpl, llama_sampler_init_penalties(
+            rep_last_n,
+            rep_penalty,
+            0.0f,
+            0.0f
+        ));
+    }
+
+    if (temperature <= 0.0f) {
+        llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+    } else {
+        if (topK > 0) {
+            llama_sampler_chain_add(smpl, llama_sampler_init_top_k(topK));
+        }
+        if (topP > 0.0f && topP < 1.0f) {
+            llama_sampler_chain_add(smpl, llama_sampler_init_top_p(topP, 1));
+        }
+        llama_sampler_chain_add(smpl, llama_sampler_init_temp(temperature));
+        llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
+    }
+
+    return smpl;
+}
+
+static std::string run_text_completion(
+    ModelContext *mc,
+    const char *prompt,
+    int maxTokens,
+    float temperature,
+    float topP,
+    int topK,
+    float repeatPenalty,
+    int repeatLastN) {
+
+    if (!mc || !mc->ctx || !mc->model || !prompt) {
+        return "";
+    }
+
+    int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    if (mc->n_ctx > 0 && n_predict > mc->n_ctx / 2) {
+        n_predict = mc->n_ctx / 2;
+    }
+    const llama_vocab *vocab = llama_model_get_vocab(mc->model);
+
+    const int prompt_len = (int)strlen(prompt);
+    std::vector<llama_token> tokens((size_t)prompt_len + 32);
+    int n_tokens = llama_tokenize(
+        vocab,
+        prompt,
+        prompt_len,
+        tokens.data(),
+        (int)tokens.size(),
+        true,
+        true
+    );
+
+    if (n_tokens < 0) {
+        tokens.resize((size_t)-n_tokens);
+        n_tokens = llama_tokenize(
+            vocab,
+            prompt,
+            prompt_len,
+            tokens.data(),
+            (int)tokens.size(),
+            true,
+            true
+        );
+    }
+
+    if (n_tokens <= 0) {
+        LOGE("Text tokenization failed: %d", n_tokens);
+        return "";
+    }
+
+    tokens.resize((size_t)n_tokens);
+
+    int max_prompt_tokens = mc->n_ctx - n_predict - 4;
+    if (max_prompt_tokens > 0 && n_tokens > max_prompt_tokens) {
+        tokens.erase(tokens.begin(), tokens.end() - max_prompt_tokens);
+        n_tokens = (int)tokens.size();
+        LOGI("Prompt truncated to %d tokens", n_tokens);
+    }
+
+    llama_memory_clear(llama_get_memory(mc->ctx), true);
+
+    const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
+    for (int offset = 0; offset < n_tokens; offset += batch_size) {
+        const int n_chunk = std::min(batch_size, n_tokens - offset);
+        llama_batch batch = llama_batch_get_one(tokens.data() + offset, n_chunk);
+        if (llama_decode(mc->ctx, batch) != 0) {
+            LOGE("Text prompt decode failed at offset %d", offset);
+            return "";
+        }
+    }
+
+    std::string result_text;
+    llama_sampler *smpl = create_sampler(temperature, topP, topK, repeatPenalty, repeatLastN);
+
+    for (int i = 0; i < n_predict; i++) {
+        llama_token token_id = llama_sampler_sample(smpl, mc->ctx, -1);
+
+        if (llama_vocab_is_eog(vocab, token_id)) {
+            break;
+        }
+
+        char buf[256];
+        int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
+        if (len > 0) {
+            result_text.append(buf, len);
+        }
+
+        llama_batch next = llama_batch_get_one(&token_id, 1);
+        if (llama_decode(mc->ctx, next) != 0) {
+            LOGE("Text decode failed at token %d", i);
+            break;
+        }
+    }
+
+    llama_sampler_free(smpl);
+    return result_text;
+}
 
 extern "C" {
 
@@ -101,6 +241,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         return 0;
     }
     mc->n_ctx = (int)llama_n_ctx(mc->ctx);
+    mc->n_batch = (int)ctx_params.n_batch;
     LOGI("Context created: n_ctx=%d", mc->n_ctx);
 
     // 3) Load vision encoder (mmproj) if provided
@@ -112,7 +253,13 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         if (mc->mtmd) {
             LOGI("MTMD vision encoder loaded: %s", mmproj);
         } else {
-            LOGE("Failed to load mmproj: %s (continuing text-only)", mmproj);
+            LOGE("Failed to load mmproj: %s", mmproj);
+            llama_free(mc->ctx);
+            llama_model_free(mc->model);
+            env->ReleaseStringUTFChars(basePath, base);
+            env->ReleaseStringUTFChars(mmprojPath, mmproj);
+            delete mc;
+            return 0;
         }
     }
 
@@ -162,7 +309,9 @@ JNIEXPORT jstring JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage(
     JNIEnv *env, jclass /* clazz */,
     jlong handle, jstring imagePath, jstring prompt,
-    jint maxTokens, jfloat repeatPenalty, jint repeatLastN) {
+    jint maxTokens,
+    jfloat temperature, jfloat topP, jint topK,
+    jfloat repeatPenalty, jint repeatLastN) {
 
     auto *mc = reinterpret_cast<ModelContext *>(handle);
     if (!mc || !mc->ctx || !mc->model) {
@@ -173,12 +322,15 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
     const char *img_path = env->GetStringUTFChars(imagePath, nullptr);
     const char *pmt      = env->GetStringUTFChars(prompt, nullptr);
 
-    const int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    if (mc->n_ctx > 0 && n_predict > mc->n_ctx / 2) {
+        n_predict = mc->n_ctx / 2;
+    }
     const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
     const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
 
-    LOGI("Infer: image=%s, maxTokens=%d, repeatPenalty=%.2f, repeatLastN=%d",
-         img_path, n_predict, rep_penalty, rep_last_n);
+    LOGI("Infer: image=%s, maxTokens=%d, temp=%.2f, topP=%.2f, topK=%d, repeatPenalty=%.2f, repeatLastN=%d",
+         img_path, n_predict, temperature, topP, topK, rep_penalty, rep_last_n);
 
     std::string result_text;
 
@@ -244,20 +396,13 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         // This ensures maximum accuracy for numeric OCR extraction.
         const llama_vocab *vocab = llama_model_get_vocab(mc->model);
 
-        llama_sampler_chain_params sparams = llama_sampler_chain_default_params();
-        sparams.no_perf = true;
-        llama_sampler *smpl = llama_sampler_chain_init(sparams);
-
-        // Add repeat penalty before greedy (order matters in sampler chain)
-        if (rep_penalty > 1.0f) {
-            llama_sampler_chain_add(smpl, llama_sampler_init_penalties(
-                rep_last_n,      // last_n tokens to penalize
-                rep_penalty,     // repeat_penalty
-                0.0f,            // frequency_penalty (disabled)
-                0.0f             // presence_penalty (disabled)
-            ));
-        }
-        llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+        llama_sampler *smpl = create_sampler(
+            temperature,
+            topP,
+            topK,
+            rep_penalty,
+            rep_last_n
+        );
 
         for (int i = 0; i < n_predict; i++) {
             // Sample token using sampler chain (-1 = last logits)
@@ -296,5 +441,44 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
     return env->NewStringUTF(result_text.c_str());
 }
 
-} // extern "C"
+// ===== nativeInferText =====
 
+JNIEXPORT jstring JNICALL
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferText(
+    JNIEnv *env, jclass /* clazz */,
+    jlong handle, jstring prompt,
+    jint maxTokens,
+    jfloat temperature, jfloat topP, jint topK,
+    jfloat repeatPenalty, jint repeatLastN) {
+
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc || !mc->ctx || !mc->model) {
+        LOGE("Invalid model context for text inference");
+        return env->NewStringUTF("");
+    }
+
+    const char *pmt = env->GetStringUTFChars(prompt, nullptr);
+    const int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+
+    LOGI("Infer text-only: maxTokens=%d, temp=%.2f, topP=%.2f, topK=%d, repeatPenalty=%.2f, repeatLastN=%d",
+         n_predict, temperature, topP, topK, rep_penalty, rep_last_n);
+
+    std::string result_text = run_text_completion(
+        mc,
+        pmt,
+        n_predict,
+        temperature,
+        topP,
+        topK,
+        rep_penalty,
+        rep_last_n
+    );
+
+    env->ReleaseStringUTFChars(prompt, pmt);
+    LOGI("Generated text-only %zu chars", result_text.size());
+    return env->NewStringUTF(result_text.c_str());
+}
+
+} // extern "C"

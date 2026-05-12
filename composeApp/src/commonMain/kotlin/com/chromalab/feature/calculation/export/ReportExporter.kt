@@ -4,6 +4,7 @@ import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
+import kotlin.math.abs
 
 /**
  * HTML report generator for chromatographic analysis results.
@@ -19,7 +20,7 @@ import com.chromalab.feature.calculation.algorithm.OverlapStatus
 object ReportExporter {
 
     fun export(run: CalculationRun): String {
-        val totalArea = run.peaks.sumOf { it.area }
+        val totalArea = run.peaks.sumOf { abs(it.area) }
         val peaks = run.peaks
 
         return buildString {
@@ -67,7 +68,7 @@ object ReportExporter {
             appendLine("</tr></thead>")
             appendLine("<tbody>")
             peaks.forEachIndexed { i, p ->
-                val areaPercent = if (totalArea > 0) p.area / totalArea * 100.0 else 0.0
+                val areaPercent = if (totalArea > 0) abs(p.area) / totalArea * 100.0 else 0.0
                 val cls = when (p.confidence) {
                     ConfidenceGrade.HIGH -> "high"
                     ConfidenceGrade.MEDIUM -> "med"
@@ -89,7 +90,7 @@ object ReportExporter {
             appendLine("<tfoot><tr>")
             appendLine("<td colspan=\"3\"><strong>Σ: ${peaks.size} пиков</strong></td>")
             appendLine("<td><strong>${formatNumber(totalArea)}</strong></td>")
-            appendLine("<td><strong>100%</strong></td>")
+            appendLine("<td><strong>${if (totalArea > 0) "100%" else "0%"}</strong></td>")
             appendLine("<td colspan=\"3\"></td>")
             appendLine("</tr></tfoot>")
             appendLine("</table>")
@@ -229,12 +230,15 @@ object ReportExporter {
             summaryRow("Smoothing", if (p.smoothingEnabled) "SG(${p.smoothingWindowSize},${p.smoothingPolynomialOrder})" else "Off")
             summaryRow("Baseline", "${p.baselineMethod} (λ=${p.baselineLambda}, p=${p.baselineP}, iter=${p.baselineIterations})")
             summaryRow("Integration", p.integrationMethod)
+            summaryRow("Clamp negative", if (p.clampNegative) "On" else "Off")
+            summaryRow("Boundary", "${p.boundaryMethod} (${p.boundaryPercentHeight * 100.0}%)")
             summaryRow("Noise", p.noiseMethod)
             summaryRow("Min S/N", "${"%.1f".format(p.minSnr)}")
             summaryRow("Min height", "${"%.1f".format(p.minPeakHeight)}")
             summaryRow("Min prominence", "${"%.1f".format(p.minPeakProminence)}")
             summaryRow("Min distance", "${p.minPeakDistance} pts")
             summaryRow("Min width", "${p.minPeakWidth} pts")
+            summaryRow("Max width", if (p.maxPeakWidth > 0) "${p.maxPeakWidth} pts" else "Off")
             appendLine("</table>")
             appendLine("</section>")
 

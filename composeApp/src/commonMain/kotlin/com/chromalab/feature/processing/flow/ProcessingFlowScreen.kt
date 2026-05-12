@@ -25,6 +25,7 @@ import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.curve.CurveOverlayScreen
 import com.chromalab.feature.processing.curve.CurvePoint
+import com.chromalab.feature.processing.curve.scaledCoordinates
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.DetectionConfidence
 import com.chromalab.feature.processing.graph.GraphRegion
@@ -346,7 +347,11 @@ fun ProcessingFlowScreen(
                                 }.distinctBy { it.second } // one point per unique value
                                     .sortedBy { it.second }
 
-                                if (validPoints.size >= 2) {
+                                val hasDistinctPixels = validPoints
+                                    .distinctBy { it.first.roundToInt() }
+                                    .size >= 2
+
+                                if (validPoints.size >= 2 && hasDistinctPixels) {
                                     val first = validPoints.first()
                                     val last = validPoints.last()
                                     println("PIPELINE[X_CAL] OCR-based: px1=${first.first}→${first.second}, px2=${last.first}→${last.second} (regionX=$regionX, ${validPoints.size} points)")
@@ -400,7 +405,7 @@ fun ProcessingFlowScreen(
                                 // Find OCR element for the highest Y value to get its pixel position
                                 val rawElems = ocr?.rawElements ?: emptyList()
                                 val topElem = rawElems
-                                    .filter { it.numericValue == maxVal }
+                                    .filter { it.numericValue == maxVal && (it.width > 0f || it.height > 0f) }
                                     .minByOrNull { it.y } // highest on screen = smallest y
 
                                 // Convert to graphRegion-relative coords
@@ -424,7 +429,7 @@ fun ProcessingFlowScreen(
                                 // Y axis: py1 (top, small pixel) → maxVal, py2 (bottom, origin) → 0
                                 println("PIPELINE[Y_CAL] OCR-based: py1=$py1→$maxVal, py2=$py2→0 (regionY=$regionY)")
 
-                                yCalibration = YAxisCalibration(
+                                val candidateCalibration = YAxisCalibration(
                                     calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
                                         point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(py1, maxVal),
                                         point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(py2, 0f),
@@ -432,6 +437,20 @@ fun ProcessingFlowScreen(
                                     unit = ocr?.yUnit ?: "mAU",
                                     timestamp = System.currentTimeMillis(),
                                 )
+                                yCalibration = if (candidateCalibration.calibration.isValid) {
+                                    candidateCalibration
+                                } else {
+                                    val fh = selectedRegion.height.toFloat()
+                                    println("PIPELINE[Y_CAL] fallback: invalid OCR pixels py1=$py1 py2=$py2")
+                                    YAxisCalibration(
+                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
+                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, maxVal),
+                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
+                                        ),
+                                        unit = ocr?.yUnit ?: "mAU",
+                                        timestamp = System.currentTimeMillis(),
+                                    )
+                                }
                             } else {
                                 // No OCR → identity (pixels, inverted)
                                 val fh = selectedRegion.height.toFloat()
@@ -447,14 +466,18 @@ fun ProcessingFlowScreen(
 
                             // Build unified PixelCalibration
                             val xCal = xCalibration
-                            if (xCal != null) {
+                            val yCal = yCalibration
+                            if (xCal != null && yCal != null && xCal.calibration.isValid && yCal.calibration.isValid) {
                                 pixelCalibration = PixelCalibration.from(
                                     xAxis = xCal,
-                                    yAxis = yCalibration!!,
+                                    yAxis = yCal,
                                     // Convert origin to region-relative coords
                                     originPixelX = (origin?.x ?: selectedRegion.x.toFloat()) - selectedRegion.x.toFloat(),
                                     originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) - selectedRegion.y.toFloat(),
                                 )
+                            } else {
+                                println("PIPELINE[CAL] fallback: invalid axis calibration")
+                                pixelCalibration = fallbackCalibration(selectedRegion.width, selectedRegion.height)
                             }
                         }
                     }
@@ -479,7 +502,7 @@ fun ProcessingFlowScreen(
                             curveExtractionResult = curveExtractor.extract(
                                 maskPath, selectedRegion.width,
                                 selectedRegion.height, outputDir,
-                            )
+                            ).scaledCoordinates(mask.coordinateScale)
                             curvePoints = curveExtractionResult?.points ?: emptyList()
                             println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")
                         } else {
@@ -492,7 +515,7 @@ fun ProcessingFlowScreen(
                             println("PIPELINE[SIGNAL] curvePoints=${curvePoints.size}, pixelCal=${pixelCalibration != null}")
                             if (curvePoints.isNotEmpty()) {
                                 val cal = pixelCalibration ?: fallbackCalibration(
-                                    imageWidth, imageHeight,
+                                    selectedRegion.width, selectedRegion.height,
                                 )
                                 val signal = SignalConverter.convert(
                                     curvePoints, cal, currentImagePath,
@@ -579,9 +602,16 @@ fun ProcessingFlowScreen(
                     } else {
                         // All graphs processed → auto-save to Room + navigate to Analysis
                         println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
+                        val signalsToSave = processedSignals.toList()
+                            .filter { it.smoothed.points.size >= 10 }
                         val saveResult = withContext(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             try {
+                                if (signalsToSave.isEmpty()) {
+                                    println("PIPELINE[AUTO-SAVE] No usable signals to save")
+                                    return@withContext null
+                                }
+
                                 val db = DatabaseProvider.getDatabase()
 
                                 // Create parent Project + Sample to satisfy FK constraints
@@ -604,7 +634,7 @@ fun ProcessingFlowScreen(
                                 println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sId")
 
                                 var firstId: Long? = null
-                                for ((idx, ss) in processedSignals.withIndex()) {
+                                for ((idx, ss) in signalsToSave.withIndex()) {
                                     val signal = ss.smoothed
                                     val entity = ChromatogramEntity(
                                         sampleId = sId,
@@ -625,9 +655,9 @@ fun ProcessingFlowScreen(
                                     )
                                     val id = db.chromatogramDao().insert(entity)
                                     if (firstId == null) firstId = id
-                                    println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                                    println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${signalsToSave.size} saved, id=$id, points=${signal.points.size}")
                                 }
-                                firstId ?: now
+                                firstId
                             } catch (e: Exception) {
                                 println("PIPELINE[AUTO-SAVE] Error: ${e.message}")
                                 e.printStackTrace()
@@ -686,9 +716,16 @@ fun ProcessingFlowScreen(
                 // All graphs done — auto-save to Room, then navigate to Analysis
                 println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                 scope.launch {
+                    val signalsToSave = processedSignals.toList()
+                        .filter { it.smoothed.points.size >= 10 }
                     val resultId = withContext(Dispatchers.IO) {
                         val now = System.currentTimeMillis()
                         try {
+                            if (signalsToSave.isEmpty()) {
+                                println("PIPELINE[AUTO-SAVE] No usable signals to save")
+                                return@withContext null
+                            }
+
                             val db = DatabaseProvider.getDatabase()
 
                             // Create parent Project + Sample to satisfy FK constraints
@@ -711,7 +748,7 @@ fun ProcessingFlowScreen(
                             println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sampleId")
 
                             var firstId: Long? = null
-                            for ((idx, ss) in processedSignals.withIndex()) {
+                            for ((idx, ss) in signalsToSave.withIndex()) {
                                 val signal = ss.smoothed
                                 val entity = ChromatogramEntity(
                                     sampleId = sampleId,
@@ -732,9 +769,9 @@ fun ProcessingFlowScreen(
                                 )
                                 val id = db.chromatogramDao().insert(entity)
                                 if (firstId == null) firstId = id
-                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${processedSignals.size} saved, id=$id, points=${signal.points.size}")
+                                println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${signalsToSave.size} saved, id=$id, points=${signal.points.size}")
                             }
-                            firstId ?: now  // return chromatogram ID
+                            firstId
                         } catch (e: Exception) {
                             e.printStackTrace()
                             println("PIPELINE[AUTO-SAVE] Error: ${e.message}")

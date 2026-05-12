@@ -31,6 +31,8 @@ data class ModelManagerState(
     val customModels: List<CustomModelEntry> = emptyList(),
     /** True while an import is in progress. */
     val isImporting: Boolean = false,
+    /** Hugging Face model search state. */
+    val huggingFaceSearch: HuggingFaceSearchState = HuggingFaceSearchState(),
 )
 
 /**

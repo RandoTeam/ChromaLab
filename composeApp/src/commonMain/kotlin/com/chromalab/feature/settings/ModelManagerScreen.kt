@@ -59,6 +59,7 @@ fun ModelManagerScreen(
     totalModelDiskUsageGb: Float,
     customModels: List<CustomModelEntry> = emptyList(),
     isImporting: Boolean = false,
+    huggingFaceSearch: HuggingFaceSearchState = HuggingFaceSearchState(),
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
     onActivate: (String) -> Unit,
@@ -66,6 +67,9 @@ fun ModelManagerScreen(
     onCancelDownload: () -> Unit = {},
     onExport: (String) -> Unit = {},
     onImport: () -> Unit,
+    onHuggingFaceQueryChange: (String) -> Unit = {},
+    onHuggingFaceSortChange: (HuggingFaceSortOption) -> Unit = {},
+    onHuggingFaceSearch: () -> Unit = {},
     onBack: () -> Unit,
 ) {
     var deleteConfirmId by remember { mutableStateOf<String?>(null) }
@@ -134,6 +138,21 @@ fun ModelManagerScreen(
             }
 
             // ===== GGUF Section — expandable groups =====
+            item { Spacer(Modifier.height(4.dp)) }
+            item {
+                HuggingFaceSearchCard(
+                    state = huggingFaceSearch,
+                    downloadedModelIds = downloadedModelIds,
+                    downloadingModelId = downloadingModelId,
+                    downloadProgress = downloadProgress,
+                    deviceRamMb = deviceRamMb,
+                    onQueryChange = onHuggingFaceQueryChange,
+                    onSortChange = onHuggingFaceSortChange,
+                    onSearch = onHuggingFaceSearch,
+                    onDownload = onDownload,
+                    onCancelDownload = onCancelDownload,
+                )
+            }
             item { Spacer(Modifier.height(4.dp)) }
             item {
                 SectionHeader(
@@ -382,6 +401,214 @@ private fun SectionHeader(
                     )
                 )
         )
+    }
+}
+
+@Composable
+private fun HuggingFaceSearchCard(
+    state: HuggingFaceSearchState,
+    downloadedModelIds: Set<String>,
+    downloadingModelId: String?,
+    downloadProgress: Float,
+    deviceRamMb: Int,
+    onQueryChange: (String) -> Unit,
+    onSortChange: (HuggingFaceSortOption) -> Unit,
+    onSearch: () -> Unit,
+    onDownload: (ModelInfo) -> Unit,
+    onCancelDownload: () -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.CloudDownload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Hugging Face", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Search by model, author, downloads, likes, or update time",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = onQueryChange,
+                    modifier = Modifier.weight(1f),
+                    singleLine = true,
+                    label = { Text("Model or author:name") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                )
+                FilledTonalButton(
+                    onClick = onSearch,
+                    enabled = !state.isSearching,
+                ) {
+                    if (state.isSearching) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HuggingFaceSortOption.entries.forEach { option ->
+                    FilterChip(
+                        selected = state.sort == option,
+                        onClick = { onSortChange(option) },
+                        label = { Text(option.label) },
+                    )
+                }
+            }
+
+            if (state.error != null) {
+                Text(
+                    state.error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            if (state.results.isEmpty() && !state.isSearching && state.error == null) {
+                Text(
+                    "Enter a query and search. Use author:unsloth to filter by author.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            state.results.forEachIndexed { index, result ->
+                if (index > 0) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                }
+                HuggingFaceResultRow(
+                    result = result,
+                    isDownloaded = result.modelInfo.id in downloadedModelIds,
+                    isDownloading = result.modelInfo.id == downloadingModelId,
+                    downloadProgress = if (result.modelInfo.id == downloadingModelId) downloadProgress else 0f,
+                    deviceRamMb = deviceRamMb,
+                    onDownload = { onDownload(result.modelInfo) },
+                    onCancelDownload = onCancelDownload,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HuggingFaceResultRow(
+    result: HuggingFaceSearchResult,
+    isDownloaded: Boolean,
+    isDownloading: Boolean,
+    downloadProgress: Float,
+    deviceRamMb: Int,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    result.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    result.repoId,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${formatCount(result.downloads)} downloads · ${formatCount(result.likes)} likes · ${formatHfDate(result.lastModified)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "${result.selectedFileName} · ${formatBytes(result.modelInfo.totalSizeBytes)} · RAM ${deviceRamMb / 1024} GB",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Badge(
+                containerColor = if (result.isCompatible) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.errorContainer
+                },
+            ) {
+                Text(result.compatibilityLabel, modifier = Modifier.padding(horizontal = 4.dp))
+            }
+        }
+
+        if (isDownloading) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                LinearProgressIndicator(
+                    progress = { downloadProgress },
+                    modifier = Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)),
+                )
+                TextButton(onClick = onCancelDownload) {
+                    Text("Cancel")
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                when {
+                    isDownloaded -> {
+                        Text(
+                            "Downloaded",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(vertical = 10.dp),
+                        )
+                    }
+                    else -> {
+                        FilledTonalButton(
+                            onClick = onDownload,
+                            enabled = result.isCompatible,
+                        ) {
+                            Icon(Icons.Filled.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Download")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1376,3 +1603,12 @@ private fun formatBytes(bytes: Long): String = when {
     bytes >= 1_000_000 -> "%.0f MB".format(bytes / 1_000_000f)
     else -> "%.0f KB".format(bytes / 1_000f)
 }
+
+private fun formatCount(value: Long): String = when {
+    value >= 1_000_000 -> "%.1fM".format(value / 1_000_000f)
+    value >= 1_000 -> "%.1fK".format(value / 1_000f)
+    else -> value.toString()
+}
+
+private fun formatHfDate(value: String): String =
+    value.take(10).ifBlank { "unknown" }

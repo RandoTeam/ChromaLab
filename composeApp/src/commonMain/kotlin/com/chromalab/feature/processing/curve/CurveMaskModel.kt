@@ -19,6 +19,8 @@ data class CurveMaskResult(
     val maskWidth: Int,
     /** Height of the mask image */
     val maskHeight: Int,
+    /** Multiplier from mask-local coordinates back to original graph ROI coordinates */
+    val coordinateScale: Float = 1f,
     /** Number of candidate pixels in raw mask */
     val rawPixelCount: Int,
     /** Number of candidate pixels in cleaned mask */

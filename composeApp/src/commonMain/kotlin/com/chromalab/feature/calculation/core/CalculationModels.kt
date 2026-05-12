@@ -121,9 +121,13 @@ data class CalculationParams(
     val minPeakProminence: Double = 0.0,
     val minPeakDistance: Int = 5,
     val minPeakWidth: Int = 3,
+    val maxPeakWidth: Int = 0,
     val minSnr: Double = 3.0,
     val noiseMethod: String = "peak_to_peak",
     val integrationMethod: String = "trapezoidal",
+    val boundaryMethod: String = "LOCAL_MINIMA",
+    val boundaryPercentHeight: Double = 0.01,
+    val clampNegative: Boolean = false,
     val useSmoothedForIntegration: Boolean = false,
     val presetName: String = "Balanced",
 )

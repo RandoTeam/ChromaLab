@@ -32,6 +32,10 @@ import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.algorithm.*
+import com.chromalab.feature.calculation.ui.AlgorithmSettings
+import com.chromalab.feature.calculation.ui.AlgorithmSettingsPanel
+import com.chromalab.feature.calculation.ui.BaselineMethodOption
+import com.chromalab.feature.calculation.ui.NoiseMethodOption
 import com.chromalab.feature.calculation.ui.PeakDetailsContent
 import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
@@ -80,18 +84,27 @@ fun AnalysisFlowScreen(
     var calculationRun by remember { mutableStateOf<CalculationRun?>(null) }
     var calcPhase by remember { mutableStateOf("Загрузка сигнала…") }
     var showExport by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var algorithmSettings by remember { mutableStateOf(AlgorithmSettings.defaults()) }
+    var recalculationKey by remember { mutableIntStateOf(0) }
 
     // Peak details state
     var selectedPeakIndex by remember { mutableStateOf(-1) }
     var showPeakSheet by remember { mutableStateOf(false) }
 
     // ─── Auto-pipeline: load signal → run calculation ───
-    LaunchedEffect(signalId) {
+    LaunchedEffect(signalId, recalculationKey) {
         val id = signalId.toLongOrNull()
         if (id == null) {
             loadError = "Некорректный ID сигнала"
             return@LaunchedEffect
         }
+
+        loadError = null
+        calculationRun = null
+        showExport = false
+        selectedPeakIndex = -1
+        showPeakSheet = false
 
         // Phase 1: Load from Room
         calcPhase = "Загрузка сигнала…"
@@ -134,7 +147,7 @@ fun AnalysisFlowScreen(
                 CalculationEngine.execute(
                     signal = sig,
                     sourceId = signalId,
-                    params = CalculationParams(),
+                    params = algorithmSettings.toCalculationParams(),
                 )
             }
 
@@ -218,6 +231,14 @@ fun AnalysisFlowScreen(
                             Text("Назад")
                         }
                         Spacer(modifier = Modifier.weight(1f))
+                        OutlinedButton(
+                            onClick = { showSettings = true },
+                            modifier = Modifier.height(48.dp),
+                        ) {
+                            Icon(Icons.Filled.Tune, null, Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Настройки")
+                        }
                         Button(
                             onClick = { showExport = true },
                             modifier = Modifier.height(48.dp),
@@ -334,6 +355,30 @@ fun AnalysisFlowScreen(
                 onRejectPeak = {
                     showPeakSheet = false
                 },
+            )
+        }
+    }
+
+    if (showSettings) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettings = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            AlgorithmSettingsPanel(
+                settings = algorithmSettings,
+                onSettingsChange = { settings ->
+                    algorithmSettings = settings
+                },
+                onRecalculate = {
+                    showSettings = false
+                    recalculationKey++
+                },
+                onReset = {
+                    algorithmSettings = AlgorithmSettings.defaults()
+                    showSettings = false
+                    recalculationKey++
+                },
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -611,6 +656,49 @@ private fun ErrorContent(
 }
 
 // ─── PeakResult → PeakDetailsData mapper ────────────────────────
+
+private fun AlgorithmSettings.toCalculationParams(): CalculationParams {
+    val window = smoothingWindowSize
+        .coerceAtLeast(3)
+        .let { if (it % 2 == 0) it + 1 else it }
+    val polynomialOrder = smoothingPolyOrder.coerceIn(0, window - 1)
+    val baselineIterations = when (baselineMethod) {
+        BaselineMethodOption.SNIP -> snipIterations
+        else -> alsIterations
+    }
+    val baselineMethodName = when (baselineMethod) {
+        BaselineMethodOption.MANUAL -> "MANUAL_LINEAR"
+        BaselineMethodOption.ALS -> "ALS"
+        BaselineMethodOption.SNIP -> "SNIP"
+    }
+    val noiseMethodName = when (noiseMethod) {
+        NoiseMethodOption.PEAK_TO_PEAK -> "PEAK_TO_PEAK"
+        NoiseMethodOption.RMS -> "RMS"
+        NoiseMethodOption.MAD -> "MAD"
+    }
+
+    return CalculationParams(
+        smoothingEnabled = smoothingEnabled,
+        smoothingWindowSize = window,
+        smoothingPolynomialOrder = polynomialOrder,
+        baselineMethod = baselineMethodName,
+        baselineLambda = alsLambda,
+        baselineP = alsPenalty,
+        baselineIterations = baselineIterations,
+        minPeakHeight = minHeight,
+        minPeakProminence = minProminence,
+        minPeakDistance = minDistance,
+        minPeakWidth = minWidth,
+        maxPeakWidth = if (maxWidth == Int.MAX_VALUE) 0 else maxWidth.coerceAtLeast(0),
+        minSnr = noiseK,
+        noiseMethod = noiseMethodName,
+        integrationMethod = if (useInterpolatedBoundaries) "trapezoidal_interpolated" else "trapezoidal",
+        boundaryMethod = boundaryMethod.name,
+        boundaryPercentHeight = percentHeight.coerceIn(0.001, 1.0),
+        clampNegative = clampNegative,
+        presetName = presetName,
+    )
+}
 
 private fun buildPeakDetailsData(peak: PeakResult): PeakDetailsData {
     return PeakDetailsData(

@@ -123,7 +123,7 @@ actual class CurveMaskPreparer actual constructor() {
 
         // Pass 1: Suppress axes (wider margin to cover tick marks)
         if (axes.xAxis != null || axes.yAxis != null) {
-            suppressAxes(cleanMask, w, h, axes, graphRegion)
+            suppressAxes(cleanMask, w, h, axes, graphRegion, scale)
             suppressions.add("axes")
             println("MASK[4-AXES] pixels=${cleanMask.count { it }}")
         }
@@ -158,6 +158,7 @@ actual class CurveMaskPreparer actual constructor() {
             graphRegion = graphRegion,
             maskWidth = w,
             maskHeight = h,
+            coordinateScale = sampleSize.toFloat(),
             rawPixelCount = rawCount,
             cleanPixelCount = cleanCount,
             suppressionApplied = suppressions,
@@ -218,13 +219,13 @@ actual class CurveMaskPreparer actual constructor() {
      */
     private fun suppressAxes(
         mask: BooleanArray, w: Int, h: Int,
-        axes: AxesResult, graphRegion: GraphRegion,
+        axes: AxesResult, graphRegion: GraphRegion, coordinateScale: Float,
     ) {
         val thickness = 8 // Erase ±8 pixels around axis position (covers tick marks too)
 
         // X axis (horizontal line)
         axes.xAxis?.let { xAxis ->
-            val yPos = ((xAxis.y1 - graphRegion.y)).roundToInt().coerceIn(0, h - 1)
+            val yPos = ((xAxis.y1 - graphRegion.y) * coordinateScale).roundToInt().coerceIn(0, h - 1)
             for (dy in -thickness..thickness) {
                 val y = (yPos + dy).coerceIn(0, h - 1)
                 for (x in 0 until w) {
@@ -235,7 +236,7 @@ actual class CurveMaskPreparer actual constructor() {
 
         // Y axis (vertical line)
         axes.yAxis?.let { yAxis ->
-            val xPos = ((yAxis.x1 - graphRegion.x)).roundToInt().coerceIn(0, w - 1)
+            val xPos = ((yAxis.x1 - graphRegion.x) * coordinateScale).roundToInt().coerceIn(0, w - 1)
             for (dx in -thickness..thickness) {
                 val x = (xPos + dx).coerceIn(0, w - 1)
                 for (y in 0 until h) {

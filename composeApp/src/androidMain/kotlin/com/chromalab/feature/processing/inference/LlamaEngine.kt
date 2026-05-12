@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.inference
 import com.chromalab.feature.processing.inference.InferenceConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * llama.cpp inference engine for .gguf models.
@@ -16,6 +17,7 @@ class LlamaEngine : InferenceEngine {
     private var modelHandle: Long = 0L
     private var backendName: String = "llama.cpp CPU"
     private var loaded: Boolean = false
+    private var hasVisionProjector: Boolean = false
     private var config: InferenceConfig = InferenceConfig.DEFAULT
 
     companion object {
@@ -51,6 +53,19 @@ class LlamaEngine : InferenceEngine {
             imagePath: String,
             prompt: String,
             maxTokens: Int,
+            temperature: Float,
+            topP: Float,
+            topK: Int,
+            repeatPenalty: Float,
+            repeatLastN: Int,
+        ): String
+        @JvmStatic private external fun nativeInferText(
+            handle: Long,
+            prompt: String,
+            maxTokens: Int,
+            temperature: Float,
+            topP: Float,
+            topK: Int,
             repeatPenalty: Float,
             repeatLastN: Int,
         ): String
@@ -84,16 +99,19 @@ class LlamaEngine : InferenceEngine {
         modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0)
         if (modelHandle == 0L) {
             loaded = false
+            hasVisionProjector = false
             throw RuntimeException("Failed to load model: $basePath")
         }
 
         backendName = "llama.cpp CPU"
         loaded = true
+        hasVisionProjector = mmprojPath.isNotBlank()
         println("LLAMA[LOAD] Model loaded, handle=$modelHandle")
     }
 
     override suspend fun analyzeChart(imagePath: String, prompt: String): ChartAnalysis {
         check(loaded && nativeLoaded) { "Model not loaded" }
+        check(hasVisionProjector) { "GGUF image analysis requires an mmproj vision projector" }
 
         return withContext(Dispatchers.IO) {
             println("LLAMA[INFER] Analyzing chart: $imagePath")
@@ -101,22 +119,58 @@ class LlamaEngine : InferenceEngine {
 
             val responseText = nativeInferWithImage(
                 modelHandle, imagePath, prompt,
-                config.maxTokens, config.repeatPenalty, config.repeatLastN,
+                config.maxTokens,
+                0f,
+                1f,
+                0,
+                config.repeatPenalty,
+                config.repeatLastN,
             )
             println("LLAMA[INFER] Response length: ${responseText.length}")
             ChartPrompts.parseResponse(responseText)
         }
     }
 
-    override suspend fun inferRaw(imagePath: String, prompt: String): String {
+    override suspend fun inferRaw(
+        imagePath: String,
+        prompt: String,
+        options: GenerationOptions,
+    ): String {
         check(loaded && nativeLoaded) { "Model not loaded" }
 
         return withContext(Dispatchers.IO) {
             println("LLAMA[RAW] Inferring: $imagePath")
-            val responseText = nativeInferWithImage(
-                modelHandle, imagePath, prompt,
-                config.maxTokens, config.repeatPenalty, config.repeatLastN,
-            )
+            val maxTokens = options.maxTokens ?: config.maxTokens
+            val temperature = options.temperature ?: 0f
+            val topP = options.topP ?: 1f
+            val topK = options.topK ?: 0
+            val repeatPenalty = options.repeatPenalty ?: config.repeatPenalty
+            val repeatLastN = options.repeatLastN ?: config.repeatLastN
+            val hasImage = imagePath.isNotBlank() && File(imagePath).isFile
+            val responseText = if (hasImage && hasVisionProjector) {
+                nativeInferWithImage(
+                    modelHandle, imagePath, prompt,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    topK,
+                    repeatPenalty,
+                    repeatLastN,
+                )
+            } else if (hasImage) {
+                println("LLAMA[RAW] Image inference requested, but no mmproj is loaded")
+                ""
+            } else {
+                nativeInferText(
+                    modelHandle, prompt,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    topK,
+                    repeatPenalty,
+                    repeatLastN,
+                )
+            }
             println("LLAMA[RAW] Response length: ${responseText.length}")
             responseText
         }
@@ -134,6 +188,7 @@ class LlamaEngine : InferenceEngine {
         }
         modelHandle = 0L
         loaded = false
+        hasVisionProjector = false
         println("LLAMA[UNLOAD] Model unloaded")
     }
 

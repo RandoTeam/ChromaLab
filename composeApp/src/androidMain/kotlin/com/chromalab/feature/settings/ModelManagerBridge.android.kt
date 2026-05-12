@@ -108,6 +108,9 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             setThreadCount = { controller.setThreadCount(it) },
             setAutoUnloadMinutes = { controller.setAutoUnloadMinutes(it) },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
+            onHuggingFaceQueryChange = { controller.updateHuggingFaceQuery(it) },
+            onHuggingFaceSortChange = { controller.setHuggingFaceSort(it) },
+            onHuggingFaceSearch = { controller.searchHuggingFace() },
             onExport = { modelId ->
                 val manager = com.chromalab.feature.processing.model.ModelManager(context.applicationContext)
                 val model = manager.getDownloadedModels().find { it.info.id == modelId }

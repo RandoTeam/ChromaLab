@@ -3,9 +3,11 @@ package com.chromalab.feature.processing.inference
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
+import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.Message
+import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -140,13 +142,17 @@ class LiteRTEngine : InferenceEngine {
 
     override fun isLoaded(): Boolean = loaded
 
-    override suspend fun inferRaw(imagePath: String, prompt: String): String {
+    override suspend fun inferRaw(
+        imagePath: String,
+        prompt: String,
+        options: GenerationOptions,
+    ): String {
         val eng = engine
         check(loaded && eng != null) { "LiteRT model not loaded" }
 
         return withContext(Dispatchers.IO) {
             println("LITERT[RAW] Inferring: $imagePath")
-            val conversation = eng.createConversation()
+            val conversation = eng.createConversation(createConversationConfig(options))
             try {
                 val imageFile = File(imagePath)
                 val contents: Contents = if (imageFile.exists()) {
@@ -182,4 +188,27 @@ class LiteRTEngine : InferenceEngine {
     }
 
     override fun getBackendName(): String = backendName
+
+    private fun createConversationConfig(options: GenerationOptions): ConversationConfig {
+        val sampler = if (
+            options.temperature != null ||
+            options.topP != null ||
+            options.topK != null
+        ) {
+            SamplerConfig(
+                topK = options.topK?.coerceIn(1, 256) ?: 40,
+                topP = options.topP?.toDouble()?.coerceIn(0.05, 1.0) ?: 0.95,
+                temperature = options.temperature?.toDouble()?.coerceIn(0.0, 2.0) ?: 0.7,
+                seed = 0,
+            )
+        } else {
+            null
+        }
+
+        return if (sampler != null) {
+            ConversationConfig(samplerConfig = sampler)
+        } else {
+            ConversationConfig()
+        }
+    }
 }

@@ -11,6 +11,7 @@ sealed interface Route {
     @Serializable data object ProjectList : Route
     @Serializable data object Capture : Route
     @Serializable data object Calculations : Route
+    @Serializable data object Chats : Route
     @Serializable data object More : Route
 
 

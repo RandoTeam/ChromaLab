@@ -1,6 +1,7 @@
 package com.chromalab.feature.calculation.export
 
 import com.chromalab.feature.calculation.core.*
+import kotlin.math.abs
 
 /**
  * Maps CalculationRun → ExportData for CSV/JSON/HTML export.
@@ -8,7 +9,7 @@ import com.chromalab.feature.calculation.core.*
 object CalculationRunToExportMapper {
 
     fun map(run: CalculationRun): ExportData {
-        val totalArea = run.peaks.sumOf { it.area }
+        val totalArea = run.peaks.sumOf { abs(it.area) }
 
         return ExportData(
             runId = run.id,
@@ -67,15 +68,15 @@ object CalculationRunToExportMapper {
             boundaryMethod = peak.boundaryMethod,
             leftBoundary = peak.leftBoundaryTime,
             rightBoundary = peak.rightBoundaryTime,
-            positiveArea = peak.area,
-            negativeArea = 0.0,
+            positiveArea = maxOf(peak.area, 0.0),
+            negativeArea = minOf(peak.area, 0.0),
             isManuallyEdited = peak.status == PeakStatus.MANUAL || peak.status == PeakStatus.CORRECTED,
             warnings = peak.warnings,
             tailingFactor = peak.tailingFactor,
             asymmetryFactor = peak.asymmetryFactor,
             plateCount = peak.plateCount,
             resolution = peak.resolution,
-            areaPercent = if (totalArea > 0) peak.area / totalArea * 100.0 else 0.0,
+            areaPercent = if (totalArea > 0) abs(peak.area) / totalArea * 100.0 else 0.0,
             compoundName = peak.compoundName,
             compoundSource = peak.compoundSource.name,
         )
@@ -91,9 +92,18 @@ object CalculationRunToExportMapper {
         appendLine("  \"baselineLambda\": ${params.baselineLambda},")
         appendLine("  \"baselineP\": ${params.baselineP},")
         appendLine("  \"baselineIterations\": ${params.baselineIterations},")
+        appendLine("  \"minPeakHeight\": ${params.minPeakHeight},")
+        appendLine("  \"minPeakProminence\": ${params.minPeakProminence},")
+        appendLine("  \"minPeakDistance\": ${params.minPeakDistance},")
+        appendLine("  \"minPeakWidth\": ${params.minPeakWidth},")
+        appendLine("  \"maxPeakWidth\": ${params.maxPeakWidth},")
         appendLine("  \"minSnr\": ${params.minSnr},")
         appendLine("  \"noiseMethod\": \"${params.noiseMethod}\",")
-        appendLine("  \"integrationMethod\": \"${params.integrationMethod}\"")
+        appendLine("  \"integrationMethod\": \"${params.integrationMethod}\",")
+        appendLine("  \"boundaryMethod\": \"${params.boundaryMethod}\",")
+        appendLine("  \"boundaryPercentHeight\": ${params.boundaryPercentHeight},")
+        appendLine("  \"clampNegative\": ${params.clampNegative},")
+        appendLine("  \"useSmoothedForIntegration\": ${params.useSmoothedForIntegration}")
         appendLine("}")
     }
 }

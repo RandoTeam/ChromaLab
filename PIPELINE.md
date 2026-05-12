@@ -1,187 +1,216 @@
-# ChromaLab — Технический Pipeline
+# ChromaLab Technical Pipeline
 
-Полный цикл обработки данных: от ввода хроматограммы до генерации отчёта.
+This document describes the current runtime pipeline. The same calculation engine must be used regardless of whether the signal came from camera, gallery, or a digital file.
 
----
+## High-Level Flow
 
-## Общая схема
-
-```
-ВВОД → ОБРАБОТКА ИЗОБРАЖЕНИЯ → AUTO-SAVE → РАСЧЁТ → ОТЧЁТ
-                                 (Room)     (auto)   (11 секций)
-```
-
-ExportScreen показывается только при ошибке auto-save (fallback).
-
----
-
-## Pipeline 1: Фото (камера / галерея)
-
-### 1.1 Захват
-- **Камера:** CameraX Preview → OverlayView (рамка) → ImageCapture → crop по координатам рамки
-- **Галерея:** Intent → URI → экран подгонки под рамку → crop
-
-### 1.2 Коррекция перспективы
-1. GaussianBlur → Canny edge → findContours → approxPolyDP (4 угла)
-2. getPerspectiveTransform → warpPerspective
-3. **Fallback:** ручная расстановка 4 углов
-
-### 1.3 Предобработка
-1. Grayscale → CLAHE (контраст) → adaptiveThreshold (бинаризация)
-2. morphologyEx: CLOSE (закрытие разрывов) + OPEN (удаление шума)
-
-### 1.4 Определение области графика
-- Hough lines → кластеризация → оси X/Y → bounding box
-- **Fallback:** пользователь тапает 4 угла графика
-
-### 1.5 OCR осей
-- **Strategy A: VLM-first** → ML Kit OCR fallback
-- VLM: Qwen2.5-VL / Qwen3.5-VL / Gemma 4 (on-device)
-- ChatML template для Instruct моделей, raw prompt для остальных
-- Greedy sampling (temp=0, repeat_penalty=1.1, maxTokens=768)
-- 3 промпта:
-  - `AXIS_EXTRACTION`: OCR числовых меток осей
-  - `GRAPH_REGION`: определение bounding box графика (% от изображения)
-  - `AXIS_STRUCTURE`: позиции осей, наличие сетки
-- Линейная интерполяция pixel → real units
-- **Fallback:** пользователь вводит min/max вручную
-
-### 1.6 Извлечение кривой
-- **Column scan:** для каждого столбца → centroid чёрных пикселей → точка (x, y)
-- **Contour:** findContours → самый длинный → упорядочение по x
-- Savitzky-Golay сглаживание (window=11, polyorder=3)
-- Калибровка pixel → real units
-
-### 1.7 Оценка качества
-| Метрика | 🟢 Хорошо | 🟡 Средне | 🔴 Плохо |
-|---------|-----------|-----------|----------|
-| Контрастность | > 0.7 | 0.4–0.7 | < 0.4 |
-| Резкость | > 100 | 50–100 | < 50 |
-| Наклон | < 2° | 2–5° | > 5° |
-| Полнота точек | > 90% | 60–90% | < 60% |
-
----
-
-## Pipeline 2: Цифровые файлы
-
-### CSV / TXT
-Auto-detect разделителя → парсинг колонок (time, intensity) → валидация
-
-### PDF
-- Векторный: извлечение path elements → координаты кривых
-- Растровый: рендеринг → Pipeline 1
-
-### mzML / netCDF
-XML/HDF парсинг → выбор хроматограммы (TIC/XIC/SIM) → массив (time, intensity)
-
----
-
-## Pipeline 3: Расчёт
-
-Одинаковый для всех источников. Работает с массивом `(time, intensity)`.
-
-### 3.1 Baseline correction
-- **ALS:** λ=1e6, p=0.01, до 50 итераций
-- **SNIP:** 40 итераций (альтернатива)
-- `corrected = intensity - baseline`
-
-### 3.2 Peak detection
-1. Noise: σ = MAD(corrected) / 0.6745
-2. Threshold: min_height = S/N_min × σ (default S/N ≥ 3)
-3. find_peaks → для каждого: RT, height, left_base, right_base, width, S/N
-
-### 3.3 Integration
-- Трапецеидальное правило: `area = Σ (y[i]+y[i+1])/2 × Δx`
-- В границах [left_base, right_base] на baseline-corrected сигнале
-
-### 3.4 Ion ratio
-1. RT matching: |RT_sample − RT_ref| ≤ tolerance
-2. IR = area_qualifier / area_quantifier × 100%
-3. Deviation vs reference → CONFIRMED / DOUBTFUL / NOT_CONFIRMED
-
-### 3.5 Калибровка
-- Линейная/квадратичная регрессия (с весами 1/x, 1/x²)
-- R², LOD = 3.3σ/slope, LOQ = 10σ/slope
-
-### 3.6 Статистика распределения (Phase 13)
-- **Индекс доминирования:** Area(max) / Σ Area — монокомпонентность
-- **Индекс Шеннона (H'):** −Σ(pᵢ · ln(pᵢ)) — разнообразие состава
-- **Равномерность Пиелу (J):** H / ln(N) — однородность распределения
-- **Средневзвешенный RT:** Σ(RTᵢ × Areaᵢ) / Σ Area — центр масс
-- **Медианный RT:** RT при 50% кумулятивной площади
-- **Асимметрия / Эксцесс:** Skewness, Kurtosis по площадям
-- **Плотность пиков:** N / (RT_max − RT_min) пиков/мин
-- Все метрики с автоматической текстовой интерпретацией
-
-### 3.7 Паттерн-анализ (Phase 14)
-- **Гомологический ряд:** CV(ΔRT) < 0.15 = HIGH, < 0.30 = MEDIUM
-- **Чёт/нечёт преобладание:** Σ Area(нечёт) / Σ Area(чёт) — зрелость ОВ
-- **UCM (неразрешённая смесь):** (total_area − resolved) / total_area — биодеградация
-- **Огибающая:** UNIMODAL / BIMODAL / FLAT / DECREASING — форма распределения
-- **Кластеризация:** ΔRT < mean×0.5 → кластер, иначе изолированный пик
-
-### 3.8 Качество метода (Phase 15)
-- **Средние теор. тарелки (N̄):** эффективность колонки
-- **Пиковая ёмкость (nc):** 1 + (√N̄ / 4) × ln(t_last/t_first)
-- **Использование ёмкости:** N_peaks / nc × 100%
-- **Средняя Rs, % Rs < 1.5:** качество разделения
-- **Средний Tailing, % T > 2.0:** симметрия пиков
-- **Drift baseline, RMS шума:** стабильность детектора
-- **Оценка:** EXCELLENT (≥7 баллов) / GOOD (≥4) / ACCEPTABLE (≥2) / POOR
-
-### 3.9 Геохимические индексы и идентификация (Phase 16)
-- **CPI:** Σ Area(нечёт) / Σ Area(чёт) — зрелость ОВ
-- **OEP:** (A[i-1]+6A[i]+A[i+1]) / (4A[i-1]+4A[i+1]) — чёт/нечёт предпочтение
-- **ACL:** Σ(n×Aₙ) / Σ(Aₙ) для C₂₅-C₃₃ — средняя длина цепи
-- **Cmax:** пик с макс. площадью — тип источника ОВ
-- **TAR:** (C₂₇+C₂₉+C₃₁) / (C₁₅+C₁₇+C₁₉) — наземный/водный источник
-- **compoundName:** авто-нумерация C₁₀, C₁₁... при обнаружении гомологов
-- **CompoundSource:** AUTO_SERIES / MANUAL / TEMPLATE / NONE
-
----
-
-## Pipeline 4: Отчёт
-
-1. Сборка: метаданные + график + таблица пиков + ion ratio + параметры алгоритма
-2. Генерация: PDF (iText), CSV, JSON
-3. Метаданные: SHA-256 hash входных данных, algorithm_version, timestamp
-
----
-
-## Производительность (оценка)
-
-| Операция | Время |
-|----------|-------|
-| Захват фото | < 1 сек |
-| Perspective warp + предобработка | 1–3 сек |
-| VLM graph region detection | 3–8 сек |
-| VLM axis extraction (OCR) | 3–8 сек |
-| ML Kit OCR fallback | 1–3 сек |
-| Извлечение кривой | 0.5–2 сек |
-| Baseline + Peaks + Integration | 0.1–0.5 сек |
-| Distribution + Patterns + Geochemistry | 0.1–0.3 сек |
-| PDF генерация | 1–3 сек |
-| **Итого (фото → отчёт, с VLM)** | **10–25 сек** |
-| **Итого (фото → отчёт, без VLM)** | **3–12 сек** |
-
-Все операции — вне UI-потока (Coroutines). Прогресс отображается пользователю.
-
----
-
-## Детерминированность
-
-Каждый расчёт сохраняет конфиг:
-```json
-{
-  "algorithm_version": "1.0.0",
-  "baseline_method": "ALS",
-  "baseline_params": {"lambda": 1e6, "p": 0.01},
-  "smoothing": {"method": "Savitzky-Golay", "window": 11, "polyorder": 3},
-  "peak_detection": {"min_sn": 3, "min_prominence": "auto"},
-  "integration": "trapezoidal",
-  "rt_tolerance_min": 0.15,
-  "ion_ratio_tolerance_pct": 20
-}
+```text
+Input
+  -> Image/File Processing
+  -> DigitalSignal(time, intensity)
+  -> CalculationEngine
+  -> Results UI
+  -> Export / Report
 ```
 
-Одинаковые входные данные + одинаковый конфиг = одинаковый результат. Всегда.
+AI models are supporting services, not a replacement for deterministic calculation:
+
+```text
+Model Manager
+  -> VLM helpers for image understanding
+  -> LLM chat workspace
+  -> Shared local model pool
+```
+
+## Input Paths
+
+### Camera
+
+1. User captures a chromatogram through the Android capture flow.
+2. ML Kit document scanner/crop flow prepares the image.
+3. Processing flow detects graph region, axes, and curve.
+4. The extracted curve becomes a `DigitalSignal`.
+
+### Gallery
+
+1. User selects an image from storage.
+2. The same processing flow is used after import.
+3. The output is the same `DigitalSignal` model.
+
+### File Import
+
+Current state:
+
+- desktop file import bridge exists for local development;
+- production-grade CSV/TXT/PDF/mzML parsing is still roadmap work.
+
+Required target:
+
+```text
+CSV/TXT/PDF/mzML -> DigitalSignal -> CalculationEngine
+```
+
+## Image And Signal Processing
+
+Main stages:
+
+1. Normalize image orientation and source metadata.
+2. Prepare curve mask.
+3. Detect graph region.
+4. Detect axis structure and labels.
+5. Extract curve points.
+6. Convert pixels to real units.
+7. Save or pass `DigitalSignal`.
+
+VLM-assisted stages:
+
+- graph region detection;
+- axis structure detection;
+- axis label extraction.
+
+Fallback stages:
+
+- classical CV graph/axis detection;
+- ML Kit OCR;
+- manual review paths where available.
+
+## CalculationEngine
+
+The calculation engine is deterministic and receives:
+
+```text
+DigitalSignal + CalculationParams -> CalculationRun
+```
+
+Pipeline order:
+
+1. Validate input signal.
+2. Optional Savitzky-Golay smoothing.
+3. Baseline estimation.
+4. Baseline correction.
+5. Noise estimation.
+6. Peak detection.
+7. Peak boundary detection.
+8. Overlap classification.
+9. Peak integration.
+10. Peak metrics and confidence.
+11. Run warnings.
+12. Immutable `CalculationRun`.
+
+### Calculation Parameters
+
+These parameters are now applied by the engine, not just shown in the UI:
+
+- `baselineMethod`
+- `baselineLambda`
+- `baselineP`
+- `baselineIterations`
+- `noiseMethod`
+- `minPeakHeight`
+- `minPeakProminence`
+- `minPeakDistance`
+- `minPeakWidth`
+- `maxPeakWidth`
+- `minSnr`
+- `boundaryMethod`
+- `boundaryPercentHeight`
+- `integrationMethod`
+- `clampNegative`
+- `useSmoothedForIntegration`
+
+### Boundary Methods
+
+Supported:
+
+- `PROMINENCE_BASES`
+- `LOCAL_MINIMA`
+- `BASELINE_INTERSECTION`
+- `PERCENT_HEIGHT`
+
+Manual boundaries are supported at the algorithm layer and should be wired into UI edits as a later step.
+
+### Integration Modes
+
+Supported:
+
+- `TRAPEZOIDAL`
+- `TRAPEZOIDAL_INTERPOLATED`
+
+If `clampNegative` is enabled, negative corrected values are treated as zero during integration.
+
+### Reports
+
+Reports/export should include:
+
+- pipeline and algorithm version;
+- calculation parameters;
+- signal source;
+- peak table;
+- warning list;
+- quality/confidence information;
+- exportable corrected signal and baseline where available.
+
+## Model Runtime Pipeline
+
+### LiteRT-LM
+
+Primary stable Android runtime for Google AI Edge/Gemma-style models.
+
+Used for:
+
+- VLM-assisted chromatogram image understanding;
+- local chat where a compatible LiteRT model is active.
+
+### GGUF / llama.cpp
+
+Native Android bridge through `androidApp/src/main/cpp/llama_bridge.cpp`.
+
+Modes:
+
+- text-only GGUF: local chat/text inference;
+- multimodal GGUF: image inference only when a valid `mmproj` is loaded with the base model.
+
+The app should not silently use a text-only GGUF model for image analysis. If image inference is requested without `mmproj`, it must fail clearly and fall back where possible.
+
+## Chat Pipeline
+
+```text
+Chat session
+  -> selected local model
+  -> per-chat generation settings
+  -> InferenceEngine.inferRaw()
+  -> saved message history
+```
+
+Generation settings:
+
+- temperature;
+- top-p;
+- top-k;
+- max tokens;
+- repeat penalty;
+- repeat last N.
+
+Chat uses the same model pool as chromatogram analysis. A model can be downloaded/imported once and reused by the analysis pipeline or chat.
+
+## Validation Gates
+
+Current working gates:
+
+```bash
+./gradlew :composeApp:compileAndroidMain :composeApp:compileKotlinDesktop --no-daemon
+./gradlew :androidApp:assembleDebug --no-daemon
+```
+
+Known test debt:
+
+- `commonTest` contains old tests targeting previous calculation APIs.
+- Before the next public alpha, these tests should be replaced with current `CalculationEngine` regression coverage.
+
+## Alpha 2 Known Risks
+
+- Real-photo validation is still limited.
+- Report language needs more professional domain interpretation.
+- CSV/TXT/PDF/mzML import is not yet production complete.
+- GGUF model compatibility depends on correct model family and `mmproj` pairing.
+- Chat MVP is functional but not yet a full assistant with attachments, streaming, or search.

@@ -331,12 +331,27 @@ class ModelManager(private val context: Context) {
                 type = type,
                 downloadUrl = "", // no download URL for imported models
             )
-        }
+        }.sortedWith(
+            compareBy<ModelFile> {
+                when (it.type) {
+                    ModelFileType.LITERT_BUNDLE -> 0
+                    ModelFileType.GGUF_BASE -> 1
+                    ModelFileType.GGUF_MMPROJ -> 2
+                }
+            }.thenBy { it.fileName.lowercase() }
+        )
 
         if (modelFiles.isEmpty()) return null
 
         val runtime = if (modelFiles.any { it.type == ModelFileType.LITERT_BUNDLE })
             ModelRuntime.LITERT_LM else ModelRuntime.LLAMA_CPP
+
+        val primaryFileName = modelFiles.first().fileName
+        val family = GgufValidator.matchFamily(primaryFileName, null) ?: when {
+            primaryFileName.contains("gemma", ignoreCase = true) -> "gemma"
+            primaryFileName.endsWith(".litertlm", ignoreCase = true) -> "gemma"
+            else -> "custom"
+        }
 
         val hasVision = modelFiles.any { it.type == ModelFileType.GGUF_MMPROJ } ||
                 modelFiles.any { it.type == ModelFileType.LITERT_BUNDLE }
@@ -344,7 +359,7 @@ class ModelManager(private val context: Context) {
         return ModelInfo(
             id = dir.name,
             displayName = dir.name.replace("_", " ").replaceFirstChar { it.uppercase() },
-            family = "custom",
+            family = family,
             runtime = runtime,
             files = modelFiles,
             minRamMb = 4096,

@@ -2,11 +2,13 @@ package com.chromalab.app.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.chromalab.core.common.AppLanguage
 import com.chromalab.core.common.Strings
 
 /**
@@ -19,6 +21,7 @@ enum class BottomTab(
     Projects(icon = Icons.Filled.Science, route = Route.ProjectList),
     Capture(icon = Icons.Filled.PhotoCamera, route = Route.Capture),
     Calculations(icon = Icons.Filled.Analytics, route = Route.Calculations),
+    Chats(icon = Icons.Filled.Chat, route = Route.Chats),
     More(icon = Icons.Filled.MoreHoriz, route = Route.More),
     ;
 
@@ -27,6 +30,7 @@ enum class BottomTab(
             Projects -> Strings.tabProjects
             Capture -> Strings.tabCapture
             Calculations -> Strings.tabCalculations
+            Chats -> if (Strings.language == AppLanguage.RU) "\u0427\u0430\u0442\u044b" else "Chats"
             More -> Strings.tabMore
         }
 }

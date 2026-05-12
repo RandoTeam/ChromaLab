@@ -11,6 +11,7 @@ import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveExtractionResult
+import com.chromalab.feature.processing.curve.scaledCoordinates
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
 import kotlin.math.abs
@@ -200,8 +201,8 @@ class AutoSweepEngine {
             }
         }
 
-        // Region selection priority: override > VLM > CV
-        val region = overrideRegion ?: vlmRegion ?: graphRes?.selectedRegion
+        // Region selection priority: override > CV > VLM fallback.
+        val region = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
         println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} CV regions, VLM=${vlmRegion != null}, selected=$region")
 
         if (region == null) {
@@ -255,6 +256,7 @@ class AutoSweepEngine {
                 val mask = curveMaskPreparer.prepare(curveInputPath, region, axes, configDir)
                 val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: curveInputPath
                 curveExtractor.extract(maskPath, region.width, region.height, configDir)
+                    .scaledCoordinates(mask.coordinateScale)
             } catch (e: Exception) {
                 println("SWEEP[${config.name}] curve extraction failed: ${e.message}")
                 null

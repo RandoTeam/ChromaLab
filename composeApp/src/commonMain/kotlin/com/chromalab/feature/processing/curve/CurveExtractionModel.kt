@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.curve
 
 import kotlinx.serialization.Serializable
+import kotlin.math.roundToInt
 
 /**
  * A single extracted curve point in pixel coordinates.
@@ -38,4 +39,19 @@ data class CurveExtractionResult(
 
     /** Whether extraction produced usable data */
     val isUsable: Boolean get() = points.size >= 10 && coverage > 0.3f
+}
+
+fun CurveExtractionResult.scaledCoordinates(scale: Float): CurveExtractionResult {
+    if (scale <= 0f || scale == 1f) return this
+    return copy(
+        points = points.map { point ->
+            point.copy(
+                pixelX = (point.pixelX * scale).roundToInt(),
+                pixelY = point.pixelY * scale,
+            )
+        },
+        totalColumns = (totalColumns * scale).roundToInt(),
+        extractedColumns = (extractedColumns * scale).roundToInt(),
+        interpolatedColumns = (interpolatedColumns * scale).roundToInt(),
+    )
 }

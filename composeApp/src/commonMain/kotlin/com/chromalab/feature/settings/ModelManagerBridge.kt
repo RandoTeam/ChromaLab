@@ -20,6 +20,9 @@ data class ModelManagerActions(
     val onImport: () -> Unit = {},
     /** Export model files to user-chosen location. */
     val onExport: (String) -> Unit = {},
+    val onHuggingFaceQueryChange: (String) -> Unit = {},
+    val onHuggingFaceSortChange: (HuggingFaceSortOption) -> Unit = {},
+    val onHuggingFaceSearch: () -> Unit = {},
 )
 
 /**

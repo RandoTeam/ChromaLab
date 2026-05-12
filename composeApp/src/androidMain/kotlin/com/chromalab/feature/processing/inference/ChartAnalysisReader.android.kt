@@ -162,18 +162,9 @@ actual class ChartAnalysisReader actual constructor() {
     }
 
     private fun chartAnalysisToOcrResult(analysis: ChartAnalysis): AxisOcrResult {
-        val elements = (analysis.xValues + analysis.yValues).map { value ->
-            com.chromalab.feature.processing.ocr.OcrTextElement(
-                text = value.toString(),
-                numericValue = value,
-                x = 0f, y = 0f,
-                width = 0f, height = 0f,
-                confidence = analysis.confidence,
-            )
-        }
-
         return AxisOcrResult(
-            rawElements = elements,
+            // VLM values do not include reliable pixel boxes. Keep them as value hints only.
+            rawElements = emptyList(),
             suggestedXValues = analysis.xValues,
             suggestedYValues = analysis.yValues,
             xUnit = analysis.xUnit,
@@ -235,4 +226,3 @@ object VlmEngineHolder {
      */
     var controller: com.chromalab.feature.settings.ModelManagerController? = null
 }
-

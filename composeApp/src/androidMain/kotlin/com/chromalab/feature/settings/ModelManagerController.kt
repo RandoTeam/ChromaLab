@@ -34,11 +34,13 @@ class ModelManagerController(
 ) {
     private val manager = ModelManager(context)
     private val downloader = ModelDownloader()
+    private val hfSearchClient = HuggingFaceSearchClient()
 
     private val _state = MutableStateFlow(ModelManagerState())
     val state: StateFlow<ModelManagerState> = _state.asStateFlow()
 
     private var downloadJob: Job? = null
+    private var hfSearchJob: Job? = null
     private var unloadTimerJob: Job? = null
 
     init {
@@ -149,6 +151,67 @@ class ModelManagerController(
             it.copy(downloadingModelId = null, downloadProgress = 0f, downloadSpeedMbps = 0f)
         }
         refresh()
+    }
+
+    fun updateHuggingFaceQuery(query: String) {
+        _state.update {
+            it.copy(
+                huggingFaceSearch = it.huggingFaceSearch.copy(
+                    query = query,
+                    error = null,
+                ),
+            )
+        }
+    }
+
+    fun setHuggingFaceSort(sort: HuggingFaceSortOption) {
+        _state.update {
+            it.copy(
+                huggingFaceSearch = it.huggingFaceSearch.copy(sort = sort),
+            )
+        }
+    }
+
+    fun searchHuggingFace() {
+        val snapshot = _state.value.huggingFaceSearch
+        hfSearchJob?.cancel()
+        _state.update {
+            it.copy(
+                huggingFaceSearch = snapshot.copy(
+                    isSearching = true,
+                    error = null,
+                ),
+            )
+        }
+
+        hfSearchJob = scope.launch {
+            try {
+                val results = hfSearchClient.search(
+                    query = snapshot.query,
+                    sort = snapshot.sort,
+                    deviceRamMb = manager.getDeviceRamMb(),
+                    availableStorageBytes = manager.getAvailableStorageBytes(),
+                )
+                _state.update {
+                    it.copy(
+                        huggingFaceSearch = it.huggingFaceSearch.copy(
+                            isSearching = false,
+                            results = results,
+                            error = null,
+                        ),
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        huggingFaceSearch = it.huggingFaceSearch.copy(
+                            isSearching = false,
+                            error = e.message ?: "Hugging Face search failed",
+                        ),
+                    )
+                }
+            }
+        }
     }
 
     /** Activate a downloaded model — creates inference engine + sets VlmEngineHolder. */

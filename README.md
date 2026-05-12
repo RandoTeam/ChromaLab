@@ -1,184 +1,148 @@
 # ChromaLab
 
-**Мобильное Android-приложение для анализа хроматограмм**
+ChromaLab is an offline-first Android/Kotlin Multiplatform app for chromatogram digitization, chromatographic calculation, and local on-device AI workflows.
 
-ChromaLab — offline-first инструмент для оцифровки и расчёта хроматографических данных. Позволяет фотографировать бумажные хроматограммы через встроенную камеру с направляющей рамкой, загружать изображения из галереи, импортировать цифровые файлы (CSV, PDF, mzML) и выполнять детерминированные расчёты пиков, площадей, ion ratio, калибровок.
+The project is no longer only a narrow chromatography calculator. The current direction is a modular offline analysis workspace:
 
----
+- chromatogram capture and digitization from camera, gallery, or file import;
+- deterministic chromatographic calculations with reproducible parameters;
+- local VLM/LLM model management with LiteRT-LM and GGUF support;
+- an integrated local chat workspace that uses the same downloaded model pool;
+- exportable human-readable reports and machine-readable data.
 
-## Назначение
+Current public build: **v0.0.3-alpha**.
 
-- **Лаборатория:** вспомогательный инструмент для экспресс-анализа хроматограмм с высоким уровнем валидации
-- **Обучение:** учебный инструмент для студентов аналитической химии
+> ChromaLab is an analysis assistant. Results must be reviewed by a qualified specialist before scientific, industrial, legal, or medical use.
 
-> ⚠️ Результаты расчётов носят вспомогательный характер и требуют верификации квалифицированным специалистом.
+## What Works In Alpha 2
 
----
+### Chromatogram Input
 
-## Ключевые возможности
+- Android camera flow through ML Kit document scanner.
+- Gallery/image import path.
+- Desktop file import bridge for local development.
+- Auto-processing flow from image to saved signal and analysis screen.
 
-### Источники данных
-| Режим | Описание |
-|-------|----------|
-| 📷 Камера | Съёмка хроматограммы с полупрозрачной рамкой-оверлеем для точного позиционирования |
-| 🖼️ Галерея | Загрузка фото/скана с интерактивной подгонкой под рамку |
-| 📄 Файлы | Импорт CSV, TXT, PDF, mzML, netCDF |
+### Image And Signal Processing
 
-### Обработка изображений
-- Автоматическая коррекция перспективы (OpenCV)
-- Определение области графика и осей
-- Извлечение кривой хроматограммы
-- OCR числовых значений осей (ML Kit)
-- Индикатор качества оцифровки
-- Ручная коррекция осей и пиков
+- Document/crop preparation and perspective handling.
+- Graph region, axis, and curve extraction pipeline.
+- Curve mask preparation with sweep-based fallback logic.
+- Digital signal preview and persistence.
+- VLM-first helpers for graph region, axis structure, and axis text extraction, with classical CV/OCR fallback.
 
-### Расчёты
-- **Базовые:** время удерживания, высота, площадь, ширина пика, S/N
-- **Baseline correction:** ALS, SNIP
-- **Peak detection:** prominence-based с настраиваемым S/N threshold
-- **Ion ratio:** сравнение нескольких ионных каналов, допуски по WADA
-- **Калибровка:** линейная/квадратичная регрессия, LOD/LOQ
-- **QC:** blank, control, duplicate, spike recovery
+### Calculation Engine
 
-### Детерминированность
-Каждый расчёт сохраняет полный набор параметров:
-```
-Algorithm version: 1.0.0
-Baseline: ALS (λ=1e6, p=0.01)
-Smoothing: Savitzky-Golay (window=11, poly=3)
-Peak detection: S/N ≥ 3
-Integration: trapezoidal
-RT tolerance: ±0.15 min
-Ion ratio tolerance: ±20%
-```
+- Baseline correction: none, manual linear, ALS, SNIP.
+- Noise estimation: peak-to-peak, RMS, MAD.
+- Peak detection with minimum height, prominence, distance, width, S/N, and max width filtering.
+- Boundary methods now applied by the engine:
+  - prominence bases;
+  - local minima;
+  - baseline intersection;
+  - percent of height.
+- Integration modes now applied by the engine:
+  - trapezoidal;
+  - interpolated trapezoidal boundaries.
+- Negative baseline-corrected regions can be clamped during integration.
+- Peak metrics: RT apex, centroid, height, area, width, prominence, S/N, confidence, overlap, tailing/asymmetry, resolution, area percent.
+- Reports now include the calculation settings that affect the result.
 
-### Экспорт
-- PDF-отчёт с графиком, таблицей пиков, параметрами расчёта
-- CSV (данные, пики, результаты)
-- JSON (машиночитаемый формат)
-- Аудит-лог всех действий
+### AI Models
 
----
+- Unified model manager for LiteRT-LM and llama.cpp/GGUF runtimes.
+- Built-in model catalog and local custom model import.
+- Download, delete, activate, deactivate, export, and local-load flows.
+- Hugging Face model search for GGUF/LiteRT candidates with sort options:
+  - downloads;
+  - likes;
+  - last update.
+- Compatibility metadata in the UI: runtime, estimated RAM, vision support, local availability.
+- LiteRT-LM path remains the primary stable Android path for Gemma-style models.
+- GGUF path supports text-only chat and multimodal analysis when a valid `mmproj` is present.
 
-## Технологический стек
+### Local LLM Chat MVP
 
-| Компонент | Технология |
-|-----------|-----------|
-| Язык | Kotlin |
-| UI | Jetpack Compose + Material 3 |
-| Камера | CameraX |
-| Обработка изображений | OpenCV Android SDK 4.9+ |
-| OCR | ML Kit Text Recognition v2 |
-| Расчётное ядро | Kotlin + Apache Commons Math |
-| База данных | Room (SQLCipher для шифрования) |
-| DI | Hilt |
-| Навигация | Navigation Compose |
-| Фоновые задачи | Coroutines + WorkManager |
-| Экспорт PDF | iText |
+- Dedicated Chats tab.
+- Multiple chat sessions.
+- Per-chat settings:
+  - temperature;
+  - top-p;
+  - top-k;
+  - max tokens;
+  - repeat penalty;
+  - repeat last N.
+- Per-chat model selection from the shared downloaded model pool.
+- Android chat inference through the active LiteRT/GGUF engine.
+- Desktop chat persistence stub for development.
 
----
+## Architecture
 
-## Архитектура
+```text
+Capture/File Input
+    -> Processing Pipeline
+    -> Digital Signal
+    -> CalculationEngine
+    -> Report / Export
 
-```
-┌─────────────────────────────────────┐
-│            UI Layer                 │
-│   Jetpack Compose + ViewModels      │
-├─────────────────────────────────────┤
-│          Domain Layer               │
-│   UseCases + Domain Models          │
-├─────────────────────────────────────┤
-│           Data Layer                │
-│   Room DB │ File I/O │ API (opt)    │
-├─────────────────────────────────────┤
-│       Processing Engine             │
-│   OpenCV │ Peak Detector │ ALS      │
-│   Integrator │ Ion Ratio │ Calib    │
-└─────────────────────────────────────┘
+Model Manager
+    -> LiteRT-LM runtime
+    -> GGUF llama.cpp runtime
+    -> VLM helpers
+    -> Chat workspace
 ```
 
-**Паттерн:** Clean Architecture + Repository.  
-**Offline-first:** Room DB — единственный источник истины.  
-**Опциональный онлайн:** справочные API для идентификации ионов и веществ (PubChem, ChemSpider).
+Main modules:
 
----
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/capture` - capture and import UI.
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing` - image, graph, curve, OCR/VLM, and signal processing.
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation` - deterministic calculation pipeline and reports.
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/settings` - model manager and app settings.
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/chat` - local LLM chat UI and state.
+- `androidApp/src/main/cpp` - llama.cpp JNI bridge for GGUF inference.
 
-## Структура проекта
+## Technology
 
-```
-chromalab/
-├── app/                        — Application, MainActivity, навигация
-├── core/
-│   ├── ui/                     — Дизайн-система, общие компоненты
-│   ├── data/                   — Room DB, entities, DAOs, repositories
-│   ├── domain/                 — UseCases, доменные модели
-│   └── common/                 — Утилиты, extensions
-├── feature/
-│   ├── camera/                 — CameraX, рамка-оверлей, захват
-│   ├── processing/             — OpenCV pipeline, извлечение кривой
-│   ├── calculation/            — Пики, интеграция, ion ratio, калибровки
-│   ├── projects/               — Проекты, образцы, CRUD
-│   ├── reports/                — Генерация и экспорт отчётов
-│   └── settings/               — Настройки, методы
-└── assets/
-    └── i18n/                   — Локализация (ru, en, fr, cs, ...)
-```
+- Kotlin Multiplatform.
+- Compose Multiplatform / Jetpack Compose Material 3.
+- Android Camera / ML Kit document scanner and OCR.
+- Room + bundled SQLite.
+- LiteRT-LM for Google AI Edge local model runtime.
+- llama.cpp native bridge for GGUF.
+- Coroutines and Kotlin serialization.
+- Android NDK/CMake for native inference.
 
----
+## Build
 
-## Локализация
+Requirements:
 
-| Язык | Код | Статус |
-|------|-----|--------|
-| Русский | `ru` | Основной |
-| English | `en` | Planned |
-| Français | `fr` | Planned |
-| Čeština | `cs` | Planned |
-| Deutsch | `de` | Planned |
-| Español | `es` | Planned |
-| Italiano | `it` | Planned |
-| Polski | `pl` | Planned |
+- JDK 17.
+- Android SDK 35.
+- Android NDK `27.2.12479018`.
+- CMake `3.22.1`.
 
----
+Useful commands:
 
-## Требования
-
-- Android 8.0+ (API 26+)
-- Камера (для режима съёмки)
-- ~80 МБ свободного места (включая OpenCV)
-
----
-
-## Разработка
-
-### Предварительные требования
-- Android Studio Ladybug (2024.2+)
-- JDK 17
-- Android SDK 34
-- NDK (для OpenCV)
-
-### Сборка
 ```bash
-git clone https://github.com/AstraVlasta/ChromaLab.git
-cd ChromaLab
-./gradlew assembleDebug
+./gradlew :composeApp:compileAndroidMain :composeApp:compileKotlinDesktop --no-daemon
+./gradlew :androidApp:assembleDebug --no-daemon
+./gradlew :androidApp:installDebug --no-daemon
 ```
 
-### Тестирование
-```bash
-./gradlew test                    # Unit tests
-./gradlew connectedAndroidTest    # Instrumented tests
+Debug APK:
+
+```text
+androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
 
----
+## Known Alpha Limitations
 
-## Лицензия
+- Old `commonTest` sources still target earlier calculation APIs and need migration before `desktopTest` can be used as a reliable gate.
+- CSV/TXT/PDF/mzML import is not yet complete as a production-grade parser path.
+- GGUF image analysis requires a matching `mmproj`; text-only GGUF models are for chat/text tasks.
+- The report is improving but still needs stronger professional wording, validation summaries, and domain-specific interpretation.
+- Validation against a large real chromatogram set is still pending.
 
-Proprietary. © 2026 Ilia Vlasov. All rights reserved.
+## License
 
----
-
-## Контакт
-
-**Ilia Vlasov** — разработчик  
-GitHub: [@AstraVlasta](https://github.com/AstraVlasta)
+Proprietary. Copyright 2026.

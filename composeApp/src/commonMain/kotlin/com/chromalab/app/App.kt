@@ -26,11 +26,17 @@ import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.capture.FileImportScreenWithPicker
+import com.chromalab.feature.chat.ChatModelOption
+import com.chromalab.feature.chat.ChatScreen
+import com.chromalab.feature.chat.rememberChatState
+import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.model.ModelRegistry
 
 import com.chromalab.feature.settings.LanguageScreen
 import com.chromalab.feature.settings.AboutScreen
 import com.chromalab.feature.settings.MoreScreen
 import com.chromalab.feature.settings.ModelManagerScreen
+import com.chromalab.feature.settings.ModelManagerState
 import com.chromalab.feature.settings.rememberModelManagerState
 
 @Composable
@@ -41,6 +47,10 @@ fun App() {
 
         // Model Manager — platform-specific state + actions
         val (modelState, modelActions) = rememberModelManagerState()
+        val (chatState, chatActions) = rememberChatState(
+            activeModelId = modelState.activeModelId,
+            activeModelName = modelState.activeModelName,
+        )
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -105,6 +115,20 @@ fun App() {
                         onAnalyze = { signalId ->
                             navController.navigate(Route.Analysis(signalId))
                         },
+                    )
+                }
+                composable<Route.Chats> {
+                    val chatModelOptions = modelState.toChatModelOptions()
+                    ChatScreen(
+                        state = chatState,
+                        actions = chatActions,
+                        modelOptions = chatModelOptions,
+                        onSelectModel = { option ->
+                            if (option.id != modelState.activeModelId) {
+                                modelActions.activate(option.id)
+                            }
+                        },
+                        onOpenModelManager = { navController.navigate(Route.ModelManager) },
                     )
                 }
                 composable<Route.More> {
@@ -198,6 +222,7 @@ fun App() {
                         totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,
                         customModels = modelState.customModels,
                         isImporting = modelState.isImporting,
+                        huggingFaceSearch = modelState.huggingFaceSearch,
                         onDownload = { modelActions.download(it) },
                         onDelete = { modelActions.delete(it) },
                         onActivate = { modelActions.activate(it) },
@@ -205,10 +230,55 @@ fun App() {
                         onCancelDownload = { modelActions.cancelDownload() },
                         onExport = { modelActions.onExport(it) },
                         onImport = { modelActions.onImport() },
+                        onHuggingFaceQueryChange = { modelActions.onHuggingFaceQueryChange(it) },
+                        onHuggingFaceSortChange = { modelActions.onHuggingFaceSortChange(it) },
+                        onHuggingFaceSearch = { modelActions.onHuggingFaceSearch() },
                         onBack = { navController.popBackStack() },
                     )
                 }
             }
         }
     }
+}
+
+private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
+    val builtinOptions = ModelRegistry.builtinModels
+        .filter { it.id in downloadedModelIds }
+        .map { model ->
+            ChatModelOption(
+                id = model.id,
+                name = model.displayName,
+                summary = "${model.runtime.shortLabel()} · ${formatModelBytes(model.totalSizeBytes)}",
+                isActive = model.id == activeModelId,
+                isActivating = model.id == activatingModelId,
+            )
+        }
+
+    val customOptions = customModels
+        .filterNot { custom -> builtinOptions.any { it.id == custom.id } }
+        .map { custom ->
+            ChatModelOption(
+                id = custom.id,
+                name = custom.displayName,
+                summary = "Imported · ${formatModelBytes(custom.sizeBytes)}",
+                isActive = custom.id == activeModelId,
+                isActivating = custom.id == activatingModelId,
+            )
+        }
+
+    return (builtinOptions + customOptions).sortedWith(
+        compareByDescending<ChatModelOption> { it.isActive }
+            .thenBy { it.name.lowercase() }
+    )
+}
+
+private fun ModelRuntime.shortLabel(): String = when (this) {
+    ModelRuntime.LITERT_LM -> "LiteRT"
+    ModelRuntime.LLAMA_CPP -> "GGUF"
+}
+
+private fun formatModelBytes(bytes: Long): String = when {
+    bytes >= 1_000_000_000 -> "%.1f GB".format(bytes / 1_000_000_000f)
+    bytes >= 1_000_000 -> "%.0f MB".format(bytes / 1_000_000f)
+    else -> "%.0f KB".format(bytes / 1_000f)
 }

@@ -61,9 +61,11 @@ object CalculationEngine {
         } else null
 
         // Stage 3: Baseline estimation (§2.9)
-        val baselineMethod = BaselineMethod.entries.find { it.name == params.baselineMethod }
-            ?: BaselineMethod.NONE
-        val baselineResult = BaselineDispatcher.estimate(baselineMethod, raw)
+        val baselineMethod = parseBaselineMethod(params.baselineMethod)
+        val boundaryMethod = parseBoundaryMethod(params.boundaryMethod)
+        val integrationMethod = parseIntegrationMethod(params.integrationMethod)
+        val maxPeakWidth = params.maxPeakWidth.takeIf { it > 0 && it < Int.MAX_VALUE } ?: 0
+        val baselineResult = estimateBaseline(baselineMethod, params, raw)
         val baseline: List<Double>? = if (baselineMethod != BaselineMethod.NONE) {
             baselineResult.baseline
         } else null
@@ -81,9 +83,10 @@ object CalculationEngine {
         val integrationPoints = SignalModelBuilder.getSignal(signals, signals.signalUsedForIntegration)
 
         // Stage 5: Noise estimation (§2.14)
+        val noiseMethod = parseNoiseMethod(params.noiseMethod)
         val noiseResult = NoiseEstimator.estimate(
             points = detectionPoints,
-            method = NoiseMethod.PEAK_TO_PEAK,
+            method = noiseMethod,
         )
 
         // Stage 6: Peak detection (§2.16)
@@ -93,7 +96,9 @@ object CalculationEngine {
             minProminence = params.minPeakProminence,
             minDistance = params.minPeakDistance,
             minWidth = params.minPeakWidth,
+            maxWidth = maxPeakWidth,
             noiseLevel = noiseResult.noiseValue,
+            noiseK = params.minSnr,
         )
 
         // Stage 7: Peak boundary detection (§2.17)
@@ -103,7 +108,8 @@ object CalculationEngine {
             PeakBoundaryDetector.detect(
                 points = integrationPoints,
                 peakIndex = candidate.index,
-                method = BoundaryMethod.LOCAL_MINIMA,
+                method = boundaryMethod,
+                percentHeight = params.boundaryPercentHeight.coerceIn(0.001, 1.0),
                 neighborPeaks = neighborIndices,
             )
         }
@@ -117,11 +123,20 @@ object CalculationEngine {
 
         // Stage 8: Peak integration (§2.19)
         val integrations = boundaries.map { boundary ->
-            PeakIntegrator.integrate(
-                points = integrationPoints,
-                leftIndex = boundary.leftIndex,
-                rightIndex = boundary.rightIndex,
-            )
+            when (integrationMethod) {
+                IntegrationMethod.TRAPEZOIDAL -> PeakIntegrator.integrate(
+                    points = integrationPoints,
+                    leftIndex = boundary.leftIndex,
+                    rightIndex = boundary.rightIndex,
+                    clampNegative = params.clampNegative,
+                )
+                IntegrationMethod.TRAPEZOIDAL_INTERPOLATED -> PeakIntegrator.integrateInterpolated(
+                    points = integrationPoints,
+                    leftTime = boundary.leftTime,
+                    rightTime = boundary.rightTime,
+                    clampNegative = params.clampNegative,
+                )
+            }
         }
 
         // Total area for area% calculation
@@ -182,12 +197,12 @@ object CalculationEngine {
                 snr = metrics.snrValue,
                 snrMethod = snr.method.label,
                 baselineMethod = baselineMethod.name,
-                integrationMethod = integration.method.label,
+                integrationMethod = integration.method.name,
                 confidence = confidence.grade,
                 overlapStatus = metrics.overlapStatus,
                 leftBoundaryTime = metrics.leftBaseTime,
                 rightBoundaryTime = metrics.rightBaseTime,
-                boundaryMethod = boundary.method.label,
+                boundaryMethod = boundary.method.name,
                 warnings = metrics.warnings + confidence.reasons,
                 tailingFactor = metrics.tailingFactor,
                 asymmetryFactor = metrics.asymmetryFactor,
@@ -312,6 +327,53 @@ object CalculationEngine {
 
     private fun generateRunId(): String {
         return "run_${currentTimeMillis()}"
+    }
+
+    private fun parseBaselineMethod(value: String): BaselineMethod {
+        return BaselineMethod.entries.find { it.name.equals(value, ignoreCase = true) }
+            ?: BaselineMethod.NONE
+    }
+
+    private fun parseNoiseMethod(value: String): NoiseMethod {
+        val normalized = value.replace('-', '_').uppercase()
+        return NoiseMethod.entries.find {
+            it.name == normalized || it.label.equals(value, ignoreCase = true)
+        } ?: NoiseMethod.PEAK_TO_PEAK
+    }
+
+    private fun parseBoundaryMethod(value: String): BoundaryMethod {
+        val normalized = value.replace('-', '_').uppercase()
+        return BoundaryMethod.entries.find {
+            it.name == normalized || it.label.equals(value, ignoreCase = true)
+        } ?: BoundaryMethod.LOCAL_MINIMA
+    }
+
+    private fun parseIntegrationMethod(value: String): IntegrationMethod {
+        val normalized = value.replace('-', '_').uppercase()
+        return IntegrationMethod.entries.find {
+            it.name == normalized || it.label.equals(value, ignoreCase = true)
+        } ?: IntegrationMethod.TRAPEZOIDAL
+    }
+
+    private fun estimateBaseline(
+        method: BaselineMethod,
+        params: CalculationParams,
+        points: List<SignalPoint>,
+    ): BaselineResult {
+        val estimator = when (method) {
+            BaselineMethod.NONE -> NoneBaselineEstimator
+            BaselineMethod.MANUAL_LINEAR -> ManualLinearBaselineEstimator.auto()
+            BaselineMethod.ALS -> AlsBaselineEstimator(
+                lambda = params.baselineLambda,
+                p = params.baselineP,
+                maxIterations = params.baselineIterations,
+            )
+            BaselineMethod.SNIP -> SnipBaselineEstimator(
+                iterations = params.baselineIterations,
+                useLlsTransform = true,
+            )
+        }
+        return estimator.estimate(points)
     }
 }
 

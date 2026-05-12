@@ -1,181 +1,127 @@
-# ChromaLab — Roadmap
+# ChromaLab Roadmap
 
----
+This roadmap tracks the current product direction after alpha 2. ChromaLab is becoming a modular offline AI analysis app, with chromatography as the first serious domain module.
 
-## Фаза 0: Фундамент (Неделя 1–2) ✅
+## Status Summary
 
-> KMP архитектура, дизайн-система, навигация, Room DB, 8 языков, CI.
+Completed or mostly working:
 
-- [x] Инициализация KMP-проекта (Kotlin 2.3.21, AGP 9.2.1, CMP 1.10.3)
-- [x] Настройка модулей (пакетная структура в composeApp/commonMain)
-- [x] Подключение зависимостей (Navigation, Lifecycle, Koin, Coil, Room, Coroutines, Serialization)
-- [x] Дизайн-система: Lab Precision Dark — WCAG AA, 8 chart colors, typography
-- [x] Room DB: 6 entities, 6 DAOs, KSP + sqlite-bundled
-- [x] Навигация: 15 type-safe routes, 4-tab bottom bar
-- [x] Локализация: 8 языков (RU, EN, FR, DE, ES, IT, PL, CS), instant switch
-- [x] CI: GitHub Actions build check
+- Android/KMP project foundation.
+- Capture from camera and gallery.
+- Image-to-signal processing pipeline.
+- Deterministic chromatogram calculation engine.
+- Model manager for LiteRT-LM and GGUF.
+- Hugging Face model search MVP.
+- Local LLM chat MVP.
+- Debug APK release workflow.
 
----
+Needs cleanup before broader alpha testing:
 
-## Фаза 1: Камера + Оцифровка (Неделя 3–6)
+- Replace stale calculation tests with current `CalculationEngine` tests.
+- Validate the full photo-to-report flow on real chromatograms.
+- Harden GGUF multimodal model pairing and error messages.
+- Improve final report language and scientific interpretation.
 
-> Ядро приложения — от фото до массива точек (35 секций, 250+ задач).
+## Alpha 2 Scope - v0.0.3-alpha
 
-- [x] Камера: CameraX Preview + ImageCapture, рамка, фокус, вспышка, зум
-- [x] Камера: Smart Scan auto-launch (ML Kit Document Scanner, убрана ручная съёмка)
-- [x] Проверка качества фото: blur, brightness, contrast, glare, shadow
-- [x] Импорт из галереи + подгонка под рамку
-- [x] Нормализация: EXIF, ориентация, единый формат
-- [x] Crop по рамке + CoordinateTransform
-- [x] Определение листа: OpenCV contours + manual fallback
-- [x] Perspective correction: homography + ручная коррекция углов
-- [x] Предобработка: grayscale → CLAHE → threshold → morphology
-- [x] Определение области графика: Hough lines + manual ROI
-- [x] Поддержка нескольких графиков на листе
-- [x] Определение осей X/Y: auto + manual editor
-- [x] Калибровка осей: 2-point linear transform
-- [x] OCR осей: ML Kit + 3-level filter (spatial + IQR) + 2-pass targeted crop
-- [x] Извлечение кривой: column scan + contour + skeletonization
-- [x] Ручная проверка и коррекция кривой
-- [x] Преобразование в цифровой сигнал: GraphPoint[]
-- [x] Savitzky-Golay smoothing
-- [x] Предпросмотр цифрового графика
-- [x] Индикатор качества оцифровки + предупреждения
-- [x] Сохранение промежуточных файлов
-- [x] Экспорт массива точек: CSV + JSON
-- [x] Debug mode
-- [ ] Детерминированность: pipelineVersion, fixed params, determinism test
-- [ ] Тестирование: синтетические данные + 20–30 реальных фото
+### Chromatography
 
----
+- [x] Auto flow from processed signal to calculation screen.
+- [x] Algorithm settings panel connected to real calculations.
+- [x] `CalculationEngine` applies boundary method.
+- [x] `CalculationEngine` applies negative-area clamp.
+- [x] `CalculationEngine` applies max peak width.
+- [x] `CalculationEngine` applies integration mode.
+- [x] Report/export includes the relevant calculation parameters.
+- [x] Area percent calculation uses absolute integrated area.
+- [ ] Replace stale `commonTest` files with current calculation regression tests.
+- [ ] Validate against a reference set of real chromatograms.
+- [ ] Add explicit user-facing warnings for weak axis extraction and low-confidence curve extraction.
 
-## Фаза 2: Расчётное ядро (Неделя 7–9) ✅
+### AI Model Platform
 
-> Baseline, пики, площади, S/N — 37 подфаз, 36 завершено.
+- [x] Unified model manager state for downloaded, custom, active, and importing models.
+- [x] LiteRT-LM activation path for stable Android inference.
+- [x] GGUF activation path through llama.cpp JNI.
+- [x] Text-only GGUF inference path for chat.
+- [x] GGUF image inference requires a valid `mmproj`.
+- [x] Hugging Face search UI.
+- [x] Search sorting by downloads, likes, and update time.
+- [x] Compatibility metadata: runtime, RAM estimate, vision support.
+- [ ] More precise device compatibility scoring.
+- [ ] Better model pairing UX for base GGUF + `mmproj`.
+- [ ] More model-family prompt presets.
 
-- [x] Baseline correction: Manual Linear, ALS, SNIP (3 метода)
-- [x] Peak detection (prominence-based + overlap/shoulder)
-- [x] Peak integration (trapezoidal, positive/negative area)
-- [x] Таблица пиков: RT, height, area, width, S/N, confidence
-- [x] Интерактивный график хроматограммы (Canvas Compose, layers)
-- [x] Ручная коррекция пиков (drag boundaries, add/reject, audit trail)
-- [x] Параметры алгоритма: UI настройки + 4 preset profile
-- [x] Warning system: 16 кодов, 4 severity
-- [x] Сохранение результатов в Room (6 новых таблиц)
-- [x] Export: peaks.csv, calculation.json, signal.csv, baseline.csv, warnings.json
-- [x] Детерминированность: DeterminismContract + DeterminismVerifier
-- [x] Unit-тесты расчётного ядра (25 тестов)
-- [x] Synthetic validation tests (18 тестов)
-- [x] Quality metrics: PeakAccuracy, DetectionMetrics, BaselineMetrics
+### Local Chat
 
----
+- [x] Chats tab in bottom navigation.
+- [x] Multiple chat sessions.
+- [x] Per-chat generation settings.
+- [x] Model selection per chat from the shared downloaded model pool.
+- [x] Android inference through the active local model engine.
+- [x] Desktop persistence stub.
+- [ ] Streaming token output.
+- [ ] Chat title auto-generation.
+- [ ] Attach image/file context to chat.
+- [ ] Search across chat history.
 
-## Фаза 2.5: Pipeline Professionalization + VLM (Неделя 9.5) ✅
+## Next MVP Phase
 
-> Автоматизация полного пайплайна "Фото → Отчёт" и профессиональная интеграция VLM.
+### 1. Stabilize Chromatography Core
 
-### Phase 25: Seamless Auto-Pipeline
-- [x] AutoProgressOverlay: premium redesign (анимации, Material иконки, глобальный glow)
-- [x] Auto-save в Room после обработки (без ручного экспорта)
-- [x] AnalysisFlowScreen: полная автоматика (убраны 8 ручных шагов)
-- [x] Auto-calculate: smoothing → baseline → peaks → distribution → patterns → geochemistry
-- [x] Premium AnalysisProgressOverlay с animated ring и step checklist
-- [x] ResultsSummaryScreen: 11 секций профессионального отчёта
-- [x] Интерактивный tap на пики → PeakDetailsBottomSheet
-- [x] ExportScreen → fallback-only: auto-save → AnalysisFlowScreen (25.2A)
-- [x] Lazy VLM loading: auto-load model at pipeline start + progress indicator (25.2B)
-- [x] VLM memory strategy: TRIM_MEMORY unload + onDestroy cleanup (25.2C)
+- [ ] Rewrite calculation tests for the current API:
+  - boundary methods;
+  - clamp negative;
+  - max width;
+  - trapezoidal vs interpolated integration;
+  - noise method and S/N threshold;
+  - area percent.
+- [ ] Add synthetic chromatogram fixtures with known expected peaks.
+- [ ] Add a small real-photo validation set.
+- [ ] Make the report explain:
+  - what was detected;
+  - what was uncertain;
+  - which parameters affected the result;
+  - what should be checked manually.
 
-### Phase 26: VLM Professional Integration
-- [x] ChatML template для Qwen2.5-VL / Qwen3.5-VL Instruct моделей
-- [x] Профессиональный промпт: persona constraint, negative constraints, schema-only (без фейковых данных)
-- [x] 3 промпта: AXIS_EXTRACTION, GRAPH_REGION, AXIS_STRUCTURE
-- [x] ChatML vs raw prompt routing по useChatML flag
-- [x] maxTokens: 512 → 768 (сложные графики + thinking tokens)
-- [x] Раздельные пресеты: QWEN25_VL, QWEN35_VL, GEMMA, DEFAULT
-- [x] Парсер: стрипает \<think\>, ChatML artifacts, правильный brace matching
-- [x] inferRaw() для non-axis промптов
-- [x] VLM-first graph region detection (Strategy A: всегда VLM first, CV fallback)
-- [x] VlmEngineHolder.activeConfig для prompt format routing
-- [x] Аудит всех 10 параметров семплинга: greedy, repeat_penalty, context, batch
+### 2. Improve File Import
 
----
+- [ ] CSV/TXT parser with delimiter and column auto-detection.
+- [ ] Manual column mapping screen.
+- [ ] Basic PDF raster fallback through the image pipeline.
+- [ ] Define mzML/netCDF scope separately; do not block alpha on it.
 
-## Фаза 3: Импорт файлов (Неделя 10–11)
+### 3. Harden AI Runtime
 
-> CSV, PDF, mzML.
+- [ ] Add clearer model activation diagnostics.
+- [ ] Validate downloaded/custom model files before activation.
+- [ ] Cache Hugging Face search results.
+- [ ] Add cancel/retry UI for downloads and activation.
+- [ ] Add memory-pressure handling for chat sessions.
 
-- [ ] Парсер CSV/TXT (auto-detect разделитель, колонки)
-- [ ] Парсер PDF (векторный + растровый fallback)
-- [ ] Парсер mzML (XML → chromatogram data)
-- [ ] Единый интерфейс FileImporter
-- [ ] Экран выбора файла + предпросмотр
+### 4. Release Quality
 
----
+- [ ] Clean outdated tests.
+- [ ] Add release checklist.
+- [ ] Add screenshots and known-issues section to GitHub releases.
+- [ ] Run device testing on at least:
+  - current development phone;
+  - one lower-memory Android device;
+  - one emulator for UI smoke checks.
 
-## Фаза 4: Multi-channel + Ion ratio (Неделя 12–13)
+## Later Modules
 
-> Работа с несколькими ионными каналами.
+These should be added as separate modules once the core model/runtime architecture is stable:
 
-- [ ] Привязка нескольких хроматограмм к одному образцу
-- [ ] RT matching между каналами
-- [ ] Ion ratio (area и height)
-- [ ] Допуски WADA TD2023IDCR
-- [ ] Статус: CONFIRMED / DOUBTFUL / NOT_CONFIRMED
-- [ ] UI: сравнительный вид двух каналов
+- ion ratio and multi-channel chromatogram comparison;
+- calibration curves and QC;
+- project/sample hierarchy;
+- template-based compound identification;
+- local document/report assistant;
+- other small domain analyzers that can reuse the same local model pool.
 
----
+## Release Track
 
-## Фаза 5: Проекты + Отчёты (Неделя 14–16)
-
-> Полная иерархия данных и экспорт.
-
-- [ ] CRUD: проекты, образцы
-- [ ] Привязка хроматограмм к образцам
-- [ ] Экспорт PDF (iText): график + таблица + параметры + заключение
-- [ ] Экспорт CSV
-- [ ] Экспорт JSON
-- [ ] Аудит-лог действий
-- [ ] Детерминированность: сохранение конфига в каждом расчёте
-- [ ] Калибровочные кривые (линейная/квадратичная регрессия)
-- [ ] QC-модуль: blank, control, spike recovery
-
----
-
-## Фаза 6: Полировка (Неделя 17–18)
-
-> UX, локализация, тестирование.
-
-- [ ] Тёмная тема
-- [ ] Локализация: fr, cs, de, es, it, pl
-- [ ] Онлайн-справка: API PubChem/ChemSpider для идентификации ионов
-- [ ] Onboarding / tutorial
-- [ ] Валидация на тестовых хроматограммах (эталонные результаты)
-- [ ] Performance profiling
-- [ ] Accessibility
-- [ ] Подготовка к публикации: иконка, описание, скриншоты
-
----
-
-## Фаза 7: Валидация + Релиз (Неделя 19–20)
-
-> Проверка точности и выпуск.
-
-- [ ] Тестирование на 30+ хроматограммах разного качества
-- [ ] Сравнение результатов с эталонными расчётами
-- [ ] Документирование точности и ограничений
-- [ ] Beta-тестирование
-- [ ] Google Play: internal testing → closed beta → production
-- [ ] Документация пользователя
-
----
-
-## Будущее (после релиза)
-
-- Монетизация (подписки, тарифы)
-- Серверная часть (аккаунты, облачное хранение)
-- LIMS-интеграция
-- Электронная подпись отчётов
-- Роли пользователей
-- API для сторонних систем
-- iOS-версия
+- `v0.0.1` - phase 1 preview.
+- `v0.0.2-alpha` - calculation engine alpha.
+- `v0.0.3-alpha` - model platform, chat MVP, calculation-settings fix.

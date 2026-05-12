@@ -16,7 +16,11 @@ interface InferenceEngine {
      * Run raw inference — send prompt + image, return raw text response.
      * Used for non-axis prompts (graph region, axis structure).
      */
-    suspend fun inferRaw(imagePath: String, prompt: String): String
+    suspend fun inferRaw(
+        imagePath: String,
+        prompt: String,
+        options: GenerationOptions = GenerationOptions(),
+    ): String
 
     /** Whether a model is currently loaded and ready. */
     fun isLoaded(): Boolean
@@ -27,6 +31,21 @@ interface InferenceEngine {
     /** Human-readable backend description, e.g. "LiteRT NPU", "llama.cpp Vulkan". */
     fun getBackendName(): String
 }
+
+/**
+ * Optional generation controls for raw inference.
+ *
+ * Chart analysis uses the engine defaults, which are deterministic. Chat can
+ * pass user-facing settings without changing the chromatography pipeline.
+ */
+data class GenerationOptions(
+    val maxTokens: Int? = null,
+    val temperature: Float? = null,
+    val topP: Float? = null,
+    val topK: Int? = null,
+    val repeatPenalty: Float? = null,
+    val repeatLastN: Int? = null,
+)
 
 /**
  * Structured result from VLM chart analysis.
