@@ -223,3 +223,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Later report UI/export phases can render these structured fields as a dedicated audit table instead of relying on the preprocessing summary line.
+
+## Phase 4.1 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- `GraphRegionResult` now exposes `qualityEvaluations` for every detected region.
+- `filteredRegions` now contains only regions that pass graph quality filters; fallback/manual guesses are no longer promoted into the accepted multi-graph list.
+- Graph region quality checks include image bounds, minimum width/height/area, maximum broad-region area, low-confidence broad-region rejection, and plausible aspect ratio.
+- Auto-sweep can now compare CV and VLM region counts using accepted regions only, so multi-graph selection is based on regions that passed quality filters.
+
+Remaining later work:
+
+- Phase 4.2 should formalize natural reading order beyond simple top-to-bottom sorting, especially for pages with multiple columns.

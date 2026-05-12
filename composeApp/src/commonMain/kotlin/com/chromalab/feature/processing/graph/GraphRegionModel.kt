@@ -20,6 +20,59 @@ data class GraphRegion(
     val aspectRatio: Float get() = if (height > 0) width.toFloat() / height else 0f
 }
 
+@Serializable
+data class GraphRegionQuality(
+    val region: GraphRegion,
+    val accepted: Boolean,
+    val widthRatio: Float,
+    val heightRatio: Float,
+    val areaRatio: Float,
+    val aspectRatio: Float,
+    val rejectionReasons: List<String> = emptyList(),
+)
+
+private const val MIN_WIDTH_RATIO = 0.25f
+private const val MIN_HEIGHT_RATIO = 0.12f
+private const val MIN_AREA_RATIO = 0.04f
+private const val MAX_AREA_RATIO = 0.92f
+private const val MAX_LOW_CONFIDENCE_AREA_RATIO = 0.55f
+private const val MIN_ASPECT_RATIO = 0.65f
+private const val MAX_ASPECT_RATIO = 5.0f
+
+private fun GraphRegion.evaluateQuality(
+    imageWidth: Int,
+    imageHeight: Int,
+    confidence: DetectionConfidence,
+): GraphRegionQuality {
+    val safeWidth = imageWidth.coerceAtLeast(1)
+    val safeHeight = imageHeight.coerceAtLeast(1)
+    val imageArea = (safeWidth.toFloat() * safeHeight.toFloat()).coerceAtLeast(1f)
+    val widthRatio = width.toFloat() / safeWidth
+    val heightRatio = height.toFloat() / safeHeight
+    val areaRatio = area.toFloat() / imageArea
+    val reasons = mutableListOf<String>()
+
+    if (x < 0 || y < 0 || right > safeWidth || bottom > safeHeight) reasons.add("out_of_image_bounds")
+    if (widthRatio < MIN_WIDTH_RATIO) reasons.add("too_narrow")
+    if (heightRatio < MIN_HEIGHT_RATIO) reasons.add("too_short")
+    if (areaRatio < MIN_AREA_RATIO) reasons.add("area_too_small")
+    if (areaRatio > MAX_AREA_RATIO) reasons.add("area_too_large")
+    if (confidence == DetectionConfidence.LOW && areaRatio > MAX_LOW_CONFIDENCE_AREA_RATIO) {
+        reasons.add("low_confidence_broad_region")
+    }
+    if (aspectRatio !in MIN_ASPECT_RATIO..MAX_ASPECT_RATIO) reasons.add("implausible_aspect_ratio")
+
+    return GraphRegionQuality(
+        region = this,
+        accepted = reasons.isEmpty(),
+        widthRatio = widthRatio,
+        heightRatio = heightRatio,
+        areaRatio = areaRatio,
+        aspectRatio = aspectRatio,
+        rejectionReasons = reasons,
+    )
+}
+
 /**
  * Confidence level for auto-detected graph region.
  */
@@ -53,40 +106,26 @@ data class GraphRegionResult(
     val warnings: List<String> = emptyList(),
     val timestamp: Long,
 ) {
+    val qualityEvaluations: List<GraphRegionQuality>
+        get() = sortedRegions.map { region ->
+            region.evaluateQuality(imageWidth, imageHeight, confidence)
+        }
+
     val selectedRegion: GraphRegion?
         get() {
             if (regions.isEmpty()) return null
-            // Select topmost region that looks like a real graph.
-            // Filter out text headers, axis labels, and thin strips:
-            // 1. Aspect ratio < 3.5 — real graphs are roughly 2:1, not 4:1+
-            // 2. Min height: at least 15% of image height
-            // 3. Min area: at least 5% of image area
-            val minHeight = (imageHeight * 0.15f).toInt()
-            val minArea = (imageWidth.toLong() * imageHeight * 0.05f).toInt()
-            val graphs = sortedRegions.filter { r ->
-                r.aspectRatio < 3.5f &&
-                    r.height >= minHeight &&
-                    r.area >= minArea
-            }
-            return graphs.firstOrNull() ?: sortedRegions.first()
+            return filteredRegions.firstOrNull() ?: sortedRegions.first()
         }
 
     /** Regions sorted top-to-bottom (by Y coordinate) — natural reading order */
     val sortedRegions: List<GraphRegion>
         get() = regions.sortedBy { it.y }
 
-    /** Regions that pass quality filter — only real graph areas, no headers/labels */
+    /** Regions that pass quality filters; fallback/manual guesses are not promoted here. */
     val filteredRegions: List<GraphRegion>
-        get() {
-            val minHeight = (imageHeight * 0.15f).toInt()
-            val minArea = (imageWidth.toLong() * imageHeight * 0.05f).toInt()
-            val filtered = sortedRegions.filter { r ->
-                r.aspectRatio < 3.5f &&
-                    r.height >= minHeight &&
-                    r.area >= minArea
-            }
-            return filtered.ifEmpty { sortedRegions }
-        }
+        get() = qualityEvaluations
+            .filter { it.accepted }
+            .map { it.region }
 
     /** Always true — we never block the user */
     val canProceed: Boolean get() = true

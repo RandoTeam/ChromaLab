@@ -70,7 +70,7 @@ Exit criteria:
 
 Goal: support one image or page containing multiple chromatogram graphs.
 
-- [ ] 4.1 Detect all graph regions that pass quality filters.
+- [x] 4.1 Detect all graph regions that pass quality filters.
 - [ ] 4.2 Sort graphs in natural reading order.
 - [ ] 4.3 Run graph preparation, OCR, calibration, curve extraction, and calculation per graph.
 - [ ] 4.4 Produce output as graph 1/report 1, graph 2/report 2, graph 3/report 3.

@@ -16,6 +16,7 @@ import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.scaledCoordinates
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
+import com.chromalab.feature.processing.pipeline.DetectionMethod
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -228,21 +229,16 @@ class AutoSweepEngine {
         // CV refines with pixel-level precision.
         var vlmBounds: com.chromalab.feature.processing.inference.GraphBounds? = null
         var vlmRegion: GraphRegion? = null
-        try {
+        var vlmGraphResult: GraphRegionResult? = null
+        if (cachedGraphResult == null && overrideRegion == null) try {
             onProgress(SweepProgress(0, configs.size, "VLM: определение графика", "vlm_region"))
             vlmBounds = ocrReader.detectGraphRegion(imagePath, w, h)
             if (vlmBounds != null) {
-                // Convert percentage bounds to pixel coordinates
-                val left = (vlmBounds.leftPct / 100f * w).toInt().coerceIn(0, w)
-                val top = (vlmBounds.topPct / 100f * h).toInt().coerceIn(0, h)
-                val right = (vlmBounds.rightPct / 100f * w).toInt().coerceIn(left + 1, w)
-                val bottom = (vlmBounds.bottomPct / 100f * h).toInt().coerceIn(top + 1, h)
-                vlmRegion = GraphRegion(
-                    x = left, y = top,
-                    width = right - left, height = bottom - top,
-                    label = "VLM detected",
-                )
-                println("SWEEP[VLM] Graph region: ${vlmRegion.x},${vlmRegion.y} ${vlmRegion.width}x${vlmRegion.height} (${vlmBounds.numGraphs} graphs)")
+                vlmGraphResult = buildVlmGraphResult(vlmBounds, w, h)
+                vlmRegion = vlmGraphResult.selectedRegion
+                if (vlmRegion != null) {
+                    println("SWEEP[VLM] Graph region: ${vlmRegion.x},${vlmRegion.y} ${vlmRegion.width}x${vlmRegion.height} (${vlmBounds.numGraphs} graphs)")
+                }
             }
         } catch (e: Exception) {
             println("SWEEP[VLM] Graph detection failed: ${e.message}")
@@ -255,7 +251,7 @@ class AutoSweepEngine {
             return emptyList()
         }
 
-        val graphRes = cachedGraphResult ?: run {
+        val cvGraphRes = cachedGraphResult ?: run {
             onProgress(SweepProgress(0, configs.size, "CV: определение графика", "detect"))
             try {
                 graphDetector.detect(imagePath, w, h)
@@ -264,6 +260,7 @@ class AutoSweepEngine {
                 null
             }
         }
+        val graphRes = selectGraphResult(cvGraphRes, vlmGraphResult)
 
         // Region selection priority: override > CV > VLM fallback.
         val region = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
@@ -636,4 +633,62 @@ class AutoSweepEngine {
         confidence = 0f,
         timestamp = System.currentTimeMillis(),
     )
+
+    private fun selectGraphResult(
+        cv: GraphRegionResult?,
+        vlm: GraphRegionResult?,
+    ): GraphRegionResult? {
+        if (cv == null) return vlm
+        if (vlm == null) return cv
+
+        val cvCount = cv.filteredRegions.size
+        val vlmCount = vlm.filteredRegions.size
+        val shouldUseVlmSplit = vlmCount > cvCount && cv.confidence != DetectionConfidence.HIGH
+        return if (shouldUseVlmSplit) {
+            println("SWEEP[MULTI] Using VLM split: cv=$cvCount, vlm=$vlmCount")
+            vlm
+        } else {
+            cv
+        }
+    }
+
+    private fun buildVlmGraphResult(
+        bounds: com.chromalab.feature.processing.inference.GraphBounds,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphRegionResult {
+        val left = (bounds.leftPct / 100f * imageWidth).toInt().coerceIn(0, imageWidth)
+        val top = (bounds.topPct / 100f * imageHeight).toInt().coerceIn(0, imageHeight)
+        val right = (bounds.rightPct / 100f * imageWidth).toInt().coerceIn(left + 1, imageWidth)
+        val bottom = (bounds.bottomPct / 100f * imageHeight).toInt().coerceIn(top + 1, imageHeight)
+        val count = bounds.numGraphs.coerceIn(1, 6)
+        val fullWidth = (right - left).coerceAtLeast(1)
+        val fullHeight = (bottom - top).coerceAtLeast(1)
+
+        val regions = if (count == 1) {
+            listOf(GraphRegion(left, top, fullWidth, fullHeight, "VLM detected"))
+        } else {
+            (0 until count).map { index ->
+                val y0 = top + (fullHeight * index / count)
+                val y1 = top + (fullHeight * (index + 1) / count)
+                GraphRegion(
+                    x = left,
+                    y = y0,
+                    width = fullWidth,
+                    height = (y1 - y0).coerceAtLeast(1),
+                    label = "Graph ${index + 1}",
+                )
+            }
+        }
+
+        return GraphRegionResult(
+            regions = regions,
+            detectionMethod = DetectionMethod.AUTO,
+            confidence = if (count > 1) DetectionConfidence.MEDIUM else DetectionConfidence.LOW,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+            warnings = listOf("Graph regions are based on VLM layout fallback; verify boundaries if results look wrong."),
+            timestamp = System.currentTimeMillis(),
+        )
+    }
 }
