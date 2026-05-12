@@ -218,19 +218,18 @@ fun ProcessingFlowScreen(
                         // Normalize first: fix EXIF orientation
                         if (normalizedResult == null) {
                             val norm = imageNormalizer.normalize(imagePath, outputDir)
-                            if (norm != null) {
-                                normalizedResult = norm
-                                normalizedPath = norm.normalizedPath
-                                currentImagePath = norm.normalizedPath
-                                imageWidth = norm.width
-                                imageHeight = norm.height
-                                selectedRegion = GraphRegion(
-                                    0, 0, norm.width, norm.height,
-                                )
-                            } else {
-                                normalizedPath = imagePath
-                                currentImagePath = imagePath
+                                ?: error("Image normalization failed: unable to load source image.")
+                            if (norm.width <= 0 || norm.height <= 0) {
+                                error("Image normalization failed: invalid source dimensions ${norm.width}x${norm.height}.")
                             }
+                            normalizedResult = norm
+                            normalizedPath = norm.normalizedPath
+                            currentImagePath = norm.normalizedPath
+                            imageWidth = norm.width
+                            imageHeight = norm.height
+                            selectedRegion = GraphRegion(
+                                0, 0, norm.width, norm.height,
+                            )
                         }
                         qualityReport = qualityAnalyzer.analyze(currentImagePath)
                         println("PIPELINE[IMAGE_QUALITY] done: blur=${qualityReport?.blurScore?.score}")
@@ -262,8 +261,10 @@ fun ProcessingFlowScreen(
                             val isSubsequentGraph = currentGraphIndex > 0
                             val totalRegions = graphResult?.filteredRegions?.size ?: 0
                             println("PIPELINE[SWEEP] Starting sweep for graph ${currentGraphIndex + 1}/${maxOf(totalRegions, 1)}, configs=${sweepEngine.configs.size}")
-                            val w = imageWidth.takeIf { it > 0 } ?: 1920
-                            val h = imageHeight.takeIf { it > 0 } ?: 1080
+                            val w = imageWidth.takeIf { it > 0 }
+                                ?: error("Normalized image width is required before graph detection.")
+                            val h = imageHeight.takeIf { it > 0 }
+                                ?: error("Normalized image height is required before graph detection.")
 
                             val sweepResults = sweepEngine.sweep(
                                 imagePath = currentImagePath,

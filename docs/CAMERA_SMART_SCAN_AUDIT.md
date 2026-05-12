@@ -174,3 +174,17 @@ Remaining later work:
 
 - `ManualCameraScreen` still exists in the codebase as a potential diagnostic/manual capture screen, but it is no longer reached from the normal Smart Scan route.
 - Source provenance still needs a structured model so reports can distinguish Smart Scan camera, Smart Scan gallery, and any future diagnostic/manual capture.
+
+## Phase 3.3 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- `ProcessingFlowScreen` now treats image normalization as mandatory for photo analysis.
+- Normalized image width and height must be positive before crop, perspective, graph detection, VLM bounds conversion, and report metadata.
+- `AutoSweepEngine` rejects missing dimensions instead of guessing `1920x1080`.
+- Desktop normalization now records real image dimensions when copying the source image.
+
+Remaining later work:
+
+- Android normalization still decodes the full source bitmap. Large-image memory behavior should be reviewed separately from correctness.
+- Source provenance still needs to record whether the normalized input came from Smart Scan camera or Smart Scan gallery.

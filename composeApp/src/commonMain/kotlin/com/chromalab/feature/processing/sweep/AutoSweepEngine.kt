@@ -163,8 +163,11 @@ class AutoSweepEngine {
         val curveExtractor = CurveExtractor()
 
         // === SHARED: run once ===
-        val w = imageWidth.takeIf { it > 0 } ?: 1920
-        val h = imageHeight.takeIf { it > 0 } ?: 1080
+        require(imageWidth > 0 && imageHeight > 0) {
+            "Image dimensions are required before graph detection."
+        }
+        val w = imageWidth
+        val h = imageHeight
 
         // === Strategy A: VLM-first graph detection (always try) ===
         // VLM provides structural understanding of the image;
