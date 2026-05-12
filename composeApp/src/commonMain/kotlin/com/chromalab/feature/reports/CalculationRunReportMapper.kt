@@ -502,8 +502,11 @@ object CalculationRunReportMapper {
         }
 
         run.warnings.forEach { add(it.toReportWarning(graphIndex)) }
-        addAll(options.additionalGraphWarnings)
+        addAll(options.additionalGraphWarnings.withGraphIndex(graphIndex))
     }
+
+    private fun List<ReportWarning>.withGraphIndex(graphIndex: Int): List<ReportWarning> =
+        map { warning -> warning.copy(graphIndex = graphIndex) }
 
     private fun CalculationRunReportOptions.hasRuntimeMetadata(): Boolean =
         selectedModel != null ||

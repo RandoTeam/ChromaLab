@@ -153,7 +153,7 @@ fun buildProcessingStoredReportMetadata(
 private fun List<ReportWarning>.toStoredGraphWarnings(graphIndex: Int): List<ReportWarning> =
     filter { it.code.isNotBlank() && it.message.isNotBlank() }
         .map { warning ->
-            warning.copy(graphIndex = warning.graphIndex ?: graphIndex)
+            warning.copy(graphIndex = graphIndex)
         }
         .distinctBy { warning ->
             listOf(

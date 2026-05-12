@@ -74,7 +74,7 @@ Goal: support one image or page containing multiple chromatogram graphs.
 - [x] 4.2 Sort graphs in natural reading order.
 - [x] 4.3 Run graph preparation, OCR, calibration, curve extraction, and calculation per graph.
 - [x] 4.4 Produce output as graph 1/report 1, graph 2/report 2, graph 3/report 3.
-- [ ] 4.5 Prevent cross-contamination between graph metadata, peaks, warnings, and model responses.
+- [x] 4.5 Prevent cross-contamination between graph metadata, peaks, warnings, and model responses.
 
 Exit criteria:
 
@@ -194,4 +194,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 4.5: prevent cross-contamination between graph metadata, peaks, warnings, and model responses.
+Start Phase 5.1: extract chromatogram title, ion/channel, sample label, X-axis label, Y-axis label, and tick labels.

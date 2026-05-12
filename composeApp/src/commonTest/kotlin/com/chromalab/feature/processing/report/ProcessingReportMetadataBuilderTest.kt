@@ -120,4 +120,84 @@ class ProcessingReportMetadataBuilderTest {
                 .contains("Auto-sweep selected config: high_contrast"),
         )
     }
+
+    @Test
+    fun processingMetadataKeepsGraphRecordsIsolated() {
+        val graph1Config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\graph_1.png""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 2,
+            signalPointCount = 101,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+            detectedGraphBounds = PixelRect(10, 20, 300, 180),
+            preparationVariants = listOf(
+                GraphPreparationVariantMetadata(
+                    rank = 1,
+                    configName = "graph_1_contrast",
+                    inputVariant = "contrast",
+                    score = 210.0,
+                    selected = true,
+                ),
+            ),
+            graphWarnings = listOf(
+                ReportWarning(
+                    code = "graph_1.warning",
+                    message = "Graph 1 warning",
+                    severity = ReportSeverity.WARNING,
+                    stage = "graph_detection",
+                    graphIndex = 2,
+                ),
+            ),
+        )
+        val graph2Config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\graph_2.png""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 2,
+            detectedGraphCount = 2,
+            signalPointCount = 202,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+            detectedGraphBounds = PixelRect(20, 260, 320, 190),
+            preparationVariants = listOf(
+                GraphPreparationVariantMetadata(
+                    rank = 1,
+                    configName = "graph_2_scan_style",
+                    inputVariant = "scan_style",
+                    score = 230.0,
+                    selected = true,
+                ),
+            ),
+            graphWarnings = listOf(
+                ReportWarning(
+                    code = "graph_2.warning",
+                    message = "Graph 2 warning",
+                    severity = ReportSeverity.WARNING,
+                    stage = "axis_ocr",
+                    graphIndex = 1,
+                ),
+            ),
+        )
+
+        val graph1 = StoredReportMetadataCodec.decodeOrNull(graph1Config)?.graphs?.single()
+        val graph2 = StoredReportMetadataCodec.decodeOrNull(graph2Config)?.graphs?.single()
+
+        assertNotNull(graph1)
+        assertNotNull(graph2)
+        assertEquals(1, graph1.graphIndex)
+        assertEquals(2, graph2.graphIndex)
+        assertEquals(PixelRect(10, 20, 300, 180), graph1.source?.detectedGraphBounds)
+        assertEquals(PixelRect(20, 260, 320, 190), graph2.source?.detectedGraphBounds)
+        assertEquals("graph_1_contrast", graph1.source?.selectedPreparationVariant?.configName)
+        assertEquals("graph_2_scan_style", graph2.source?.selectedPreparationVariant?.configName)
+        assertEquals("graph_1.warning", graph1.warnings.single().code)
+        assertEquals("graph_2.warning", graph2.warnings.single().code)
+        assertEquals(1, graph1.warnings.single().graphIndex)
+        assertEquals(2, graph2.warnings.single().graphIndex)
+        assertTrue(graph1.source?.preprocessingSteps.orEmpty().contains("Digitized signal points: 101"))
+        assertTrue(graph2.source?.preprocessingSteps.orEmpty().contains("Digitized signal points: 202"))
+    }
 }

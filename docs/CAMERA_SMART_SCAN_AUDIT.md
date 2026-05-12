@@ -275,3 +275,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Phase 4.5 should add stronger regression checks that metadata, peaks, warnings, and model responses cannot cross between graph records.
+
+## Phase 4.5 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- Processing metadata now forces all stored graph warnings onto the current graph index instead of preserving stale indexes from upstream state.
+- Report mapping now forces additional graph warnings onto the report graph being rendered.
+- Regression coverage documents two separate graph records with distinct ROI, preparation variant, warning, and signal-point metadata.
+- Regression coverage also documents that report peaks and calculation/model-stage warnings are bound to the current graph index.
+
+Remaining later work:
+
+- Phase 5.1 should start structured extraction for title, ion/channel, sample label, axis labels, and tick labels.

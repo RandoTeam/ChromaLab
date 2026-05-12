@@ -2,12 +2,18 @@ package com.chromalab.feature.reports
 
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
+import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.calculation.core.CalculationWarning
+import com.chromalab.feature.calculation.core.PeakResult
+import com.chromalab.feature.calculation.core.PeakStatus
 import com.chromalab.feature.calculation.core.SignalBundle
 import com.chromalab.feature.calculation.core.SignalPoint
 import com.chromalab.feature.calculation.core.SignalSource
 import com.chromalab.feature.calculation.core.ValidationResult
+import com.chromalab.feature.calculation.core.WarningSeverity
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -217,6 +223,52 @@ class StoredReportMetadataTest {
         assertTrue(options.graphSourceMetadata?.preprocessingSteps.orEmpty().contains("Graph 2 selected crop"))
     }
 
+    @Test
+    fun reportMapperBindsPeaksAndWarningsToCurrentGraphIndex() {
+        val run = calculationRun(
+            peaks = listOf(
+                peakResult(
+                    peakId = 0,
+                    rtApex = 0.5,
+                    warning = "peak belongs to graph 2",
+                ),
+            ),
+            warnings = listOf(
+                CalculationWarning(
+                    message = "calculation warning belongs to graph 2",
+                    severity = WarningSeverity.CAUTION,
+                    stage = "peak_detection",
+                ),
+            ),
+        )
+
+        val report = CalculationRunReportMapper.map(
+            run = run,
+            options = CalculationRunReportOptions(
+                detectedGraphCount = 2,
+                graphIndex = 2,
+                graphSourceMetadata = GraphSourceMetadata(
+                    detectedGraphBounds = PixelRect(20, 260, 320, 190),
+                ),
+                additionalGraphWarnings = listOf(
+                    ReportWarning(
+                        code = "legacy.graph.warning",
+                        message = "legacy graph warning had the wrong index",
+                        severity = ReportSeverity.WARNING,
+                        stage = "graph_detection",
+                        graphIndex = 1,
+                    ),
+                ),
+            ),
+        )
+
+        val graph = report.graphs.single()
+        assertEquals(2, graph.graphIndex)
+        assertEquals(2, graph.peaks.single().warnings.single().graphIndex)
+        assertEquals(2, graph.warnings.first { it.code == "calculation_run.peak_detection" }.graphIndex)
+        assertEquals(2, graph.warnings.first { it.code == "legacy.graph.warning" }.graphIndex)
+    }
+
     private fun chromatogramEntity(
         sourceType: SourceType,
         filePath: String?,
@@ -238,7 +290,10 @@ class StoredReportMetadataTest {
             updatedAt = 200L,
         )
 
-    private fun calculationRun(): CalculationRun =
+    private fun calculationRun(
+        peaks: List<PeakResult> = emptyList(),
+        warnings: List<CalculationWarning> = emptyList(),
+    ): CalculationRun =
         CalculationRun(
             id = "run-1",
             sourceSignalId = "signal-1",
@@ -277,8 +332,36 @@ class StoredReportMetadataTest {
                 signalUsedForDetection = SignalSource.RAW,
                 signalUsedForIntegration = SignalSource.RAW,
             ),
-            peaks = emptyList(),
-            warnings = emptyList(),
+            peaks = peaks,
+            warnings = warnings,
             timestamp = 4000L,
+        )
+
+    private fun peakResult(
+        peakId: Int,
+        rtApex: Double,
+        warning: String,
+    ): PeakResult =
+        PeakResult(
+            peakId = peakId,
+            status = PeakStatus.AUTO,
+            rtApex = rtApex,
+            rtCentroid = null,
+            height = 10.0,
+            area = 25.0,
+            widthBase = 0.2,
+            widthHalfHeight = 0.1,
+            prominence = 8.0,
+            snr = 12.0,
+            snrMethod = "RMS",
+            baselineMethod = "ALS",
+            integrationMethod = "trapezoidal",
+            confidence = ConfidenceGrade.HIGH,
+            overlapStatus = OverlapStatus.ISOLATED,
+            leftBoundaryTime = rtApex - 0.1,
+            rightBoundaryTime = rtApex + 0.1,
+            boundaryMethod = "LOCAL_MINIMA",
+            warnings = listOf(warning),
+            areaPercent = 100.0,
         )
 }
