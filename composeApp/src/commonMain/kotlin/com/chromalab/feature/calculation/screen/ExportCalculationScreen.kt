@@ -25,6 +25,7 @@ import com.chromalab.feature.calculation.export.*
  * Connected to real ExportEngine logic:
  * - peaks.csv via PeaksCsvExporter
  * - calculation.json via CalculationJsonExporter
+ * - chromatogram_report.md via CalculationRunReportExporter
  * - report.html via ReportExporter
  * - Share via onShare callback with generated content
  */
@@ -97,6 +98,19 @@ fun ExportCalculationScreen(
                 val html = ReportExporter.export(run)
                 onFileSave("report_${run.id}.html", html)
                 exportStatus = "✓ report.html сохранён"
+            },
+        )
+
+        ExportButton(
+            title = "Structured report (Markdown)",
+            subtitle = "chromatogram_report.md - strict report contract with explicit missing data",
+            icon = Icons.Filled.Description,
+            color = Color(0xFF7E57C2),
+            onClick = {
+                val markdown = CalculationRunReportExporter.exportMarkdown(run)
+                val validation = CalculationRunReportExporter.validate(run)
+                onFileSave("chromatogram_report_${run.id}.md", markdown)
+                exportStatus = "Saved chromatogram_report.md - ${validation.errorCount} errors, ${validation.warningCount} warnings"
             },
         )
 

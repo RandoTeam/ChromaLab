@@ -132,3 +132,5 @@ composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation/export/Calcul
 ```
 
 This bridge exports `chromatogram_report.md` from calculation data without inventing source-image OCR, crop, neural-model, or Kovats values that are not stored in the run yet. Missing upstream data remains explicit in the rendered report and is carried as warnings.
+
+Phase 1.8 exposes this bridge in the calculation export UI as a separate Markdown export action. The older HTML report remains available, but the Markdown export is the first user-facing output backed by the strict report contract.
