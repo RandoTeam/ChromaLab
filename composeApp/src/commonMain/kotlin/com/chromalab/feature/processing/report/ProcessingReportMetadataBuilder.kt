@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.GraphSourceMetadata
 import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.ModelExecutionInfo
@@ -26,6 +27,7 @@ fun buildProcessingReportMetadataConfig(
     detectedGraphBounds: PixelRect? = null,
     cropConfidence: Double? = null,
     preprocessingSteps: List<String> = emptyList(),
+    preparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
     scanMode: String? = null,
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
@@ -51,6 +53,7 @@ fun buildProcessingReportMetadataConfig(
             detectedGraphBounds = detectedGraphBounds,
             cropConfidence = cropConfidence,
             preprocessingSteps = preprocessingSteps,
+            preparationVariants = preparationVariants,
             scanMode = scanMode,
             titleOcrConfidence = titleOcrConfidence,
             axisOcrConfidence = axisOcrConfidence,
@@ -77,6 +80,7 @@ fun buildProcessingStoredReportMetadata(
     detectedGraphBounds: PixelRect? = null,
     cropConfidence: Double? = null,
     preprocessingSteps: List<String> = emptyList(),
+    preparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
     scanMode: String? = null,
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
@@ -95,6 +99,12 @@ fun buildProcessingStoredReportMetadata(
     } else {
         null
     }
+    val selectedPreparationVariant = preparationVariants
+        .firstOrNull { it.selected }
+        ?: preparationVariants.minByOrNull { it.rank }
+    val rejectedPreparationVariants = preparationVariants
+        .filterNot { it == selectedPreparationVariant }
+        .sortedBy { it.rank }
 
     return StoredReportMetadata(
         inputSourceType = sourceType.toReportInputSourceType(),
@@ -122,6 +132,8 @@ fun buildProcessingStoredReportMetadata(
                     titleOcrConfidence = titleOcrConfidence?.coerceIn(0.0, 1.0),
                     axisOcrConfidence = axisOcrConfidence?.coerceIn(0.0, 1.0),
                     tickOcrConfidence = tickOcrConfidence?.coerceIn(0.0, 1.0),
+                    selectedPreparationVariant = selectedPreparationVariant,
+                    rejectedPreparationVariants = rejectedPreparationVariants,
                     preprocessingSteps = buildList {
                         add("ProcessingFlowScreen auto-save")
                         add("Photo analysis pipeline completed before calculation export")

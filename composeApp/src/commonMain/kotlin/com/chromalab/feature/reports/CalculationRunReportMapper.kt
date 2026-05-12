@@ -516,6 +516,8 @@ object CalculationRunReportMapper {
             source.detectedGraphBounds != null ||
             source.cropConfidence != null ||
             source.preprocessingSteps.isNotEmpty() ||
+            source.selectedPreparationVariant != null ||
+            source.rejectedPreparationVariants.isNotEmpty() ||
             source.scanMode != null ||
             source.titleOcrConfidence != null ||
             source.axisOcrConfidence != null ||

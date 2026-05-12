@@ -210,4 +210,16 @@ Implemented on 2026-05-12:
 
 Remaining later work:
 
-- Phase 3.6 must persist the chosen variant and rejected variants in metadata for audit.
+## Phase 3.6 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- Report metadata now has structured `selectedPreparationVariant` and `rejectedPreparationVariants` fields on `GraphSourceMetadata`.
+- `ProcessingFlowScreen` converts the sorted auto-sweep results into ranked metadata entries with config name, image input variant, score, selected flag, and score breakdown.
+- Multi-graph processing stores preparation variant rankings per graph before saving each chromatogram record.
+- `ProcessingReportMetadataBuilder` writes the selected variant and rejected rankings into `algorithmConfig`.
+- Metadata round-trip and builder tests now cover selected/rejected preparation variants.
+
+Remaining later work:
+
+- Later report UI/export phases can render these structured fields as a dedicated audit table instead of relying on the preprocessing summary line.

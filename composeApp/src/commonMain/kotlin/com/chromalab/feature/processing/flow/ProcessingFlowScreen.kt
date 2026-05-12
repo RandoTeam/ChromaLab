@@ -75,6 +75,7 @@ import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
 import com.chromalab.feature.processing.report.currentReportDeviceName
 import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ReportSeverity
@@ -174,11 +175,13 @@ fun ProcessingFlowScreen(
     var sweepProgress by remember { mutableStateOf<AutoSweepEngine.SweepProgress?>(null) }
     var sweepCompleted by remember { mutableStateOf(false) }
     var bestSweepConfig by remember { mutableStateOf<String?>(null) }
+    var sweepPreparationVariants by remember { mutableStateOf<List<GraphPreparationVariantMetadata>>(emptyList()) }
 
     // Multi-graph support
     var currentGraphIndex by remember { mutableIntStateOf(0) }
     val processedSignals = remember { mutableStateListOf<SmoothedSignal>() }
     val processedGraphWarnings = remember { mutableStateListOf<List<ReportWarning>>() }
+    val processedPreparationVariants = remember { mutableStateListOf<List<GraphPreparationVariantMetadata>>() }
 
     // VLM model loading status (25.2B: lazy loading)
     var vlmLoadingStatus by remember { mutableStateOf<String?>(null) }
@@ -283,6 +286,7 @@ fun ProcessingFlowScreen(
                             if (sweepResults.isNotEmpty()) {
                                 val best = sweepResults.first()
                                 bestSweepConfig = best.config.name
+                                sweepPreparationVariants = sweepResults.toGraphPreparationVariants()
                                 println("PIPELINE[SWEEP] Winner: '${best.config.name}' score=${best.score} (${best.scoreBreakdown})")
 
                                 // Apply sweep results to pipeline state
@@ -614,6 +618,7 @@ fun ProcessingFlowScreen(
                                 ocrResult = ocrResult,
                             ),
                         )
+                        processedPreparationVariants.add(sweepPreparationVariants)
                     }
                     val totalRegions = graphResult?.filteredRegions?.size ?: 1
                     if (currentGraphIndex + 1 < totalRegions) {
@@ -634,12 +639,16 @@ fun ProcessingFlowScreen(
                         sweepCompleted = false
                         sweepProgress = null
                         bestSweepConfig = null
+                        sweepPreparationVariants = emptyList()
                         currentStep = ProcessingStep.GRAPH_ROI
                     } else {
                         // All graphs processed → auto-save to Room + navigate to Analysis
                         println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                         val signalsToSave = processedSignals.toList()
-                            .toReportSaveEntries(processedGraphWarnings.toList())
+                            .toReportSaveEntries(
+                                graphWarnings = processedGraphWarnings.toList(),
+                                preparationVariants = processedPreparationVariants.toList(),
+                            )
                         val modelSnapshot = chartReader.currentModelSnapshot()
                         val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                         val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -724,6 +733,7 @@ fun ProcessingFlowScreen(
                                             ),
                                             cropConfidence = cropConfidence,
                                             preprocessingSteps = preprocessingSteps,
+                                            preparationVariants = entry.preparationVariants,
                                             titleOcrConfidence = null,
                                             axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
                                             tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
@@ -783,6 +793,7 @@ fun ProcessingFlowScreen(
                         ocrResult = ocrResult,
                     ),
                 )
+                processedPreparationVariants.add(sweepPreparationVariants)
             }
             val totalRegions = graphResult?.filteredRegions?.size ?: 1
             if (currentGraphIndex + 1 < totalRegions) {
@@ -805,13 +816,17 @@ fun ProcessingFlowScreen(
                 sweepCompleted = false
                 sweepProgress = null
                 bestSweepConfig = null
+                sweepPreparationVariants = emptyList()
                 currentStep = ProcessingStep.GRAPH_ROI
             } else {
                 // All graphs done — auto-save to Room, then navigate to Analysis
                 println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                 scope.launch {
                     val signalsToSave = processedSignals.toList()
-                        .toReportSaveEntries(processedGraphWarnings.toList())
+                        .toReportSaveEntries(
+                            graphWarnings = processedGraphWarnings.toList(),
+                            preparationVariants = processedPreparationVariants.toList(),
+                        )
                     val modelSnapshot = chartReader.currentModelSnapshot()
                     val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                     val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
@@ -896,6 +911,7 @@ fun ProcessingFlowScreen(
                                         ),
                                         cropConfidence = cropConfidence,
                                         preprocessingSteps = preprocessingSteps,
+                                        preparationVariants = entry.preparationVariants,
                                         titleOcrConfidence = null,
                                         axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
                                         tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
@@ -1192,10 +1208,12 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
 private data class ReportSignalSaveEntry(
     val signal: SmoothedSignal,
     val warnings: List<ReportWarning>,
+    val preparationVariants: List<GraphPreparationVariantMetadata>,
 )
 
 private fun List<SmoothedSignal>.toReportSaveEntries(
     graphWarnings: List<List<ReportWarning>>,
+    preparationVariants: List<List<GraphPreparationVariantMetadata>>,
 ): List<ReportSignalSaveEntry> =
     mapIndexedNotNull { index, signal ->
         if (signal.smoothed.points.size < 10) {
@@ -1204,8 +1222,21 @@ private fun List<SmoothedSignal>.toReportSaveEntries(
             ReportSignalSaveEntry(
                 signal = signal,
                 warnings = graphWarnings.getOrNull(index).orEmpty(),
+                preparationVariants = preparationVariants.getOrNull(index).orEmpty(),
             )
         }
+    }
+
+private fun List<AutoSweepEngine.SweepResult>.toGraphPreparationVariants(): List<GraphPreparationVariantMetadata> =
+    mapIndexed { index, result ->
+        GraphPreparationVariantMetadata(
+            rank = index + 1,
+            configName = result.config.name,
+            inputVariant = result.config.inputVariant.name.lowercase(),
+            score = result.score.toDouble(),
+            selected = index == 0,
+            scoreBreakdown = result.scoreBreakdown.takeIf { it.isNotBlank() },
+        )
     }
 
 private fun buildReportGraphWarnings(

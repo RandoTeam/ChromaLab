@@ -100,11 +100,23 @@ data class GraphSourceMetadata(
     val detectedGraphBounds: PixelRect? = null,
     val cropConfidence: Double? = null,
     val preprocessingSteps: List<String> = emptyList(),
+    val selectedPreparationVariant: GraphPreparationVariantMetadata? = null,
+    val rejectedPreparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
     val scanMode: String? = null,
     val titleOcrConfidence: Double? = null,
     val axisOcrConfidence: Double? = null,
     val tickOcrConfidence: Double? = null,
     val manuallyAdjusted: Boolean = false,
+)
+
+@Serializable
+data class GraphPreparationVariantMetadata(
+    val rank: Int,
+    val configName: String,
+    val inputVariant: String,
+    val score: Double,
+    val selected: Boolean,
+    val scoreBreakdown: String? = null,
 )
 
 @Serializable

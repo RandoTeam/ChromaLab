@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
@@ -32,6 +33,24 @@ class ProcessingReportMetadataBuilderTest {
             detectedGraphBounds = PixelRect(120, 160, 900, 420),
             cropConfidence = 0.82,
             preprocessingSteps = listOf("EXIF normalized", "Auto-sweep selected config: high_contrast"),
+            preparationVariants = listOf(
+                GraphPreparationVariantMetadata(
+                    rank = 1,
+                    configName = "high_contrast",
+                    inputVariant = "contrast",
+                    score = 233.5,
+                    selected = true,
+                    scoreBreakdown = "graph[conf=HIGH], curve[cov=98%]",
+                ),
+                GraphPreparationVariantMetadata(
+                    rank = 2,
+                    configName = "scan_style",
+                    inputVariant = "scan_style",
+                    score = 211.0,
+                    selected = false,
+                    scoreBreakdown = "graph[conf=HIGH], curve[cov=82%]",
+                ),
+            ),
             scanMode = "photo-processing-flow/high_contrast",
             titleOcrConfidence = null,
             axisOcrConfidence = 0.76,
@@ -83,6 +102,10 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(PixelRect(0, 0, 1200, 800), graph.source?.sourceImageBounds)
         assertEquals(PixelRect(120, 160, 900, 420), graph.source?.detectedGraphBounds)
         assertEquals(0.82, graph.source?.cropConfidence)
+        assertEquals("high_contrast", graph.source?.selectedPreparationVariant?.configName)
+        assertEquals("contrast", graph.source?.selectedPreparationVariant?.inputVariant)
+        assertEquals(233.5, graph.source?.selectedPreparationVariant?.score)
+        assertEquals("scan_style", graph.source?.rejectedPreparationVariants?.single()?.configName)
         assertEquals(null, graph.source?.titleOcrConfidence)
         assertEquals(0.76, graph.source?.axisOcrConfidence)
         assertEquals(0.88, graph.source?.tickOcrConfidence)

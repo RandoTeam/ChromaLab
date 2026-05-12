@@ -30,6 +30,24 @@ class StoredReportMetadataTest {
                         detectedGraphBounds = PixelRect(x = 10, y = 20, width = 300, height = 180),
                         cropConfidence = 0.92,
                         preprocessingSteps = listOf("ML Kit document scan"),
+                        selectedPreparationVariant = GraphPreparationVariantMetadata(
+                            rank = 1,
+                            configName = "contrast",
+                            inputVariant = "contrast",
+                            score = 220.0,
+                            selected = true,
+                            scoreBreakdown = "graph[conf=HIGH], curve[cov=97%]",
+                        ),
+                        rejectedPreparationVariants = listOf(
+                            GraphPreparationVariantMetadata(
+                                rank = 2,
+                                configName = "binary",
+                                inputVariant = "binary",
+                                score = 140.0,
+                                selected = false,
+                                scoreBreakdown = "graph[conf=HIGH], curve[cov=62%]",
+                            ),
+                        ),
                         scanMode = "smart-scan-gallery",
                     ),
                     identification = ChromatogramIdentification(
@@ -51,6 +69,8 @@ class StoredReportMetadataTest {
         assertEquals(2, decoded.detectedGraphCount)
         assertEquals(ExecutedRuntime.LITERT, decoded.executedRuntime)
         assertEquals("m/z 92.00", decoded.graphs.single().identification?.ionOrChannel?.value)
+        assertEquals("contrast", decoded.graphs.single().source?.selectedPreparationVariant?.configName)
+        assertEquals("binary", decoded.graphs.single().source?.rejectedPreparationVariants?.single()?.configName)
     }
 
     @Test
@@ -91,6 +111,22 @@ class StoredReportMetadataTest {
                         detectedGraphBounds = PixelRect(20, 40, 500, 260),
                         cropConfidence = 0.91,
                         preprocessingSteps = listOf("Auto crop"),
+                        selectedPreparationVariant = GraphPreparationVariantMetadata(
+                            rank = 1,
+                            configName = "high_contrast",
+                            inputVariant = "contrast",
+                            score = 235.0,
+                            selected = true,
+                        ),
+                        rejectedPreparationVariants = listOf(
+                            GraphPreparationVariantMetadata(
+                                rank = 2,
+                                configName = "scan_style",
+                                inputVariant = "scan_style",
+                                score = 202.0,
+                                selected = false,
+                            ),
+                        ),
                         scanMode = "smart-scan-gallery",
                         titleOcrConfidence = 0.83,
                     ),
@@ -138,6 +174,8 @@ class StoredReportMetadataTest {
         assertEquals(300L, options.stageTimings.last().durationMillis)
         assertEquals("m/z 92.00", options.identification?.ionOrChannel?.value)
         assertEquals(0.91, options.graphSourceMetadata?.cropConfidence)
+        assertEquals("high_contrast", options.graphSourceMetadata?.selectedPreparationVariant?.configName)
+        assertEquals("scan_style", options.graphSourceMetadata?.rejectedPreparationVariants?.single()?.configName)
         assertTrue(options.graphSourceMetadata?.preprocessingSteps.orEmpty().contains("Auto crop"))
         assertTrue(
             options.graphSourceMetadata?.preprocessingSteps.orEmpty()
