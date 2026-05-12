@@ -121,3 +121,14 @@ docs/reference/belyi_tigr_ion92/rendered_report.md
 ```
 
 Use it as the first visual/textual target for the future report screen and export flow.
+
+## Calculation Run Bridge
+
+Phase 1.7 adds the first production bridge from a real deterministic `CalculationRun` into the structured `ChromatogramReport` contract:
+
+```text
+composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/CalculationRunReportMapper.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation/export/CalculationRunReportExporter.kt
+```
+
+This bridge exports `chromatogram_report.md` from calculation data without inventing source-image OCR, crop, neural-model, or Kovats values that are not stored in the run yet. Missing upstream data remains explicit in the rendered report and is carried as warnings.
