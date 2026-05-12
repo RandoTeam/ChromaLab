@@ -18,6 +18,7 @@ data class GraphRegion(
     val bottom: Int get() = y + height
     val area: Int get() = width * height
     val aspectRatio: Float get() = if (height > 0) width.toFloat() / height else 0f
+    val centerY: Float get() = y + height / 2f
 }
 
 @Serializable
@@ -38,6 +39,7 @@ private const val MAX_AREA_RATIO = 0.92f
 private const val MAX_LOW_CONFIDENCE_AREA_RATIO = 0.55f
 private const val MIN_ASPECT_RATIO = 0.65f
 private const val MAX_ASPECT_RATIO = 5.0f
+private const val SAME_ROW_MIN_VERTICAL_OVERLAP = 0.45f
 
 private fun GraphRegion.evaluateQuality(
     imageWidth: Int,
@@ -71,6 +73,47 @@ private fun GraphRegion.evaluateQuality(
         aspectRatio = aspectRatio,
         rejectionReasons = reasons,
     )
+}
+
+private class GraphRegionRow {
+    val regions: MutableList<GraphRegion> = mutableListOf()
+    var top: Int = Int.MAX_VALUE
+        private set
+    var bottom: Int = Int.MIN_VALUE
+        private set
+
+    val left: Int
+        get() = regions.minOfOrNull { it.x } ?: 0
+
+    fun add(region: GraphRegion) {
+        regions += region
+        top = minOf(top, region.y)
+        bottom = maxOf(bottom, region.bottom)
+    }
+
+    fun belongsToSameRow(region: GraphRegion): Boolean {
+        val overlap = minOf(bottom, region.bottom) - maxOf(top, region.y)
+        if (overlap <= 0) return false
+
+        val rowHeight = (bottom - top).coerceAtLeast(1)
+        val smallerHeight = minOf(rowHeight, region.height.coerceAtLeast(1))
+        val overlapRatio = overlap.toFloat() / smallerHeight.toFloat()
+        return overlapRatio >= SAME_ROW_MIN_VERTICAL_OVERLAP
+    }
+}
+
+private fun List<GraphRegion>.sortedByNaturalReadingOrder(): List<GraphRegion> {
+    if (size <= 1) return this
+
+    val rows = mutableListOf<GraphRegionRow>()
+    sortedWith(compareBy<GraphRegion> { it.centerY }.thenBy { it.x }).forEach { region ->
+        val row = rows.firstOrNull { it.belongsToSameRow(region) } ?: GraphRegionRow().also { rows += it }
+        row.add(region)
+    }
+
+    return rows
+        .sortedWith(compareBy<GraphRegionRow> { it.top }.thenBy { it.left })
+        .flatMap { row -> row.regions.sortedWith(compareBy<GraphRegion> { it.x }.thenBy { it.y }) }
 }
 
 /**
@@ -117,9 +160,9 @@ data class GraphRegionResult(
             return filteredRegions.firstOrNull() ?: sortedRegions.first()
         }
 
-    /** Regions sorted top-to-bottom (by Y coordinate) — natural reading order */
+    /** Regions sorted in natural reading order: rows top-to-bottom, items left-to-right. */
     val sortedRegions: List<GraphRegion>
-        get() = regions.sortedBy { it.y }
+        get() = regions.sortedByNaturalReadingOrder()
 
     /** Regions that pass quality filters; fallback/manual guesses are not promoted here. */
     val filteredRegions: List<GraphRegion>

@@ -236,3 +236,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Phase 4.2 should formalize natural reading order beyond simple top-to-bottom sorting, especially for pages with multiple columns.
+
+## Phase 4.2 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- `GraphRegionResult.sortedRegions` now groups detected regions into visual rows before sorting.
+- Regions in the same row are ordered left-to-right; rows are ordered top-to-bottom.
+- Row grouping uses vertical overlap, so pages with two chromatograms side-by-side are ordered before moving to the next row.
+- `filteredRegions`, `qualityEvaluations`, and the default selected region now inherit the same natural reading order.
+
+Remaining later work:
+
+- Phase 4.3 should run graph preparation, OCR, calibration, curve extraction, and calculation independently for each ordered graph.
