@@ -113,3 +113,11 @@ composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/fixtures/BelyiTig
 ```
 
 It builds a structured `ChromatogramReport`, validates it with `ReportContractValidator`, and renders it with `ReportMarkdownRenderer`. Its representative numeric values are report-shape placeholders only; they are not calculation ground truth.
+
+The phase 1.6 rendered Markdown reference is:
+
+```text
+docs/reference/belyi_tigr_ion92/rendered_report.md
+```
+
+Use it as the first visual/textual target for the future report screen and export flow.

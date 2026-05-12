@@ -48,7 +48,7 @@ object BelyiTigrIon92ReportFixture {
     const val referenceSha256: String = "8D68B75738DD33DFFD74CFB83696F3485C46D3E8AE6A770CAA562A02D0404DB0"
 
     fun buildReport(): ChromatogramReport {
-        val warnings = listOf(
+        val reportWarnings = listOf(
             ReportWarning(
                 code = "fixture.numeric_truth_not_locked",
                 message = "This fixture validates report shape and completeness; numeric values are not locked ground truth.",
@@ -56,6 +56,8 @@ object BelyiTigrIon92ReportFixture {
                 stage = "fixture",
                 graphIndex = 1,
             ),
+        )
+        val graphWarnings = listOf(
             ReportWarning(
                 code = "fixture.dominant_peak_reference_discrepancy",
                 message = "Reference text claims a dominant peak near 49 min, while the supplied screenshot visually shows a dominant early peak.",
@@ -89,8 +91,8 @@ object BelyiTigrIon92ReportFixture {
                 deviceName = "fixture-device",
                 processingMode = ProcessingMode.FULL_ANALYSIS,
             ),
-            graphs = listOf(buildGraph(warnings)),
-            warnings = warnings,
+            graphs = listOf(buildGraph(graphWarnings)),
+            warnings = reportWarnings,
         )
     }
 
