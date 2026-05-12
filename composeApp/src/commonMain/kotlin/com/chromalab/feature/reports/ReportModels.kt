@@ -33,6 +33,7 @@ data class ReportMetadata(
     val executedRuntime: ExecutedRuntime = ExecutedRuntime.UNKNOWN,
     val deviceName: String? = null,
     val processingMode: ProcessingMode = ProcessingMode.UNKNOWN,
+    val stageTimings: List<ReportStageTiming> = emptyList(),
 )
 
 @Serializable
@@ -41,6 +42,13 @@ data class ModelExecutionInfo(
     val modelName: String? = null,
     val runtime: ExecutedRuntime = ExecutedRuntime.UNKNOWN,
     val backendLabel: String? = null,
+)
+
+@Serializable
+data class ReportStageTiming(
+    val stageId: String,
+    val stageName: String? = null,
+    val durationMillis: Long,
 )
 
 @Serializable

@@ -33,6 +33,7 @@ fun buildCalculationReportOptions(
         executedRuntime = stored?.executedRuntime ?: ExecutedRuntime.DETERMINISTIC,
         deviceName = stored?.deviceName,
         processingMode = stored?.processingMode ?: ProcessingMode.EXPORT_ONLY,
+        stageTimings = stored?.stageTimings.orEmpty(),
         graphIndex = storedGraph?.graphIndex?.coerceAtLeast(1) ?: 1,
         graphSourceMetadata = mergeGraphSourceMetadata(storedGraph?.source, fallbackSource),
         identification = storedGraph?.identification ?: buildChromatogramIdentification(chromatogram, sourceName),

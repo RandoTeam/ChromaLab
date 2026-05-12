@@ -124,3 +124,15 @@ enum class ModelRuntime {
     /** llama.cpp — .gguf format, CPU/Vulkan/Hexagon. */
     LLAMA_CPP,
 }
+
+data class ActiveInferenceModel(
+    val modelId: String,
+    val modelName: String? = null,
+    val runtime: ModelRuntime? = null,
+    val backendLabel: String? = null,
+)
+
+data class ActiveInferenceModelSnapshot(
+    val selectedModel: ActiveInferenceModel? = null,
+    val executedModel: ActiveInferenceModel? = null,
+)

@@ -29,4 +29,6 @@ actual class ChartAnalysisReader actual constructor() {
 
     /** No VLM on desktop — always returns false. */
     actual suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)?): Boolean = false
+
+    actual fun currentModelSnapshot(): ActiveInferenceModelSnapshot = ActiveInferenceModelSnapshot()
 }

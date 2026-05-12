@@ -4,8 +4,10 @@ import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphSourceMetadata
 import com.chromalab.feature.reports.InputSourceType
+import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.StoredGraphReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadataCodec
@@ -27,6 +29,11 @@ fun buildProcessingReportMetadataConfig(
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
+    selectedModel: ModelExecutionInfo? = null,
+    executedModel: ModelExecutionInfo? = null,
+    executedRuntime: ExecutedRuntime = executedModel?.runtime ?: selectedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
+    deviceName: String? = null,
+    stageTimings: List<ReportStageTiming> = emptyList(),
 ): String =
     StoredReportMetadataCodec.encode(
         buildProcessingStoredReportMetadata(
@@ -46,6 +53,11 @@ fun buildProcessingReportMetadataConfig(
             titleOcrConfidence = titleOcrConfidence,
             axisOcrConfidence = axisOcrConfidence,
             tickOcrConfidence = tickOcrConfidence,
+            selectedModel = selectedModel,
+            executedModel = executedModel,
+            executedRuntime = executedRuntime,
+            deviceName = deviceName,
+            stageTimings = stageTimings,
         ),
     )
 
@@ -66,6 +78,11 @@ fun buildProcessingStoredReportMetadata(
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
+    selectedModel: ModelExecutionInfo? = null,
+    executedModel: ModelExecutionInfo? = null,
+    executedRuntime: ExecutedRuntime = executedModel?.runtime ?: selectedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
+    deviceName: String? = null,
+    stageTimings: List<ReportStageTiming> = emptyList(),
 ): StoredReportMetadata {
     val startedAt = analysisStartedAtEpochMillis.takeIf { it > 0 }
     val completedAt = analysisCompletedAtEpochMillis.takeIf { it > 0 }
@@ -82,8 +99,14 @@ fun buildProcessingStoredReportMetadata(
         analysisStartedAtEpochMillis = startedAt,
         analysisCompletedAtEpochMillis = completedAt,
         totalAnalysisDurationMillis = duration,
-        executedRuntime = ExecutedRuntime.UNKNOWN,
+        selectedModel = selectedModel,
+        executedModel = executedModel,
+        executedRuntime = executedRuntime,
+        deviceName = deviceName?.takeIf { it.isNotBlank() },
         processingMode = ProcessingMode.FULL_ANALYSIS,
+        stageTimings = stageTimings
+            .filter { it.stageId.isNotBlank() && it.durationMillis >= 0L }
+            .distinctBy { it.stageId },
         graphs = listOf(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),

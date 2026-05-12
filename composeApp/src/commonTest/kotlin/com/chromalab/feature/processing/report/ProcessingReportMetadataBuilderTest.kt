@@ -3,8 +3,10 @@ package com.chromalab.feature.processing.report
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.InputSourceType
+import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,6 +34,22 @@ class ProcessingReportMetadataBuilderTest {
             titleOcrConfidence = null,
             axisOcrConfidence = 0.76,
             tickOcrConfidence = 0.88,
+            selectedModel = ModelExecutionInfo(
+                modelId = "gemma-litert",
+                modelName = "Gemma LiteRT",
+                runtime = ExecutedRuntime.LITERT,
+            ),
+            executedModel = ModelExecutionInfo(
+                modelId = "gemma-litert",
+                modelName = "Gemma LiteRT",
+                runtime = ExecutedRuntime.LITERT,
+                backendLabel = "LiteRT GPU",
+            ),
+            deviceName = "Pixel Test",
+            stageTimings = listOf(
+                ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
+                ReportStageTiming("OCR_SUGGESTION", "OCR_SUGGESTION", 450L),
+            ),
         )
 
         val metadata = StoredReportMetadataCodec.decodeOrNull(config)
@@ -41,8 +59,13 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("normalized_photo.jpg", metadata.sourceName)
         assertEquals(3, metadata.detectedGraphCount)
         assertEquals(1_750L, metadata.totalAnalysisDurationMillis)
-        assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
+        assertEquals("gemma-litert", metadata.selectedModel?.modelId)
+        assertEquals("LiteRT GPU", metadata.executedModel?.backendLabel)
+        assertEquals(ExecutedRuntime.LITERT, metadata.executedRuntime)
+        assertEquals("Pixel Test", metadata.deviceName)
         assertEquals(ProcessingMode.FULL_ANALYSIS, metadata.processingMode)
+        assertEquals(2, metadata.stageTimings.size)
+        assertEquals(450L, metadata.stageTimings.last().durationMillis)
 
         val graph = metadata.graphs.single()
         assertEquals(2, graph.graphIndex)

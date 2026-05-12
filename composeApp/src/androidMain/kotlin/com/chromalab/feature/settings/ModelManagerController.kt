@@ -7,6 +7,7 @@ import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
 import com.chromalab.feature.processing.inference.LiteRTEngine
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.model.ModelDownloader
 import com.chromalab.feature.processing.model.ModelInfo
@@ -290,6 +291,8 @@ class ModelManagerController(
                 if (engine != null) {
                     VlmEngineHolder.activeEngine = engine
                     VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
+                    VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
+                    VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                     println("MODEL[CTRL] Engine activated: ${model.info.displayName} (family=${model.info.family}, promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
                 }
 
@@ -298,6 +301,8 @@ class ModelManagerController(
             } catch (e: Throwable) {
                 println("MODEL[CTRL] Activate failed: ${e.message}")
                 manager.clearActiveModel()
+                VlmEngineHolder.selectedModel = null
+                VlmEngineHolder.executedModel = null
                 _state.update {
                     it.copy(
                         activatingModelId = null,
@@ -313,6 +318,8 @@ class ModelManagerController(
     fun deactivate() {
         VlmEngineHolder.activeEngine = null
         VlmEngineHolder.activeConfig = null
+        VlmEngineHolder.selectedModel = null
+        VlmEngineHolder.executedModel = null
         manager.clearActiveModel()
         refresh()
         println("MODEL[CTRL] Model deactivated")
@@ -324,6 +331,8 @@ class ModelManagerController(
         if (manager.getActiveModelId() == modelId) {
             VlmEngineHolder.activeEngine = null
             VlmEngineHolder.activeConfig = null
+            VlmEngineHolder.selectedModel = null
+            VlmEngineHolder.executedModel = null
         }
         manager.delete(modelId)
         refresh()
@@ -380,6 +389,8 @@ class ModelManagerController(
                 println("MODEL[TIMER] Auto-unloading model after $minutes min of inactivity")
                 VlmEngineHolder.activeEngine = null
                 VlmEngineHolder.activeConfig = null
+                VlmEngineHolder.selectedModel = null
+                VlmEngineHolder.executedModel = null
                 refresh()
             }
         }
@@ -443,12 +454,18 @@ class ModelManagerController(
         ) {
             VlmEngineHolder.activeEngine = null
             VlmEngineHolder.activeConfig = null
+            VlmEngineHolder.executedModel = null
         }
 
         // Find a model to load for chromatogram vision. This path must never
         // load a GGUF model text-only: photo analysis requires image input.
         val activeId = manager.getActiveModelId()
-        val models = manager.getDownloadedModels()
+        val downloadedModels = manager.getDownloadedModels()
+        val selectedModel = activeId
+            ?.let { id -> downloadedModels.find { it.info.id == id } }
+            ?.info
+            ?.toActiveInferenceModel()
+        val models = downloadedModels
             .filter { manager.canLoadForChromatogramVision(it.info) }
             .sortedWith(
                 compareByDescending<com.chromalab.feature.processing.model.DownloadedModel> {
@@ -514,6 +531,8 @@ class ModelManagerController(
             if (engine != null) {
                 VlmEngineHolder.activeEngine = engine
                 VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
+                VlmEngineHolder.selectedModel = selectedModel ?: model.info.toActiveInferenceModel()
+                VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 onProgress?.invoke("AI модель готова")
                 println("MODEL[LAZY] Loaded: ${model.info.displayName} (promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
                 // Schedule auto-unload timer
@@ -525,7 +544,17 @@ class ModelManagerController(
         } catch (e: Throwable) {
             println("MODEL[LAZY] Auto-load failed: ${e.message}")
             manager.clearActiveModel()
+            VlmEngineHolder.selectedModel = selectedModel
+            VlmEngineHolder.executedModel = null
             false
         }
     }
 }
+
+private fun ModelInfo.toActiveInferenceModel(backendLabel: String? = null): ActiveInferenceModel =
+    ActiveInferenceModel(
+        modelId = id,
+        modelName = displayName,
+        runtime = runtime,
+        backendLabel = backendLabel?.takeIf { it.isNotBlank() },
+    )

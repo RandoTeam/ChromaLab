@@ -34,6 +34,8 @@ import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.graph.GraphRoiEditorScreen
 import com.chromalab.feature.processing.graph.GraphSelectionScreen
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
+import com.chromalab.feature.processing.inference.ActiveInferenceModel
+import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrSuggestionScreen
 import com.chromalab.feature.processing.perspective.PerspectiveCorrectionResult
@@ -69,7 +71,11 @@ import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
+import com.chromalab.feature.processing.report.currentReportDeviceName
+import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
@@ -98,6 +104,7 @@ fun ProcessingFlowScreen(
     modifier: Modifier = Modifier,
 ) {
     val flowStartedAt = remember(imagePath) { System.currentTimeMillis() }
+    val stageDurationMillis = remember(imagePath) { mutableStateMapOf<ProcessingStep, Long>() }
     var currentStep by remember { mutableStateOf(ProcessingStep.FIRST) }
     var isProcessing by remember { mutableStateOf(false) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
@@ -184,6 +191,8 @@ fun ProcessingFlowScreen(
     LaunchedEffect(currentStep) {
         isProcessing = true
         processingError = null  // clear previous error on step entry
+        val timedStep = currentStep
+        val stepStartedAt = System.currentTimeMillis()
         try {
             withContext(Dispatchers.Default) {
                 when (currentStep) {
@@ -571,6 +580,8 @@ fun ProcessingFlowScreen(
             e.printStackTrace()
             processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
         }
+        val stepDuration = (System.currentTimeMillis() - stepStartedAt).coerceAtLeast(0L)
+        stageDurationMillis[timedStep] = (stageDurationMillis[timedStep] ?: 0L) + stepDuration
         isProcessing = false
 
         // --- Auto-advance logic ---
@@ -607,6 +618,14 @@ fun ProcessingFlowScreen(
                         println("PIPELINE[AUTO-SAVE] All ${processedSignals.size} graphs processed, saving to Room...")
                         val signalsToSave = processedSignals.toList()
                             .filter { it.smoothed.points.size >= 10 }
+                        val modelSnapshot = chartReader.currentModelSnapshot()
+                        val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
+                        val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
+                        val executedRuntime = executedReportModel?.runtime
+                            ?: selectedReportModel?.runtime
+                            ?: ExecutedRuntime.UNKNOWN
+                        val reportStageTimings = stageDurationMillis.toReportStageTimings()
+                        val reportDeviceName = currentReportDeviceName()
                         val saveResult = withContext(Dispatchers.IO) {
                             val now = System.currentTimeMillis()
                             try {
@@ -686,6 +705,11 @@ fun ProcessingFlowScreen(
                                             titleOcrConfidence = null,
                                             axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
                                             tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
+                                            selectedModel = selectedReportModel,
+                                            executedModel = executedReportModel,
+                                            executedRuntime = executedRuntime,
+                                            deviceName = reportDeviceName,
+                                            stageTimings = reportStageTimings,
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
@@ -755,6 +779,14 @@ fun ProcessingFlowScreen(
                 scope.launch {
                     val signalsToSave = processedSignals.toList()
                         .filter { it.smoothed.points.size >= 10 }
+                    val modelSnapshot = chartReader.currentModelSnapshot()
+                    val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
+                    val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
+                    val executedRuntime = executedReportModel?.runtime
+                        ?: selectedReportModel?.runtime
+                        ?: ExecutedRuntime.UNKNOWN
+                    val reportStageTimings = stageDurationMillis.toReportStageTimings()
+                    val reportDeviceName = currentReportDeviceName()
                     val resultId = withContext(Dispatchers.IO) {
                         val now = System.currentTimeMillis()
                         try {
@@ -834,6 +866,11 @@ fun ProcessingFlowScreen(
                                         titleOcrConfidence = null,
                                         axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
                                         tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
+                                        selectedModel = selectedReportModel,
+                                        executedModel = executedReportModel,
+                                        executedRuntime = executedRuntime,
+                                        deviceName = reportDeviceName,
+                                        stageTimings = reportStageTimings,
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
@@ -1090,6 +1127,33 @@ private fun Float?.toReportConfidence(): Double? {
     val normalized = if (value > 1f) value / 100f else value
     return normalized.toDouble().coerceIn(0.0, 1.0)
 }
+
+private fun ActiveInferenceModel?.toReportModelExecutionInfo(): ModelExecutionInfo? {
+    val model = this ?: return null
+    return ModelExecutionInfo(
+        modelId = model.modelId,
+        modelName = model.modelName,
+        runtime = model.runtime.toReportExecutedRuntime(),
+        backendLabel = model.backendLabel,
+    )
+}
+
+private fun ModelRuntime?.toReportExecutedRuntime(): ExecutedRuntime =
+    when (this) {
+        ModelRuntime.LITERT_LM -> ExecutedRuntime.LITERT
+        ModelRuntime.LLAMA_CPP -> ExecutedRuntime.GGUF
+        null -> ExecutedRuntime.UNKNOWN
+    }
+
+private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTiming> =
+    ProcessingStep.entries.mapNotNull { step ->
+        val duration = this[step]?.takeIf { it >= 0L } ?: return@mapNotNull null
+        ReportStageTiming(
+            stageId = step.name,
+            stageName = step.name,
+            durationMillis = duration,
+        )
+    }
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
     val width = w.coerceAtLeast(1)

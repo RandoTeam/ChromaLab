@@ -53,4 +53,6 @@ expect class ChartAnalysisReader() {
      * @return true if VLM is ready, false if no model available
      */
     suspend fun ensureModelLoaded(onProgress: ((String) -> Unit)? = null): Boolean
+
+    fun currentModelSnapshot(): ActiveInferenceModelSnapshot
 }

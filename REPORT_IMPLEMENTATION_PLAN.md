@@ -41,7 +41,7 @@ Goal: make the image-processing pipeline save the exact metadata that the report
 - [x] 2.1 Write `StoredReportMetadata` from `ProcessingFlowScreen` when a chromatogram is saved.
 - [x] 2.2 Persist source image bounds, detected graph bounds, crop confidence, scan mode, and preprocessing steps.
 - [~] 2.3 Persist OCR confidence for title, axis labels, and tick labels. Axis/tick confidence is persisted; title confidence remains empty until a dedicated title-OCR stage exists.
-- [ ] 2.4 Persist selected model, executed model, runtime, backend, device name, stage timings, and total duration.
+- [x] 2.4 Persist selected model, executed model, runtime, backend, device name, stage timings, and total duration.
 - [ ] 2.5 Persist per-graph warnings without converting them into final report prose too early.
 - [ ] 2.6 Ensure failed neural vision stages stop the full-analysis report instead of silently producing deterministic-only output.
 

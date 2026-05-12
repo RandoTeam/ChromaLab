@@ -28,6 +28,7 @@ data class CalculationRunReportOptions(
     val executedRuntime: ExecutedRuntime = ExecutedRuntime.DETERMINISTIC,
     val deviceName: String? = null,
     val processingMode: ProcessingMode = ProcessingMode.EXPORT_ONLY,
+    val stageTimings: List<ReportStageTiming> = emptyList(),
     val graphIndex: Int = 1,
     val graphSourceMetadata: GraphSourceMetadata? = null,
     val identification: ChromatogramIdentification? = null,
@@ -70,6 +71,7 @@ object CalculationRunReportMapper {
                 executedRuntime = options.executedRuntime,
                 deviceName = options.deviceName,
                 processingMode = options.processingMode,
+                stageTimings = options.stageTimings,
             ),
             graphs = listOf(
                 GraphReport(

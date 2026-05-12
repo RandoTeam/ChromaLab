@@ -243,6 +243,12 @@ actual class ChartAnalysisReader actual constructor() {
             false
         }
     }
+
+    actual fun currentModelSnapshot(): ActiveInferenceModelSnapshot =
+        ActiveInferenceModelSnapshot(
+            selectedModel = VlmEngineHolder.selectedModel,
+            executedModel = VlmEngineHolder.executedModel,
+        )
 }
 
 private enum class VlmTask {
@@ -288,6 +294,10 @@ object VlmEngineHolder {
 
     /** Active model's inference config (for prompt format selection). */
     var activeConfig: InferenceConfig? = null
+
+    var selectedModel: ActiveInferenceModel? = null
+
+    var executedModel: ActiveInferenceModel? = null
 
     /** True while inference is running — prevents auto-unload. */
     @Volatile

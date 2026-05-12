@@ -79,6 +79,10 @@ class StoredReportMetadataTest {
             ),
             executedRuntime = ExecutedRuntime.LITERT,
             processingMode = ProcessingMode.FULL_ANALYSIS,
+            stageTimings = listOf(
+                ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 100L),
+                ReportStageTiming("OCR_SUGGESTION", "OCR_SUGGESTION", 300L),
+            ),
             graphs = listOf(
                 StoredGraphReportMetadata(
                     graphIndex = 1,
@@ -130,6 +134,8 @@ class StoredReportMetadataTest {
         assertEquals(2000L, options.totalAnalysisDurationMillis)
         assertEquals(ExecutedRuntime.LITERT, options.executedRuntime)
         assertEquals(ProcessingMode.FULL_ANALYSIS, options.processingMode)
+        assertEquals(2, options.stageTimings.size)
+        assertEquals(300L, options.stageTimings.last().durationMillis)
         assertEquals("m/z 92.00", options.identification?.ionOrChannel?.value)
         assertEquals(0.91, options.graphSourceMetadata?.cropConfidence)
         assertTrue(options.graphSourceMetadata?.preprocessingSteps.orEmpty().contains("Auto crop"))

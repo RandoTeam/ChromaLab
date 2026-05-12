@@ -29,6 +29,7 @@ data class StoredReportMetadata(
     val executedRuntime: ExecutedRuntime? = null,
     val deviceName: String? = null,
     val processingMode: ProcessingMode? = null,
+    val stageTimings: List<ReportStageTiming> = emptyList(),
     val graphs: List<StoredGraphReportMetadata> = emptyList(),
     val warnings: List<ReportWarning> = emptyList(),
 )

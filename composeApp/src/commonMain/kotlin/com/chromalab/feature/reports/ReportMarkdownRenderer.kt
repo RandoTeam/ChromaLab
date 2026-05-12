@@ -264,6 +264,7 @@ object ReportMarkdownRenderer {
         row("Selected model", metadata.selectedModel.render())
         row("Executed model", metadata.executedModel.render())
         row("Executed runtime", metadata.executedRuntime.name)
+        renderStageTimings(metadata.stageTimings)
 
         report.graphs.forEach { graph ->
             appendLine()
@@ -274,6 +275,22 @@ object ReportMarkdownRenderer {
             appendLine("- Baseline parameters: ${graph.signal.baselineParameters.renderMap()}")
             appendLine("- Noise method: ${graph.signal.noiseMethod ?: notCalculated()}")
             appendLine("- Signal extraction confidence: ${graph.signal.signalExtractionConfidence.renderPercent()}")
+        }
+    }
+
+    private fun StringBuilder.renderStageTimings(stageTimings: List<ReportStageTiming>) {
+        appendLine()
+        appendLine("### Stage timings")
+        if (stageTimings.isEmpty()) {
+            appendLine(notCalculated())
+            return
+        }
+
+        appendLine("| Stage | Duration |")
+        appendLine("| --- | --- |")
+        stageTimings.forEach { timing ->
+            val stage = timing.stageName?.takeIf { it.isNotBlank() } ?: timing.stageId
+            appendLine("| ${stage.escapeTable()} | ${timing.durationMillis} ms |")
         }
     }
 
