@@ -4,6 +4,8 @@ import com.chromalab.feature.processing.inference.InferenceConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * llama.cpp inference engine for .gguf models.
@@ -19,6 +21,10 @@ class LlamaEngine : InferenceEngine {
     private var loaded: Boolean = false
     private var hasVisionProjector: Boolean = false
     private var config: InferenceConfig = InferenceConfig.DEFAULT
+    private val nativeLock = ReentrantLock()
+
+    @Volatile
+    private var unloadRequested: Boolean = false
 
     companion object {
         private var nativeLoaded = false
@@ -46,6 +52,8 @@ class LlamaEngine : InferenceEngine {
             mmprojPath: String,
             threads: Int,
             backendCode: Int,
+            contextSize: Int,
+            batchSize: Int,
         ): Long
         @JvmStatic private external fun nativeUnloadModel(handle: Long)
         @JvmStatic private external fun nativeInferWithImage(
@@ -84,50 +92,67 @@ class LlamaEngine : InferenceEngine {
         mmprojPath: String,
         threads: Int = 4,
         modelFamily: String = "",
+        contextSize: Int? = null,
+        batchSize: Int? = null,
     ) = withContext(Dispatchers.IO) {
-        if (!nativeLoaded) {
-            loadNativeLibrary()
+        nativeLock.withLock {
+            if (!nativeLoaded) {
+                loadNativeLibrary()
+            }
+
+            require(nativeLoaded) { "Native library not available" }
+
+            if (modelHandle != 0L) {
+                unloadLocked()
+            }
+            unloadRequested = false
+
+            // Auto-select inference config for this model family
+            config = InferenceConfig.forModelFamily(modelFamily)
+            val ctx = contextSize ?: config.contextSize
+            val batch = batchSize ?: config.batchSize
+            println("LLAMA[LOAD] Loading model: $basePath + $mmprojPath, threads=$threads")
+            println("LLAMA[LOAD] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}, repeatLastN=${config.repeatLastN}, ctx=$ctx, batch=$batch")
+
+            modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0, ctx, batch)
+            if (modelHandle == 0L) {
+                loaded = false
+                hasVisionProjector = false
+                throw RuntimeException("Failed to load model: $basePath")
+            }
+
+            backendName = "llama.cpp CPU"
+            loaded = true
+            hasVisionProjector = mmprojPath.isNotBlank()
+            println("LLAMA[LOAD] Model loaded, handle=$modelHandle")
         }
-
-        require(nativeLoaded) { "Native library not available" }
-
-        // Auto-select inference config for this model family
-        config = InferenceConfig.forModelFamily(modelFamily)
-        println("LLAMA[LOAD] Loading model: $basePath + $mmprojPath, threads=$threads")
-        println("LLAMA[LOAD] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}, repeatLastN=${config.repeatLastN}")
-
-        modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0)
-        if (modelHandle == 0L) {
-            loaded = false
-            hasVisionProjector = false
-            throw RuntimeException("Failed to load model: $basePath")
-        }
-
-        backendName = "llama.cpp CPU"
-        loaded = true
-        hasVisionProjector = mmprojPath.isNotBlank()
-        println("LLAMA[LOAD] Model loaded, handle=$modelHandle")
     }
 
     override suspend fun analyzeChart(imagePath: String, prompt: String): ChartAnalysis {
-        check(loaded && nativeLoaded) { "Model not loaded" }
-        check(hasVisionProjector) { "GGUF image analysis requires an mmproj vision projector" }
-
         return withContext(Dispatchers.IO) {
-            println("LLAMA[INFER] Analyzing chart: $imagePath")
-            println("LLAMA[INFER] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}")
+            nativeLock.withLock {
+                check(loaded && nativeLoaded) { "Model not loaded" }
+                check(hasVisionProjector) { "GGUF image analysis requires an mmproj vision projector" }
 
-            val responseText = nativeInferWithImage(
-                modelHandle, imagePath, prompt,
-                config.maxTokens,
-                0f,
-                1f,
-                0,
-                config.repeatPenalty,
-                config.repeatLastN,
-            )
-            println("LLAMA[INFER] Response length: ${responseText.length}")
-            ChartPrompts.parseResponse(responseText)
+                println("LLAMA[INFER] Analyzing chart: $imagePath")
+                println("LLAMA[INFER] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}")
+
+                try {
+                    val responseText = nativeInferWithImage(
+                        modelHandle, imagePath, prompt,
+                        config.maxTokens,
+                        0f,
+                        1f,
+                        0,
+                        config.repeatPenalty,
+                        config.repeatLastN,
+                    )
+                    println("LLAMA[INFER] Response length: ${responseText.length}")
+                    ChartPrompts.parseResponse(responseText)
+                } finally {
+                    unloadIfRequestedLocked()
+                }
+            }
         }
     }
 
@@ -136,59 +161,95 @@ class LlamaEngine : InferenceEngine {
         prompt: String,
         options: GenerationOptions,
     ): String {
-        check(loaded && nativeLoaded) { "Model not loaded" }
-
         return withContext(Dispatchers.IO) {
-            println("LLAMA[RAW] Inferring: $imagePath")
-            val maxTokens = options.maxTokens ?: config.maxTokens
-            val temperature = options.temperature ?: 0f
-            val topP = options.topP ?: 1f
-            val topK = options.topK ?: 0
-            val repeatPenalty = options.repeatPenalty ?: config.repeatPenalty
-            val repeatLastN = options.repeatLastN ?: config.repeatLastN
-            val hasImage = imagePath.isNotBlank() && File(imagePath).isFile
-            val responseText = if (hasImage && hasVisionProjector) {
-                nativeInferWithImage(
-                    modelHandle, imagePath, prompt,
-                    maxTokens,
-                    temperature,
-                    topP,
-                    topK,
-                    repeatPenalty,
-                    repeatLastN,
-                )
-            } else if (hasImage) {
-                println("LLAMA[RAW] Image inference requested, but no mmproj is loaded")
-                ""
-            } else {
-                nativeInferText(
-                    modelHandle, prompt,
-                    maxTokens,
-                    temperature,
-                    topP,
-                    topK,
-                    repeatPenalty,
-                    repeatLastN,
-                )
+            nativeLock.withLock {
+                check(loaded && nativeLoaded) { "Model not loaded" }
+
+                println("LLAMA[RAW] Inferring: $imagePath")
+                val maxTokens = options.maxTokens ?: config.maxTokens
+                val temperature = options.temperature ?: 0f
+                val topP = options.topP ?: 1f
+                val topK = options.topK ?: 0
+                val repeatPenalty = options.repeatPenalty ?: config.repeatPenalty
+                val repeatLastN = options.repeatLastN ?: config.repeatLastN
+                val hasImage = imagePath.isNotBlank() && File(imagePath).isFile
+                try {
+                    val responseText = if (hasImage && hasVisionProjector) {
+                        nativeInferWithImage(
+                            modelHandle, imagePath, prompt,
+                            maxTokens,
+                            temperature,
+                            topP,
+                            topK,
+                            repeatPenalty,
+                            repeatLastN,
+                        )
+                    } else if (hasImage) {
+                        println("LLAMA[RAW] Image inference requested, but no mmproj is loaded")
+                        ""
+                    } else {
+                        nativeInferText(
+                            modelHandle, prompt,
+                            maxTokens,
+                            temperature,
+                            topP,
+                            topK,
+                            repeatPenalty,
+                            repeatLastN,
+                        )
+                    }
+                    println("LLAMA[RAW] Response length: ${responseText.length}")
+                    responseText
+                } finally {
+                    unloadIfRequestedLocked()
+                }
             }
-            println("LLAMA[RAW] Response length: ${responseText.length}")
-            responseText
         }
     }
 
     override fun isLoaded(): Boolean = loaded && nativeLoaded
 
+    override fun supportsImageInput(): Boolean = loaded && hasVisionProjector
+
     override fun unload() {
-        if (nativeLoaded && modelHandle != 0L) {
-            try {
-                nativeUnloadModel(modelHandle)
-            } catch (e: Exception) {
-                println("LLAMA[UNLOAD] Error: ${e.message}")
-            }
+        if (!nativeLoaded || modelHandle == 0L) {
+            loaded = false
+            hasVisionProjector = false
+            return
+        }
+
+        if (!nativeLock.tryLock()) {
+            unloadRequested = true
+            loaded = false
+            hasVisionProjector = false
+            println("LLAMA[UNLOAD] Deferred until active inference finishes")
+            return
+        }
+
+        try {
+            unloadLocked()
+        } finally {
+            nativeLock.unlock()
+        }
+    }
+
+    private fun unloadIfRequestedLocked() {
+        if (unloadRequested && modelHandle != 0L) {
+            unloadLocked()
+        }
+    }
+
+    private fun unloadLocked() {
+        if (!nativeLoaded || modelHandle == 0L) return
+        try {
+            nativeUnloadModel(modelHandle)
+        } catch (e: Exception) {
+            println("LLAMA[UNLOAD] Error: ${e.message}")
         }
         modelHandle = 0L
         loaded = false
         hasVisionProjector = false
+        unloadRequested = false
         println("LLAMA[UNLOAD] Model unloaded")
     }
 

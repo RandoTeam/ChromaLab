@@ -167,6 +167,8 @@ Modes:
 
 The app should not silently use a text-only GGUF model for image analysis. If image inference is requested without `mmproj`, it must fail clearly and fall back where possible.
 
+For full chromatogram analysis, GGUF models must satisfy the same VLM contract as LiteRT: graph bounds JSON, axis-label JSON, and usable image input. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr stay available as model downloads, but they are not selected automatically for the full chromatogram pipeline until they have a validated adapter for that contract.
+
 ## Chat Pipeline
 
 ```text

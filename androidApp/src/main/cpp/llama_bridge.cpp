@@ -16,6 +16,8 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <chrono>
+#include <cctype>
 #include <android/log.h>
 
 #include "llama.h"
@@ -75,6 +77,86 @@ static llama_sampler * create_sampler(
     }
 
     return smpl;
+}
+
+static bool prompt_requests_json(const char *prompt) {
+    if (!prompt) return false;
+    std::string text(prompt);
+    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
+        return (char)std::tolower(c);
+    });
+    return text.find("json") != std::string::npos ||
+           text.find("\"x\"") != std::string::npos ||
+           text.find("left_pct") != std::string::npos;
+}
+
+static bool json_object_complete(const std::string &text) {
+    const size_t start = text.find('{');
+    if (start == std::string::npos) return false;
+
+    int depth = 0;
+    bool in_string = false;
+    bool escaped = false;
+
+    for (size_t i = start; i < text.size(); ++i) {
+        const char ch = text[i];
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (ch == '\\' && in_string) {
+            escaped = true;
+            continue;
+        }
+        if (ch == '"') {
+            in_string = !in_string;
+            continue;
+        }
+        if (in_string) continue;
+
+        if (ch == '{') {
+            depth++;
+        } else if (ch == '}') {
+            depth--;
+            if (depth == 0) return true;
+        }
+    }
+    return false;
+}
+
+static bool elapsed_over(
+    const std::chrono::steady_clock::time_point &started,
+    int limit_ms) {
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - started
+    ).count();
+    return elapsed > limit_ms;
+}
+
+static long long elapsed_ms_since(
+    const std::chrono::steady_clock::time_point &started) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - started
+    ).count();
+}
+
+static std::string build_multimodal_prompt(const char *prompt, const char *marker) {
+    std::string text = prompt ? std::string(prompt) : std::string();
+    const std::string marker_text = marker ? std::string(marker) : std::string("<__media__>");
+
+    if (text.find(marker_text) != std::string::npos) {
+        return text;
+    }
+
+    const std::string chatml_user = "<|im_start|>user\n";
+    const size_t user_pos = text.find(chatml_user);
+    if (user_pos != std::string::npos) {
+        const size_t insert_pos = user_pos + chatml_user.size();
+        text.insert(insert_pos, marker_text + "\n");
+        return text;
+    }
+
+    return marker_text + "\n" + text;
 }
 
 static std::string run_text_completion(
@@ -150,6 +232,9 @@ static std::string run_text_completion(
 
     std::string result_text;
     llama_sampler *smpl = create_sampler(temperature, topP, topK, repeatPenalty, repeatLastN);
+    const bool json_task = prompt_requests_json(prompt);
+    const auto started = std::chrono::steady_clock::now();
+    const int decode_limit_ms = json_task ? 90000 : 180000;
 
     for (int i = 0; i < n_predict; i++) {
         llama_token token_id = llama_sampler_sample(smpl, mc->ctx, -1);
@@ -162,6 +247,15 @@ static std::string run_text_completion(
         int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
         if (len > 0) {
             result_text.append(buf, len);
+        }
+
+        if (json_task && json_object_complete(result_text)) {
+            LOGI("Text JSON complete at token %d", i + 1);
+            break;
+        }
+        if (elapsed_over(started, decode_limit_ms)) {
+            LOGE("Text decode timed out after %d ms", decode_limit_ms);
+            break;
         }
 
         llama_batch next = llama_batch_get_one(&token_id, 1);
@@ -197,12 +291,14 @@ JNIEXPORT jlong JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     JNIEnv *env, jclass /* clazz */,
     jstring basePath, jstring mmprojPath,
-    jint threads, jint backendCode) {
+    jint threads, jint backendCode,
+    jint contextSize, jint batchSize) {
 
     const char *base   = env->GetStringUTFChars(basePath, nullptr);
     const char *mmproj = env->GetStringUTFChars(mmprojPath, nullptr);
 
-    LOGI("nativeLoadModel: base=%s, threads=%d", base, threads);
+    LOGI("nativeLoadModel: base=%s, threads=%d, ctx=%d, batch=%d",
+         base, threads, contextSize, batchSize);
 
     // Init backend once (idempotent)
     static bool backend_inited = false;
@@ -227,8 +323,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
 
     // 2) Create context
     llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx     = 4096;
-    ctx_params.n_batch   = 512;
+    ctx_params.n_ctx     = std::clamp((int)contextSize, 1024, 8192);
+    ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
     ctx_params.n_threads = (threads > 0) ? threads : 4;
     ctx_params.n_threads_batch = ctx_params.n_threads;
     mc->ctx = llama_init_from_model(mc->model, ctx_params);
@@ -328,6 +424,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
     }
     const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
     const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+    const bool json_task = prompt_requests_json(pmt);
+    const auto started = std::chrono::steady_clock::now();
+    const int decode_limit_ms = json_task ? 90000 : 180000;
 
     LOGI("Infer: image=%s, maxTokens=%d, temp=%.2f, topP=%.2f, topK=%d, repeatPenalty=%.2f, repeatLastN=%d",
          img_path, n_predict, temperature, topP, topK, rep_penalty, rep_last_n);
@@ -338,6 +437,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         // ---- Multimodal path (VLM with vision) ----
 
         // 1. Load image
+        LOGI("MTMD bitmap load start");
         mtmd_bitmap *bitmap = mtmd_helper_bitmap_init_from_file(mc->mtmd, img_path);
         if (!bitmap) {
             LOGE("Failed to load image: %s", img_path);
@@ -345,10 +445,12 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             env->ReleaseStringUTFChars(prompt, pmt);
             return env->NewStringUTF("{\"x\": [], \"y\": []}");
         }
+        LOGI("MTMD bitmap load done");
 
         // 2. Build prompt with media marker
         const char *marker = mtmd_default_marker();
-        std::string full_prompt = std::string(marker) + "\n" + pmt;
+        std::string full_prompt = build_multimodal_prompt(pmt, marker);
+        LOGI("MTMD prompt prepared: chars=%zu, marker=%s", full_prompt.size(), marker);
 
         // 3. Tokenize
         mtmd_input_text input_text;
@@ -359,8 +461,12 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         const mtmd_bitmap *bitmaps[] = { bitmap };
 
         mtmd_input_chunks *chunks = mtmd_input_chunks_init();
+        const auto tokenize_started = std::chrono::steady_clock::now();
+        LOGI("MTMD tokenize start");
         int32_t tok_result = mtmd_tokenize(mc->mtmd, chunks, &input_text, bitmaps, 1);
         mtmd_bitmap_free(bitmap);
+        LOGI("MTMD tokenize done: result=%d elapsed=%lld ms",
+             tok_result, elapsed_ms_since(tokenize_started));
 
         if (tok_result != 0) {
             LOGE("mtmd_tokenize failed: %d", tok_result);
@@ -374,11 +480,15 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         llama_memory_clear(llama_get_memory(mc->ctx), true);
 
         llama_pos n_past = 0;
+        const auto eval_started = std::chrono::steady_clock::now();
+        LOGI("MTMD eval chunks start: n_batch=%d n_ctx=%d", mc->n_batch, mc->n_ctx);
         int32_t eval_result = mtmd_helper_eval_chunks(
             mc->mtmd, mc->ctx, chunks,
-            n_past, 0, 512, true, &n_past
+            n_past, 0, mc->n_batch, true, &n_past
         );
         mtmd_input_chunks_free(chunks);
+        LOGI("MTMD eval chunks done: result=%d n_past=%d elapsed=%lld ms",
+             eval_result, (int)n_past, elapsed_ms_since(eval_started));
 
         if (eval_result != 0) {
             LOGE("mtmd_helper_eval_chunks failed: %d", eval_result);
@@ -394,6 +504,13 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         //   b) Greedy — deterministic, temperature=0, no randomness
         //
         // This ensures maximum accuracy for numeric OCR extraction.
+        if (elapsed_over(started, decode_limit_ms)) {
+            LOGE("Image prompt eval exceeded %d ms before decode", decode_limit_ms);
+            env->ReleaseStringUTFChars(imagePath, img_path);
+            env->ReleaseStringUTFChars(prompt, pmt);
+            return env->NewStringUTF(json_task ? "{}" : "");
+        }
+
         const llama_vocab *vocab = llama_model_get_vocab(mc->model);
 
         llama_sampler *smpl = create_sampler(
@@ -421,6 +538,15 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             }
 
             // Prepare next batch — single token
+            if (json_task && json_object_complete(result_text)) {
+                LOGI("Image JSON complete at token %d", i + 1);
+                break;
+            }
+            if (elapsed_over(started, decode_limit_ms)) {
+                LOGE("Image decode timed out after %d ms", decode_limit_ms);
+                break;
+            }
+
             llama_batch batch = llama_batch_get_one(&token_id, 1);
             if (llama_decode(mc->ctx, batch) != 0) {
                 LOGE("llama_decode failed at token %d", i);

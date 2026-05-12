@@ -540,6 +540,42 @@ object ModelRegistry {
     /** Find a builtin model by ID. */
     fun findById(id: String): ModelInfo? = builtinModels.find { it.id == id }
 
+    /** Models that are intended for chromatogram/photo analysis, ordered by analysis priority. */
+    fun chromatogramVisionModels(): List<ModelInfo> =
+        builtinModels
+            .filter(::isChromatogramVisionModel)
+            .sortedWith(compareBy<ModelInfo> { chromatogramVisionPriority(it) }.thenBy { it.totalSizeBytes })
+
+    /** General chat/download list. Vision-only OCR models are excluded from default chat choices. */
+    fun chatModels(): List<ModelInfo> =
+        builtinModels.filter { model ->
+            model.family !in setOf("paddleocr-vl", "dots-mocr", "deepseek-ocr")
+        }
+
+    fun isChromatogramVisionModel(model: ModelInfo): Boolean {
+        if (!model.supportsVision) return false
+        val family = model.family.lowercase()
+        return family.contains("gemma") ||
+            family.contains("smolvlm") ||
+            family.contains("moondream") ||
+            family.contains("qwen")
+    }
+
+    fun chromatogramVisionPriority(model: ModelInfo): Int {
+        val family = model.family.lowercase()
+        val id = model.id.lowercase()
+        return when {
+            id == "gemma4-e2b" -> 0
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q3") -> 1
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q4") -> 2
+            family.contains("smolvlm") && id.contains("q4") -> 3
+            family.contains("moondream") -> 4
+            id == "gemma4-e4b" -> 5
+            family.contains("qwen") -> 6
+            else -> 100
+        }
+    }
+
     /** Group models by runtime for UI display. */
     fun groupedByRuntime(): Map<ModelRuntime, List<ModelInfo>> =
         builtinModels.groupBy { it.runtime }

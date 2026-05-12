@@ -253,10 +253,10 @@ private enum class VlmTask {
 private fun optionsFor(task: VlmTask, config: InferenceConfig?): GenerationOptions {
     val familyLimit = config?.maxTokens ?: 768
     val maxTokens = when (task) {
-        VlmTask.GraphRegion -> maxOf(familyLimit, 512)
-        VlmTask.AxisExtraction -> maxOf(familyLimit, 768)
-        VlmTask.AxisStructure -> maxOf(familyLimit, 512)
-    }.coerceAtMost(2048)
+        VlmTask.GraphRegion -> minOf(familyLimit, 384)
+        VlmTask.AxisExtraction -> minOf(familyLimit, 768)
+        VlmTask.AxisStructure -> minOf(familyLimit, 384)
+    }.coerceIn(128, 768)
     return GenerationOptions(
         maxTokens = maxTokens,
         timeoutMs = when (task) {
