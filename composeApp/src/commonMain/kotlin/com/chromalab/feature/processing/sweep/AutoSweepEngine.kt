@@ -152,6 +152,7 @@ class AutoSweepEngine {
         imageHeight: Int,
         cachedGraphResult: com.chromalab.feature.processing.graph.GraphRegionResult? = null,
         overrideRegion: com.chromalab.feature.processing.graph.GraphRegion? = null,
+        requireVlmForAnalysis: Boolean = false,
         onProgress: (SweepProgress) -> Unit = {},
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
@@ -188,9 +189,15 @@ class AutoSweepEngine {
             }
         } catch (e: Exception) {
             println("SWEEP[VLM] Graph detection failed: ${e.message}")
+            if (requireVlmForAnalysis) return emptyList()
         }
 
         // CV graph detection — always run for precision refinement
+        if (requireVlmForAnalysis && cachedGraphResult == null && overrideRegion == null && vlmBounds == null) {
+            println("SWEEP[ABORT] VLM graph detection is required but did not return bounds")
+            return emptyList()
+        }
+
         val graphRes = cachedGraphResult ?: run {
             onProgress(SweepProgress(0, configs.size, "CV: определение графика", "detect"))
             try {
@@ -216,6 +223,10 @@ class AutoSweepEngine {
         } catch (e: Exception) {
             println("SWEEP[OCR] failed: ${e.message}")
             null
+        }
+        if (requireVlmForAnalysis && ocrResult == null) {
+            println("SWEEP[ABORT] VLM axis OCR is required but failed")
+            return emptyList()
         }
         println("SWEEP[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
 

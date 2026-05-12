@@ -210,6 +210,9 @@ fun ProcessingFlowScreen(
                             }
                             vlmLoadingStatus = if (vlmReady) "AI модель готова" else null
                             println("PIPELINE[VLM] Model ready: $vlmReady")
+                            if (!vlmReady) {
+                                error("AI vision model is required for photo chromatogram analysis. Download or activate a chromatography VLM first.")
+                            }
                         }
 
                         // Normalize first: fix EXIF orientation
@@ -270,6 +273,7 @@ fun ProcessingFlowScreen(
                                 // Multi-graph: reuse graph detection, target specific region
                                 cachedGraphResult = if (isSubsequentGraph) graphResult else null,
                                 overrideRegion = if (isSubsequentGraph) selectedRegion else null,
+                                requireVlmForAnalysis = true,
                                 onProgress = { progress ->
                                     sweepProgress = progress
                                 },
@@ -302,6 +306,8 @@ fun ProcessingFlowScreen(
                                 println("PIPELINE[GRAPH] selected=$selectedRegion")
                                 println("PIPELINE[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
                                 println("PIPELINE[CURVE] points=${curvePoints.size}")
+                            } else {
+                                error("AI vision analysis did not produce a usable graph and axis result.")
                             }
                             sweepCompleted = true
                         }
