@@ -1,38 +1,43 @@
 package com.chromalab.feature.capture
 
+import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.chromalab.feature.processing.document.MlKitDocumentScanner
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Locale
 
+private const val CAPTURE_TAG = "ChromaLabCapture"
+
 /**
- * Android gallery import: pick image → adjust (pan/zoom/rotate) → confirm.
+ * Android photo import.
+ *
+ * Preferred path matches CameraScreen: ML Kit Smart Scan with gallery import,
+ * crop/deskew/filter editor, then a prepared JPEG for the analysis pipeline.
+ * Raw gallery import is kept only as a fallback when Smart Scan is unavailable.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,25 +49,70 @@ actual fun GalleryImportScreen(
     val context = LocalContext.current
     var selectedUri by remember { mutableStateOf<Uri?>(null) }
     var savedPath by remember { mutableStateOf<String?>(null) }
+    var smartScanLaunched by remember { mutableStateOf(false) }
+    var smartScanInProgress by remember { mutableStateOf(true) }
+    var useRawFallback by remember { mutableStateOf(false) }
+    var scannerError by remember { mutableStateOf<String?>(null) }
 
-    // Transform state
-    var scale by remember { mutableFloatStateOf(1f) }
-    var rotation by remember { mutableFloatStateOf(0f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
-    val launcher = rememberLauncherForActivityResult(
+    val rawGalleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri != null) {
             selectedUri = uri
-            // Copy to internal storage immediately (preserve original)
             savedPath = copyToInternal(context, uri)
         }
     }
 
-    // Auto-launch picker on first composition
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        smartScanInProgress = false
+        if (result.resultCode == Activity.RESULT_OK) {
+            val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            val outputDir = File(context.filesDir, "captures").absolutePath
+            val path = scanResult?.let {
+                MlKitDocumentScanner.copyResultToStorage(context, it, outputDir)
+            }
+            if (path != null) {
+                Log.i(CAPTURE_TAG, "Photo import prepared by Smart Scan: $path")
+                onImageSelected(path)
+            } else {
+                scannerError = "Smart Scan did not return a prepared image."
+                Log.w(CAPTURE_TAG, scannerError!!)
+                useRawFallback = true
+            }
+        } else {
+            Log.i(CAPTURE_TAG, "Smart Scan cancelled for photo import; showing raw fallback.")
+            useRawFallback = true
+        }
+    }
+
     LaunchedEffect(Unit) {
-        launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        if (!smartScanLaunched) {
+            smartScanLaunched = true
+            smartScanInProgress = true
+            val activity = context as? Activity
+            if (activity == null) {
+                scannerError = "Activity context is unavailable for Smart Scan."
+                smartScanInProgress = false
+                useRawFallback = true
+                return@LaunchedEffect
+            }
+
+            MlKitDocumentScanner.getScanner()
+                .getStartScanIntent(activity)
+                .addOnSuccessListener { intentSender ->
+                    scannerLauncher.launch(
+                        IntentSenderRequest.Builder(intentSender).build(),
+                    )
+                }
+                .addOnFailureListener { error ->
+                    scannerError = "Smart Scan unavailable: ${error.message}"
+                    Log.w(CAPTURE_TAG, "Smart Scan unavailable for photo import.", error)
+                    smartScanInProgress = false
+                    useRawFallback = true
+                }
+        }
     }
 
     Scaffold(
@@ -70,7 +120,11 @@ actual fun GalleryImportScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (selectedUri != null) "Подгонка изображения" else "Импорт из галереи",
+                        when {
+                            selectedUri != null -> "Предпросмотр фото"
+                            useRawFallback -> "Импорт фото"
+                            else -> "Smart Scan"
+                        },
                     )
                 },
                 navigationIcon = {
@@ -80,11 +134,6 @@ actual fun GalleryImportScreen(
                 },
                 actions = {
                     if (selectedUri != null) {
-                        // Rotate 90°
-                        IconButton(onClick = { rotation += 90f }) {
-                            Icon(Icons.Filled.RotateRight, contentDescription = "Повернуть")
-                        }
-                        // Confirm
                         IconButton(onClick = {
                             savedPath?.let { onImageSelected(it) }
                         }) {
@@ -105,66 +154,68 @@ actual fun GalleryImportScreen(
                 .padding(padding),
             contentAlignment = Alignment.Center,
         ) {
-            if (selectedUri != null) {
-                // Adjustable image with frame overlay
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                        .clipToBounds()
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, gestureRotation ->
-                                scale = (scale * zoom).coerceIn(0.5f, 5f)
-                                rotation += gestureRotation
-                                offset = Offset(
-                                    x = offset.x + pan.x,
-                                    y = offset.y + pan.y,
-                                )
-                            }
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    AsyncImage(
-                        model = selectedUri,
-                        contentDescription = "Imported image",
-                        contentScale = ContentScale.Fit,
+            when {
+                selectedUri != null -> {
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                                rotationZ = rotation
-                                translationX = offset.x
-                                translationY = offset.y
-                            },
-                    )
-
-                    // Frame overlay
-                    CameraFrameOverlay()
-                }
-            } else {
-                // Waiting for picker or picker was cancelled
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Image,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "Выберите изображение из галереи",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedButton(onClick = {
-                        launcher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            .background(Color.Black),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AsyncImage(
+                            model = selectedUri,
+                            contentDescription = "Imported image",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
                         )
-                    }) {
-                        Text("Открыть галерею")
+                    }
+                }
+
+                smartScanInProgress && !useRawFallback -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            "Запуск Smart Scan",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                else -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.Image,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            "Выберите изображение из галереи",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        scannerError?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        OutlinedButton(onClick = {
+                            rawGalleryLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        }) {
+                            Text("Открыть галерею")
+                        }
                     }
                 }
             }

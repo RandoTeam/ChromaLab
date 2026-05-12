@@ -33,9 +33,11 @@ Model Manager
 
 ### Gallery
 
-1. User selects an image from storage.
-2. The same processing flow is used after import.
-3. The output is the same `DigitalSignal` model.
+1. Direct `Photo` import first launches the same ML Kit Smart Scan flow used by `Camera`.
+2. The user can select a gallery image inside Smart Scan, then crop/deskew/filter it before analysis.
+3. The prepared JPEG is passed to the same image-to-signal flow.
+4. Raw Android gallery import is a fallback only when Smart Scan is unavailable.
+5. The output is the same `DigitalSignal` model.
 
 ### File Import
 

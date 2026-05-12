@@ -12,6 +12,8 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import java.io.File
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * ML Kit Document Scanner wrapper.
@@ -56,7 +58,9 @@ object MlKitDocumentScanner {
 
         val sourceUri = pages[0].imageUri
         val dir = File(outputDir).also { it.mkdirs() }
-        val outFile = File(dir, "mlkit_scanned.jpg")
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
+            .format(System.currentTimeMillis())
+        val outFile = File(dir, "mlkit_scanned_$timestamp.jpg")
 
         return try {
             context.contentResolver.openInputStream(sourceUri)?.use { input ->
