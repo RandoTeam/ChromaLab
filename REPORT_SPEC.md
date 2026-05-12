@@ -41,6 +41,17 @@ Source image or file
 
 The implementation should converge on a strict data model with these logical groups.
 
+### Persisted Report Metadata
+
+`ChromatogramEntity.algorithmConfig` may store a typed JSON envelope with:
+
+- `kind`: `chromalab.report-metadata`;
+- `version`: `1`;
+- top-level source, timing, model, runtime, device, graph-count, and processing-mode metadata;
+- per-graph source preparation metadata, identification, axis calibration, and warnings.
+
+This payload is metadata only. It must not replace calculated signal points or peak metrics, and unrelated legacy `algorithmConfig` JSON must be ignored by report export.
+
 ### Report Metadata
 
 Required fields:
