@@ -13,11 +13,9 @@ import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 
 /**
- * Capture hub — entry point for the digitization pipeline.
+ * Capture hub - entry point for the digitization pipeline.
  *
- * Offers two paths:
- * - Camera capture → ProcessingFlowScreen
- * - CSV/JSON file import → FileImportScreen
+ * Smart Scan camera flow also supports gallery import through the scanner UI.
  */
 @Composable
 fun CaptureHubScreen(

@@ -27,17 +27,10 @@ Model Manager
 ### Camera
 
 1. User captures a chromatogram through the Android capture flow.
-2. ML Kit document scanner/crop flow prepares the image.
-3. Processing flow detects graph region, axes, and curve.
-4. The extracted curve becomes a `DigitalSignal`.
-
-### Gallery
-
-1. Direct `Photo` import first launches the same ML Kit Smart Scan flow used by `Camera`.
-2. The user can select a gallery image inside Smart Scan, then crop/deskew/filter it before analysis.
-3. The prepared JPEG is passed to the same image-to-signal flow.
-4. Raw Android gallery import is a fallback only when Smart Scan is unavailable.
-5. The output is the same `DigitalSignal` model.
+2. The same Smart Scan UI can import an existing photo from the gallery.
+3. ML Kit document scanner/crop flow prepares the image.
+4. Processing flow detects graph region, axes, and curve.
+5. The extracted curve becomes a `DigitalSignal`.
 
 ### File Import
 
