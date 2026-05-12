@@ -4,6 +4,7 @@ import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphSourceMetadata
 import com.chromalab.feature.reports.InputSourceType
+import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.StoredGraphReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadata
@@ -18,6 +19,11 @@ fun buildProcessingReportMetadataConfig(
     signalPointCount: Int,
     analysisStartedAtEpochMillis: Long,
     analysisCompletedAtEpochMillis: Long,
+    sourceImageBounds: PixelRect? = null,
+    detectedGraphBounds: PixelRect? = null,
+    cropConfidence: Double? = null,
+    preprocessingSteps: List<String> = emptyList(),
+    scanMode: String? = null,
 ): String =
     StoredReportMetadataCodec.encode(
         buildProcessingStoredReportMetadata(
@@ -29,6 +35,11 @@ fun buildProcessingReportMetadataConfig(
             signalPointCount = signalPointCount,
             analysisStartedAtEpochMillis = analysisStartedAtEpochMillis,
             analysisCompletedAtEpochMillis = analysisCompletedAtEpochMillis,
+            sourceImageBounds = sourceImageBounds,
+            detectedGraphBounds = detectedGraphBounds,
+            cropConfidence = cropConfidence,
+            preprocessingSteps = preprocessingSteps,
+            scanMode = scanMode,
         ),
     )
 
@@ -41,6 +52,11 @@ fun buildProcessingStoredReportMetadata(
     signalPointCount: Int,
     analysisStartedAtEpochMillis: Long,
     analysisCompletedAtEpochMillis: Long,
+    sourceImageBounds: PixelRect? = null,
+    detectedGraphBounds: PixelRect? = null,
+    cropConfidence: Double? = null,
+    preprocessingSteps: List<String> = emptyList(),
+    scanMode: String? = null,
 ): StoredReportMetadata {
     val startedAt = analysisStartedAtEpochMillis.takeIf { it > 0 }
     val completedAt = analysisCompletedAtEpochMillis.takeIf { it > 0 }
@@ -63,15 +79,19 @@ fun buildProcessingStoredReportMetadata(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),
                 source = GraphSourceMetadata(
+                    sourceImageBounds = sourceImageBounds,
+                    detectedGraphBounds = detectedGraphBounds,
+                    cropConfidence = cropConfidence?.coerceIn(0.0, 1.0),
                     preprocessingSteps = buildList {
                         add("ProcessingFlowScreen auto-save")
                         add("Photo analysis pipeline completed before calculation export")
                         add("Digitized signal points: ${signalPointCount.coerceAtLeast(0)}")
+                        addAll(preprocessingSteps.filter { it.isNotBlank() })
                         if (!processedPath.isNullOrBlank() && processedPath != sourcePath) {
                             add("Processed image path differs from original source")
                         }
-                    },
-                    scanMode = sourceType.toScanMode(),
+                    }.distinct(),
+                    scanMode = scanMode?.takeIf { it.isNotBlank() } ?: sourceType.toScanMode(),
                 ),
             ),
         ),

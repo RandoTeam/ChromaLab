@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.report
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.InputSourceType
+import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlin.test.Test
@@ -23,6 +24,11 @@ class ProcessingReportMetadataBuilderTest {
             signalPointCount = 512,
             analysisStartedAtEpochMillis = 1_000L,
             analysisCompletedAtEpochMillis = 2_750L,
+            sourceImageBounds = PixelRect(0, 0, 1200, 800),
+            detectedGraphBounds = PixelRect(120, 160, 900, 420),
+            cropConfidence = 0.82,
+            preprocessingSteps = listOf("EXIF normalized", "Auto-sweep selected config: high_contrast"),
+            scanMode = "photo-processing-flow/high_contrast",
         )
 
         val metadata = StoredReportMetadataCodec.decodeOrNull(config)
@@ -37,10 +43,17 @@ class ProcessingReportMetadataBuilderTest {
 
         val graph = metadata.graphs.single()
         assertEquals(2, graph.graphIndex)
-        assertEquals("photo-processing-flow", graph.source?.scanMode)
+        assertEquals("photo-processing-flow/high_contrast", graph.source?.scanMode)
+        assertEquals(PixelRect(0, 0, 1200, 800), graph.source?.sourceImageBounds)
+        assertEquals(PixelRect(120, 160, 900, 420), graph.source?.detectedGraphBounds)
+        assertEquals(0.82, graph.source?.cropConfidence)
         assertTrue(
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Digitized signal points: 512"),
+        )
+        assertTrue(
+            graph.source?.preprocessingSteps.orEmpty()
+                .contains("Auto-sweep selected config: high_contrast"),
         )
     }
 }

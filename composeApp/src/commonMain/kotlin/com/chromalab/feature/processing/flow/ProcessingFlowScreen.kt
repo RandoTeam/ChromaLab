@@ -69,6 +69,7 @@ import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
+import com.chromalab.feature.reports.PixelRect
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
@@ -639,6 +640,15 @@ fun ProcessingFlowScreen(
                                 val detectedGraphCount = graphResult?.filteredRegions?.size
                                     ?.takeIf { it > 0 }
                                     ?: signalsToSave.size
+                                val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
+                                val cropConfidence = graphResult?.confidence.toReportCropConfidence()
+                                val preprocessingSteps = buildReportPreprocessingSteps(
+                                    normalizedResult = normalizedResult,
+                                    cropResult = cropResult,
+                                    perspectiveResult = perspectiveResult,
+                                    preprocessingResult = preprocessingResult,
+                                    bestSweepConfig = bestSweepConfig,
+                                )
                                 for ((idx, ss) in signalsToSave.withIndex()) {
                                     val signal = ss.smoothed
                                     val entity = ChromatogramEntity(
@@ -664,6 +674,15 @@ fun ProcessingFlowScreen(
                                             signalPointCount = signal.points.size,
                                             analysisStartedAtEpochMillis = flowStartedAt,
                                             analysisCompletedAtEpochMillis = now,
+                                            sourceImageBounds = sourceImageBounds,
+                                            detectedGraphBounds = reportGraphBounds(
+                                                graphIndex = idx,
+                                                graphResult = graphResult,
+                                                selectedRegion = selectedRegion,
+                                                savedGraphCount = signalsToSave.size,
+                                            ),
+                                            cropConfidence = cropConfidence,
+                                            preprocessingSteps = preprocessingSteps,
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
@@ -766,6 +785,15 @@ fun ProcessingFlowScreen(
                             val detectedGraphCount = graphResult?.filteredRegions?.size
                                 ?.takeIf { it > 0 }
                                 ?: signalsToSave.size
+                            val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
+                            val cropConfidence = graphResult?.confidence.toReportCropConfidence()
+                            val preprocessingSteps = buildReportPreprocessingSteps(
+                                normalizedResult = normalizedResult,
+                                cropResult = cropResult,
+                                perspectiveResult = perspectiveResult,
+                                preprocessingResult = preprocessingResult,
+                                bestSweepConfig = bestSweepConfig,
+                            )
                             for ((idx, ss) in signalsToSave.withIndex()) {
                                 val signal = ss.smoothed
                                 val entity = ChromatogramEntity(
@@ -791,6 +819,15 @@ fun ProcessingFlowScreen(
                                         signalPointCount = signal.points.size,
                                         analysisStartedAtEpochMillis = flowStartedAt,
                                         analysisCompletedAtEpochMillis = now,
+                                        sourceImageBounds = sourceImageBounds,
+                                        detectedGraphBounds = reportGraphBounds(
+                                            graphIndex = idx,
+                                            graphResult = graphResult,
+                                            selectedRegion = selectedRegion,
+                                            savedGraphCount = signalsToSave.size,
+                                        ),
+                                        cropConfidence = cropConfidence,
+                                        preprocessingSteps = preprocessingSteps,
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
@@ -961,6 +998,63 @@ fun ProcessingFlowScreen(
 
 
 // --- Fallback data when processing fails or isn't applicable --------
+
+private fun reportSourceImageBounds(width: Int, height: Int): PixelRect? =
+    if (width > 0 && height > 0) {
+        PixelRect(x = 0, y = 0, width = width, height = height)
+    } else {
+        null
+    }
+
+private fun reportGraphBounds(
+    graphIndex: Int,
+    graphResult: GraphRegionResult?,
+    selectedRegion: GraphRegion,
+    savedGraphCount: Int,
+): PixelRect? {
+    val region = graphResult?.filteredRegions?.getOrNull(graphIndex)
+        ?: selectedRegion.takeIf { savedGraphCount == 1 && it.width > 1 && it.height > 1 }
+    return region?.toReportPixelRect()
+}
+
+private fun GraphRegion.toReportPixelRect(): PixelRect =
+    PixelRect(x = x, y = y, width = width, height = height)
+
+private fun DetectionConfidence?.toReportCropConfidence(): Double? =
+    when (this) {
+        DetectionConfidence.MANUAL -> 1.0
+        DetectionConfidence.HIGH -> 0.9
+        DetectionConfidence.MEDIUM -> 0.65
+        DetectionConfidence.LOW -> 0.35
+        null -> null
+    }
+
+private fun buildReportPreprocessingSteps(
+    normalizedResult: NormalizedImageResult?,
+    cropResult: CropResult?,
+    perspectiveResult: PerspectiveCorrectionResult?,
+    preprocessingResult: PreprocessingResult?,
+    bestSweepConfig: String?,
+): List<String> = buildList {
+    normalizedResult?.let {
+        add("Image orientation normalized: rotated=${it.wasRotated}, exif=${it.exifOrientation}")
+    }
+    cropResult?.let {
+        add("Crop stage completed: ${it.cropRect.width}x${it.cropRect.height}")
+    }
+    perspectiveResult?.let {
+        add("Perspective stage completed: ${it.outputWidth}x${it.outputHeight}, excessiveWarp=${it.isExcessiveWarp}")
+    }
+    preprocessingResult?.let {
+        add(
+            "Preprocessing: CLAHE=${it.params.claheClipLimit}, adaptiveBlock=${it.params.adaptiveBlockSize}, " +
+                "morph=${it.params.morphKernelSize}x${it.params.morphIterations}",
+        )
+    }
+    bestSweepConfig?.takeIf { it.isNotBlank() }?.let {
+        add("Auto-sweep selected config: $it")
+    }
+}
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
     val width = w.coerceAtLeast(1)
