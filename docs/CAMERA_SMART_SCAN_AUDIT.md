@@ -188,3 +188,16 @@ Remaining later work:
 
 - Android normalization still decodes the full source bitmap. Large-image memory behavior should be reviewed separately from correctness.
 - Source provenance still needs to record whether the normalized input came from Smart Scan camera or Smart Scan gallery.
+
+## Phase 3.4 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- Preprocessing now writes explicit `sharpened` and `scan_style` image artifacts in addition to grayscale, contrast, binary, and morphology outputs.
+- Auto-sweep now tests curve extraction against original, grayscale, contrast, sharpened, binary, and scan-style variants.
+- Sweep scoring records the selected variant in the score breakdown, so the winning path can be audited.
+- Desktop preprocessing stubs now expose the same variant file contract and preserve image dimensions.
+
+Remaining later work:
+
+- Phase 3.5 must choose the best preparation by measurable graph/axis/curve quality and should persist enough ranking detail for audit.

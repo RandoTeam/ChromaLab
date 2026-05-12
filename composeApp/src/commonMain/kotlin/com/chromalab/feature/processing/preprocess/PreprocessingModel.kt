@@ -26,6 +26,8 @@ data class PreprocessingResult(
     val contrastEnhancedPath: String,
     val binaryPath: String,
     val morphologyPath: String,
+    val sharpenedPath: String? = null,
+    val scanStylePath: String? = null,
     val sourcePath: String,
     val params: PreprocessingParams,
     val width: Int,

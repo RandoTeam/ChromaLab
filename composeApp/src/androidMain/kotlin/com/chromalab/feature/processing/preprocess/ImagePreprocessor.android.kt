@@ -54,6 +54,23 @@ actual class ImagePreprocessor actual constructor() {
         val enhanced = applyClahe(gray, w, h, params.claheClipLimit, params.claheTileSize)
         val contrastPath = saveGray(enhanced, w, h, File(outDir, "contrast_enhanced.jpg"))
 
+        val sharpened = sharpen(enhanced, w, h)
+        val sharpenedPath = saveGray(sharpened, w, h, File(outDir, "sharpened.jpg"))
+
+        val scanStyle = medianFilter(
+            adaptiveThreshold(
+                sharpened,
+                w,
+                h,
+                params.adaptiveBlockSize.coerceAtLeast(31),
+                params.adaptiveC + 4,
+            ),
+            w,
+            h,
+            params.medianFilterSize,
+        )
+        val scanStylePath = saveGray(scanStyle, w, h, File(outDir, "scan_style.jpg"))
+
         // 3. Adaptive threshold
         val binary = adaptiveThreshold(enhanced, w, h, params.adaptiveBlockSize, params.adaptiveC)
         val binaryPath = saveGray(binary, w, h, File(outDir, "binary.jpg"))
@@ -74,6 +91,8 @@ actual class ImagePreprocessor actual constructor() {
             contrastEnhancedPath = contrastPath,
             binaryPath = binaryPath,
             morphologyPath = morphPath,
+            sharpenedPath = sharpenedPath,
+            scanStylePath = scanStylePath,
             sourcePath = imagePath,
             params = params,
             width = w,
@@ -250,5 +269,21 @@ actual class ImagePreprocessor actual constructor() {
         }
         bitmap.recycle()
         return file.absolutePath
+    }
+
+    private fun sharpen(src: IntArray, w: Int, h: Int): IntArray {
+        val dst = src.copyOf()
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val center = src[y * w + x] * 5
+                val value = center -
+                    src[(y - 1) * w + x] -
+                    src[(y + 1) * w + x] -
+                    src[y * w + (x - 1)] -
+                    src[y * w + (x + 1)]
+                dst[y * w + x] = value.coerceIn(0, 255)
+            }
+        }
+        return dst
     }
 }

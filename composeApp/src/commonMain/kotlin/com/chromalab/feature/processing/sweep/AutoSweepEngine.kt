@@ -35,8 +35,18 @@ class AutoSweepEngine {
     data class SweepConfig(
         val name: String,
         val params: PreprocessingParams,
+        val inputVariant: SweepInputVariant = SweepInputVariant.CONTRAST,
         val description: String,
     )
+
+    enum class SweepInputVariant {
+        ORIGINAL,
+        GRAYSCALE,
+        CONTRAST,
+        SHARPENED,
+        BINARY,
+        SCAN_STYLE,
+    }
 
     data class SweepResult(
         val config: SweepConfig,
@@ -58,7 +68,7 @@ class AutoSweepEngine {
     )
 
     /**
-     * 8 preset configurations covering the full range of image conditions.
+     * Preset configurations and image variants covering the common scan conditions.
      */
     val configs: List<SweepConfig> = listOf(
         SweepConfig(
@@ -132,6 +142,47 @@ class AutoSweepEngine {
                 morphKernelSize = 3, morphIterations = 0, medianFilterSize = 1,
             ),
             description = "Минимальная обработка",
+        ),
+        SweepConfig(
+            name = "original",
+            params = PreprocessingParams(),
+            inputVariant = SweepInputVariant.ORIGINAL,
+            description = "Original",
+        ),
+        SweepConfig(
+            name = "grayscale",
+            params = PreprocessingParams(),
+            inputVariant = SweepInputVariant.GRAYSCALE,
+            description = "Grayscale",
+        ),
+        SweepConfig(
+            name = "contrast",
+            params = PreprocessingParams(),
+            inputVariant = SweepInputVariant.CONTRAST,
+            description = "Contrast",
+        ),
+        SweepConfig(
+            name = "sharpened",
+            params = PreprocessingParams(),
+            inputVariant = SweepInputVariant.SHARPENED,
+            description = "Sharpened",
+        ),
+        SweepConfig(
+            name = "binary",
+            params = PreprocessingParams(),
+            inputVariant = SweepInputVariant.BINARY,
+            description = "Binary",
+        ),
+        SweepConfig(
+            name = "scan_style",
+            params = PreprocessingParams(
+                claheClipLimit = 3.0f,
+                adaptiveBlockSize = 35,
+                adaptiveC = 12,
+                morphIterations = 1,
+            ),
+            inputVariant = SweepInputVariant.SCAN_STYLE,
+            description = "Scan-style",
         ),
     )
 
@@ -264,7 +315,7 @@ class AutoSweepEngine {
             // This is where configs actually differ — different CLAHE/threshold/morphology
             // produces different edges for Canny detection
             onProgress(SweepProgress(index + 1, configs.size, config.description, "curve"))
-            val curveInputPath = prepResult?.contrastEnhancedPath ?: imagePath
+            val curveInputPath = curveInputPath(imagePath, prepResult, config.inputVariant)
             val curveResult = try {
                 val axes = axesRes ?: fallbackAxes()
                 val mask = curveMaskPreparer.prepare(curveInputPath, region, axes, configDir)
@@ -279,7 +330,7 @@ class AutoSweepEngine {
             // Score: OCR base + curve quality
             val curveScore = calculateCurveScore(curveResult, region)
             val totalScore = ocrBaseScore.first + curveScore.first
-            val breakdown = "${ocrBaseScore.second}, ${curveScore.second}"
+            val breakdown = "${ocrBaseScore.second}, variant=${config.inputVariant.name.lowercase()}, ${curveScore.second}"
             println("SWEEP[${config.name}] total=$totalScore (ocr=${ocrBaseScore.first} + curve=${curveScore.first})")
 
             results.add(
@@ -410,6 +461,19 @@ class AutoSweepEngine {
         if (median <= 0f) return 0f
         val consistent = diffs.count { abs(it - median) < median * 0.15f }
         return consistent.toFloat() / diffs.size
+    }
+
+    private fun curveInputPath(
+        originalPath: String,
+        prep: PreprocessingResult?,
+        variant: SweepInputVariant,
+    ): String = when (variant) {
+        SweepInputVariant.ORIGINAL -> originalPath
+        SweepInputVariant.GRAYSCALE -> prep?.grayscalePath ?: originalPath
+        SweepInputVariant.CONTRAST -> prep?.contrastEnhancedPath ?: originalPath
+        SweepInputVariant.SHARPENED -> prep?.sharpenedPath ?: prep?.contrastEnhancedPath ?: originalPath
+        SweepInputVariant.BINARY -> prep?.binaryPath ?: originalPath
+        SweepInputVariant.SCAN_STYLE -> prep?.scanStylePath ?: prep?.morphologyPath ?: originalPath
     }
 
     private fun fallbackAxes(): AxesResult = AxesResult(
