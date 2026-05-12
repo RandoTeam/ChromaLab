@@ -10,6 +10,14 @@ These rules are project-specific and override generic speed/shortcut preferences
 - Run the most relevant available validation before committing. If validation cannot be run, state why.
 - Use concise commit messages that describe the product change, not the implementation trivia.
 
+## Phase Discipline
+
+- Work on no more than one product phase at a time.
+- If a phase is large or risky, complete only one subphase in a single work slice.
+- Do not mix report-contract work, calculation-engine work, UI redesign, model-runtime work, and release work in one commit.
+- After each completed phase or subphase, validate what can be validated, provide a short status report, and create a focused commit.
+- Treat phase documents as contracts for later implementation. If a later implementation cannot satisfy a contract item, update the contract explicitly instead of silently weakening the product behavior.
+
 ## Analysis Quality Bar
 
 - ChromaLab is a serious chromatogram analysis tool, not a demo. Prefer correct, honest, deeply validated results over faster but weaker results.
