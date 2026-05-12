@@ -19,6 +19,7 @@ data class CalculationRunReportOptions(
     val appVersion: String? = null,
     val inputSourceType: InputSourceType = InputSourceType.UNKNOWN,
     val sourceName: String? = null,
+    val detectedGraphCount: Int = 1,
     val analysisStartedAtEpochMillis: Long? = null,
     val analysisCompletedAtEpochMillis: Long? = null,
     val totalAnalysisDurationMillis: Long? = null,
@@ -28,6 +29,11 @@ data class CalculationRunReportOptions(
     val deviceName: String? = null,
     val processingMode: ProcessingMode = ProcessingMode.EXPORT_ONLY,
     val graphIndex: Int = 1,
+    val graphSourceMetadata: GraphSourceMetadata? = null,
+    val identification: ChromatogramIdentification? = null,
+    val axisCalibration: ReportAxisCalibration? = null,
+    val additionalReportWarnings: List<ReportWarning> = emptyList(),
+    val additionalGraphWarnings: List<ReportWarning> = emptyList(),
 )
 
 /**
@@ -47,7 +53,7 @@ object CalculationRunReportMapper {
         val sortedPeaks = run.peaks.sortedBy { it.rtApex }
         val distribution = run.distribution ?: DistributionAnalyzer.analyze(sortedPeaks)
         val methodQuality = run.methodQuality ?: MethodQualityAnalyzer.analyze(sortedPeaks, run.signals)
-        val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex)
+        val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex, options)
 
         return ChromatogramReport(
             metadata = ReportMetadata(
@@ -58,7 +64,7 @@ object CalculationRunReportMapper {
                 totalAnalysisDurationMillis = options.totalAnalysisDurationMillis,
                 inputSourceType = options.inputSourceType,
                 sourceName = options.sourceName ?: run.sourceSignalId,
-                detectedGraphCount = 1,
+                detectedGraphCount = options.detectedGraphCount.coerceAtLeast(1),
                 selectedModel = options.selectedModel,
                 executedModel = options.executedModel,
                 executedRuntime = options.executedRuntime,
@@ -68,9 +74,9 @@ object CalculationRunReportMapper {
             graphs = listOf(
                 GraphReport(
                     graphIndex = graphIndex,
-                    source = buildSourceMetadata(run.params),
-                    identification = buildIdentification(options.sourceName ?: run.sourceSignalId),
-                    axisCalibration = buildAxisCalibration(run, graphIndex),
+                    source = buildSourceMetadata(run.params, options.graphSourceMetadata),
+                    identification = options.identification ?: buildIdentification(options.sourceName ?: run.sourceSignalId),
+                    axisCalibration = options.axisCalibration ?: buildAxisCalibration(run, graphIndex),
                     signal = buildSignalReport(run),
                     peaks = sortedPeaks.mapIndexed { index, peak ->
                         peak.toReportPeak(index + 1, run, graphIndex)
@@ -86,18 +92,29 @@ object CalculationRunReportMapper {
         )
     }
 
-    private fun buildSourceMetadata(params: CalculationParams): GraphSourceMetadata =
-        GraphSourceMetadata(
-            preprocessingSteps = buildList {
-                add("CalculationRun report mapping")
-                if (params.smoothingEnabled) {
-                    add("Smoothing: Savitzky-Golay")
-                }
-                add("Baseline: ${params.baselineMethod}")
-                add("Peak detection and integration completed before report mapping")
-            },
+    private fun buildSourceMetadata(
+        params: CalculationParams,
+        upstream: GraphSourceMetadata?,
+    ): GraphSourceMetadata {
+        val calculationSteps = buildCalculationPreprocessingSteps(params)
+        return upstream?.copy(
+            preprocessingSteps = (upstream.preprocessingSteps + calculationSteps).distinct(),
+            scanMode = upstream.scanMode ?: "calculation-run-export",
+        ) ?: GraphSourceMetadata(
+            preprocessingSteps = calculationSteps,
             scanMode = "calculation-run-export",
         )
+    }
+
+    private fun buildCalculationPreprocessingSteps(params: CalculationParams): List<String> =
+        buildList {
+            add("CalculationRun report mapping")
+            if (params.smoothingEnabled) {
+                add("Smoothing: Savitzky-Golay")
+            }
+            add("Baseline: ${params.baselineMethod}")
+            add("Peak detection and integration completed before report mapping")
+        }
 
     private fun buildIdentification(sourceName: String): ChromatogramIdentification =
         ChromatogramIdentification(
@@ -128,15 +145,6 @@ object CalculationRunReportMapper {
                 visibleMinimum = calculatedDouble(intensityMin, "a.u."),
                 visibleMaximum = calculatedDouble(intensityMax, "a.u."),
                 majorTicks = buildTicks(intensityMin, intensityMax, "a.u."),
-            ),
-            warnings = listOf(
-                ReportWarning(
-                    code = "calculation_run.axis_ocr_metadata_missing",
-                    message = "Axis labels and ranges were mapped from the digitized CalculationRun signal; original OCR and crop calibration confidence are not persisted here.",
-                    severity = ReportSeverity.INFO,
-                    stage = "report_mapping",
-                    graphIndex = graphIndex,
-                ),
             ),
         )
     }
@@ -368,15 +376,17 @@ object CalculationRunReportMapper {
         options: CalculationRunReportOptions,
         graphIndex: Int,
     ): List<ReportWarning> = buildList {
-        add(
-            ReportWarning(
-                code = "calculation_run.report_scope",
-                message = "This report was generated from CalculationRun data only; source-image crop, OCR, and neural model-stage metadata are not available in this export slice.",
-                severity = ReportSeverity.INFO,
-                stage = "report_mapping",
-                graphIndex = graphIndex,
-            ),
-        )
+        if (!options.hasRuntimeMetadata()) {
+            add(
+                ReportWarning(
+                    code = "calculation_run.runtime_metadata_missing",
+                    message = "This report was generated without selected/executed model metadata; only the default deterministic runtime is recorded.",
+                    severity = ReportSeverity.INFO,
+                    stage = "report_mapping",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
 
         val selectedRuntime = options.selectedModel?.runtime
         val executedRuntime = options.executedModel?.runtime ?: options.executedRuntime
@@ -395,22 +405,63 @@ object CalculationRunReportMapper {
                 ),
             )
         }
+
+        addAll(options.additionalReportWarnings)
     }
 
     private fun buildGraphWarnings(
         run: CalculationRun,
         peaks: List<PeakResult>,
         graphIndex: Int,
+        options: CalculationRunReportOptions,
     ): List<ReportWarning> = buildList {
-        add(
-            ReportWarning(
-                code = "calculation_run.graph_source_metadata_missing",
-                message = "Detected graph bounds, crop confidence, OCR confidence, and original preprocessing filters are not stored in CalculationRun yet.",
-                severity = ReportSeverity.INFO,
-                stage = "graph_preparation",
-                graphIndex = graphIndex,
-            ),
-        )
+        if (!options.hasGraphSourceMetadata()) {
+            add(
+                ReportWarning(
+                    code = "calculation_run.graph_source_metadata_missing",
+                    message = "Detected graph bounds, crop confidence, OCR confidence, and original preprocessing filters are not available in the report options.",
+                    severity = ReportSeverity.INFO,
+                    stage = "graph_preparation",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
+
+        if (options.axisCalibration == null) {
+            add(
+                ReportWarning(
+                    code = "calculation_run.axis_upstream_metadata_missing",
+                    message = "Axis calibration was inferred from the digitized CalculationRun signal; original OCR calibration confidence is not available in the report options.",
+                    severity = ReportSeverity.INFO,
+                    stage = "axis_calibration",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
+
+        if (options.identification == null) {
+            add(
+                ReportWarning(
+                    code = "calculation_run.identification_metadata_missing",
+                    message = "Chromatogram title, ion/channel, and sample identity were not passed from upstream OCR or model extraction.",
+                    severity = ReportSeverity.INFO,
+                    stage = "identification",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
+
+        if (!options.hasGraphSourceMetadata() && !options.hasRuntimeMetadata()) {
+            add(
+                ReportWarning(
+                    code = "calculation_run.report_scope",
+                    message = "This report was generated from CalculationRun data only; source-image crop, OCR, and neural model-stage metadata were not supplied.",
+                    severity = ReportSeverity.INFO,
+                    stage = "report_mapping",
+                    graphIndex = graphIndex,
+                ),
+            )
+        }
 
         if (run.signals.raw.isEmpty()) {
             add(
@@ -449,6 +500,25 @@ object CalculationRunReportMapper {
         }
 
         run.warnings.forEach { add(it.toReportWarning(graphIndex)) }
+        addAll(options.additionalGraphWarnings)
+    }
+
+    private fun CalculationRunReportOptions.hasRuntimeMetadata(): Boolean =
+        selectedModel != null ||
+            executedModel != null ||
+            (executedRuntime != ExecutedRuntime.DETERMINISTIC && executedRuntime != ExecutedRuntime.UNKNOWN)
+
+    private fun CalculationRunReportOptions.hasGraphSourceMetadata(): Boolean {
+        val source = graphSourceMetadata ?: return false
+        return source.sourceImageBounds != null ||
+            source.detectedGraphBounds != null ||
+            source.cropConfidence != null ||
+            source.preprocessingSteps.isNotEmpty() ||
+            source.scanMode != null ||
+            source.titleOcrConfidence != null ||
+            source.axisOcrConfidence != null ||
+            source.tickOcrConfidence != null ||
+            source.manuallyAdjusted
     }
 
     private fun CalculationWarning.toReportWarning(graphIndex: Int): ReportWarning =

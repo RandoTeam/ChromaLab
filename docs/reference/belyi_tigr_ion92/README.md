@@ -136,3 +136,16 @@ This bridge exports `chromatogram_report.md` from calculation data without inven
 Phase 1.8 exposes this bridge in the calculation export UI as a separate Markdown export action. The older HTML report remains available, but the Markdown export is the first user-facing output backed by the strict report contract.
 
 Phase 1.9 adds an in-app structured report preview to the calculation export screen. The preview renders the structured report object directly, including validation counts, graph summary, peak preview, and the highest-priority warnings before the user saves the Markdown file.
+
+Phase 1.10 extends `CalculationRunReportOptions` so upstream stages can pass real graph-source metadata into the report bridge:
+
+- detected graph/source bounds;
+- crop confidence;
+- preprocessing and scan mode;
+- title, axis, and tick OCR confidence;
+- OCR/model-derived chromatogram identification;
+- upstream axis calibration;
+- selected and executed model/runtime metadata;
+- additional report or graph warnings.
+
+When these fields are provided, the mapper uses them directly. When they are absent, the report keeps explicit missing-metadata warnings instead of pretending that crop, OCR, or model-stage information exists.
