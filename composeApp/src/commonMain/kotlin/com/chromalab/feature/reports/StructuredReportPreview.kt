@@ -113,6 +113,7 @@ private fun GraphPreview(graph: GraphReport) {
 
         KeyValueGrid(
             rows = listOf(
+                "Title" to graph.identification.chromatogramTitle.renderText(),
                 "Mode" to graph.identification.chromatogramMode.renderText(),
                 "Ion" to graph.identification.ionOrChannel.renderText(),
                 "Sample" to graph.identification.sampleName.renderText(),

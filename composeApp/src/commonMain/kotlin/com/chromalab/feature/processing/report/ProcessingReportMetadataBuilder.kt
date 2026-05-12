@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.GraphSourceMetadata
@@ -29,6 +30,7 @@ fun buildProcessingReportMetadataConfig(
     preprocessingSteps: List<String> = emptyList(),
     preparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
     scanMode: String? = null,
+    axisOcrResult: AxisOcrResult? = null,
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
@@ -55,6 +57,7 @@ fun buildProcessingReportMetadataConfig(
             preprocessingSteps = preprocessingSteps,
             preparationVariants = preparationVariants,
             scanMode = scanMode,
+            axisOcrResult = axisOcrResult,
             titleOcrConfidence = titleOcrConfidence,
             axisOcrConfidence = axisOcrConfidence,
             tickOcrConfidence = tickOcrConfidence,
@@ -82,6 +85,7 @@ fun buildProcessingStoredReportMetadata(
     preprocessingSteps: List<String> = emptyList(),
     preparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
     scanMode: String? = null,
+    axisOcrResult: AxisOcrResult? = null,
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
@@ -105,6 +109,7 @@ fun buildProcessingStoredReportMetadata(
     val rejectedPreparationVariants = preparationVariants
         .filterNot { it == selectedPreparationVariant }
         .sortedBy { it.rank }
+    val ocrExtraction = axisOcrResult.toProcessingOcrReportExtraction(detectedGraphBounds)
 
     return StoredReportMetadata(
         inputSourceType = sourceType.toReportInputSourceType(),
@@ -125,11 +130,13 @@ fun buildProcessingStoredReportMetadata(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),
                 warnings = graphWarnings.toStoredGraphWarnings(graphIndex.coerceAtLeast(1)),
+                identification = ocrExtraction.identification,
+                axisCalibration = ocrExtraction.axisCalibration,
                 source = GraphSourceMetadata(
                     sourceImageBounds = sourceImageBounds,
                     detectedGraphBounds = detectedGraphBounds,
                     cropConfidence = cropConfidence?.coerceIn(0.0, 1.0),
-                    titleOcrConfidence = titleOcrConfidence?.coerceIn(0.0, 1.0),
+                    titleOcrConfidence = (titleOcrConfidence ?: ocrExtraction.titleOcrConfidence)?.coerceIn(0.0, 1.0),
                     axisOcrConfidence = axisOcrConfidence?.coerceIn(0.0, 1.0),
                     tickOcrConfidence = tickOcrConfidence?.coerceIn(0.0, 1.0),
                     selectedPreparationVariant = selectedPreparationVariant,

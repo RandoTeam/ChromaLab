@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.ocr.AxisOcrResult
+import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.InputSourceType
@@ -9,6 +11,8 @@ import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportStageTiming
+import com.chromalab.feature.reports.ReportValueSource
+import com.chromalab.feature.reports.ReportValueStatus
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlin.test.Test
@@ -119,6 +123,87 @@ class ProcessingReportMetadataBuilderTest {
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Auto-sweep selected config: high_contrast"),
         )
+    }
+
+    @Test
+    fun processingMetadataExtractsOcrIdentificationAndAxisLabels() {
+        val title = """Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\data.ms"""
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\normalized_photo.jpg""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 512,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_750L,
+            detectedGraphBounds = PixelRect(100, 100, 400, 300),
+            axisOcrResult = AxisOcrResult(
+                rawElements = listOf(
+                    OcrTextElement(
+                        text = title,
+                        numericValue = null,
+                        x = 165f,
+                        y = 105f,
+                        width = 330f,
+                        height = 18f,
+                        confidence = 0.86f,
+                    ),
+                    OcrTextElement(
+                        text = "Abundance",
+                        numericValue = null,
+                        x = 35f,
+                        y = 128f,
+                        width = 74f,
+                        height = 16f,
+                        confidence = 0.82f,
+                    ),
+                    OcrTextElement(
+                        text = "Time-->",
+                        numericValue = null,
+                        x = 80f,
+                        y = 426f,
+                        width = 60f,
+                        height = 14f,
+                        confidence = 0.80f,
+                    ),
+                    OcrTextElement(
+                        text = """Ion 44.00: OTHER_SAMPLE.D\data.ms""",
+                        numericValue = null,
+                        x = 900f,
+                        y = 105f,
+                        width = 280f,
+                        height = 18f,
+                        confidence = 0.95f,
+                    ),
+                ),
+                suggestedXValues = listOf(10f, 15f, 20f, 25f),
+                suggestedYValues = listOf(10_000f, 9_000f, 8_000f, 0f),
+                xUnit = "Time-->",
+                yUnit = "Abundance",
+                confidence = 0.82f,
+                timestamp = 1_234L,
+            ),
+        )
+
+        val graph = StoredReportMetadataCodec.decodeOrNull(config)?.graphs?.single()
+
+        assertNotNull(graph)
+        assertEquals(title, graph.identification?.chromatogramTitle?.value)
+        assertEquals(ReportValueStatus.DETECTED, graph.identification?.chromatogramTitle?.status)
+        assertEquals("m/z 92.00", graph.identification?.ionOrChannel?.value)
+        assertEquals("91.70 to 92.70", graph.identification?.ionRange?.value)
+        assertEquals("BELIY TIGR_1", graph.identification?.sampleName?.value)
+        assertEquals("""BELIY TIGR_1.D\data.ms""", graph.identification?.samplePathOrInstrumentLabel?.value)
+        assertEquals(0.86, graph.source?.titleOcrConfidence)
+        assertEquals("Time", graph.axisCalibration?.xAxis?.label?.value)
+        assertEquals("min", graph.axisCalibration?.xAxis?.unit?.value)
+        assertEquals(ReportValueStatus.INFERRED, graph.axisCalibration?.xAxis?.unit?.status)
+        assertEquals(ReportValueSource.LOCAL_KNOWLEDGE, graph.axisCalibration?.xAxis?.unit?.source)
+        assertEquals(listOf(10.0, 15.0, 20.0, 25.0), graph.axisCalibration?.xAxis?.majorTicks?.map { it.value })
+        assertEquals("Abundance", graph.axisCalibration?.yAxis?.label?.value)
+        assertEquals("counts", graph.axisCalibration?.yAxis?.unit?.value)
+        assertEquals(listOf(0.0, 8_000.0, 9_000.0, 10_000.0), graph.axisCalibration?.yAxis?.majorTicks?.map { it.value })
     }
 
     @Test

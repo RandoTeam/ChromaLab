@@ -129,6 +129,7 @@ data class PixelRect(
 
 @Serializable
 data class ChromatogramIdentification(
+    val chromatogramTitle: ReportTextValue = ReportTextValue.notCalculated(),
     val analysisType: ReportTextValue = ReportTextValue.notCalculated(),
     val chromatogramMode: ReportTextValue = ReportTextValue.notCalculated(),
     val ionOrChannel: ReportTextValue = ReportTextValue.notCalculated(),

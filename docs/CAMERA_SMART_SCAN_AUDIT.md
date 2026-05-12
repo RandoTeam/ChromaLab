@@ -288,3 +288,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Phase 5.1 should start structured extraction for title, ion/channel, sample label, axis labels, and tick labels.
+
+## Phase 5.1 Implementation Notes
+
+Implemented on 2026-05-13:
+
+- Processing report metadata now receives each graph's `AxisOcrResult` snapshot when saving a chromatogram record.
+- OCR text is filtered to the current graph bounds before report extraction, so title/sample metadata from another graph on the same page is not reused.
+- Stored graph metadata now captures chromatogram title, ion/channel, ion range, sample name, sample path/instrument label, axis labels, inferred basic units, and OCR tick labels.
+- Structured Markdown export and the in-app report preview now expose the chromatogram title instead of hiding it in raw preprocessing metadata.
+
+Remaining later work:
+
+- Phase 5.2 should turn OCR/model axis readings into explicit calibration candidates with geometry, transform confidence, and rejection reasons.

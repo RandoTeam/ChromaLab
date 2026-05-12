@@ -1,6 +1,6 @@
 # ChromaLab Report Implementation Plan
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 This document tracks the 10-phase plan for turning ChromaLab's chromatogram output into a professional, structured, offline report flow. Work must proceed one phase or one heavy subphase at a time. Each completed slice requires validation and a focused commit.
 
@@ -85,7 +85,7 @@ Exit criteria:
 
 Goal: make pixel-to-unit conversion auditable and accurate enough for real chromatographic calculations.
 
-- [ ] 5.1 Extract chromatogram title, ion/channel, sample label, X-axis label, Y-axis label, and tick labels.
+- [x] 5.1 Extract chromatogram title, ion/channel, sample label, X-axis label, Y-axis label, and tick labels.
 - [ ] 5.2 Convert OCR/model axis readings into structured calibration candidates.
 - [ ] 5.3 Validate X/Y tick monotonicity, spacing, and visible range.
 - [ ] 5.4 Persist `PixelToUnitTransform` and calibration confidence.
@@ -194,4 +194,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 5.1: extract chromatogram title, ion/channel, sample label, X-axis label, Y-axis label, and tick labels.
+Start Phase 5.2: convert OCR/model axis readings into structured calibration candidates.
