@@ -33,7 +33,8 @@ import java.io.File
  * ML Kit provides built-in camera, edge detection, crop, deskew,
  * shadow removal and image filters — all via Google Play Services (0 MB in APK).
  *
- * If ML Kit is unavailable, falls back to Manual (ManualCameraScreen).
+ * If ML Kit is unavailable, blocks release-quality photo analysis instead of
+ * falling back to an unprepared direct camera/gallery image.
  */
 @Composable
 actual fun CameraScreen(
@@ -44,7 +45,6 @@ actual fun CameraScreen(
     val context = LocalContext.current
     var scannerLaunched by remember { mutableStateOf(false) }
     var scannerError by remember { mutableStateOf<String?>(null) }
-    var showFallbackCamera by remember { mutableStateOf(false) }
 
     // ML Kit Scanner launcher
     val scannerLauncher = rememberLauncherForActivityResult(
@@ -69,8 +69,8 @@ actual fun CameraScreen(
         }
     }
 
-    // Auto-launch Smart Scan on first composition
-    LaunchedEffect(Unit) {
+    // Auto-launch Smart Scan. Retry resets scannerLaunched to false.
+    LaunchedEffect(scannerLaunched) {
         if (!scannerLaunched) {
             scannerLaunched = true
             val activity = context as? Activity ?: return@LaunchedEffect
@@ -83,19 +83,11 @@ actual fun CameraScreen(
                 }
                 .addOnFailureListener { e ->
                     scannerError = "Smart Scan недоступен: ${e.message}"
-                    showFallbackCamera = true
                 }
         }
     }
 
-    if (showFallbackCamera) {
-        // Fallback: manual camera if ML Kit is unavailable
-        ManualCameraScreen(
-            onImageCaptured = onImageCaptured,
-            onBack = onBack,
-        )
-    } else if (scannerError != null && !showFallbackCamera) {
-        // Error state — should rarely happen
+    if (scannerError != null) {
         ScannerErrorScreen(
             error = scannerError!!,
             onRetry = {

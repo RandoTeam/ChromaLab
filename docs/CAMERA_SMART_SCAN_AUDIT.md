@@ -48,9 +48,10 @@ Implication:
 - ML Kit owns the visible crop/editor/filter step.
 - Current code stores only the final scanner JPEG. It does not store ML Kit crop rectangle, selected filter, deskew parameters, or whether the user entered through camera or gallery inside the scanner UI.
 
-### Manual fallback path
+### Legacy manual fallback path
 
-If ML Kit scanner startup fails, `CameraScreen.android.kt` switches to `ManualCameraScreen`.
+Before Phase 3.2, ML Kit scanner startup failure switched `CameraScreen.android.kt` to `ManualCameraScreen`.
+That fallback is now disconnected from the normal camera route because it bypasses Smart Scan preparation.
 
 Manual capture features:
 
@@ -146,11 +147,11 @@ This is acceptable only for the ML Kit Smart Scan path. It is not acceptable for
 ## Findings For Next Phases
 
 1. The strongest existing preparation path is ML Kit Smart Scan with gallery import allowed.
-2. The weak duplicate path is the manual fallback gallery/camera route, because it bypasses Smart Scan preparation.
+2. The weak duplicate path was the manual fallback gallery/camera route, because it bypassed Smart Scan preparation.
 3. The processing pipeline currently assumes that incoming images are already prepared, then records no-op crop and perspective stages.
 4. Provenance is not strong enough: the report cannot tell Smart Scan camera vs Smart Scan gallery vs manual fallback.
 5. The app does not persist the ML Kit crop/filter choices visible in the scanner UI.
-6. If a non-Smart-Scan screenshot enters through manual fallback, VLM/CV stages may analyze a full phone screenshot instead of a clean graph image.
+6. If a non-Smart-Scan screenshot is reintroduced through any manual path, VLM/CV stages may analyze a full phone screenshot instead of a clean graph image.
 
 ## Phase 3.2 Recommendation
 
@@ -160,3 +161,16 @@ Phase 3.2 should make the photo path single-source and explicit:
 - Do not expose the manual gallery copy path as a release-quality chromatogram input.
 - If ML Kit is unavailable, show a clear compatibility/error path or a separate diagnostic/manual mode instead of silently continuing with weaker preparation.
 - Add structured source provenance so reports can distinguish scanner camera, scanner gallery, and manual diagnostic inputs.
+
+## Phase 3.2 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- `CameraScreen.android.kt` no longer falls back from failed Smart Scan startup into `ManualCameraScreen`.
+- Smart Scan startup failure now stays on a scanner error screen with retry/back actions.
+- The release-quality camera/photo route therefore requires the ML Kit scanner preparation step before `ProcessingFlowScreen`.
+
+Remaining later work:
+
+- `ManualCameraScreen` still exists in the codebase as a potential diagnostic/manual capture screen, but it is no longer reached from the normal Smart Scan route.
+- Source provenance still needs a structured model so reports can distinguish Smart Scan camera, Smart Scan gallery, and any future diagnostic/manual capture.
