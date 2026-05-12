@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
+import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.signal.DigitalSignal
 import com.chromalab.feature.processing.signal.GraphPoint
 import com.chromalab.feature.processing.signal.SignalMetadata
@@ -45,6 +46,14 @@ import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
 import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
 import com.chromalab.feature.calculation.algorithm.CompoundSource
+import com.chromalab.feature.reports.CalculationRunReportOptions
+import com.chromalab.feature.reports.ChromatogramIdentification
+import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.GraphSourceMetadata
+import com.chromalab.feature.reports.InputSourceType
+import com.chromalab.feature.reports.ProcessingMode
+import com.chromalab.feature.reports.ReportTextValue
+import com.chromalab.feature.reports.ReportValueSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -80,6 +89,7 @@ fun AnalysisFlowScreen(
 ) {
     // ─── State ───
     var signal by remember { mutableStateOf<DigitalSignal?>(null) }
+    var sourceChromatogram by remember { mutableStateOf<ChromatogramEntity?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var calculationRun by remember { mutableStateOf<CalculationRun?>(null) }
     var calcPhase by remember { mutableStateOf("Загрузка сигнала…") }
@@ -101,6 +111,7 @@ fun AnalysisFlowScreen(
         }
 
         loadError = null
+        sourceChromatogram = null
         calculationRun = null
         showExport = false
         selectedPeakIndex = -1
@@ -116,6 +127,8 @@ fun AnalysisFlowScreen(
                 loadError = "Сигнал ID=$id не найден в базе"
                 return@LaunchedEffect
             }
+
+            sourceChromatogram = loaded
 
             val json = loaded.dataPoints
             if (json == null) {
@@ -324,6 +337,11 @@ fun AnalysisFlowScreen(
                                 onFileSave = { _: String, _: String -> },
                                 onShare = { _: String, _: String -> },
                                 modifier = Modifier.fillMaxSize(),
+                                reportOptions = buildCalculationReportOptions(
+                                    run = calculationRun!!,
+                                    chromatogram = sourceChromatogram,
+                                    signal = signal,
+                                ),
                             )
                         } else {
                             ResultsSummaryScreen(
@@ -615,6 +633,90 @@ private fun AnalysisProgressOverlay(
 }
 
 // ─── Error Content ──────────────────────────────────────────────
+
+private fun buildCalculationReportOptions(
+    run: CalculationRun,
+    chromatogram: ChromatogramEntity?,
+    signal: DigitalSignal?,
+): CalculationRunReportOptions {
+    val sourceName = sourceName(chromatogram, signal) ?: run.sourceSignalId
+    return CalculationRunReportOptions(
+        inputSourceType = chromatogram?.sourceType.toReportInputSourceType(),
+        sourceName = sourceName,
+        detectedGraphCount = 1,
+        analysisCompletedAtEpochMillis = run.timestamp,
+        executedRuntime = ExecutedRuntime.DETERMINISTIC,
+        processingMode = ProcessingMode.EXPORT_ONLY,
+        graphSourceMetadata = buildGraphSourceMetadata(chromatogram, signal),
+        identification = buildChromatogramIdentification(chromatogram, sourceName),
+    )
+}
+
+private fun buildGraphSourceMetadata(
+    chromatogram: ChromatogramEntity?,
+    signal: DigitalSignal?,
+): GraphSourceMetadata? {
+    if (chromatogram == null && signal == null) return null
+
+    val preprocessingSteps = buildList {
+        add("Loaded chromatogram record from local database")
+        signal?.metadata?.totalPoints?.let { add("Restored $it digitized points") }
+        chromatogram?.sourceType?.let { add("Source type: ${it.name}") }
+        chromatogram?.algorithmConfig?.takeIf { it.isNotBlank() }?.let {
+            add("Stored algorithm configuration available")
+        }
+    }
+
+    return GraphSourceMetadata(
+        preprocessingSteps = preprocessingSteps,
+        scanMode = chromatogram?.sourceType?.name?.lowercase() ?: "stored-signal",
+    )
+}
+
+private fun buildChromatogramIdentification(
+    chromatogram: ChromatogramEntity?,
+    sourceName: String,
+): ChromatogramIdentification =
+    ChromatogramIdentification(
+        chromatogramMode = ReportTextValue.calculated(
+            value = "digitized signal calculation",
+            source = ReportValueSource.DETERMINISTIC,
+        ),
+        ionOrChannel = chromatogram?.ionChannel?.takeIf { it.isNotBlank() }?.let {
+            ReportTextValue.calculated(it, source = ReportValueSource.IMPORTED_FILE)
+        } ?: ReportTextValue.notCalculated(),
+        sampleName = ReportTextValue.calculated(sourceName, source = ReportValueSource.IMPORTED_FILE),
+        samplePathOrInstrumentLabel = chromatogram?.filePath?.takeIf { it.isNotBlank() }?.let {
+            ReportTextValue.calculated(it, source = ReportValueSource.IMPORTED_FILE)
+        } ?: ReportTextValue.calculated(sourceName, source = ReportValueSource.IMPORTED_FILE),
+    )
+
+private fun SourceType?.toReportInputSourceType(): InputSourceType =
+    when (this) {
+        SourceType.PHOTO -> InputSourceType.CAMERA_CAPTURE
+        SourceType.GALLERY -> InputSourceType.SMART_SCAN_GALLERY
+        SourceType.PDF,
+        SourceType.CSV,
+        SourceType.MZML -> InputSourceType.FILE_IMPORT
+        SourceType.MANUAL,
+        null -> InputSourceType.UNKNOWN
+    }
+
+private fun sourceName(
+    chromatogram: ChromatogramEntity?,
+    signal: DigitalSignal?,
+): String? =
+    displayName(chromatogram?.filePath)
+        ?: displayName(signal?.metadata?.sourceImage)
+        ?: chromatogram?.ionChannel?.takeIf { it.isNotBlank() }
+        ?: chromatogram?.id?.let { "chromatogram_$it" }
+
+private fun displayName(path: String?): String? =
+    path
+        ?.takeIf { it.isNotBlank() }
+        ?.substringAfterLast('/')
+        ?.substringAfterLast('\\')
+        ?.takeIf { it.isNotBlank() }
 
 @Composable
 private fun ErrorContent(

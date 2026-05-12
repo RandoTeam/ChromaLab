@@ -149,3 +149,5 @@ Phase 1.10 extends `CalculationRunReportOptions` so upstream stages can pass rea
 - additional report or graph warnings.
 
 When these fields are provided, the mapper uses them directly. When they are absent, the report keeps explicit missing-metadata warnings instead of pretending that crop, OCR, or model-stage information exists.
+
+Phase 1.11 wires the calculation export caller to this options contract. `AnalysisFlowScreen` now passes metadata available from `ChromatogramEntity` and the restored `DigitalSignal` into `ExportCalculationScreen`: source type, source display name, stored signal point count, scan mode, ion channel when present, and deterministic execution metadata. Crop bounds and OCR confidence are still not invented; they remain absent until the processing flow persists them.

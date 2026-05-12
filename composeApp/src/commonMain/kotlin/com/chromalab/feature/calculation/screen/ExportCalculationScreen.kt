@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.export.*
+import com.chromalab.feature.reports.CalculationRunReportOptions
 import com.chromalab.feature.reports.StructuredReportPreview
 
 /**
@@ -38,6 +39,7 @@ fun ExportCalculationScreen(
     onFileSave: (fileName: String, content: String) -> Unit,
     onShare: (fileName: String, content: String) -> Unit,
     modifier: Modifier = Modifier,
+    reportOptions: CalculationRunReportOptions = CalculationRunReportOptions(),
 ) {
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var isExporting by remember { mutableStateOf(false) }
@@ -47,11 +49,11 @@ fun ExportCalculationScreen(
     val exportData = remember(run) {
         CalculationRunToExportMapper.map(run)
     }
-    val structuredReport = remember(run) {
-        CalculationRunReportExporter.buildReport(run)
+    val structuredReport = remember(run, reportOptions) {
+        CalculationRunReportExporter.buildReport(run, reportOptions)
     }
-    val structuredValidation = remember(run) {
-        CalculationRunReportExporter.validate(run)
+    val structuredValidation = remember(run, reportOptions) {
+        CalculationRunReportExporter.validate(run, reportOptions)
     }
 
     Column(
@@ -118,8 +120,8 @@ fun ExportCalculationScreen(
             icon = Icons.Filled.Description,
             color = Color(0xFF7E57C2),
             onClick = {
-                val markdown = CalculationRunReportExporter.exportMarkdown(run)
-                val validation = CalculationRunReportExporter.validate(run)
+                val markdown = CalculationRunReportExporter.exportMarkdown(run, reportOptions)
+                val validation = CalculationRunReportExporter.validate(run, reportOptions)
                 onFileSave("chromatogram_report_${run.id}.md", markdown)
                 exportStatus = "Saved chromatogram_report.md - ${validation.errorCount} errors, ${validation.warningCount} warnings"
             },
