@@ -1,7 +1,9 @@
 package com.chromalab.feature.calculation.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.export.*
+import com.chromalab.feature.reports.StructuredReportPreview
 
 /**
  * Export calculation screen — CSV, JSON, HTML export + Share.
@@ -38,15 +41,23 @@ fun ExportCalculationScreen(
 ) {
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var isExporting by remember { mutableStateOf(false) }
+    var showStructuredPreview by remember { mutableStateOf(false) }
 
     // Pre-build export data
     val exportData = remember(run) {
         CalculationRunToExportMapper.map(run)
     }
+    val structuredReport = remember(run) {
+        CalculationRunReportExporter.buildReport(run)
+    }
+    val structuredValidation = remember(run) {
+        CalculationRunReportExporter.validate(run)
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
@@ -113,6 +124,24 @@ fun ExportCalculationScreen(
                 exportStatus = "Saved chromatogram_report.md - ${validation.errorCount} errors, ${validation.warningCount} warnings"
             },
         )
+
+        ExportButton(
+            title = if (showStructuredPreview) "Hide structured report preview" else "Preview structured report",
+            subtitle = "In-app preview before saving the contract-backed report",
+            icon = Icons.Filled.Description,
+            color = MaterialTheme.colorScheme.tertiary,
+            outlined = true,
+            onClick = {
+                showStructuredPreview = !showStructuredPreview
+            },
+        )
+
+        if (showStructuredPreview) {
+            StructuredReportPreview(
+                report = structuredReport,
+                validation = structuredValidation,
+            )
+        }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
 
