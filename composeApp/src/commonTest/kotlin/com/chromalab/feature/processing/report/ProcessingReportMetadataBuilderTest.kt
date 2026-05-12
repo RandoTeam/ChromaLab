@@ -29,6 +29,9 @@ class ProcessingReportMetadataBuilderTest {
             cropConfidence = 0.82,
             preprocessingSteps = listOf("EXIF normalized", "Auto-sweep selected config: high_contrast"),
             scanMode = "photo-processing-flow/high_contrast",
+            titleOcrConfidence = null,
+            axisOcrConfidence = 0.76,
+            tickOcrConfidence = 0.88,
         )
 
         val metadata = StoredReportMetadataCodec.decodeOrNull(config)
@@ -47,6 +50,9 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(PixelRect(0, 0, 1200, 800), graph.source?.sourceImageBounds)
         assertEquals(PixelRect(120, 160, 900, 420), graph.source?.detectedGraphBounds)
         assertEquals(0.82, graph.source?.cropConfidence)
+        assertEquals(null, graph.source?.titleOcrConfidence)
+        assertEquals(0.76, graph.source?.axisOcrConfidence)
+        assertEquals(0.88, graph.source?.tickOcrConfidence)
         assertTrue(
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Digitized signal points: 512"),

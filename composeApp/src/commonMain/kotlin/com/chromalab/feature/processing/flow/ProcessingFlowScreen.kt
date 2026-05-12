@@ -683,6 +683,9 @@ fun ProcessingFlowScreen(
                                             ),
                                             cropConfidence = cropConfidence,
                                             preprocessingSteps = preprocessingSteps,
+                                            titleOcrConfidence = null,
+                                            axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
+                                            tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
@@ -828,6 +831,9 @@ fun ProcessingFlowScreen(
                                         ),
                                         cropConfidence = cropConfidence,
                                         preprocessingSteps = preprocessingSteps,
+                                        titleOcrConfidence = null,
+                                        axisOcrConfidence = ocrResult.toReportAxisOcrConfidence(),
+                                        tickOcrConfidence = ocrResult.toReportTickOcrConfidence(),
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
@@ -1054,6 +1060,35 @@ private fun buildReportPreprocessingSteps(
     bestSweepConfig?.takeIf { it.isNotBlank() }?.let {
         add("Auto-sweep selected config: $it")
     }
+}
+
+private fun AxisOcrResult?.toReportAxisOcrConfidence(): Double? {
+    val result = this ?: return null
+    result.confidence.toReportConfidence()?.let { return it }
+    if (!result.hasXSuggestions && !result.hasYSuggestions) return null
+
+    val elementConfidences = result.rawElements.mapNotNull { it.confidence.toReportConfidence() }
+    return elementConfidences.takeIf { it.isNotEmpty() }?.average()
+}
+
+private fun AxisOcrResult?.toReportTickOcrConfidence(): Double? {
+    val result = this ?: return null
+    val numericConfidences = result.rawElements
+        .filter { it.numericValue != null }
+        .mapNotNull { it.confidence.toReportConfidence() }
+    if (numericConfidences.isNotEmpty()) {
+        return numericConfidences.average()
+    }
+
+    val hasTickSuggestions = result.suggestedXValues.isNotEmpty() || result.suggestedYValues.isNotEmpty()
+    return if (hasTickSuggestions) result.confidence.toReportConfidence() else null
+}
+
+private fun Float?.toReportConfidence(): Double? {
+    val value = this ?: return null
+    if (value.isNaN() || value.isInfinite() || value < 0f) return null
+    val normalized = if (value > 1f) value / 100f else value
+    return normalized.toDouble().coerceIn(0.0, 1.0)
 }
 
 private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {

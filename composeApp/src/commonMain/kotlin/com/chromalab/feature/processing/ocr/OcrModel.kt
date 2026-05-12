@@ -44,6 +44,7 @@ data class AxisOcrResult(
     val status: OcrStatus = OcrStatus.NOT_AVAILABLE,
     val confirmedXValues: List<Float>? = null,
     val confirmedYValues: List<Float>? = null,
+    val confidence: Float? = null,
     val timestamp: Long,
 ) {
     /** Whether OCR found usable numeric values */

@@ -24,6 +24,9 @@ fun buildProcessingReportMetadataConfig(
     cropConfidence: Double? = null,
     preprocessingSteps: List<String> = emptyList(),
     scanMode: String? = null,
+    titleOcrConfidence: Double? = null,
+    axisOcrConfidence: Double? = null,
+    tickOcrConfidence: Double? = null,
 ): String =
     StoredReportMetadataCodec.encode(
         buildProcessingStoredReportMetadata(
@@ -40,6 +43,9 @@ fun buildProcessingReportMetadataConfig(
             cropConfidence = cropConfidence,
             preprocessingSteps = preprocessingSteps,
             scanMode = scanMode,
+            titleOcrConfidence = titleOcrConfidence,
+            axisOcrConfidence = axisOcrConfidence,
+            tickOcrConfidence = tickOcrConfidence,
         ),
     )
 
@@ -57,6 +63,9 @@ fun buildProcessingStoredReportMetadata(
     cropConfidence: Double? = null,
     preprocessingSteps: List<String> = emptyList(),
     scanMode: String? = null,
+    titleOcrConfidence: Double? = null,
+    axisOcrConfidence: Double? = null,
+    tickOcrConfidence: Double? = null,
 ): StoredReportMetadata {
     val startedAt = analysisStartedAtEpochMillis.takeIf { it > 0 }
     val completedAt = analysisCompletedAtEpochMillis.takeIf { it > 0 }
@@ -82,6 +91,9 @@ fun buildProcessingStoredReportMetadata(
                     sourceImageBounds = sourceImageBounds,
                     detectedGraphBounds = detectedGraphBounds,
                     cropConfidence = cropConfidence?.coerceIn(0.0, 1.0),
+                    titleOcrConfidence = titleOcrConfidence?.coerceIn(0.0, 1.0),
+                    axisOcrConfidence = axisOcrConfidence?.coerceIn(0.0, 1.0),
+                    tickOcrConfidence = tickOcrConfidence?.coerceIn(0.0, 1.0),
                     preprocessingSteps = buildList {
                         add("ProcessingFlowScreen auto-save")
                         add("Photo analysis pipeline completed before calculation export")

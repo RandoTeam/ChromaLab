@@ -199,6 +199,7 @@ actual class AxisOcrReader actual constructor() {
             xUnit = xUnit,
             yUnit = yUnit,
             status = OcrStatus.NOT_AVAILABLE,
+            confidence = estimateOcrConfidence(allElements, sortedX, sortedY),
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -654,6 +655,17 @@ actual class AxisOcrReader actual constructor() {
         suggestedYValues = emptyList(),
         xUnit = null,
         yUnit = null,
+        confidence = null,
         timestamp = System.currentTimeMillis(),
     )
+
+    private fun estimateOcrConfidence(
+        elements: List<OcrTextElement>,
+        xValues: List<Float>,
+        yValues: List<Float>,
+    ): Float? {
+        val values = elements.mapNotNull { it.confidence.takeIf { confidence -> confidence > 0f } }
+        if (values.isEmpty() || (xValues.isEmpty() && yValues.isEmpty())) return null
+        return values.average().toFloat().coerceIn(0f, 1f)
+    }
 }

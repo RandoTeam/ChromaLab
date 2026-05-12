@@ -212,6 +212,7 @@ actual class ChartAnalysisReader actual constructor() {
             xUnit = analysis.xUnit,
             yUnit = analysis.yUnit,
             status = OcrStatus.ACCEPTED,
+            confidence = analysis.confidence,
             timestamp = System.currentTimeMillis(),
         )
     }
