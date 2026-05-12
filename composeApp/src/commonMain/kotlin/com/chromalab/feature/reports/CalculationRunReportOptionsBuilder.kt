@@ -12,7 +12,7 @@ fun buildCalculationReportOptions(
 ): CalculationRunReportOptions {
     val stored = StoredReportMetadataCodec.decodeOrNull(chromatogram?.algorithmConfig)
     val storedGraph = stored?.graphs
-        ?.firstOrNull { it.graphIndex == 1 }
+        ?.singleOrNull()
         ?: stored?.graphs?.firstOrNull()
     val fallbackSourceName = sourceName(chromatogram, signal) ?: run.sourceSignalId
     val sourceName = stored?.sourceName?.takeIf { it.isNotBlank() } ?: fallbackSourceName

@@ -4,6 +4,8 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,8 +47,11 @@ import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
 import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
 import com.chromalab.feature.calculation.algorithm.CompoundSource
+import com.chromalab.feature.reports.StoredReportMetadata
 import com.chromalab.feature.reports.buildCalculationReportOptions
+import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.ListSerializer
@@ -89,14 +94,16 @@ fun AnalysisFlowScreen(
     var showSettings by remember { mutableStateOf(false) }
     var algorithmSettings by remember { mutableStateOf(AlgorithmSettings.defaults()) }
     var recalculationKey by remember { mutableIntStateOf(0) }
+    var activeSignalId by remember(signalId) { mutableStateOf(signalId) }
+    var graphEntries by remember { mutableStateOf<List<AnalysisGraphEntry>>(emptyList()) }
 
     // Peak details state
     var selectedPeakIndex by remember { mutableStateOf(-1) }
     var showPeakSheet by remember { mutableStateOf(false) }
 
     // ─── Auto-pipeline: load signal → run calculation ───
-    LaunchedEffect(signalId, recalculationKey) {
-        val id = signalId.toLongOrNull()
+    LaunchedEffect(activeSignalId, recalculationKey) {
+        val id = activeSignalId.toLongOrNull()
         if (id == null) {
             loadError = "Некорректный ID сигнала"
             return@LaunchedEffect
@@ -106,6 +113,7 @@ fun AnalysisFlowScreen(
         sourceChromatogram = null
         calculationRun = null
         showExport = false
+        graphEntries = emptyList()
         selectedPeakIndex = -1
         showPeakSheet = false
 
@@ -121,6 +129,9 @@ fun AnalysisFlowScreen(
             }
 
             sourceChromatogram = loaded
+            graphEntries = withContext(Dispatchers.IO) {
+                loadAnalysisGraphEntries(loaded)
+            }
 
             val json = loaded.dataPoints
             if (json == null) {
@@ -151,7 +162,7 @@ fun AnalysisFlowScreen(
             val run = withContext(Dispatchers.Default) {
                 CalculationEngine.execute(
                     signal = sig,
-                    sourceId = signalId,
+                    sourceId = activeSignalId,
                     params = algorithmSettings.toCalculationParams(),
                 )
             }
@@ -336,14 +347,25 @@ fun AnalysisFlowScreen(
                                 ),
                             )
                         } else {
-                            ResultsSummaryScreen(
-                                run = calculationRun!!,
-                                onPeakTap = { idx ->
-                                    selectedPeakIndex = idx
-                                    showPeakSheet = true
-                                },
-                                modifier = Modifier.fillMaxSize(),
-                            )
+                            Column(modifier = Modifier.fillMaxSize()) {
+                                GraphResultSwitcher(
+                                    entries = graphEntries,
+                                    activeSignalId = activeSignalId,
+                                    onSelect = { entry ->
+                                        if (entry.id.toString() != activeSignalId) {
+                                            activeSignalId = entry.id.toString()
+                                        }
+                                    },
+                                )
+                                ResultsSummaryScreen(
+                                    run = calculationRun!!,
+                                    onPeakTap = { idx ->
+                                        selectedPeakIndex = idx
+                                        showPeakSheet = true
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
                 }
@@ -400,6 +422,59 @@ fun AnalysisFlowScreen(
  * Full-screen overlay shown while auto-calculation runs.
  * Matches the AutoProgressOverlay design language.
  */
+@Composable
+private fun GraphResultSwitcher(
+    entries: List<AnalysisGraphEntry>,
+    activeSignalId: String,
+    onSelect: (AnalysisGraphEntry) -> Unit,
+) {
+    if (entries.size <= 1) return
+
+    val totalGraphs = entries.maxOfOrNull { it.detectedGraphCount } ?: entries.size
+    Surface(
+        tonalElevation = 2.dp,
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            Text(
+                text = "Multi-graph result: ${entries.size}/$totalGraphs reports",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                entries.forEach { entry ->
+                    val active = entry.id.toString() == activeSignalId
+                    val label = "Graph ${entry.graphIndex}"
+                    if (active) {
+                        Button(
+                            onClick = { onSelect(entry) },
+                            modifier = Modifier.height(40.dp),
+                        ) {
+                            Text(label)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onSelect(entry) },
+                            modifier = Modifier.height(40.dp),
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun AnalysisProgressOverlay(
     phase: String,
@@ -666,6 +741,63 @@ private fun ErrorContent(
 }
 
 // ─── PeakResult → PeakDetailsData mapper ────────────────────────
+
+private data class AnalysisGraphEntry(
+    val id: Long,
+    val graphIndex: Int,
+    val detectedGraphCount: Int,
+)
+
+private suspend fun loadAnalysisGraphEntries(current: ChromatogramEntity): List<AnalysisGraphEntry> {
+    val currentMetadata = StoredReportMetadataCodec.decodeOrNull(current.algorithmConfig)
+    val currentEntry = current.toAnalysisGraphEntry(currentMetadata)
+    val detectedGraphCount = currentEntry.detectedGraphCount
+    if (detectedGraphCount <= 1) return listOf(currentEntry)
+
+    val chromatograms = DatabaseProvider.getDatabase()
+        .chromatogramDao()
+        .getBySampleId(current.sampleId)
+        .first()
+    val currentStartedAt = currentMetadata?.analysisStartedAtEpochMillis
+
+    val entries = chromatograms.mapNotNull { chromatogram ->
+        val metadata = StoredReportMetadataCodec.decodeOrNull(chromatogram.algorithmConfig)
+            ?: return@mapNotNull null
+        val graphIndex = metadata.primaryGraphIndex() ?: return@mapNotNull null
+        val sameAnalysis = if (currentStartedAt != null) {
+            metadata.analysisStartedAtEpochMillis == currentStartedAt
+        } else {
+            metadata.detectedGraphCount == detectedGraphCount
+        }
+        if (!sameAnalysis) return@mapNotNull null
+
+        AnalysisGraphEntry(
+            id = chromatogram.id,
+            graphIndex = graphIndex.coerceAtLeast(1),
+            detectedGraphCount = metadata.detectedGraphCount?.coerceAtLeast(1) ?: detectedGraphCount,
+        )
+    }
+
+    return (entries + currentEntry)
+        .distinctBy { it.id }
+        .sortedWith(compareBy<AnalysisGraphEntry> { it.graphIndex }.thenBy { it.id })
+}
+
+private fun ChromatogramEntity.toAnalysisGraphEntry(metadata: StoredReportMetadata?): AnalysisGraphEntry {
+    val graphIndex = metadata.primaryGraphIndex() ?: 1
+    val detectedGraphCount = metadata?.detectedGraphCount
+        ?: metadata?.graphs?.size?.takeIf { it > 0 }
+        ?: 1
+    return AnalysisGraphEntry(
+        id = id,
+        graphIndex = graphIndex.coerceAtLeast(1),
+        detectedGraphCount = detectedGraphCount.coerceAtLeast(1),
+    )
+}
+
+private fun StoredReportMetadata?.primaryGraphIndex(): Int? =
+    this?.graphs?.singleOrNull()?.graphIndex
+        ?: this?.graphs?.firstOrNull()?.graphIndex
 
 private fun AlgorithmSettings.toCalculationParams(): CalculationParams {
     val window = smoothingWindowSize

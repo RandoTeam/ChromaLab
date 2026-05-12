@@ -184,6 +184,39 @@ class StoredReportMetadataTest {
         assertEquals("graph.crop_review_required", options.additionalGraphWarnings.single().code)
     }
 
+    @Test
+    fun optionsBuilderUsesStoredGraphIndexFromCurrentChromatogramRecord() {
+        val stored = StoredReportMetadata(
+            sourceName = "multi_graph_photo.jpg",
+            detectedGraphCount = 3,
+            graphs = listOf(
+                StoredGraphReportMetadata(
+                    graphIndex = 2,
+                    source = GraphSourceMetadata(
+                        detectedGraphBounds = PixelRect(40, 120, 500, 260),
+                        preprocessingSteps = listOf("Graph 2 selected crop"),
+                    ),
+                ),
+            ),
+        )
+        val chromatogram = chromatogramEntity(
+            sourceType = SourceType.PHOTO,
+            filePath = """C:\samples\multi_graph_photo.jpg""",
+            algorithmConfig = StoredReportMetadataCodec.encode(stored),
+        )
+
+        val options = buildCalculationReportOptions(
+            run = calculationRun(),
+            chromatogram = chromatogram,
+            signal = null,
+        )
+
+        assertEquals(2, options.graphIndex)
+        assertEquals(3, options.detectedGraphCount)
+        assertEquals(PixelRect(40, 120, 500, 260), options.graphSourceMetadata?.detectedGraphBounds)
+        assertTrue(options.graphSourceMetadata?.preprocessingSteps.orEmpty().contains("Graph 2 selected crop"))
+    }
+
     private fun chromatogramEntity(
         sourceType: SourceType,
         filePath: String?,

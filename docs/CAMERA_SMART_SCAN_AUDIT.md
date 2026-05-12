@@ -262,3 +262,16 @@ Implemented on 2026-05-12:
 Remaining later work:
 
 - Phase 4.4 should present saved multi-graph output as graph 1/report 1, graph 2/report 2, graph 3/report 3 in the user-facing result flow.
+
+## Phase 4.4 Implementation Notes
+
+Implemented on 2026-05-12:
+
+- `AnalysisFlowScreen` now discovers sibling chromatogram records from the same multi-graph photo analysis.
+- Multi-graph results show a graph switcher so the user can open graph 1/report 1, graph 2/report 2, graph 3/report 3 from the same result screen.
+- Switching graphs reloads the selected chromatogram record and recalculates the report for that specific signal.
+- Report options now use the graph index stored in the current chromatogram record instead of always preferring graph 1 metadata.
+
+Remaining later work:
+
+- Phase 4.5 should add stronger regression checks that metadata, peaks, warnings, and model responses cannot cross between graph records.
