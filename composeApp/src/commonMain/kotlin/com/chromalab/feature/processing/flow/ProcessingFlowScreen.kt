@@ -68,6 +68,7 @@ import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
+import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
@@ -95,6 +96,7 @@ fun ProcessingFlowScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val flowStartedAt = remember(imagePath) { System.currentTimeMillis() }
     var currentStep by remember { mutableStateOf(ProcessingStep.FIRST) }
     var isProcessing by remember { mutableStateOf(false) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
@@ -634,6 +636,9 @@ fun ProcessingFlowScreen(
                                 println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sId")
 
                                 var firstId: Long? = null
+                                val detectedGraphCount = graphResult?.filteredRegions?.size
+                                    ?.takeIf { it > 0 }
+                                    ?: signalsToSave.size
                                 for ((idx, ss) in signalsToSave.withIndex()) {
                                     val signal = ss.smoothed
                                     val entity = ChromatogramEntity(
@@ -649,6 +654,16 @@ fun ProcessingFlowScreen(
                                                 com.chromalab.feature.processing.signal.GraphPoint.serializer(),
                                             ),
                                             signal.points,
+                                        ),
+                                        algorithmConfig = buildProcessingReportMetadataConfig(
+                                            sourcePath = imagePath,
+                                            processedPath = currentImagePath,
+                                            sourceType = SourceType.PHOTO,
+                                            graphIndex = idx + 1,
+                                            detectedGraphCount = detectedGraphCount,
+                                            signalPointCount = signal.points.size,
+                                            analysisStartedAtEpochMillis = flowStartedAt,
+                                            analysisCompletedAtEpochMillis = now,
                                         ),
                                         createdAt = now,
                                         updatedAt = now,
@@ -748,6 +763,9 @@ fun ProcessingFlowScreen(
                             println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sampleId")
 
                             var firstId: Long? = null
+                            val detectedGraphCount = graphResult?.filteredRegions?.size
+                                ?.takeIf { it > 0 }
+                                ?: signalsToSave.size
                             for ((idx, ss) in signalsToSave.withIndex()) {
                                 val signal = ss.smoothed
                                 val entity = ChromatogramEntity(
@@ -763,6 +781,16 @@ fun ProcessingFlowScreen(
                                             com.chromalab.feature.processing.signal.GraphPoint.serializer(),
                                         ),
                                         signal.points,
+                                    ),
+                                    algorithmConfig = buildProcessingReportMetadataConfig(
+                                        sourcePath = imagePath,
+                                        processedPath = currentImagePath,
+                                        sourceType = SourceType.PHOTO,
+                                        graphIndex = idx + 1,
+                                        detectedGraphCount = detectedGraphCount,
+                                        signalPointCount = signal.points.size,
+                                        analysisStartedAtEpochMillis = flowStartedAt,
+                                        analysisCompletedAtEpochMillis = now,
                                     ),
                                     createdAt = now,
                                     updatedAt = now,
