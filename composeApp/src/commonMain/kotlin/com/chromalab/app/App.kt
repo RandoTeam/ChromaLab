@@ -151,7 +151,6 @@ fun App() {
                         state = chatState,
                         actions = chatActions,
                         modelOptions = chatModelOptions,
-                        onSelectModel = {},
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                     )
                 }

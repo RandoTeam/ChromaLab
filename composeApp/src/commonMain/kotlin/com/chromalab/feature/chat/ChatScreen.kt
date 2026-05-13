@@ -77,7 +77,6 @@ fun ChatScreen(
     state: ChatState,
     actions: ChatActions,
     modelOptions: List<ChatModelOption>,
-    onSelectModel: (ChatModelOption) -> Unit,
     onOpenModelManager: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,7 +174,6 @@ fun ChatScreen(
                 if (!option.runtime.thinking.isSupported && selected.settings.enableThinking) {
                     actions.updateSettings(selected.id, selected.settings.copy(enableThinking = false))
                 }
-                onSelectModel(option)
                 showModelPicker = false
             },
             selectedAccelerator = selectedAccelerator,
@@ -911,6 +909,11 @@ private fun ChatModelPickerRow(
                 "Недоступна",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
+            )
+            selected && option.isActive -> Text(
+                "Загружена",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
             )
             selected -> Icon(
                 Icons.Filled.CheckCircle,
