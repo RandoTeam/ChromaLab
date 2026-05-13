@@ -27,10 +27,17 @@ import com.chromalab.core.ui.theme.ChromaLabTheme
 import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.capture.FileImportScreenWithPicker
+import com.chromalab.feature.chat.ChatModelCapabilities
+import com.chromalab.feature.chat.ChatModelCompatibility
 import com.chromalab.feature.chat.ChatModelOption
+import com.chromalab.feature.chat.ChatRuntimeAccelerator
+import com.chromalab.feature.chat.ChatRuntimeBackend
+import com.chromalab.feature.chat.ChatRuntimeUiState
+import com.chromalab.feature.chat.ChatThinkingUiState
 import com.chromalab.feature.chat.ChatScreen
 import com.chromalab.feature.chat.rememberChatState
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelRegistry
 
 import com.chromalab.feature.settings.LanguageScreen
@@ -268,7 +275,11 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
             ChatModelOption(
                 id = model.id,
                 name = model.displayName,
-                summary = "${model.runtime.shortLabel()} · ${formatModelBytes(model.totalSizeBytes)}",
+                summary = formatChatModelSummary(
+                    runtime = model.runtime.shortLabel(),
+                    sizeBytes = model.totalSizeBytes,
+                ),
+                runtime = model.toChatRuntimeUiState(),
                 isActive = model.id == activeModelId,
                 isActivating = model.id == activatingModelId,
             )
@@ -281,7 +292,26 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
             ChatModelOption(
                 id = custom.id,
                 name = custom.displayName,
-                summary = "Imported · ${formatModelBytes(custom.sizeBytes)}",
+                summary = formatChatModelSummary(runtime = "Imported", sizeBytes = custom.sizeBytes),
+                runtime = ChatRuntimeUiState(
+                    backend = ChatRuntimeBackend.IMPORTED,
+                    backendLabel = "Imported",
+                    supportedAccelerators = listOf(ChatRuntimeAccelerator.CPU),
+                    selectedAccelerator = ChatRuntimeAccelerator.CPU,
+                    capabilities = ChatModelCapabilities(
+                        supportsTextChat = custom.supportsTextChat,
+                        supportsVisionInput = custom.supportsVision,
+                    ),
+                    thinking = ChatThinkingUiState(
+                        modelSupportsThinking = false,
+                        runtimeCanExposeThinking = false,
+                        unavailableReason = "Thinking support is unknown for imported models.",
+                    ),
+                    compatibility = ChatModelCompatibility(
+                        isSelectableForChat = custom.supportsTextChat,
+                        reason = if (custom.supportsTextChat) null else "Imported model is not marked as chat-capable.",
+                    ),
+                ),
                 isActive = custom.id == activeModelId,
                 isActivating = custom.id == activatingModelId,
             )
@@ -309,6 +339,70 @@ private fun ModelRuntime.shortLabel(): String = when (this) {
     ModelRuntime.LITERT_LM -> "LiteRT"
     ModelRuntime.LLAMA_CPP -> "GGUF"
 }
+
+private fun ModelInfo.toChatRuntimeUiState(): ChatRuntimeUiState {
+    val supportsChromatograms = ModelRegistry.isChromatogramVisionModel(this)
+    val supportsTextChat = ModelRegistry.isChatModel(this)
+    val acceleratorOptions = runtime.chatAccelerators()
+    val modelSupportsThinking = supportsChatThinking()
+    return ChatRuntimeUiState(
+        backend = runtime.toChatRuntimeBackend(),
+        backendLabel = runtime.chatBackendLabel(),
+        supportedAccelerators = acceleratorOptions,
+        selectedAccelerator = ChatRuntimeAccelerator.AUTO,
+        capabilities = ChatModelCapabilities(
+            supportsTextChat = supportsTextChat,
+            supportsVisionInput = supportsVision,
+            supportsChromatogramAnalysis = supportsChromatograms,
+            supportsRuntimeSelection = acceleratorOptions.size > 1,
+            supportsThinking = modelSupportsThinking,
+            supportsNativeStreaming = runtime == ModelRuntime.LITERT_LM,
+        ),
+        thinking = ChatThinkingUiState(
+            modelSupportsThinking = modelSupportsThinking,
+            runtimeCanExposeThinking = false,
+            unavailableReason = if (modelSupportsThinking) {
+                "Thinking output is not separated by the chat runtime yet."
+            } else {
+                "Thinking is not validated for this model."
+            },
+        ),
+        compatibility = ChatModelCompatibility(
+            isSelectableForChat = supportsTextChat,
+            reason = if (supportsTextChat) null else "Model is not chat-capable.",
+        ),
+    )
+}
+
+private fun ModelRuntime.toChatRuntimeBackend(): ChatRuntimeBackend = when (this) {
+    ModelRuntime.LITERT_LM -> ChatRuntimeBackend.LITERT_LM
+    ModelRuntime.LLAMA_CPP -> ChatRuntimeBackend.LLAMA_CPP
+}
+
+private fun ModelRuntime.chatBackendLabel(): String = when (this) {
+    ModelRuntime.LITERT_LM -> "LiteRT-LM"
+    ModelRuntime.LLAMA_CPP -> "GGUF / llama.cpp"
+}
+
+private fun ModelRuntime.chatAccelerators(): List<ChatRuntimeAccelerator> = when (this) {
+    ModelRuntime.LITERT_LM -> listOf(
+        ChatRuntimeAccelerator.NPU,
+        ChatRuntimeAccelerator.GPU,
+        ChatRuntimeAccelerator.CPU,
+    )
+    ModelRuntime.LLAMA_CPP -> listOf(
+        ChatRuntimeAccelerator.VULKAN,
+        ChatRuntimeAccelerator.CPU,
+    )
+}
+
+private fun ModelInfo.supportsChatThinking(): Boolean {
+    val normalized = "$family $id ${displayName}".lowercase()
+    return runtime == ModelRuntime.LLAMA_CPP && "qwen3" in normalized
+}
+
+private fun formatChatModelSummary(runtime: String, sizeBytes: Long): String =
+    "$runtime · ${formatModelBytes(sizeBytes)}"
 
 private fun formatModelBytes(bytes: Long): String = when {
     bytes >= 1_000_000_000 -> "%.1f GB".format(bytes / 1_000_000_000f)

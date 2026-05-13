@@ -75,9 +75,75 @@ data class ChatModelOption(
     val id: String,
     val name: String,
     val summary: String,
+    val runtime: ChatRuntimeUiState = ChatRuntimeUiState(),
     val isActive: Boolean,
     val isActivating: Boolean = false,
 )
+
+enum class ChatRuntimeBackend(
+    val label: String,
+) {
+    LITERT_LM("LiteRT-LM"),
+    LLAMA_CPP("GGUF / llama.cpp"),
+    IMPORTED("Imported"),
+    UNKNOWN("Unknown"),
+}
+
+enum class ChatRuntimeAccelerator(
+    val label: String,
+) {
+    AUTO("Auto"),
+    CPU("CPU"),
+    GPU("GPU"),
+    NPU("NPU"),
+    VULKAN("Vulkan"),
+}
+
+data class ChatModelCapabilities(
+    val supportsTextChat: Boolean = false,
+    val supportsVisionInput: Boolean = false,
+    val supportsChromatogramAnalysis: Boolean = false,
+    val supportsRuntimeSelection: Boolean = false,
+    val supportsThinking: Boolean = false,
+    val supportsNativeStreaming: Boolean = false,
+)
+
+data class ChatThinkingUiState(
+    val modelSupportsThinking: Boolean = false,
+    val runtimeCanExposeThinking: Boolean = false,
+    val isEnabled: Boolean = false,
+    val unavailableReason: String? = null,
+) {
+    val isSupported: Boolean
+        get() = modelSupportsThinking && runtimeCanExposeThinking
+}
+
+data class ChatModelCompatibility(
+    val isSelectableForChat: Boolean = true,
+    val reason: String? = null,
+)
+
+data class ChatRuntimeUiState(
+    val backend: ChatRuntimeBackend = ChatRuntimeBackend.UNKNOWN,
+    val backendLabel: String = backend.label,
+    val supportedAccelerators: List<ChatRuntimeAccelerator> = listOf(ChatRuntimeAccelerator.CPU),
+    val selectedAccelerator: ChatRuntimeAccelerator = ChatRuntimeAccelerator.AUTO,
+    val capabilities: ChatModelCapabilities = ChatModelCapabilities(),
+    val thinking: ChatThinkingUiState = ChatThinkingUiState(),
+    val compatibility: ChatModelCompatibility = ChatModelCompatibility(),
+) {
+    val acceleratorLabel: String
+        get() = supportedAccelerators.joinToString("/") { it.label }
+
+    val capabilitySummary: String
+        get() = buildList {
+            add(backendLabel)
+            if (supportedAccelerators.isNotEmpty()) add(acceleratorLabel)
+            if (capabilities.supportsVisionInput) add("Vision")
+            if (capabilities.supportsChromatogramAnalysis) add("Chromatograms")
+            if (thinking.isSupported) add("Thinking")
+        }.joinToString(" · ")
+}
 
 data class ChatActions(
     val createChat: () -> Unit = {},

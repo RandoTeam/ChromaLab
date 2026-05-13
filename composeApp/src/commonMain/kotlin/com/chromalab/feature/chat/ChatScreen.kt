@@ -771,7 +771,14 @@ private fun ChatModelPickerRow(
                 text = option.summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = option.runtime.capabilitySummary,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
