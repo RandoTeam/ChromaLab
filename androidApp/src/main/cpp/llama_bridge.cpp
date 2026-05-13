@@ -274,6 +274,118 @@ static std::string apply_model_chat_template(
     return prompt;
 }
 
+static jstring new_jstring_from_utf8_bytes(JNIEnv *env, const std::string &text) {
+    if (!env) {
+        return nullptr;
+    }
+
+    jbyteArray bytes = env->NewByteArray((jsize)text.size());
+    if (!bytes) {
+        LOGE("Failed to allocate UTF-8 byte array");
+        return nullptr;
+    }
+    if (!text.empty()) {
+        env->SetByteArrayRegion(
+            bytes,
+            0,
+            (jsize)text.size(),
+            reinterpret_cast<const jbyte *>(text.data())
+        );
+    }
+
+    jclass string_class = env->FindClass("java/lang/String");
+    if (!string_class) {
+        env->DeleteLocalRef(bytes);
+        return nullptr;
+    }
+    jmethodID ctor = env->GetMethodID(string_class, "<init>", "([BLjava/lang/String;)V");
+    if (!ctor) {
+        env->DeleteLocalRef(bytes);
+        env->DeleteLocalRef(string_class);
+        return nullptr;
+    }
+    jstring charset = env->NewStringUTF("UTF-8");
+    if (!charset) {
+        env->DeleteLocalRef(bytes);
+        env->DeleteLocalRef(string_class);
+        return nullptr;
+    }
+
+    auto result = (jstring)env->NewObject(string_class, ctor, bytes, charset);
+    env->DeleteLocalRef(bytes);
+    env->DeleteLocalRef(charset);
+    env->DeleteLocalRef(string_class);
+    return result;
+}
+
+static bool is_utf8_continuation(unsigned char value) {
+    return (value & 0xC0) == 0x80;
+}
+
+static size_t utf8_complete_prefix_length(const std::string &text) {
+    size_t index = 0;
+    while (index < text.size()) {
+        const unsigned char first = (unsigned char)text[index];
+        if (first <= 0x7F) {
+            index += 1;
+            continue;
+        }
+
+        size_t expected = 0;
+        if (first >= 0xC2 && first <= 0xDF) {
+            expected = 2;
+        } else if (first >= 0xE0 && first <= 0xEF) {
+            expected = 3;
+        } else if (first >= 0xF0 && first <= 0xF4) {
+            expected = 4;
+        } else {
+            // Invalid byte. Java's UTF-8 decoder will replace it safely.
+            index += 1;
+            continue;
+        }
+
+        const size_t available = text.size() - index;
+        if (available < expected) {
+            bool could_be_incomplete = true;
+            for (size_t offset = 1; offset < available; offset++) {
+                if (!is_utf8_continuation((unsigned char)text[index + offset])) {
+                    could_be_incomplete = false;
+                    break;
+                }
+            }
+            if (could_be_incomplete) {
+                break;
+            }
+            index += 1;
+            continue;
+        }
+
+        bool valid = true;
+        for (size_t offset = 1; offset < expected; offset++) {
+            if (!is_utf8_continuation((unsigned char)text[index + offset])) {
+                valid = false;
+                break;
+            }
+        }
+        if (!valid) {
+            index += 1;
+            continue;
+        }
+
+        const unsigned char second = (unsigned char)text[index + 1];
+        if ((first == 0xE0 && second < 0xA0) ||
+            (first == 0xED && second >= 0xA0) ||
+            (first == 0xF0 && second < 0x90) ||
+            (first == 0xF4 && second > 0x8F)) {
+            index += 1;
+            continue;
+        }
+
+        index += expected;
+    }
+    return index;
+}
+
 static bool dispatch_token_callback(
     JNIEnv *env,
     jobject callback,
@@ -286,7 +398,7 @@ static bool dispatch_token_callback(
         return true;
     }
 
-    jstring chunk = env->NewStringUTF(text.c_str());
+    jstring chunk = new_jstring_from_utf8_bytes(env, text);
     if (!chunk) {
         LOGE("Failed to allocate JNI token chunk");
         return false;
@@ -750,6 +862,9 @@ static std::string run_text_completion(
          elapsed_ms_since(prompt_eval_started));
 
     std::string result_text;
+    std::string pending_callback_text;
+    int generated_tokens = 0;
+    bool callback_failed = false;
     llama_sampler *smpl = create_sampler(temperature, topP, topK, repeatPenalty, repeatLastN);
     const bool json_task = prompt_requests_json(prompt);
     const int decode_limit_ms = json_task ? 90000 : 180000;
@@ -765,10 +880,19 @@ static std::string run_text_completion(
         int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
         if (len > 0) {
             result_text.append(buf, len);
-            std::string token_text(buf, (size_t)len);
-            if (!dispatch_token_callback(env, callback, callback_method, token_text, i + 1, elapsed_ms_since(total_started))) {
-                LOGE("Stopping text decode after callback failure at token %d", i + 1);
-                break;
+            generated_tokens = i + 1;
+            if (callback && callback_method) {
+                pending_callback_text.append(buf, (size_t)len);
+                const size_t safe_prefix_len = utf8_complete_prefix_length(pending_callback_text);
+                if (safe_prefix_len > 0) {
+                    std::string token_text = pending_callback_text.substr(0, safe_prefix_len);
+                    pending_callback_text.erase(0, safe_prefix_len);
+                    if (!dispatch_token_callback(env, callback, callback_method, token_text, generated_tokens, elapsed_ms_since(total_started))) {
+                        LOGE("Stopping text decode after callback failure at token %d", generated_tokens);
+                        callback_failed = true;
+                        break;
+                    }
+                }
             }
         }
         if (i == 0) {
@@ -789,6 +913,17 @@ static std::string run_text_completion(
             LOGE("Text decode failed at token %d", i);
             break;
         }
+    }
+
+    if (!callback_failed && !pending_callback_text.empty()) {
+        dispatch_token_callback(
+            env,
+            callback,
+            callback_method,
+            pending_callback_text,
+            generated_tokens,
+            elapsed_ms_since(total_started)
+        );
     }
 
     llama_sampler_free(smpl);
@@ -1203,7 +1338,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
 
     env->ReleaseStringUTFChars(imagePath, img_path);
     env->ReleaseStringUTFChars(prompt, pmt);
-    return env->NewStringUTF(result_text.c_str());
+    return new_jstring_from_utf8_bytes(env, result_text);
 }
 
 // ===== nativeInferText =====
@@ -1243,7 +1378,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferText(
 
     env->ReleaseStringUTFChars(prompt, pmt);
     LOGI("Generated text-only %zu chars", result_text.size());
-    return env->NewStringUTF(result_text.c_str());
+    return new_jstring_from_utf8_bytes(env, result_text);
 }
 
 // ===== nativeInferChat =====
@@ -1285,7 +1420,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChat(
     );
 
     LOGI("Generated native-chat %zu chars", result_text.size());
-    return env->NewStringUTF(result_text.c_str());
+    return new_jstring_from_utf8_bytes(env, result_text);
 }
 
 // ===== nativeInferChatStreaming =====
@@ -1330,7 +1465,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChatStrea
     );
 
     LOGI("Generated streaming native-chat %zu chars", result_text.size());
-    return env->NewStringUTF(result_text.c_str());
+    return new_jstring_from_utf8_bytes(env, result_text);
 }
 
 } // extern "C"

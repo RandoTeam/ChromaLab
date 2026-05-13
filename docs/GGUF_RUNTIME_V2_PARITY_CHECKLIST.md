@@ -13,6 +13,7 @@ Do not change LiteRT behavior while running these checks. LiteRT remains the ref
 
 - Text GGUF inference now has a native chat-template path for chat-style prompts.
 - Text streaming now comes from the native decode loop through a JNI token callback.
+- Native streaming buffers partial UTF-8 token pieces before dispatch, so multi-byte symbols do not crash JNI.
 - General GGUF activation is text-only; chromatogram analysis loads `mmproj` through the dedicated pipeline path.
 - Debug APKs build native llama.cpp/ggml code with optimization flags so parity tests measure real inference speed.
 - Vision GGUF inference still uses the existing mtmd image path and must pass T6 through T10 before chromatogram reports can rely on it.
