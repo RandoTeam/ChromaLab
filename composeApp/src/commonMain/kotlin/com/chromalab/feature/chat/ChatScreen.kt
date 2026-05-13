@@ -455,6 +455,19 @@ private fun ChatThreadContent(
 @Composable
 private fun MessageBubble(message: ChatMessage) {
     val isUser = message.role == ChatRole.USER
+    val contentModifier = if (isUser) {
+        Modifier
+            .fillMaxWidth(0.82f)
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(24.dp),
+            )
+            .padding(Spacing.md)
+    } else {
+        Modifier
+            .fillMaxWidth(0.92f)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -462,13 +475,7 @@ private fun MessageBubble(message: ChatMessage) {
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth(0.86f)
-                .background(
-                    color = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(24.dp),
-                )
-                .padding(Spacing.md),
+            modifier = contentModifier,
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             Text(
@@ -477,7 +484,11 @@ private fun MessageBubble(message: ChatMessage) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (isUser) {
-                Text(message.content, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = message.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             } else {
                 StreamingMessageText(message)
             }
