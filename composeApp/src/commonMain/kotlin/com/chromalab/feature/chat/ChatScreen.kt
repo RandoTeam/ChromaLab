@@ -1,6 +1,8 @@
 package com.chromalab.feature.chat
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -58,6 +60,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +74,8 @@ import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+
+private const val CHAT_STREAM_FADE_MS = 120
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -503,48 +508,47 @@ private fun MessageBubble(message: ChatMessage) {
 
 @Composable
 private fun StreamingMessageText(message: ChatMessage) {
-    var visibleText by remember(message.id) { mutableStateOf("") }
-    var cursorVisible by remember(message.id) { mutableStateOf(true) }
-
-    LaunchedEffect(message.id, message.content, message.isStreaming) {
-        if (!message.isStreaming) {
-            visibleText = message.content
-            return@LaunchedEffect
-        }
-        if (!message.content.startsWith(visibleText)) {
-            visibleText = ""
-        }
-        while (visibleText.length < message.content.length) {
-            val nextLength = (visibleText.length + 3).coerceAtMost(message.content.length)
-            visibleText = message.content.take(nextLength)
-            delay(18)
-        }
+    var bufferedText by remember(message.id) {
+        mutableStateOf(if (message.isStreaming) "" else message.content)
     }
+    val latestContent by rememberUpdatedState(message.content)
 
     LaunchedEffect(message.id, message.isStreaming) {
-        cursorVisible = true
-        while (message.isStreaming) {
-            delay(450)
-            cursorVisible = !cursorVisible
+        if (!message.isStreaming) {
+            bufferedText = latestContent
+            return@LaunchedEffect
         }
-        cursorVisible = false
+
+        while (true) {
+            val next = latestContent
+            if (next != bufferedText) {
+                bufferedText = next
+            }
+            delay(CHAT_STREAM_FADE_MS.toLong())
+        }
     }
 
     val text = when {
-        visibleText.isNotBlank() -> visibleText
+        bufferedText.isNotBlank() -> bufferedText
         message.isStreaming -> "Генерация..."
         else -> message.content
     }
-    val textStyle = if (message.content.looksLikeStructuredOutput()) {
-        MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-    } else {
-        MaterialTheme.typography.bodyMedium
+    Crossfade(
+        targetState = text,
+        animationSpec = tween(durationMillis = CHAT_STREAM_FADE_MS),
+        label = "chat_stream_text",
+    ) { target ->
+        val textStyle = if (target.looksLikeStructuredOutput()) {
+            MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+        } else {
+            MaterialTheme.typography.bodyMedium
+        }
+        Text(
+            text = target,
+            modifier = Modifier.fillMaxWidth(),
+            style = textStyle,
+        )
     }
-    Text(
-        text = if (message.isStreaming && cursorVisible) "$text|" else text,
-        modifier = Modifier.fillMaxWidth(),
-        style = textStyle,
-    )
 }
 
 @Composable
