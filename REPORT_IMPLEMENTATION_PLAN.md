@@ -139,7 +139,7 @@ Goal: make the user-facing report match the reference depth and read like a prof
 - [x] 8.4 Add rendered graph overlay with signal, baseline, peaks, boundaries, and labels.
 - [x] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
 - [x] 8.6 Export polished Markdown/HTML/PDF-ready output from the same structured report.
-- [ ] 8.7 Apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
+- [x] 8.7 Apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
 - [ ] 8.8 Convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
 
 Exit criteria:
@@ -152,6 +152,7 @@ Exit criteria:
 - The report graph section renders signal/baseline layers, integration boundaries, peak markers, and labels from calculation data when available, with a metric-based fallback for stored reports.
 - The report has a compact run metadata band with model/runtime/device/time/stage summary and per-graph preview cards.
 - Markdown and HTML/PDF-ready exports are generated from the same structured `ChromatogramReport` data, not from a separate legacy report path.
+- The mobile report/export screen opens the readable report first and keeps file export/share actions behind progressive disclosure.
 
 ## Phase 9 - Model Runtime Separation And GGUF/VLM Reliability
 
@@ -210,7 +211,8 @@ Exit criteria:
 - `7be00d3` - Build structured final report screen.
 - `02108cb` - Add report graph overlay.
 - `d974b9e` - Add compact report metadata.
+- `81b59e1` - Add structured report HTML export.
 
 ## Next Recommended Slice
 
-Start Phase 8.7: apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
+Start Phase 8.8: convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.

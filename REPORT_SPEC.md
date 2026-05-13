@@ -288,6 +288,13 @@ Structured export requirements:
 - HTML/PDF-ready export must not use the older calculation-only `ReportExporter` path as its source of truth.
 - Missing or low-confidence values must remain explicit in every export format.
 
+Mobile UI requirements:
+
+- The final report preview is the primary surface after analysis.
+- Export, share, and file-format actions are secondary and must be behind progressive disclosure.
+- Technical warnings and audit details remain available, but compact quality state and readable report sections come first.
+- Touch targets for report actions should stay large enough for phone use.
+
 ### 2. Source And Graph Preparation
 
 Purpose: make the image preparation auditable.

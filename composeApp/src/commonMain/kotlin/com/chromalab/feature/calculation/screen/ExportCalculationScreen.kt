@@ -7,6 +7,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.*
@@ -44,7 +46,8 @@ fun ExportCalculationScreen(
 ) {
     var exportStatus by remember { mutableStateOf<String?>(null) }
     var isExporting by remember { mutableStateOf(false) }
-    var showStructuredPreview by remember { mutableStateOf(false) }
+    var showStructuredPreview by remember { mutableStateOf(true) }
+    var showExportActions by remember { mutableStateOf(false) }
 
     // Pre-build export data
     val exportData = remember(run) {
@@ -75,17 +78,43 @@ fun ExportCalculationScreen(
     ) {
         // Header
         Text(
-            "Экспорт результатов",
+            "Final report",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         Text(
-            "${run.peaks.size} пиков · Σ Area: ${formatExportNumber(run.peaks.sumOf { it.area })}",
+            "${run.peaks.size} peaks · Σ Area: ${formatExportNumber(run.peaks.sumOf { it.area })}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Spacer(modifier = Modifier.height(Spacing.sm))
+        TextButton(onClick = { showStructuredPreview = !showStructuredPreview }) {
+            Icon(
+                imageVector = if (showStructuredPreview) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+            )
+            Text(if (showStructuredPreview) "Hide report preview" else "Show report preview")
+        }
+
+        if (showStructuredPreview) {
+            StructuredReportPreview(
+                report = structuredReport,
+                validation = structuredValidation,
+                graphOverlays = reportGraphOverlays,
+            )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
+
+        TextButton(onClick = { showExportActions = !showExportActions }) {
+            Icon(
+                imageVector = if (showExportActions) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+            )
+            Text(if (showExportActions) "Hide export actions" else "Export or share")
+        }
+
+        if (showExportActions) {
 
         // Export buttons
         ExportButton(
@@ -138,27 +167,6 @@ fun ExportCalculationScreen(
             },
         )
 
-        ExportButton(
-            title = if (showStructuredPreview) "Hide final report" else "Open final report",
-            subtitle = "Readable report screen with warnings, peak table, and appendix",
-            icon = Icons.Filled.Description,
-            color = MaterialTheme.colorScheme.tertiary,
-            outlined = true,
-            onClick = {
-                showStructuredPreview = !showStructuredPreview
-            },
-        )
-
-        if (showStructuredPreview) {
-            StructuredReportPreview(
-                report = structuredReport,
-                validation = structuredValidation,
-                graphOverlays = reportGraphOverlays,
-            )
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = Spacing.xs))
-
         // Share button
         ExportButton(
             title = "Поделиться отчётом",
@@ -172,6 +180,7 @@ fun ExportCalculationScreen(
                 exportStatus = "✓ Отправлено"
             },
         )
+        }
 
         // Status
         if (exportStatus != null) {
@@ -209,7 +218,9 @@ private fun ExportButton(
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         border = if (outlined) ButtonDefaults.outlinedButtonBorder(true)
         else null,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
