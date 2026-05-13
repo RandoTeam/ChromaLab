@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 3.6.
-- Next phase to start: Phase 3.7.
+- Current completed phase: Phase 3.7.
+- Next phase to start: Phase 4.1.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -45,7 +45,7 @@ Status: completed.
 
 ## Phase 3 - Runtime Controls And Capability Gating
 
-Status: in progress.
+Status: completed.
 
 - [x] Phase 3.1: Define chat runtime UI state for backend, accelerator, thinking support, and model capability flags.
 - [x] Phase 3.2: Add capability-gated accelerator controls for LiteRT/GGUF where runtime support is real.
@@ -53,7 +53,16 @@ Status: in progress.
 - [x] Phase 3.4: Disable unsupported model/runtime choices with clear UI reasons instead of hiding them silently.
 - [x] Phase 3.5: Keep selection separate from loading; loading still starts only on first message or explicit runtime action.
 - [x] Phase 3.6: Validate that chromatogram model/runtime flows are not affected.
-- [ ] Phase 3.7: Commit Phase 3 work slices separately.
+- [x] Phase 3.7: Commit Phase 3 work slices separately.
+
+### Phase 3 Commit Record
+
+- `bdd3ef1` - Phase 3.1: chat runtime capability state.
+- `9db7533` - Phase 3.2: accelerator controls.
+- `fedc45a` - Phase 3.3: thinking capability gating.
+- `ac2f068` - Phase 3.4: unsupported model/runtime reasons.
+- `c04b25e` - Phase 3.5: selection separated from loading.
+- `9925298` - Phase 3.6: chromatogram runtime separation validation.
 
 ### Phase 3.6 Validation Notes
 
