@@ -493,6 +493,7 @@ private fun MessageBubble(message: ChatMessage) {
                 StreamingMessageText(message)
             }
             if (!isUser && !message.isStreaming && message.stats != null) {
+                Spacer(Modifier.height(2.dp))
                 MessageStatsRow(message.stats)
             }
         }
@@ -541,11 +542,19 @@ private fun StreamingMessageText(message: ChatMessage) {
 
 @Composable
 private fun MessageStatsRow(stats: ChatMessageStats) {
-    Text(
-        text = "Prompt ${stats.promptTokens} tok · answer ${stats.completionTokens} tok · ${formatDuration(stats.durationMs)} · ${formatRate(stats.tokensPerSecond)} tok/s",
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(24.dp),
+    ) {
+        Text(
+            text = "Prompt ${stats.promptTokens} tok | answer ${stats.completionTokens} tok | total ${stats.totalTokens} tok | ${formatDuration(stats.durationMs)} | ${formatRate(stats.tokensPerSecond)} tok/s",
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 @Composable
