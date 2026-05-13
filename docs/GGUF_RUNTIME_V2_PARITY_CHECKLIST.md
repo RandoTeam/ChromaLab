@@ -9,6 +9,12 @@ This checklist is for GGUF only.
 
 Do not change LiteRT behavior while running these checks. LiteRT remains the reference runtime for chromatogram analysis until GGUF passes the gates below.
 
+## Implementation Status
+
+- Text GGUF inference now has a native chat-template path for chat-style prompts.
+- Text streaming now comes from the native decode loop through a JNI token callback.
+- Vision GGUF inference still uses the existing mtmd image path and must pass T6 through T10 before chromatogram reports can rely on it.
+
 ## Test Matrix
 
 | ID | Test | Input | Required result |

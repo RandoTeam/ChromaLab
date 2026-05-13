@@ -89,6 +89,29 @@ class LlamaEngine : InferenceEngine {
             repeatPenalty: Float,
             repeatLastN: Int,
         ): String
+        @JvmStatic private external fun nativeInferChat(
+            handle: Long,
+            roles: Array<String>,
+            contents: Array<String>,
+            maxTokens: Int,
+            temperature: Float,
+            topP: Float,
+            topK: Int,
+            repeatPenalty: Float,
+            repeatLastN: Int,
+        ): String
+        @JvmStatic private external fun nativeInferChatStreaming(
+            handle: Long,
+            roles: Array<String>,
+            contents: Array<String>,
+            maxTokens: Int,
+            temperature: Float,
+            topP: Float,
+            topK: Int,
+            repeatPenalty: Float,
+            repeatLastN: Int,
+            callback: NativeTokenCallback,
+        ): String
     }
 
     /**
@@ -201,18 +224,15 @@ class LlamaEngine : InferenceEngine {
                         log("Image inference requested, but no mmproj is loaded")
                         ""
                     } else {
-                        val textPrompt = formatGgufTextPrompt(prompt, config.promptStyle)
-                        if (textPrompt != prompt) {
-                            log("Applied ${config.promptStyle} prompt formatting for text inference")
-                        }
-                        nativeInferText(
-                            modelHandle, textPrompt,
-                            maxTokens,
-                            temperature,
-                            topP,
-                            topK,
-                            repeatPenalty,
-                            repeatLastN,
+                        inferTextLocked(
+                            prompt = prompt,
+                            maxTokens = maxTokens,
+                            temperature = temperature,
+                            topP = topP,
+                            topK = topK,
+                            repeatPenalty = repeatPenalty,
+                            repeatLastN = repeatLastN,
+                            onPartial = null,
                         )
                     }
                     log("Raw response chars=${responseText.length}")
@@ -224,6 +244,46 @@ class LlamaEngine : InferenceEngine {
                         )
                     }
                     responseText
+                } finally {
+                    unloadIfRequestedLocked()
+                }
+            }
+        }
+    }
+
+    override suspend fun inferRawStreaming(
+        imagePath: String,
+        prompt: String,
+        options: GenerationOptions,
+        onPartial: (String) -> Unit,
+    ): String {
+        return withContext(Dispatchers.IO) {
+            val hasImage = imagePath.isNotBlank() && File(imagePath).isFile
+            if (hasImage) {
+                return@withContext super<InferenceEngine>.inferRawStreaming(imagePath, prompt, options, onPartial)
+            }
+
+            nativeLock.withLock {
+                check(loaded && nativeLoaded) { "Model not loaded" }
+
+                val maxTokens = options.maxTokens ?: config.maxTokens
+                val temperature = options.temperature ?: 0f
+                val topP = options.topP ?: 1f
+                val topK = options.topK ?: 0
+                val repeatPenalty = options.repeatPenalty ?: config.repeatPenalty
+                val repeatLastN = options.repeatLastN ?: config.repeatLastN
+
+                try {
+                    inferTextLocked(
+                        prompt = prompt,
+                        maxTokens = maxTokens,
+                        temperature = temperature,
+                        topP = topP,
+                        topK = topK,
+                        repeatPenalty = repeatPenalty,
+                        repeatLastN = repeatLastN,
+                        onPartial = onPartial,
+                    )
                 } finally {
                     unloadIfRequestedLocked()
                 }
@@ -278,4 +338,149 @@ class LlamaEngine : InferenceEngine {
     }
 
     override fun getBackendName(): String = backendName
+
+    private fun inferTextLocked(
+        prompt: String,
+        maxTokens: Int,
+        temperature: Float,
+        topP: Float,
+        topK: Int,
+        repeatPenalty: Float,
+        repeatLastN: Int,
+        onPartial: ((String) -> Unit)?,
+    ): String {
+        val chatPrompt = prompt.toNativeChatPromptOrNull(config)
+        if (chatPrompt != null) {
+            log(
+                "Using llama.cpp chat template for text inference " +
+                    "messages=${chatPrompt.roles.size} promptStyle=${config.promptStyle}",
+            )
+            return if (onPartial == null) {
+                nativeInferChat(
+                    modelHandle,
+                    chatPrompt.roles,
+                    chatPrompt.contents,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    topK,
+                    repeatPenalty,
+                    repeatLastN,
+                )
+            } else {
+                nativeInferChatStreaming(
+                    modelHandle,
+                    chatPrompt.roles,
+                    chatPrompt.contents,
+                    maxTokens,
+                    temperature,
+                    topP,
+                    topK,
+                    repeatPenalty,
+                    repeatLastN,
+                    object : NativeTokenCallback {
+                        override fun onToken(text: String, generatedTokens: Int, elapsedMs: Long) {
+                            onPartial(text)
+                        }
+                    },
+                )
+            }
+        }
+
+        val textPrompt = formatGgufTextPrompt(prompt, config.promptStyle)
+        if (textPrompt != prompt) {
+            log("Applied ${config.promptStyle} prompt formatting for text inference")
+        }
+        return nativeInferText(
+            modelHandle,
+            textPrompt,
+            maxTokens,
+            temperature,
+            topP,
+            topK,
+            repeatPenalty,
+            repeatLastN,
+        )
+    }
+}
+
+private interface NativeTokenCallback {
+    fun onToken(text: String, generatedTokens: Int, elapsedMs: Long)
+}
+
+private data class NativeChatPrompt(
+    val roles: Array<String>,
+    val contents: Array<String>,
+)
+
+private fun String.toNativeChatPromptOrNull(config: InferenceConfig): NativeChatPrompt? {
+    if (!config.shouldUseNativeChatTemplate()) return null
+    if (containsKnownTemplateMarkup()) return null
+
+    val messages = parseTranscriptMessages()
+        .ifEmpty { listOf("user" to trim()) }
+        .filter { (_, content) -> content.isNotBlank() }
+
+    if (messages.isEmpty()) return null
+    return NativeChatPrompt(
+        roles = messages.map { it.first }.toTypedArray(),
+        contents = messages.map { it.second }.toTypedArray(),
+    )
+}
+
+private fun InferenceConfig.shouldUseNativeChatTemplate(): Boolean =
+    promptStyle != PromptStyle.TRIGGER &&
+        promptStyle != PromptStyle.DEEPSEEK_OCR &&
+        promptStyle != PromptStyle.DIRECT_QUESTION &&
+        promptStyle != PromptStyle.LITERT
+
+private fun String.containsKnownTemplateMarkup(): Boolean =
+    contains("<|im_start|>") ||
+        contains("<|start_header_id|>") ||
+        contains("[INST]") ||
+        contains("<start_of_turn>")
+
+private fun String.parseTranscriptMessages(): List<Pair<String, String>> {
+    val lines = lines()
+    val messages = mutableListOf<Pair<String, String>>()
+    var role: String? = null
+    val buffer = StringBuilder()
+
+    fun flush() {
+        val currentRole = role ?: return
+        val content = buffer.toString().trim()
+        if (content.isNotBlank()) {
+            messages += currentRole to content
+        }
+        buffer.clear()
+    }
+
+    lines.forEach { line ->
+        val trimmed = line.trimStart()
+        when {
+            trimmed.startsWith("User:") -> {
+                flush()
+                role = "user"
+                buffer.append(trimmed.removePrefix("User:").trimStart())
+            }
+            trimmed.startsWith("Assistant:") -> {
+                flush()
+                role = "assistant"
+                buffer.append(trimmed.removePrefix("Assistant:").trimStart())
+            }
+            role == null -> {
+                role = "system"
+                if (buffer.isNotEmpty()) buffer.appendLine()
+                buffer.append(line)
+            }
+            else -> {
+                if (buffer.isNotEmpty()) buffer.appendLine()
+                buffer.append(line)
+            }
+        }
+    }
+    flush()
+
+    return messages
+        .dropLastWhile { (messageRole, content) -> messageRole == "assistant" && content.isBlank() }
 }

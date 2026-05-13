@@ -180,6 +180,126 @@ static std::string one_line_preview(const std::string &text, size_t max_chars = 
     return out;
 }
 
+static std::vector<std::string> jstring_array_to_vector(JNIEnv *env, jobjectArray array) {
+    std::vector<std::string> result;
+    if (!env || !array) {
+        return result;
+    }
+
+    const jsize count = env->GetArrayLength(array);
+    result.reserve((size_t)count);
+    for (jsize i = 0; i < count; ++i) {
+        auto item = (jstring)env->GetObjectArrayElement(array, i);
+        if (!item) {
+            result.emplace_back();
+            continue;
+        }
+
+        const char *chars = env->GetStringUTFChars(item, nullptr);
+        result.emplace_back(chars ? chars : "");
+        env->ReleaseStringUTFChars(item, chars);
+        env->DeleteLocalRef(item);
+    }
+    return result;
+}
+
+static std::string apply_model_chat_template(
+    ModelContext *mc,
+    const std::vector<std::string> &roles,
+    const std::vector<std::string> &contents) {
+
+    if (!mc || !mc->model || roles.empty() || roles.size() != contents.size()) {
+        return "";
+    }
+
+    std::vector<llama_chat_message> messages;
+    messages.reserve(roles.size());
+    for (size_t i = 0; i < roles.size(); ++i) {
+        messages.push_back(llama_chat_message{
+            roles[i].c_str(),
+            contents[i].c_str(),
+        });
+    }
+
+    const char *model_template = llama_model_chat_template(mc->model, nullptr);
+    const bool has_model_template = model_template && std::strlen(model_template) > 0;
+    const char *template_source = has_model_template ? model_template : "chatml";
+
+    int32_t formatted_len = llama_chat_apply_template(
+        template_source,
+        messages.data(),
+        messages.size(),
+        true,
+        nullptr,
+        0
+    );
+    if (formatted_len < 0 && has_model_template) {
+        LOGW("Model chat template was not supported by llama_chat_apply_template; falling back to chatml");
+        template_source = "chatml";
+        formatted_len = llama_chat_apply_template(
+            template_source,
+            messages.data(),
+            messages.size(),
+            true,
+            nullptr,
+            0
+        );
+    }
+    if (formatted_len <= 0) {
+        LOGE("Failed to apply chat template: result=%d messages=%zu", formatted_len, messages.size());
+        return "";
+    }
+
+    std::vector<char> buffer((size_t)formatted_len + 1, '\0');
+    const int32_t applied_len = llama_chat_apply_template(
+        template_source,
+        messages.data(),
+        messages.size(),
+        true,
+        buffer.data(),
+        (int32_t)buffer.size()
+    );
+    if (applied_len <= 0) {
+        LOGE("Failed to render chat template: result=%d messages=%zu", applied_len, messages.size());
+        return "";
+    }
+    buffer[(size_t)std::min<int32_t>(applied_len, (int32_t)buffer.size() - 1)] = '\0';
+
+    std::string prompt(buffer.data(), (size_t)applied_len);
+    LOGI("Applied native chat template: source=%s messages=%zu chars=%zu preview=%s",
+         has_model_template ? "model" : "fallback-chatml",
+         messages.size(),
+         prompt.size(),
+         one_line_preview(prompt).c_str());
+    return prompt;
+}
+
+static bool dispatch_token_callback(
+    JNIEnv *env,
+    jobject callback,
+    jmethodID method,
+    const std::string &text,
+    int generated_tokens,
+    long long elapsed_ms) {
+
+    if (!env || !callback || !method || text.empty()) {
+        return true;
+    }
+
+    jstring chunk = env->NewStringUTF(text.c_str());
+    if (!chunk) {
+        LOGE("Failed to allocate JNI token chunk");
+        return false;
+    }
+    env->CallVoidMethod(callback, method, chunk, (jint)generated_tokens, (jlong)elapsed_ms);
+    env->DeleteLocalRef(chunk);
+    if (env->ExceptionCheck()) {
+        LOGE("Exception thrown from Kotlin token callback");
+        return false;
+    }
+    return true;
+}
+
 static const char * chunk_type_name(enum mtmd_input_chunk_type type) {
     switch (type) {
         case MTMD_INPUT_CHUNK_TYPE_TEXT:  return "text";
@@ -530,10 +650,25 @@ static std::string run_text_completion(
     float topP,
     int topK,
     float repeatPenalty,
-    int repeatLastN) {
+    int repeatLastN,
+    JNIEnv *env = nullptr,
+    jobject callback = nullptr) {
 
     if (!mc || !mc->ctx || !mc->model || !prompt) {
         return "";
+    }
+
+    jmethodID callback_method = nullptr;
+    if (env && callback) {
+        jclass callback_class = env->GetObjectClass(callback);
+        if (callback_class) {
+            callback_method = env->GetMethodID(callback_class, "onToken", "(Ljava/lang/String;IJ)V");
+            env->DeleteLocalRef(callback_class);
+        }
+        if (!callback_method) {
+            LOGE("Token callback method not found");
+            return "";
+        }
     }
 
     int n_predict = (maxTokens > 0) ? maxTokens : 512;
@@ -541,6 +676,7 @@ static std::string run_text_completion(
         n_predict = mc->n_ctx / 2;
     }
     const llama_vocab *vocab = llama_model_get_vocab(mc->model);
+    const auto total_started = std::chrono::steady_clock::now();
 
     const int prompt_len = (int)strlen(prompt);
     std::vector<llama_token> tokens((size_t)prompt_len + 32);
@@ -587,6 +723,7 @@ static std::string run_text_completion(
 
     llama_memory_clear(llama_get_memory(mc->ctx), true);
 
+    const auto prompt_eval_started = std::chrono::steady_clock::now();
     const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
     for (int offset = 0; offset < n_tokens; offset += batch_size) {
         const int n_chunk = std::min(batch_size, n_tokens - offset);
@@ -596,11 +733,13 @@ static std::string run_text_completion(
             return "";
         }
     }
+    LOGI("Text prompt eval done: tokens=%d elapsed=%lld ms",
+         n_tokens,
+         elapsed_ms_since(prompt_eval_started));
 
     std::string result_text;
     llama_sampler *smpl = create_sampler(temperature, topP, topK, repeatPenalty, repeatLastN);
     const bool json_task = prompt_requests_json(prompt);
-    const auto started = std::chrono::steady_clock::now();
     const int decode_limit_ms = json_task ? 90000 : 180000;
 
     for (int i = 0; i < n_predict; i++) {
@@ -614,16 +753,21 @@ static std::string run_text_completion(
         int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
         if (len > 0) {
             result_text.append(buf, len);
+            std::string token_text(buf, (size_t)len);
+            if (!dispatch_token_callback(env, callback, callback_method, token_text, i + 1, elapsed_ms_since(total_started))) {
+                LOGE("Stopping text decode after callback failure at token %d", i + 1);
+                break;
+            }
         }
         if (i == 0) {
-            LOGI("Text first token: id=%d elapsed=%lld ms", (int)token_id, elapsed_ms_since(started));
+            LOGI("Text first token: id=%d elapsed=%lld ms", (int)token_id, elapsed_ms_since(total_started));
         }
 
         if (json_task && json_object_complete(result_text)) {
             LOGI("Text JSON complete at token %d", i + 1);
             break;
         }
-        if (elapsed_over(started, decode_limit_ms)) {
+        if (elapsed_over(total_started, decode_limit_ms)) {
             LOGE("Text decode timed out after %d ms", decode_limit_ms);
             break;
         }
@@ -1087,6 +1231,93 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferText(
 
     env->ReleaseStringUTFChars(prompt, pmt);
     LOGI("Generated text-only %zu chars", result_text.size());
+    return env->NewStringUTF(result_text.c_str());
+}
+
+// ===== nativeInferChat =====
+
+JNIEXPORT jstring JNICALL
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChat(
+    JNIEnv *env, jclass /* clazz */,
+    jlong handle, jobjectArray roles, jobjectArray contents,
+    jint maxTokens,
+    jfloat temperature, jfloat topP, jint topK,
+    jfloat repeatPenalty, jint repeatLastN) {
+
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc || !mc->ctx || !mc->model) {
+        LOGE("Invalid model context for chat inference");
+        return env->NewStringUTF("");
+    }
+
+    const std::vector<std::string> role_values = jstring_array_to_vector(env, roles);
+    const std::vector<std::string> content_values = jstring_array_to_vector(env, contents);
+    const std::string prompt = apply_model_chat_template(mc, role_values, content_values);
+    if (prompt.empty()) {
+        return env->NewStringUTF("");
+    }
+
+    const int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+
+    std::string result_text = run_text_completion(
+        mc,
+        prompt.c_str(),
+        n_predict,
+        temperature,
+        topP,
+        topK,
+        rep_penalty,
+        rep_last_n
+    );
+
+    LOGI("Generated native-chat %zu chars", result_text.size());
+    return env->NewStringUTF(result_text.c_str());
+}
+
+// ===== nativeInferChatStreaming =====
+
+JNIEXPORT jstring JNICALL
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChatStreaming(
+    JNIEnv *env, jclass /* clazz */,
+    jlong handle, jobjectArray roles, jobjectArray contents,
+    jint maxTokens,
+    jfloat temperature, jfloat topP, jint topK,
+    jfloat repeatPenalty, jint repeatLastN,
+    jobject callback) {
+
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc || !mc->ctx || !mc->model) {
+        LOGE("Invalid model context for streaming chat inference");
+        return env->NewStringUTF("");
+    }
+
+    const std::vector<std::string> role_values = jstring_array_to_vector(env, roles);
+    const std::vector<std::string> content_values = jstring_array_to_vector(env, contents);
+    const std::string prompt = apply_model_chat_template(mc, role_values, content_values);
+    if (prompt.empty()) {
+        return env->NewStringUTF("");
+    }
+
+    const int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+
+    std::string result_text = run_text_completion(
+        mc,
+        prompt.c_str(),
+        n_predict,
+        temperature,
+        topP,
+        topK,
+        rep_penalty,
+        rep_last_n,
+        env,
+        callback
+    );
+
+    LOGI("Generated streaming native-chat %zu chars", result_text.size());
     return env->NewStringUTF(result_text.c_str());
 }
 
