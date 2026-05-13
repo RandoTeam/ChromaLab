@@ -32,6 +32,12 @@ Latest observed Qwen3-VL run:
 - Image was already normalized to `537x476`.
 - Execution stalled before generation, inside `mtmd_helper_eval_chunks`, for more than five minutes.
 
+Update after external parity check:
+
+- The same small Qwen3-VL 2B GGUF model returned normal text and image answers in LM Studio 0.4.12 on the same chromatogram screenshot class.
+- This means the current ChromaLab failure is a GGUF runtime/integration problem until proven otherwise, not a model capability failure.
+- The runtime repair plan is tracked in `docs/GGUF_RUNTIME_RESEARCH_PLAN.md`.
+
 ## Registry Capability Matrix
 
 | Registry family | Built-in variants | Normal text chat | Image/VQA | OCR/document parsing | Chart/SVG parsing | Strict chromatogram candidate | Notes |
