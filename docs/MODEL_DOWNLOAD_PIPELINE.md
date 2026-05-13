@@ -33,10 +33,21 @@ Downloads now run in a native Android foreground service.
 - If the service/controller is recreated, pending requests are resumed from preferences.
 - Cancelling still targets one model id and does not cancel other model downloads.
 
-## Not In Phase 3
+## Phase 4 Status
 
-- Global speed limiter.
+Model downloads now support a global user-configured speed limit.
+
+- The user can choose unlimited mode or a total limit from 1 MB/s to 50 MB/s in More settings.
+- The setting is persisted in model preferences.
+- The foreground download service owns one shared limiter instance.
+- Sequential downloads, parallel range chunks, and several simultaneous model downloads all use that shared limiter.
+- Progress speed is measured after throttling, so the displayed speed reflects the effective limited throughput.
+- Download validation and partial-download behavior are unchanged.
+
+## Not In Phase 4
+
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
+- Model memory lifecycle changes, role separation, and per-workflow model loading.
 
-These are intentionally left for the next phases so background execution stays separate from speed throttling and model lifecycle changes.
+These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.

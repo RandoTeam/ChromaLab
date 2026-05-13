@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import com.chromalab.feature.processing.model.DownloadPhase
+import com.chromalab.feature.processing.model.DownloadSpeedLimiter
 import com.chromalab.feature.processing.model.ModelDownloader
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelManager
@@ -26,6 +27,9 @@ import kotlinx.coroutines.withContext
 class ModelDownloadForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val downloader = ModelDownloader()
+    private val speedLimiter = DownloadSpeedLimiter {
+        manager.downloadSpeedLimitBytesPerSecond
+    }
     private lateinit var manager: ModelManager
     private val jobs = mutableMapOf<String, Job>()
     private var lastNotificationUpdateMs = 0L
@@ -90,6 +94,7 @@ class ModelDownloadForegroundService : Service() {
                     model = model,
                     targetDir = targetDir,
                     parallelism = request.parallelism,
+                    speedLimiter = speedLimiter,
                 ) { progress ->
                     ModelDownloadForegroundState.upsert(
                         ModelDownloadUiState(

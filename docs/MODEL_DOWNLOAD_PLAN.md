@@ -102,17 +102,19 @@ Process-kill behavior:
 
 Goal: allow the user to limit total download speed, from about 1 MB/s to 50 MB/s, plus unlimited mode.
 
-Status: not started.
+Status: implemented, needs real-device speed verification.
 
 Subpoints:
 
-- Not done: add persisted speed-limit setting.
-- Not done: add UI control for `1..50 MB/s` and unlimited.
-- Not done: apply speed limiting to sequential downloads.
-- Not done: apply speed limiting across parallel range chunks for one file.
-- Not done: apply speed limiting across several simultaneous model downloads.
-- Not done: make progress speed display reflect throttled effective speed.
-- Not done: verify that limiting does not corrupt partial downloads or validation.
+- Done: add persisted speed-limit setting.
+- Done: add UI control for `1..50 MB/s` and unlimited.
+- Done: apply speed limiting to sequential downloads.
+- Done: apply speed limiting across parallel range chunks for one file.
+- Done: apply speed limiting across several simultaneous model downloads through one shared foreground-service limiter.
+- Done: make progress speed display reflect throttled effective speed.
+- Done: keep partial downloads and final file validation unchanged.
+- Not done: verify real-device behavior at unlimited, 1 MB/s, 10 MB/s, and 50 MB/s.
+- Not done: measure whether multiple simultaneous downloads share the configured total limit evenly enough in practice.
 
 Technical rule:
 
@@ -145,9 +147,9 @@ Technical rule:
 
 ## Current Next Phase
 
-The next phase to work on is Phase 4 - Download Speed Limit.
+The next phase to work on is Phase 5 - Model Loading, Roles, And Lifecycle.
 
-Before starting Phase 4, verify Phase 1, Phase 2, and Phase 3 on a real device:
+Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 
 - Start two model downloads at the same time.
 - Start one large download with 4x or 8x parallelism.
@@ -155,3 +157,5 @@ Before starting Phase 4, verify Phase 1, Phase 2, and Phase 3 on a real device:
 - Confirm finished files pass validation and appear as downloaded models.
 - Start a download, leave the model screen, and confirm it continues.
 - Minimize the app during a download and confirm the foreground notification stays active.
+- Set download speed to 1 MB/s and confirm the displayed speed stays near the limit after the first seconds.
+- Set download speed to unlimited and confirm throughput is no longer capped.

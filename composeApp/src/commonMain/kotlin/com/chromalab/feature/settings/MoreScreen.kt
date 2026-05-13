@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 
 /**
  * "More" tab screen — settings hub with sections.
@@ -25,12 +26,14 @@ fun MoreScreen(
     activeModelSummary: String?,
     threadCount: Int,
     downloadParallelism: Int,
+    downloadSpeedLimitMbps: Int,
     autoUnloadMinutes: Int,
     onOpenModelManager: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenAbout: () -> Unit,
     onThreadCountChange: (Int) -> Unit,
     onDownloadParallelismChange: (Int) -> Unit,
+    onDownloadSpeedLimitChange: (Int) -> Unit,
     onAutoUnloadChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -75,6 +78,13 @@ fun MoreScreen(
             DownloadParallelismCard(
                 downloadParallelism = downloadParallelism,
                 onDownloadParallelismChange = onDownloadParallelismChange,
+            )
+        }
+
+        item {
+            DownloadSpeedLimitCard(
+                downloadSpeedLimitMbps = downloadSpeedLimitMbps,
+                onDownloadSpeedLimitChange = onDownloadSpeedLimitChange,
             )
         }
 
@@ -262,6 +272,77 @@ private fun DownloadParallelismCard(
                         label = { Text("${option}x") },
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadSpeedLimitCard(
+    downloadSpeedLimitMbps: Int,
+    onDownloadSpeedLimitChange: (Int) -> Unit,
+) {
+    val normalizedLimit = downloadSpeedLimitMbps.coerceIn(0, 50)
+    val subtitle = if (normalizedLimit == 0) {
+        "Ð‘ÐµÐ· Ð¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸Ñ"
+    } else {
+        "ÐžÐ±Ñ‰Ð¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚: $normalizedLimit MB/s"
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Speed,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Ð¡ÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒ ÑÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ñ",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Slider(
+                value = normalizedLimit.toFloat(),
+                onValueChange = { onDownloadSpeedLimitChange(it.roundToInt().coerceIn(0, 50)) },
+                valueRange = 0f..50f,
+                steps = 49,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "∞",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "50 MB/s",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

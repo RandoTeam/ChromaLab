@@ -79,6 +79,7 @@ class ModelDownloader {
         model: ModelInfo,
         targetDir: File,
         parallelism: Int = 1,
+        speedLimiter: DownloadSpeedLimiter? = null,
         onProgress: suspend (DownloadProgress) -> Unit,
     ) = withContext(Dispatchers.IO) {
         targetDir.mkdirs()
@@ -111,6 +112,7 @@ class ModelDownloader {
                 tempFile = tempFile,
                 expectedSize = file.sizeBytes,
                 parallelism = parallelism,
+                speedLimiter = speedLimiter,
             ) { bytesThisFile, speedBps ->
                 onProgress(
                     DownloadProgress(
@@ -187,6 +189,7 @@ class ModelDownloader {
         tempFile: File,
         expectedSize: Long,
         parallelism: Int,
+        speedLimiter: DownloadSpeedLimiter?,
         onFileProgress: suspend (bytesDownloaded: Long, speedBps: Long) -> Unit,
     ) {
         if (targetFile.exists() && targetFile.length() >= expectedSize * 0.9) {
@@ -203,12 +206,13 @@ class ModelDownloader {
                 tempFile = tempFile,
                 expectedSize = expectedSize,
                 parallelism = rangeParallelism,
+                speedLimiter = speedLimiter,
                 onFileProgress = onFileProgress,
             )
             if (completed) return
         }
 
-        downloadSequentialFile(url, targetFile, tempFile, expectedSize, onFileProgress)
+        downloadSequentialFile(url, targetFile, tempFile, expectedSize, speedLimiter, onFileProgress)
     }
 
     /**
@@ -219,6 +223,7 @@ class ModelDownloader {
         targetFile: File,
         tempFile: File,
         expectedSize: Long,
+        speedLimiter: DownloadSpeedLimiter?,
         onFileProgress: suspend (bytesDownloaded: Long, speedBps: Long) -> Unit,
     ) {
         // Check existing temp file for resume
@@ -274,6 +279,7 @@ class ModelDownloader {
                             targetFile,
                             tempFile,
                             expectedSize,
+                            speedLimiter,
                             onFileProgress,
                         )
                         return
@@ -306,6 +312,7 @@ class ModelDownloader {
                     if (bytesRead == -1) break
 
                     outputStream.write(buffer, 0, bytesRead)
+                    speedLimiter?.throttle(bytesRead)
                     downloadedBytes += bytesRead
                     speedBytes += bytesRead
 
@@ -349,6 +356,7 @@ class ModelDownloader {
         tempFile: File,
         expectedSize: Long,
         parallelism: Int,
+        speedLimiter: DownloadSpeedLimiter?,
         onFileProgress: suspend (bytesDownloaded: Long, speedBps: Long) -> Unit,
     ): Boolean = coroutineScope {
         if (!supportsRangeRequests(url)) {
@@ -381,7 +389,7 @@ class ModelDownloader {
             buildRanges(expectedSize, parallelism)
                 .map { range ->
                     async(Dispatchers.IO) {
-                        downloadRangeChunk(url, tempFile, range, downloadedBytes)
+                        downloadRangeChunk(url, tempFile, range, downloadedBytes, speedLimiter)
                     }
                 }
                 .awaitAll()
@@ -409,6 +417,7 @@ class ModelDownloader {
         tempFile: File,
         range: ByteRange,
         downloadedBytes: AtomicLong,
+        speedLimiter: DownloadSpeedLimiter?,
     ) {
         var requestUrl = url
         var redirects = 0
@@ -460,6 +469,7 @@ class ModelDownloader {
                                 )
                             }
                             output.write(buffer, 0, bytesRead)
+                            speedLimiter?.throttle(bytesRead)
                             remaining -= bytesRead
                             downloadedBytes.addAndGet(bytesRead.toLong())
                         }

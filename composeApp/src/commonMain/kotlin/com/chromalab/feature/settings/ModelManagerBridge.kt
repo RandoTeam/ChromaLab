@@ -17,6 +17,7 @@ data class ModelManagerActions(
     val delete: (String) -> Unit = {},
     val setThreadCount: (Int) -> Unit = {},
     val setDownloadParallelism: (Int) -> Unit = {},
+    val setDownloadSpeedLimit: (Int) -> Unit = {},
     val setAutoUnloadMinutes: (Int) -> Unit = {},
     val onImport: () -> Unit = {},
     /** Export model files to user-chosen location. */

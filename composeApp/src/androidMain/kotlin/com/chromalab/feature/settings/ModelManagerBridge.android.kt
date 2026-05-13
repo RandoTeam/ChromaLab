@@ -107,6 +107,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             delete = { controller.delete(it) },
             setThreadCount = { controller.setThreadCount(it) },
             setDownloadParallelism = { controller.setDownloadParallelism(it) },
+            setDownloadSpeedLimit = { controller.setDownloadSpeedLimit(it) },
             setAutoUnloadMinutes = { controller.setAutoUnloadMinutes(it) },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
             onHuggingFaceQueryChange = { controller.updateHuggingFaceQuery(it) },

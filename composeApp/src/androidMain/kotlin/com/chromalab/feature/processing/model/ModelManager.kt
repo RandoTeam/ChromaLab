@@ -56,6 +56,7 @@ class ModelManager(private val context: Context) {
         private const val KEY_ACTIVE_MODEL = "active_model_id"
         private const val KEY_THREAD_COUNT = "thread_count"
         private const val KEY_DOWNLOAD_PARALLELISM = "download_parallelism"
+        private const val KEY_DOWNLOAD_SPEED_LIMIT_MBPS = "download_speed_limit_mbps"
         private const val KEY_ACCEL_BACKEND = "accel_backend"
         private const val KEY_AUTO_UNLOAD_MINUTES = "auto_unload_minutes"
     }
@@ -300,6 +301,14 @@ class ModelManager(private val context: Context) {
     var downloadParallelism: Int
         get() = sanitizeDownloadParallelism(prefs.getInt(KEY_DOWNLOAD_PARALLELISM, 4))
         set(value) = prefs.edit().putInt(KEY_DOWNLOAD_PARALLELISM, sanitizeDownloadParallelism(value)).apply()
+
+    /** Total model download speed limit in MiB/s. 0 means unlimited. */
+    var downloadSpeedLimitMbps: Int
+        get() = prefs.getInt(KEY_DOWNLOAD_SPEED_LIMIT_MBPS, 0).coerceIn(0, 50)
+        set(value) = prefs.edit().putInt(KEY_DOWNLOAD_SPEED_LIMIT_MBPS, value.coerceIn(0, 50)).apply()
+
+    val downloadSpeedLimitBytesPerSecond: Long
+        get() = if (downloadSpeedLimitMbps <= 0) 0L else downloadSpeedLimitMbps * 1024L * 1024L
 
     /** Acceleration backend name. */
     var accelBackend: String

@@ -95,6 +95,7 @@ class ModelManagerController(
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),
                 threadCount = manager.threadCount,
                 downloadParallelism = manager.downloadParallelism,
+                downloadSpeedLimitMbps = manager.downloadSpeedLimitMbps,
                 autoUnloadMinutes = manager.autoUnloadMinutes,
                 customModels = customs,
             )
@@ -348,6 +349,12 @@ class ModelManagerController(
     fun setDownloadParallelism(parallelism: Int) {
         manager.downloadParallelism = parallelism
         _state.update { it.copy(downloadParallelism = manager.downloadParallelism) }
+    }
+
+    /** Update total download speed limit in MiB/s. 0 = unlimited. */
+    fun setDownloadSpeedLimit(mbps: Int) {
+        manager.downloadSpeedLimitMbps = mbps
+        _state.update { it.copy(downloadSpeedLimitMbps = manager.downloadSpeedLimitMbps) }
     }
 
     /** Update auto-unload timeout (minutes). 0 = disabled. */

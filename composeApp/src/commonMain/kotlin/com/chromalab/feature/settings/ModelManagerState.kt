@@ -28,6 +28,8 @@ data class ModelManagerState(
     val threadCount: Int = 4,
     /** Number of HTTP range chunks used for model file downloads. */
     val downloadParallelism: Int = 4,
+    /** Total model download speed limit in MiB/s. 0 = unlimited. */
+    val downloadSpeedLimitMbps: Int = 0,
     /** Auto-unload VLM model after N minutes of inactivity (1–30, 0 = disabled). */
     val autoUnloadMinutes: Int = 5,
     /** Custom (imported) models that aren't in the builtin registry. */

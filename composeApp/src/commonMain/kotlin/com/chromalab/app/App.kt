@@ -139,12 +139,14 @@ fun App() {
                         activeModelSummary = modelState.activeModelSummary,
                         threadCount = modelState.threadCount,
                         downloadParallelism = modelState.downloadParallelism,
+                        downloadSpeedLimitMbps = modelState.downloadSpeedLimitMbps,
                         autoUnloadMinutes = modelState.autoUnloadMinutes,
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                         onOpenLanguage = { navController.navigate(Route.Language) },
                         onOpenAbout = { navController.navigate(Route.About) },
                         onThreadCountChange = { modelActions.setThreadCount(it) },
                         onDownloadParallelismChange = { modelActions.setDownloadParallelism(it) },
+                        onDownloadSpeedLimitChange = { modelActions.setDownloadSpeedLimit(it) },
                         onAutoUnloadChange = { modelActions.setAutoUnloadMinutes(it) },
                     )
                 }
