@@ -10,8 +10,6 @@ import com.chromalab.feature.processing.inference.LiteRTEngine
 import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.VlmEngineHolder
-import com.chromalab.feature.processing.model.DownloadPhase
-import com.chromalab.feature.processing.model.ModelDownloader
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelManager
 import com.chromalab.feature.processing.model.ModelRegistry
@@ -35,14 +33,6 @@ private fun logModelError(message: String, throwable: Throwable? = null) {
     Log.e(TAG, message, throwable)
 }
 
-private fun DownloadPhase.toUiPhase(): ModelDownloadUiPhase = when (this) {
-    DownloadPhase.CONNECTING -> ModelDownloadUiPhase.CONNECTING
-    DownloadPhase.DOWNLOADING -> ModelDownloadUiPhase.DOWNLOADING
-    DownloadPhase.VALIDATING -> ModelDownloadUiPhase.VALIDATING
-    DownloadPhase.COMPLETE -> ModelDownloadUiPhase.COMPLETE
-    DownloadPhase.ERROR -> ModelDownloadUiPhase.ERROR
-}
-
 /**
  * Controller bridging ModelManager (Android) → ModelManagerState (common UI).
  *
@@ -54,18 +44,18 @@ class ModelManagerController(
     private val scope: CoroutineScope,
 ) {
     private val manager = ModelManager(context)
-    private val downloader = ModelDownloader()
     private val hfSearchClient = HuggingFaceSearchClient()
 
     private val _state = MutableStateFlow(ModelManagerState())
     val state: StateFlow<ModelManagerState> = _state.asStateFlow()
 
-    private val downloadJobs = mutableMapOf<String, Job>()
     private var hfSearchJob: Job? = null
     private var unloadTimerJob: Job? = null
 
     init {
         refresh()
+        observeForegroundDownloads()
+        ModelDownloadForegroundService.resumePendingDownloads(context)
     }
 
     /** Refresh state from disk / prefs. */
@@ -111,9 +101,32 @@ class ModelManagerController(
         }
     }
 
+    private fun observeForegroundDownloads() {
+        scope.launch {
+            ModelDownloadForegroundState.downloadJobs.collect { jobs ->
+                val nextJob = jobs.values.firstOrNull { it.isRunningDownload() }
+                    ?: jobs.values.firstOrNull()
+                _state.update {
+                    it.copy(
+                        downloadJobs = jobs,
+                        downloadingModelId = nextJob?.modelId,
+                        downloadProgress = nextJob?.progress ?: 0f,
+                        downloadSpeedMbps = nextJob?.speedMbps ?: 0f,
+                        downloadFileName = nextJob?.fileName.orEmpty(),
+                        downloadError = jobs.values.firstOrNull { job -> job.error != null }?.error,
+                    )
+                }
+
+                if (jobs.isEmpty() || jobs.values.any { it.phase == ModelDownloadUiPhase.COMPLETE }) {
+                    refresh()
+                }
+            }
+        }
+    }
+
     /** Start downloading a model. */
     fun download(model: ModelInfo) {
-        if (downloadJobs[model.id]?.isActive == true) return
+        if (ModelDownloadForegroundState.snapshot()[model.id]?.isRunningDownload() == true) return
         if (manager.isDownloaded(model.id)) return
 
         _state.update {
@@ -129,80 +142,16 @@ class ModelManagerController(
             )
         }
 
-        val job = scope.launch {
-            try {
-                val targetDir = manager.getModelDir(model.id)
-                downloader.downloadModel(
-                    model = model,
-                    targetDir = targetDir,
-                    parallelism = manager.downloadParallelism,
-                ) { progress ->
-                    _state.update {
-                        val jobState = ModelDownloadUiState(
-                            modelId = model.id,
-                            phase = progress.phase.toUiPhase(),
-                            progress = progress.fraction,
-                            speedMbps = progress.speedMbPerSec,
-                            fileName = progress.currentFileName,
-                            error = progress.error,
-                        )
-                        it.copy(
-                            downloadJobs = it.downloadJobs + (model.id to jobState),
-                            downloadingModelId = it.downloadingModelId ?: model.id,
-                            downloadProgress = jobState.progress,
-                            downloadSpeedMbps = jobState.speedMbps,
-                            downloadFileName = jobState.fileName,
-                            downloadError = progress.error,
-                        )
-                    }
-                }
-                println("MODEL[CTRL] Download complete: ${model.id}")
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                println("MODEL[CTRL] Download cancelled: ${model.id}")
-                // Clean up partial download
-                manager.delete(model.id)
-            } catch (e: Exception) {
-                println("MODEL[CTRL] Download failed: ${e.message}")
-                _state.update {
-                    it.copy(
-                        downloadError = e.message ?: "Неизвестная ошибка загрузки",
-                    )
-                }
-                // Clean up corrupt files
-                manager.delete(model.id)
-            } finally {
-                downloadJobs.remove(model.id)
-                _state.update {
-                    val remainingJobs = it.downloadJobs - model.id
-                    val nextJob = remainingJobs.values.firstOrNull()
-                    it.copy(
-                        downloadJobs = remainingJobs,
-                        downloadingModelId = nextJob?.modelId,
-                        downloadProgress = nextJob?.progress ?: 0f,
-                        downloadSpeedMbps = nextJob?.speedMbps ?: 0f,
-                        downloadFileName = nextJob?.fileName.orEmpty(),
-                    )
-                }
-                refresh()
-            }
-        }
-        downloadJobs[model.id] = job
+        ModelDownloadForegroundService.startDownload(
+            context = context,
+            model = model,
+            parallelism = manager.downloadParallelism,
+        )
     }
 
     /** Cancel a specific ongoing download. */
     fun cancelDownload(modelId: String) {
-        downloadJobs.remove(modelId)?.cancel()
-        _state.update {
-            val remainingJobs = it.downloadJobs - modelId
-            val nextJob = remainingJobs.values.firstOrNull()
-            it.copy(
-                downloadJobs = remainingJobs,
-                downloadingModelId = nextJob?.modelId,
-                downloadProgress = nextJob?.progress ?: 0f,
-                downloadSpeedMbps = nextJob?.speedMbps ?: 0f,
-                downloadFileName = nextJob?.fileName.orEmpty(),
-            )
-        }
+        ModelDownloadForegroundService.cancelDownload(context, modelId)
         refresh()
     }
 
@@ -621,3 +570,9 @@ private fun ModelInfo.toActiveInferenceModel(backendLabel: String? = null): Acti
         runtime = runtime,
         backendLabel = backendLabel?.takeIf { it.isNotBlank() },
     )
+
+private fun ModelDownloadUiState.isRunningDownload(): Boolean =
+    phase == ModelDownloadUiPhase.QUEUED ||
+        phase == ModelDownloadUiPhase.CONNECTING ||
+        phase == ModelDownloadUiPhase.DOWNLOADING ||
+        phase == ModelDownloadUiPhase.VALIDATING

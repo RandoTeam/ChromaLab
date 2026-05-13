@@ -71,22 +71,32 @@ Implementation reference:
 
 Goal: downloads must continue when the user leaves the screen or minimizes the app.
 
-Status: not started.
+Status: implemented, needs real-device background verification.
 
 Subpoints:
 
-- Not done: move download execution out of UI/composition scope.
-- Not done: implement Android foreground download service with a visible notification for long model downloads.
-- Not done: keep downloads running after navigating to another screen.
-- Not done: keep downloads running when the app is minimized, within Android foreground service limits.
-- Not done: reconnect UI state to active service downloads after returning to the app.
-- Not done: persist enough download metadata to recover status after process recreation.
-- Not done: preserve cancellation by model id from the UI.
-- Not done: document behavior when Android kills the app process.
+- Done: move download execution out of UI/composition scope.
+- Done: implement Android foreground download service with a visible notification for long model downloads.
+- Done: keep downloads running after navigating to another screen, because execution lives in the service.
+- Done: keep downloads running when the app is minimized, within Android foreground service limits.
+- Done: reconnect UI state to active service downloads after returning to the app through process-wide `StateFlow`.
+- Done: persist model download requests, including Hugging Face/custom model file metadata and selected parallelism.
+- Done: resume pending requests when the service or controller is recreated.
+- Done: preserve cancellation by model id from the UI.
+- Done: document behavior when Android kills the app process.
+- Not done: request Android 13+ notification permission in-app before starting long downloads.
+- Not done: real-device verification with app minimized for a full multi-GB model download.
 
 Technical rule:
 
 - Use native Android foreground-service behavior for long downloads. Do not fake background work through hidden UI scopes.
+
+Process-kill behavior:
+
+- If Android recreates the service, pending requests are read from app preferences and started again.
+- Sequential downloads can reuse the existing `.download` temp file.
+- Parallel range downloads currently restart the active file after process death because individual chunk completion maps are not persisted.
+- Force-stop by the user or OS policy can still stop all work; Android does not allow an app to restart itself after force-stop.
 
 ## Phase 4 - Download Speed Limit
 
@@ -135,11 +145,13 @@ Technical rule:
 
 ## Current Next Phase
 
-The next phase to work on is Phase 3 - Background Downloads.
+The next phase to work on is Phase 4 - Download Speed Limit.
 
-Before starting Phase 3, verify Phase 1 and Phase 2 on a real device:
+Before starting Phase 4, verify Phase 1, Phase 2, and Phase 3 on a real device:
 
 - Start two model downloads at the same time.
 - Start one large download with 4x or 8x parallelism.
 - Cancel only one active download and confirm the other continues.
 - Confirm finished files pass validation and appear as downloaded models.
+- Start a download, leave the model screen, and confirm it continues.
+- Minimize the app during a download and confirm the foreground notification stays active.

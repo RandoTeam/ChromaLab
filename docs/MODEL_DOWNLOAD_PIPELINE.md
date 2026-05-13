@@ -22,10 +22,21 @@ Single model files can now use HTTP range chunk downloading.
 - If the server does not return partial content, the downloader falls back to the older sequential/resumable path.
 - File validation still runs after each file, so a completed download is checked before the model is treated as available.
 
-## Not In Phase 2
+## Phase 3 Status
 
-- Foreground/background Android download service.
+Downloads now run in a native Android foreground service.
+
+- Download execution is owned by `ModelDownloadForegroundService`, not by a Compose UI scope.
+- The service shows a persistent low-priority notification while downloads are active.
+- UI controllers observe service state through a process-wide `StateFlow`.
+- Active download requests are persisted with model metadata and selected parallelism.
+- If the service/controller is recreated, pending requests are resumed from preferences.
+- Cancelling still targets one model id and does not cancel other model downloads.
+
+## Not In Phase 3
+
 - Global speed limiter.
-- Persistent restart after process death.
+- Persisted per-chunk completion maps for parallel range downloads after process death.
+- Android 13+ runtime notification permission request before long downloads.
 
-These are intentionally left for the next phases so chunked downloading does not change storage format or runtime loading.
+These are intentionally left for the next phases so background execution stays separate from speed throttling and model lifecycle changes.
