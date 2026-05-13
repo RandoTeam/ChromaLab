@@ -1,7 +1,8 @@
 # ChromaLab Local Knowledge Pack
 
 Phase 7.1 defines the offline knowledge-pack schema. Phase 7.2 adds the first conservative
-GC-MS EI `m/z 92` and alkylbenzene-oriented reference data.
+GC-MS EI `m/z 92` and alkylbenzene-oriented reference data. Phase 7.3 adds n-paraffin
+reference-series support for Kovats calculations.
 
 The goal is to keep chemical interpretation conservative and auditable:
 
@@ -16,6 +17,7 @@ The goal is to keep chemical interpretation conservative and auditable:
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgePackModels.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgePackValidator.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/ChromaLabBaseKnowledgePack.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/KovatsIndexCalculator.kt
 ```
 
 ## Top-Level Groups
@@ -55,6 +57,9 @@ It currently includes:
 - A conservative `monoalkylbenzenes` compound class.
 - A `monoalkylbenzene-carbon-series` candidate series for C7-C30.
 - A non-polar temperature-ramp Kovats seed library for C7-C8 alkylbenzenes.
+- A `n-paraffins` compound class for straight-chain alkane references.
+- A `n-paraffin-reference-series` for C7-C30.
+- A C7-C30 Kovats reference scale where each n-paraffin anchor has RI `100 * carbonNumber`.
 
 The built-in pack is intentionally conservative:
 
@@ -62,10 +67,30 @@ The built-in pack is intentionally conservative:
 - Alkylbenzene labels are candidate labels until retention index, adjacent ions, full spectrum, or user/library confirmation support the assignment.
 - Xylene and ethylbenzene isomers are kept as separate reference entries, but their shared formula and overlapping RI behavior must be treated as an ambiguity, not a resolved identity.
 - The C7-C8 RI records are broad seed ranges from NIST WebBook literature records; they are suitable for candidate ranking and warnings, not final release-quality naming by themselves.
+- The n-paraffin built-in entries define the RI scale only. They do not provide measured reference retention times for a user's chromatographic method.
+
+## Kovats Calculation Support
+
+`KovatsIndexCalculator` supports two formulas:
+
+- `VAN_DEN_DOOL_KRATZ_LINEAR` for temperature-programmed GC.
+- `KOVATS_ISOTHERMAL_LOG` for isothermal Kovats calculations.
+
+The calculator requires:
+
+- positive finite target retention time;
+- at least two n-paraffin reference retention times;
+- reference retention times that increase with carbon number;
+- the adjacent bracketing n-paraffins that elute immediately before and after the target peak.
+
+If the measured reference series is missing, non-monotonic, out of range, or lacks adjacent
+bracketing references, the calculator returns a non-calculable status instead of estimating a weak
+Kovats value.
 
 ## Source Links
 
 - NIST Chemistry WebBook, SRD 69: <https://webbook.nist.gov/chemistry/>
+- NIST GC retention data: <https://webbook.nist.gov/chemistry/gc-ri/>
 - Toluene: <https://webbook.nist.gov/cgi/cbook.cgi?ID=C108883>
 - Ethylbenzene: <https://webbook.nist.gov/cgi/cbook.cgi?ID=C100414>
 - m-Xylene: <https://webbook.nist.gov/cgi/cbook.cgi?ID=C108383>
@@ -74,9 +99,9 @@ The built-in pack is intentionally conservative:
 
 ## Phase Boundaries
 
-Phase 7.2 intentionally does not:
+Phase 7.3 intentionally does not:
 
-- calculate Kovats indices;
+- connect Kovats calculation results into report mapping or UI;
 - assign compounds to peaks;
 - generate warning rules for co-elution, contamination, weak baseline, weak crop, or unsupported runtimes;
 - change report rendering or UI.

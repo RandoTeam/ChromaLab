@@ -23,6 +23,8 @@ class ChromaLabBaseKnowledgePackTest {
         assertEquals(pack, decoded)
         assertEquals("chromalab-base", decoded.id)
         assertEquals("gc-ms-ei-eic", decoded.chromatogramTypes.single().id)
+        assertTrue(decoded.compoundClasses.any { it.id == "n-paraffins" })
+        assertTrue(decoded.carbonNumberSeries.any { it.id == "n-paraffin-reference-series" })
     }
 
     @Test
@@ -96,6 +98,32 @@ class ChromaLabBaseKnowledgePackTest {
                     it.text.contains("verified compound names")
             },
         )
+    }
+
+    @Test
+    fun nParaffinReferenceScaleDefinesC7ToC30KovatsAnchors() {
+        val pack = ChromaLabBaseKnowledgePack.pack
+        val compoundClass = pack.compoundClasses.single { it.id == "n-paraffins" }
+        val series = pack.carbonNumberSeries.single { it.id == "n-paraffin-reference-series" }
+        val library = pack.kovatsLibraries.single { it.id == "kovats-n-paraffin-reference-scale-c7-c30" }
+
+        assertEquals("CnH2n+2", compoundClass.formulaPattern)
+        assertEquals(KnowledgeIntRange(7, 30), compoundClass.carbonNumberRange)
+        assertEquals("n-paraffins", series.compoundClassId)
+        assertEquals(RetentionOrder.INCREASES_WITH_CARBON_NUMBER, series.retentionOrder)
+        assertEquals("n-C{n} paraffin reference", series.memberNameTemplate)
+        assertEquals("n-paraffin-reference-series", library.referenceSeriesId)
+        assertEquals(24, library.entries.size)
+
+        library.entries.forEachIndexed { index, entry ->
+            val carbonNumber = index + 7
+            assertEquals(carbonNumber, entry.carbonNumber)
+            assertEquals("C${carbonNumber}H${carbonNumber * 2 + 2}", entry.formula)
+            assertEquals(carbonNumber * 100.0, entry.kovatsIndex)
+            assertEquals("n-paraffins", entry.compoundClassId)
+            assertEquals(KnowledgeEvidence.LITERATURE, entry.evidence)
+            assertEquals(listOf("nist-gc-retention-data"), entry.sourceIds)
+        }
     }
 
     private companion object {
