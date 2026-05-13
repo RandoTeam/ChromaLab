@@ -57,6 +57,34 @@
       "requiredHandling": "Do not copy the reference claim as a numeric result unless extracted signal data supports it. Flag discrepancy when needed."
     }
   ],
+  "visualAudit": {
+    "phase": "6.5",
+    "method": "desktop_test_dark_pixel_column_audit",
+    "status": "tension_confirmed",
+    "plotGeometryEstimate": {
+      "signalTopY": 500,
+      "plotBottomY": 860,
+      "tenMinuteTickX": 134,
+      "fiftyFiveMinuteTickX": 524
+    },
+    "earlyWindow": {
+      "minutes": [8.0, 20.0],
+      "tallestDarkFeature": {
+        "x": 148,
+        "timeApproxMinutes": 11.62,
+        "heightPixels": 99
+      }
+    },
+    "referenceClaimWindow": {
+      "minutes": [48.0, 50.5],
+      "tallestDarkFeature": {
+        "x": 467,
+        "timeApproxMinutes": 48.42,
+        "heightPixels": 37
+      }
+    },
+    "requiredHandling": "Reports must warn about the early-dominant-peak tension unless extracted signal data later proves the 49 min claim."
+  },
   "requiredReportSections": [
     "overview",
     "source_and_graph_preparation",

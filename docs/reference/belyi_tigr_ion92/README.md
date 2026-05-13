@@ -116,6 +116,15 @@ The test verifies that the committed JPEG keeps its expected SHA-256, byte size,
 
 This fixture still does not lock peak areas, FWHM, baseline, noise, or compound assignments. Those values must come from later graph extraction and calculation validation, not from manual reference prose.
 
+## Dominant-Peak Tension Gate
+
+Phase 6.5 adds a desktop-test pixel audit for the known conflict between the reference text and the screenshot. The test uses an approximate plot geometry and dark-pixel column scan inside the graph area:
+
+- early window `8.0..20.0 min`: tallest dark feature at about `11.62 min`, `99 px` above baseline;
+- reference-claim window `48.0..50.5 min`: tallest dark feature at about `48.42 min`, `37 px` above baseline.
+
+This is not final peak integration. It is a regression gate that prevents a report from blindly copying the reference text claim that the dominant peak is near `49.0 min` unless later extracted signal data proves it. Until then, the report must keep `dominant_peak_reference_discrepancy`.
+
 ## Executable Fixture
 
 The phase 1.5 Kotlin fixture lives at:
