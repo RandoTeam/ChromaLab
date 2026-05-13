@@ -962,6 +962,7 @@ fun ProcessingFlowScreen(
                 // Error overlay on top
                 val error = processingError
                 if (error != null) {
+                    val blocksSkip = blocksFullAnalysisSkip(error)
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center,
@@ -988,6 +989,13 @@ fun ProcessingFlowScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                 )
+                                if (blocksSkip) {
+                                    Text(
+                                        "Full photo analysis requires a working vision model. This stage cannot be skipped.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                    )
+                                }
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                 ) {
@@ -1002,11 +1010,13 @@ fun ProcessingFlowScreen(
                                     }) {
                                         Text("Повторить")
                                     }
-                                    TextButton(onClick = {
-                                        processingError = null
-                                        advance(currentStep)
-                                    }) {
-                                        Text("Пропустить")
+                                    if (!blocksSkip) {
+                                        TextButton(onClick = {
+                                            processingError = null
+                                            advance(currentStep)
+                                        }) {
+                                            Text("Пропустить")
+                                        }
                                     }
                                 }
                             }

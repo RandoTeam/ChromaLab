@@ -34,6 +34,7 @@ Source image or file
 - Missing data must be shown as `not calculated`, `not detected`, or `insufficient confidence`.
 - A report must not hide failed stages. Failed crop, axis extraction, calibration, peak integration, or model execution must be visible.
 - A deterministic-only approximation must not be presented as a completed neural vision analysis.
+- Full photo chromatogram analysis must stop when the required image-capable model is missing or fails; the user must not be able to skip that failure into a release-quality report.
 - The report must show the actual runtime that was used, not only the model selected in the UI.
 - Any mismatch between selected model and executed runtime must be flagged.
 

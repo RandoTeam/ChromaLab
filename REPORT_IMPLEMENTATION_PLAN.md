@@ -161,7 +161,7 @@ Goal: keep chromatography models, chat models, OCR-only models, LiteRT, and GGUF
 
 - [~] 9.1 Shared downloaded/custom model pool exists.
 - [~] 9.2 Chat hides OCR/document-only models from normal text assistant selection.
-- [ ] 9.3 Enforce that full chromatogram photo analysis requires a vision-capable model.
+- [x] 9.3 Enforce that full chromatogram photo analysis requires a vision-capable model.
 - [ ] 9.4 Enforce GGUF base model plus matching `mmproj` before image analysis.
 - [ ] 9.5 Record selected runtime and actual executed runtime in report metadata.
 - [ ] 9.6 Diagnose and fix empty GGUF chat responses and stuck GGUF image-analysis stages.
@@ -171,6 +171,7 @@ Exit criteria:
 
 - The app never pretends that the selected model/runtime was used when another engine actually ran.
 - GGUF failures are clear and actionable.
+- Mandatory vision-model failures cannot be skipped into a deterministic-only full photo analysis.
 
 ## Phase 10 - Alpha Release Validation
 
@@ -214,7 +215,8 @@ Exit criteria:
 - `d974b9e` - Add compact report metadata.
 - `81b59e1` - Add structured report HTML export.
 - `f9e7f62` - Apply mobile report UX guardrails.
+- `1d1a9a2` - Show compact report quality states.
 
 ## Next Recommended Slice
 
-Start Phase 9.3: enforce that full chromatogram photo analysis requires a vision-capable model.
+Start Phase 9.4: enforce GGUF base model plus matching `mmproj` before image analysis.
