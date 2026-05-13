@@ -56,7 +56,7 @@ object CalculationRunReportMapper {
         val methodQuality = run.methodQuality ?: MethodQualityAnalyzer.analyze(sortedPeaks, run.signals)
         val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex, options)
 
-        return ChromatogramReport(
+        val report = ChromatogramReport(
             metadata = ReportMetadata(
                 reportId = "calculation_${run.id}",
                 appVersion = options.appVersion,
@@ -92,6 +92,7 @@ object CalculationRunReportMapper {
             ),
             warnings = buildReportWarnings(options, graphIndex),
         )
+        return ReportWarningRuleEngine.apply(report)
     }
 
     private fun buildSourceMetadata(

@@ -120,12 +120,14 @@ Goal: make chemical interpretation offline, structured, and conservative.
 - [x] 7.2 Add `m/z 92` and alkylbenzene-oriented reference data.
 - [x] 7.3 Add n-paraffin reference series support for Kovats calculations.
 - [x] 7.4 Distinguish calculated, detected, inferred, local-knowledge, and model-suggested values.
-- [ ] 7.5 Add warning rules for co-elution, contamination, weak baseline, weak crop, and unsupported model/runtime.
+- [x] 7.5 Add warning rules for co-elution, contamination, weak baseline, weak crop, and unsupported model/runtime.
 
 Exit criteria:
 
 - The app does not rely on small-model memory for domain facts.
 - Chemical conclusions show basis and confidence.
+- Rule-based quality warnings are produced from structured report data and serious graph warnings
+  are mirrored into chromatographic quality anomalies.
 
 ## Phase 8 - Professional Report UI And Export
 
@@ -199,7 +201,8 @@ Exit criteria:
 - `6bd442f` - Add local knowledge pack schema.
 - `4707498` - Add mz 92 alkylbenzene knowledge data.
 - `30df15d` - Add n-paraffin Kovats reference support.
+- `8419d9d` - Add report value provenance audit.
 
 ## Next Recommended Slice
 
-Start Phase 7.5: add warning rules for co-elution, contamination, weak baseline, weak crop, and unsupported model/runtime.
+Start Phase 8.3: build the final report screen with readable sections, tables, warnings, and technical appendix, using the mobile UI/UX guardrails.

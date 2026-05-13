@@ -389,6 +389,18 @@ Required warning examples:
 - OCR-only model attempted for text chat or full chromatogram analysis;
 - Kovats index differs from literature beyond threshold.
 
+The implementation must also generate structured rule-based warning codes for release-critical
+states. These warnings are part of the report data, not free-form model prose:
+
+- `graph.crop_confidence_low` and `graph.crop_review_required` for weak graph preparation;
+- `peak.coelution_suspected` and `separation.minimum_resolution_low` for overlap or poor separation;
+- `peak.dominant_peak_review` and `peak.dominant_height_review` for dominant peaks that may represent contamination, internal standards, solvent/front artifacts, or co-elution;
+- `baseline.quality_poor`, `baseline.correction_missing`, `baseline.noise_high`, and `baseline.drift_high` for weak baseline conditions;
+- `runtime.full_analysis_without_neural_vision`, `runtime.ocr_only_full_analysis`, `runtime.executed_unknown`, and `runtime.selected_gguf_not_executed` for unsupported or mismatched model/runtime execution.
+
+Serious or failed graph-level warnings must also appear in the chromatographic quality anomaly
+list so the user-facing report can summarize them without hiding the technical audit trail.
+
 ### 10. Technical Appendix
 
 Purpose: make results reproducible.
