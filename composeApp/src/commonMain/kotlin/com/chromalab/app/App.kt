@@ -217,10 +217,7 @@ fun App() {
                 composable<Route.ModelManager> {
                     ModelManagerScreen(
                         downloadedModelIds = modelState.downloadedModelIds,
-                        activeModelId = modelState.activeModelId,
                         downloadJobs = modelState.downloadJobs,
-                        activatingModelId = modelState.activatingModelId,
-                        activationError = modelState.activationError,
                         deviceRamMb = modelState.deviceRamMb,
                         availableStorageGb = modelState.availableStorageGb,
                         totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,
@@ -229,8 +226,6 @@ fun App() {
                         huggingFaceSearch = modelState.huggingFaceSearch,
                         onDownload = { modelActions.download(it) },
                         onDelete = { modelActions.delete(it) },
-                        onActivate = { modelActions.activate(it) },
-                        onDeactivate = { modelActions.deactivate() },
                         onCancelDownload = { modelActions.cancelDownload(it) },
                         onExport = { modelActions.onExport(it) },
                         onImport = { modelActions.onImport() },

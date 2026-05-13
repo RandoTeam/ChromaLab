@@ -1,19 +1,16 @@
 package com.chromalab.feature.settings
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,7 +19,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
@@ -48,10 +44,7 @@ import com.chromalab.feature.processing.model.ModelRegistry
 @Composable
 fun ModelManagerScreen(
     downloadedModelIds: Set<String>,
-    activeModelId: String?,
     downloadJobs: Map<String, ModelDownloadUiState>,
-    activatingModelId: String?,
-    activationError: String?,
     deviceRamMb: Int,
     availableStorageGb: Float,
     totalModelDiskUsageGb: Float,
@@ -60,8 +53,6 @@ fun ModelManagerScreen(
     huggingFaceSearch: HuggingFaceSearchState = HuggingFaceSearchState(),
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
-    onActivate: (String) -> Unit,
-    onDeactivate: () -> Unit = {},
     onCancelDownload: (String) -> Unit = {},
     onExport: (String) -> Unit = {},
     onImport: () -> Unit,
@@ -95,17 +86,6 @@ fun ModelManagerScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            // ===== Active Model Banner =====
-            val activeModel = activeModelId?.let { ModelRegistry.findById(it) }
-            if (activeModel != null) {
-                item {
-                    ActiveModelBanner(
-                        model = activeModel,
-                        onDeactivate = onDeactivate,
-                    )
-                }
-            }
-
             // ===== LiteRT-LM Section =====
             item {
                 SectionHeader(
@@ -122,15 +102,12 @@ fun ModelManagerScreen(
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
-                    isActive = model.id == activeModelId,
                     isDownloading = downloadJob.isRunning(),
-                    isActivating = model.id == activatingModelId,
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
-                    onActivate = { onActivate(model.id) },
                     onExport = { onExport(model.id) },
                     onCancelDownload = { onCancelDownload(model.id) },
                 )
@@ -168,13 +145,10 @@ fun ModelManagerScreen(
                     ExpandableModelGroup(
                         group = group,
                         downloadedModelIds = downloadedModelIds,
-                        activeModelId = activeModelId,
                         downloadJobs = downloadJobs,
-                        activatingModelId = activatingModelId,
                         deviceRamMb = deviceRamMb,
                         onDownload = onDownload,
                         onDelete = { deleteConfirmId = it },
-                        onActivate = onActivate,
                         onExport = onExport,
                         onCancelDownload = onCancelDownload,
                     )
@@ -188,15 +162,12 @@ fun ModelManagerScreen(
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
-                    isActive = model.id == activeModelId,
                     isDownloading = downloadJob.isRunning(),
-                    isActivating = model.id == activatingModelId,
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
-                    onActivate = { onActivate(model.id) },
                     onExport = { onExport(model.id) },
                     onCancelDownload = { onCancelDownload(model.id) },
                 )
@@ -243,9 +214,6 @@ fun ModelManagerScreen(
             items(customModels, key = { it.id }) { custom ->
                 CustomModelCard(
                     custom = custom,
-                    isActive = custom.id == activeModelId,
-                    isActivating = custom.id == activatingModelId,
-                    onActivate = { onActivate(custom.id) },
                     onDelete = { deleteConfirmId = custom.id },
                     onExport = { onExport(custom.id) },
                 )
@@ -299,22 +267,6 @@ fun ModelManagerScreen(
             }
         }
 
-        // Error Snackbar at bottom
-        if (activationError != null) {
-            Snackbar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Error, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(activationError, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
         } // Box
     }
 
@@ -623,13 +575,10 @@ private fun HuggingFaceResultRow(
 private fun ExpandableModelGroup(
     group: ModelGroup,
     downloadedModelIds: Set<String>,
-    activeModelId: String?,
     downloadJobs: Map<String, ModelDownloadUiState>,
-    activatingModelId: String?,
     deviceRamMb: Int,
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
-    onActivate: (String) -> Unit,
     onExport: (String) -> Unit,
     onCancelDownload: (String) -> Unit,
 ) {
@@ -637,15 +586,12 @@ private fun ExpandableModelGroup(
 
     // Count how many variants are downloaded
     val downloadedCount = group.variants.count { it.id in downloadedModelIds }
-    val hasActive = group.variants.any { it.id == activeModelId }
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (hasActive)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            else MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column {
@@ -740,15 +686,12 @@ private fun ExpandableModelGroup(
                         QuantVariantCard(
                             variant = variant,
                             isDownloaded = variant.id in downloadedModelIds,
-                            isActive = variant.id == activeModelId,
                             isDownloading = downloadJob.isRunning(),
-                            isActivating = variant.id == activatingModelId,
                             downloadProgress = downloadJob?.progress ?: 0f,
                             downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                             deviceRamMb = deviceRamMb,
                             onDownload = { onDownload(variant) },
                             onDelete = { onDelete(variant.id) },
-                            onActivate = { onActivate(variant.id) },
                             onExport = { onExport(variant.id) },
                             onCancelDownload = { onCancelDownload(variant.id) },
                         )
@@ -766,15 +709,12 @@ private fun ExpandableModelGroup(
 private fun QuantVariantCard(
     variant: ModelInfo,
     isDownloaded: Boolean,
-    isActive: Boolean,
     isDownloading: Boolean,
-    isActivating: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
     deviceRamMb: Int,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
-    onActivate: () -> Unit,
     onExport: () -> Unit,
     onCancelDownload: () -> Unit,
 ) {
@@ -782,20 +722,10 @@ private fun QuantVariantCard(
     val animatedProgress by animateFloatAsState(targetValue = downloadProgress, label = "dl")
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isActive) Modifier.border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(12.dp),
-                ) else Modifier
-            ),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            else MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -807,15 +737,8 @@ private fun QuantVariantCard(
                 Text(
                     variant.quantLabel ?: variant.displayName,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                    fontWeight = FontWeight.Medium,
                 )
-                if (isActive) {
-                    Spacer(Modifier.width(6.dp))
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                        Text("✓", modifier = Modifier.padding(horizontal = 2.dp))
-                    }
-                }
-
                 Spacer(Modifier.weight(1f))
 
                 // Size + RAM info
@@ -897,13 +820,6 @@ private fun QuantVariantCard(
                             Spacer(Modifier.width(2.dp))
                             Text("Удалить", style = MaterialTheme.typography.labelSmall)
                         }
-                        if (!isActive && !isActivating) {
-                            Spacer(Modifier.width(4.dp))
-                            ActivateButton(isActivating = false, onActivate = onActivate)
-                        }
-                    }
-                    isActivating -> {
-                        ActivateButton(isActivating = true, onActivate = {})
                     }
                     else -> {
                         FilledTonalButton(
@@ -922,52 +838,28 @@ private fun QuantVariantCard(
     }
 }
 
+
 @Composable
 private fun ModelCard(
     model: ModelInfo,
     isDownloaded: Boolean,
-    isActive: Boolean,
     isDownloading: Boolean,
-    isActivating: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
     deviceRamMb: Int,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
-    onActivate: () -> Unit,
     onExport: () -> Unit = {},
     onCancelDownload: () -> Unit = {},
 ) {
     val ramOk = deviceRamMb >= model.minRamMb
     val animatedProgress by animateFloatAsState(targetValue = downloadProgress, label = "dl")
 
-    // Active glow border
-    val borderColor by animateColorAsState(
-        targetValue = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-        else Color.Transparent,
-        label = "border",
-    )
-
     ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isActive) Modifier.border(
-                    width = 1.5.dp,
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                        ),
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                ) else Modifier
-            ),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isActive)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-            else MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1006,12 +898,6 @@ private fun ModelCard(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
-                        if (isActive) {
-                            Spacer(Modifier.width(8.dp))
-                            Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                                Text("✓", modifier = Modifier.padding(horizontal = 2.dp))
-                            }
-                        }
                     }
 
                     Spacer(Modifier.height(4.dp))
@@ -1174,7 +1060,7 @@ private fun ModelCard(
                             Text("Отмена")
                         }
                     }
-                    isDownloaded && isActive -> {
+                    isDownloaded -> {
                         TextButton(onClick = onExport) {
                             Icon(Icons.Filled.Upload, null, Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
@@ -1186,30 +1072,6 @@ private fun ModelCard(
                             Spacer(Modifier.width(4.dp))
                             Text("Удалить")
                         }
-                    }
-                    isDownloaded && !isActive && !isActivating -> {
-                        TextButton(onClick = onExport) {
-                            Icon(Icons.Filled.Upload, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Выгрузить")
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = onDelete) {
-                            Icon(Icons.Filled.Delete, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Удалить")
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        ActivateButton(
-                            isActivating = isActivating,
-                            onActivate = onActivate,
-                        )
-                    }
-                    isActivating -> {
-                        ActivateButton(
-                            isActivating = true,
-                            onActivate = {},
-                        )
                     }
                     else -> {
                         FilledTonalButton(
@@ -1227,122 +1089,20 @@ private fun ModelCard(
     }
 }
 
-@Composable
-private fun ActiveModelBanner(
-    model: ModelInfo,
-    onDeactivate: () -> Unit,
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = EaseInOutCubic),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "glow",
-    )
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = glowAlpha),
-                            MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha * 0.3f),
-                        ),
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                )
-                .padding(16.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.Psychology,
-                        null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "Активная модель",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        model.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    val runtime = when (model.runtime) {
-                        ModelRuntime.LITERT_LM -> "LiteRT GPU"
-                        ModelRuntime.LLAMA_CPP -> "llama.cpp"
-                    }
-                    Text(
-                        "$runtime · ${formatBytes(model.totalSizeBytes)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                // Deactivate button
-                IconButton(onClick = onDeactivate) {
-                    Icon(
-                        Icons.Filled.PowerSettingsNew,
-                        contentDescription = "Выгрузить",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-    }
-}
-
 /**
  * Card for a custom/imported model.
  */
 @Composable
 private fun CustomModelCard(
     custom: CustomModelEntry,
-    isActive: Boolean,
-    isActivating: Boolean,
-    onActivate: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
 ) {
     ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (isActive) Modifier.border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(16.dp),
-                ) else Modifier
-            ),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = if (isActive)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            else MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1372,11 +1132,6 @@ private fun CustomModelCard(
                         )
                     }
                 }
-                if (isActive) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                        Text("Активна", modifier = Modifier.padding(horizontal = 4.dp))
-                    }
-                }
             }
 
             Spacer(Modifier.height(4.dp))
@@ -1401,13 +1156,6 @@ private fun CustomModelCard(
                     Icon(Icons.Filled.Delete, null, Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
                     Text("Удалить", style = MaterialTheme.typography.labelSmall)
-                }
-                if (!isActive && !isActivating) {
-                    Spacer(Modifier.width(4.dp))
-                    ActivateButton(isActivating = false, onActivate = onActivate)
-                } else if (isActivating) {
-                    Spacer(Modifier.width(4.dp))
-                    ActivateButton(isActivating = true, onActivate = {})
                 }
             }
         }
@@ -1521,81 +1269,6 @@ private fun DeviceInfoCard(
                     fontWeight = FontWeight.Medium,
                 )
             }
-        }
-    }
-}
-
-/**
- * Capsule "Activate" button with animated gradient fill during loading.
- *
- * Normal: "▶ Активировать" (tonal button)
- * Loading: Animated gradient fill left→right + spinner + "Загрузка..."
- */
-@Composable
-private fun ActivateButton(
-    isActivating: Boolean,
-    onActivate: () -> Unit,
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "activate")
-    val fillOffset by infiniteTransition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = LinearEasing),
-        ),
-        label = "fill",
-    )
-
-    Box(
-        modifier = Modifier
-            .height(40.dp)
-            .clip(RoundedCornerShape(20.dp)),
-    ) {
-        FilledTonalButton(
-            onClick = onActivate,
-            enabled = !isActivating,
-            modifier = Modifier.height(40.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                disabledContentColor = MaterialTheme.colorScheme.onSurface,
-            ),
-        ) {
-            if (isActivating) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(14.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text("Загрузка…")
-            } else {
-                Icon(Icons.Filled.PlayArrow, null, Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Активировать")
-            }
-        }
-
-        // Animated gradient overlay during activation
-        if (isActivating) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                Color.Transparent,
-                            ),
-                            startX = fillOffset * 200f,
-                            endX = (fillOffset + 0.5f) * 200f,
-                        )
-                    ),
-            )
         }
     }
 }

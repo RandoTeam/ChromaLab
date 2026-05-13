@@ -124,12 +124,12 @@ Technical rule:
 
 Goal: downloaded models are stored on disk, but not loaded into memory until the active workflow needs them.
 
-Status: not started for the new lifecycle contract; existing model activation logic remains older behavior.
+Status: in progress. Phase 5.1 completed for the shared model manager UI; chat and chromatogram runtime lifecycle still use the older activation path.
 
 Subpoints:
 
-- Not done: remove the Activation action from the model download/settings section.
-- Not done: make the model manager a download/import/storage screen, not a memory-loading screen.
+- Done: remove the Activation action from the model download/settings section.
+- Done: make the model manager a download/import/storage screen, not a memory-loading screen.
 - Not done: separate chat-capable models from chromatogram/vision analysis models.
 - Not done: add dedicated "use for chromatograms" selection.
 - Not done: load the selected chat model only when chat needs inference.
@@ -144,10 +144,11 @@ Subpoints:
 Technical rule:
 
 - Model lifecycle changes must not weaken chromatogram analysis quality. If a required vision model cannot load, the analysis must stop with a clear error rather than producing a deterministic-only report.
+- Phase 5.1 intentionally leaves `activate()` available for chat and pipeline code until those workflows get their own explicit loaders.
 
 ## Current Next Phase
 
-The next phase to work on is Phase 5 - Model Loading, Roles, And Lifecycle.
+The next phase to work on is Phase 5.2 - Model Role Selection.
 
 Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 

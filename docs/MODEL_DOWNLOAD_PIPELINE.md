@@ -44,10 +44,19 @@ Model downloads now support a global user-configured speed limit.
 - Progress speed is measured after throttling, so the displayed speed reflects the effective limited throughput.
 - Download validation and partial-download behavior are unchanged.
 
+## Phase 5.1 Status
+
+The shared model manager is now a storage/download/import screen.
+
+- Built-in, Hugging Face, and imported model cards no longer show Activate actions.
+- The model manager route no longer receives activation state or activation callbacks from app navigation.
+- Existing download, cancel, delete, import, export, and compatibility displays remain available.
+- Chat and chromatogram analysis still keep their older runtime activation paths until Phase 5.2+ adds explicit workflow model selection and loaders.
+
 ## Not In Phase 4
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Model memory lifecycle changes, role separation, and per-workflow model loading.
+- Full model memory lifecycle changes, role separation, and per-workflow model loading.
 
 These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.
