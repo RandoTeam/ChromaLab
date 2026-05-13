@@ -115,6 +115,8 @@ fun ChromatogramChart(
     modifier: Modifier = Modifier,
     onPeakTap: ((Int) -> Unit)? = null,
     axisPadding: Float = 48f,
+    interactive: Boolean = true,
+    showPeakLabels: Boolean = false,
 ) {
     // Compute full data bounds
     val fullViewport = remember(state.layers) {
@@ -125,10 +127,12 @@ fun ChromatogramChart(
 
     val textMeasurer = rememberTextMeasurer()
 
-    Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 200.dp)
+    var chartModifier = modifier
+        .fillMaxWidth()
+        .heightIn(min = 200.dp)
+
+    if (interactive) {
+        chartModifier = chartModifier
             .pointerInput(Unit) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
                     val chartWidth = size.width - axisPadding
@@ -169,7 +173,9 @@ fun ChromatogramChart(
                     }
                 }
             }
-    ) {
+    }
+
+    Canvas(modifier = chartModifier) {
         val chartLeft = axisPadding
         val chartWidth = size.width - axisPadding
         val chartHeight = size.height - axisPadding
@@ -205,7 +211,7 @@ fun ChromatogramChart(
 
             // Peak markers
             state.peaks.forEachIndexed { _, peak ->
-                drawPeakMarker(peak, viewport, chartLeft, chartWidth, chartHeight)
+                drawPeakMarker(peak, viewport, chartLeft, chartWidth, chartHeight, textMeasurer, showPeakLabels)
             }
         }
     }
@@ -295,6 +301,8 @@ private fun DrawScope.drawPeakMarker(
     chartLeft: Float,
     chartWidth: Float,
     chartHeight: Float,
+    textMeasurer: TextMeasurer,
+    showLabel: Boolean,
 ) {
     val apexX = chartLeft + ((peak.apexTime - viewport.timeMin) / viewport.timeRange * chartWidth).toFloat()
     val apexY = chartHeight - ((peak.apexIntensity - viewport.intensityMin) / viewport.intensityRange * chartHeight).toFloat()
@@ -322,6 +330,15 @@ private fun DrawScope.drawPeakMarker(
             center = Offset(apexX, apexY),
             style = Stroke(width = 2f),
         )
+    }
+
+    if (showLabel && peak.label.isNotBlank()) {
+        val labelStyle = TextStyle(fontSize = 9.sp, color = peak.confidenceColor)
+        val measured = textMeasurer.measure(peak.label, labelStyle)
+        val maxLabelX = max(chartLeft, chartLeft + chartWidth - measured.size.width)
+        val labelX = (apexX + 5f).coerceIn(chartLeft, maxLabelX)
+        val labelY = (apexY - measured.size.height - 4f).coerceIn(0f, chartHeight - measured.size.height)
+        drawText(measured, topLeft = Offset(labelX, labelY))
     }
 }
 

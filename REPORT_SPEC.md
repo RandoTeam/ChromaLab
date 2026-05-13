@@ -333,6 +333,11 @@ Required overlays:
 - anomaly markers;
 - optional compound or carbon-number labels.
 
+The in-app report view should render the overlay from the real calculation signal when the
+`CalculationRun` is available. Stored or fixture-only reports may render a clearly secondary
+metric-based overlay from peak RT, height, baseline-at-apex, and integration boundaries, but this
+fallback must not be treated as the original extracted curve.
+
 ### 6. Chromatographic Quality
 
 Purpose: explain whether the calculation can be trusted.

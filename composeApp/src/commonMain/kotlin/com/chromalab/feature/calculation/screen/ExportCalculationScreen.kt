@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.export.*
+import com.chromalab.feature.calculation.flow.CalculationToChartMapper
 import com.chromalab.feature.reports.CalculationRunReportOptions
 import com.chromalab.feature.reports.StructuredReportPreview
 
@@ -54,6 +55,15 @@ fun ExportCalculationScreen(
     }
     val structuredValidation = remember(run, reportOptions) {
         CalculationRunReportExporter.validate(run, reportOptions)
+    }
+    val reportGraphOverlays = remember(run, structuredReport, reportOptions) {
+        val graphIndex = structuredReport.graphs.singleOrNull()?.graphIndex ?: reportOptions.graphIndex.coerceAtLeast(1)
+        mapOf(
+            graphIndex to CalculationToChartMapper.buildChartState(
+                run = run,
+                visibleLayers = setOf("raw", "baseline", "corrected"),
+            ),
+        )
     }
 
     Column(
@@ -142,6 +152,7 @@ fun ExportCalculationScreen(
             StructuredReportPreview(
                 report = structuredReport,
                 validation = structuredValidation,
+                graphOverlays = reportGraphOverlays,
             )
         }
 

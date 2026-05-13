@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -35,6 +37,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
+import com.chromalab.feature.calculation.ui.ChartLayer
+import com.chromalab.feature.calculation.ui.ChartPeakMarker
+import com.chromalab.feature.calculation.ui.ChartPoint
+import com.chromalab.feature.calculation.ui.ChromatogramChart
+import com.chromalab.feature.calculation.ui.ChromatogramChartState
 import kotlin.math.abs
 
 @Composable
@@ -42,6 +49,7 @@ fun StructuredReportPreview(
     report: ChromatogramReport,
     validation: ReportContractValidationResult,
     modifier: Modifier = Modifier,
+    graphOverlays: Map<Int, ChromatogramChartState> = emptyMap(),
 ) {
     val allWarnings = remember(report) { report.allWarnings() }
     val qualityState = remember(report, validation) {
@@ -75,7 +83,10 @@ fun StructuredReportPreview(
         WarningSummary(warnings = allWarnings)
 
         report.graphs.forEach { graph ->
-            GraphReportSection(graph = graph)
+            GraphReportSection(
+                graph = graph,
+                overlay = graphOverlays[graph.graphIndex],
+            )
         }
 
         TechnicalAppendix(report = report, warnings = allWarnings)
@@ -148,13 +159,18 @@ private fun ReportHeader(
 }
 
 @Composable
-private fun GraphReportSection(graph: GraphReport) {
+private fun GraphReportSection(
+    graph: GraphReport,
+    overlay: ChromatogramChartState?,
+) {
     ReportSection(title = "Graph ${graph.graphIndex}") {
         IdentificationBlock(graph)
         HorizontalDivider()
         PreparationBlock(graph)
         HorizontalDivider()
         AxisBlock(graph)
+        HorizontalDivider()
+        GraphOverlayBlock(graph = graph, overlay = overlay)
         HorizontalDivider()
         PeakTable(peaks = graph.peaks)
         HorizontalDivider()
@@ -163,6 +179,40 @@ private fun GraphReportSection(graph: GraphReport) {
         KovatsBlock(graph)
         HorizontalDivider()
         InterpretationBlock(graph)
+    }
+}
+
+@Composable
+private fun GraphOverlayBlock(
+    graph: GraphReport,
+    overlay: ChromatogramChartState?,
+) {
+    SectionBlock(title = "Graph overlay") {
+        val chartState = remember(graph, overlay) {
+            overlay?.withReportLabels(graph) ?: graph.toMetricOverlayState()
+        }
+        val hasRenderableData = chartState.layers.any { it.points.size >= 2 } || chartState.peaks.isNotEmpty()
+        if (!hasRenderableData) {
+            EmptyText("No graph overlay data available.")
+            return@SectionBlock
+        }
+
+        MetricGrid(
+            rows = listOf(
+                "Overlay source" to if (overlay != null) "calculation signal" else "report metrics",
+                "Signal layers" to chartState.layers.count { it.visible }.toString(),
+            ),
+        )
+        ChromatogramChart(
+            state = chartState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp),
+            interactive = false,
+            showPeakLabels = true,
+            axisPadding = 44f,
+        )
+        OverlayLegend(chartState.layers)
     }
 }
 
@@ -233,6 +283,39 @@ private fun AxisBlock(graph: GraphReport) {
 
         if (graph.axisCalibration.warnings.isNotEmpty()) {
             CompactWarningList(graph.axisCalibration.warnings, maxItems = 3)
+        }
+    }
+}
+
+@Composable
+private fun OverlayLegend(layers: List<ChartLayer>) {
+    val visible = layers.filter { it.visible }
+    if (visible.isEmpty()) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        visible.forEach { layer ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    modifier = Modifier.size(8.dp),
+                    shape = RoundedCornerShape(50),
+                    color = layer.color,
+                    content = {},
+                )
+                Text(
+                    text = layer.id.overlayLabel(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
@@ -707,6 +790,107 @@ private fun buildQualityState(
     }
 }
 
+private fun ChromatogramChartState.withReportLabels(graph: GraphReport): ChromatogramChartState {
+    val labelsByTime = graph.peaks.mapNotNull { peak ->
+        peak.retentionTime.value.takeIfUsable()?.let { time ->
+            time to peak.renderOverlayLabel()
+        }
+    }
+    if (labelsByTime.isEmpty()) return this
+
+    return copy(
+        peaks = peaks.map { marker ->
+            val label = labelsByTime.minByOrNull { abs(it.first - marker.apexTime) }?.second
+            marker.copy(label = label ?: marker.label)
+        },
+    )
+}
+
+private fun GraphReport.toMetricOverlayState(): ChromatogramChartState {
+    val sortedPeaks = peaks.sortedBy { it.retentionTime.value ?: Double.MAX_VALUE }
+    if (sortedPeaks.isEmpty()) return ChromatogramChartState()
+
+    val baseline = sortedPeaks.mapNotNull { it.baselineAtApex.value.takeIfUsable() }.takeIf { it.isNotEmpty() }?.average()
+        ?: signal.baselineMean.value.takeIfUsable()
+        ?: 0.0
+    val xMinimum = axisCalibration.xAxis.visibleMinimum.value.takeIfUsable()
+        ?: sortedPeaks.firstNotNullOfOrNull { it.startRetentionTime.value.takeIfUsable() }
+        ?: sortedPeaks.firstNotNullOfOrNull { it.retentionTime.value.takeIfUsable() }
+        ?: 0.0
+    val xMaximum = axisCalibration.xAxis.visibleMaximum.value.takeIfUsable()
+        ?: sortedPeaks.mapNotNull { it.endRetentionTime.value.takeIfUsable() }.lastOrNull()
+        ?: sortedPeaks.mapNotNull { it.retentionTime.value.takeIfUsable() }.lastOrNull()
+        ?: (xMinimum + 1.0)
+    val signalPoints = sortedPeaks.flatMap { peak ->
+        peak.toMetricSignalPoints(defaultBaseline = baseline)
+    }.plus(
+        listOf(
+            ChartPoint(xMinimum, baseline),
+            ChartPoint(xMaximum, baseline),
+        ),
+    ).sortedBy { it.time }
+
+    val markerData = sortedPeaks.mapNotNull { peak ->
+        val apexTime = peak.retentionTime.value.takeIfUsable() ?: return@mapNotNull null
+        val peakBaseline = peak.baselineAtApex.value.takeIfUsable() ?: baseline
+        val height = peak.heightAboveBaseline.value.takeIfUsable()
+            ?: peak.absoluteApexIntensity.value.takeIfUsable()?.minus(peakBaseline)
+            ?: return@mapNotNull null
+        ChartPeakMarker(
+            apexTime = apexTime,
+            apexIntensity = peakBaseline + height,
+            leftBoundaryTime = peak.startRetentionTime.value.takeIfUsable() ?: apexTime,
+            rightBoundaryTime = peak.endRetentionTime.value.takeIfUsable() ?: apexTime,
+            label = peak.renderOverlayLabel(),
+            confidenceColor = peak.overlayColor(),
+        )
+    }
+
+    return ChromatogramChartState(
+        layers = listOf(
+            ChartLayer(
+                id = "reported_signal",
+                points = signalPoints,
+                color = Color(0xFF1E88E5),
+                strokeWidth = 2.2f,
+                visible = true,
+            ),
+            ChartLayer(
+                id = "baseline",
+                points = listOf(
+                    ChartPoint(xMinimum, baseline),
+                    ChartPoint(xMaximum, baseline),
+                ),
+                color = Color(0xFF757575),
+                strokeWidth = 1.4f,
+                visible = true,
+            ),
+        ),
+        peaks = markerData,
+    )
+}
+
+private fun ReportPeak.toMetricSignalPoints(defaultBaseline: Double): List<ChartPoint> {
+    val apexTime = retentionTime.value.takeIfUsable() ?: return emptyList()
+    val baseline = baselineAtApex.value.takeIfUsable() ?: defaultBaseline
+    val height = heightAboveBaseline.value.takeIfUsable()
+        ?: absoluteApexIntensity.value.takeIfUsable()?.minus(baseline)
+        ?: return emptyList()
+    val left = startRetentionTime.value.takeIfUsable() ?: (apexTime - widthAtBase.value.takeIfUsable().orDefaultWidth() / 2.0)
+    val right = endRetentionTime.value.takeIfUsable() ?: (apexTime + widthAtBase.value.takeIfUsable().orDefaultWidth() / 2.0)
+    if (right <= left) return listOf(ChartPoint(apexTime, baseline + height))
+
+    val leftMid = left + (apexTime - left) * 0.55
+    val rightMid = apexTime + (right - apexTime) * 0.55
+    return listOf(
+        ChartPoint(left, baseline),
+        ChartPoint(leftMid, baseline + height * 0.35),
+        ChartPoint(apexTime, baseline + height),
+        ChartPoint(rightMid, baseline + height * 0.35),
+        ChartPoint(right, baseline),
+    )
+}
+
 private fun ChromatogramReport.allWarnings(): List<ReportWarning> =
     (warnings + graphs.flatMap { graph ->
         graph.warnings + graph.axisCalibration.warnings + graph.peaks.flatMap { it.warnings }
@@ -764,6 +948,30 @@ private fun ReportPeak.warningSummary(): String =
         ?.joinToString("; ") { it.code }
         .orEmpty()
 
+private fun ReportPeak.renderOverlayLabel(): String =
+    compound?.carbonNumber?.value?.takeIf { it.isNotBlank() }
+        ?: compound?.probableName?.value?.takeIf { it.isNotBlank() }?.take(10)
+        ?: "#$number"
+
+private fun ReportPeak.overlayColor(): Color {
+    val overlap = overlapClass.value?.uppercase().orEmpty()
+    return when {
+        confidence != null && confidence < 0.5 -> Color(0xFFD32F2F)
+        "UNRESOLVED" in overlap || "SHOULDER" in overlap || "PARTIALLY" in overlap -> Color(0xFFFF9800)
+        else -> Color(0xFF2E7D32)
+    }
+}
+
+private fun String.overlayLabel(): String =
+    when (this) {
+        "raw" -> "Raw"
+        "smoothed" -> "Smoothed"
+        "baseline" -> "Baseline"
+        "corrected" -> "Corrected"
+        "reported_signal" -> "Signal"
+        else -> replace('_', ' ').replaceFirstChar { it.titlecase() }
+    }
+
 private fun AxisReport.renderRange(): String {
     val minimum = visibleMinimum.renderNumberWithoutUnit()
     val maximum = visibleMaximum.renderNumberWithoutUnit()
@@ -806,6 +1014,12 @@ private fun Double?.renderPercent(): String {
         "${(value * 100.0).formatReportNumber()}%"
     }
 }
+
+private fun Double?.takeIfUsable(): Double? =
+    if (this != null && !isNaN() && !isInfinite()) this else null
+
+private fun Double?.orDefaultWidth(): Double =
+    this?.takeIf { it > 0.0 } ?: 0.2
 
 private fun Long?.renderDuration(): String {
     val millis = this ?: return "not recorded"
