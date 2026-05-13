@@ -67,6 +67,11 @@ fun StructuredReportPreview(
             warnings = allWarnings,
         )
 
+        CompactReportMetadata(
+            report = report,
+            graphOverlays = graphOverlays,
+        )
+
         ReportSection(title = "Overview") {
             MetricGrid(
                 rows = listOf(
@@ -90,6 +95,175 @@ fun StructuredReportPreview(
         }
 
         TechnicalAppendix(report = report, warnings = allWarnings)
+    }
+}
+
+@Composable
+private fun CompactReportMetadata(
+    report: ChromatogramReport,
+    graphOverlays: Map<Int, ChromatogramChartState>,
+) {
+    ReportSection(title = "Run metadata") {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.Top,
+        ) {
+            MetadataTile(
+                label = "Model",
+                value = report.metadata.executedModel.renderModelName(),
+                supporting = "selected: ${report.metadata.selectedModel.renderModelName()}",
+            )
+            MetadataTile(
+                label = "Runtime",
+                value = report.metadata.executedRuntime.name,
+                supporting = report.metadata.executedModel?.backendLabel?.takeIf { it.isNotBlank() }
+                    ?: "backend not recorded",
+            )
+            MetadataTile(
+                label = "Analysis time",
+                value = report.metadata.totalAnalysisDurationMillis.renderDuration(),
+                supporting = report.metadata.timingWindowLabel(),
+            )
+            MetadataTile(
+                label = "Device",
+                value = report.metadata.deviceName ?: "not recorded",
+                supporting = report.metadata.processingMode.name,
+            )
+            MetadataTile(
+                label = "Stages",
+                value = report.metadata.stageTimings.size.toString(),
+                supporting = report.metadata.stageTimingPreview(),
+            )
+        }
+
+        GraphPreviewStrip(
+            graphs = report.graphs,
+            graphOverlays = graphOverlays,
+        )
+    }
+}
+
+@Composable
+private fun MetadataTile(
+    label: String,
+    value: String,
+    supporting: String,
+) {
+    Surface(
+        modifier = Modifier.width(170.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.70f),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = supporting,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GraphPreviewStrip(
+    graphs: List<GraphReport>,
+    graphOverlays: Map<Int, ChromatogramChartState>,
+) {
+    if (graphs.isEmpty()) {
+        EmptyText("No graphs recorded.")
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(
+            text = "Graph previews",
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.Top,
+        ) {
+            graphs.forEach { graph ->
+                GraphPreviewTile(
+                    graph = graph,
+                    overlaySource = if (graphOverlays.containsKey(graph.graphIndex)) {
+                        "calculation signal"
+                    } else {
+                        "report metrics"
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GraphPreviewTile(
+    graph: GraphReport,
+    overlaySource: String,
+) {
+    Surface(
+        modifier = Modifier.width(220.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.70f),
+    ) {
+        Column(
+            modifier = Modifier.padding(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Graph ${graph.graphIndex}",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                SeverityBadge(
+                    label = graph.graphPreviewQualityLabel(),
+                    severity = graph.graphPreviewSeverity(),
+                )
+            }
+            Text(
+                text = graph.graphPreviewTitle(),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            DetailLine(label = "Crop", value = graph.source.cropConfidence.renderPercent())
+            DetailLine(label = "Bounds", value = graph.source.detectedGraphBounds.renderRect())
+            DetailLine(label = "Peaks", value = (graph.quality.totalDetectedPeaks ?: graph.peaks.size).toString())
+            DetailLine(label = "Overlay", value = overlaySource)
+        }
     }
 }
 
@@ -924,10 +1098,58 @@ private fun ChromatogramReport.primaryTitle(): String =
 private fun ChromatogramReport.totalPeakCount(): Int =
     graphs.sumOf { graph -> graph.quality.totalDetectedPeaks ?: graph.peaks.size }
 
+private fun ReportMetadata.timingWindowLabel(): String =
+    when {
+        analysisStartedAtEpochMillis != null && analysisCompletedAtEpochMillis != null -> {
+            val elapsed = (analysisCompletedAtEpochMillis - analysisStartedAtEpochMillis)
+                .takeIf { it >= 0L }
+                .renderDuration()
+            "window: $elapsed"
+        }
+        analysisStartedAtEpochMillis != null -> "start recorded"
+        analysisCompletedAtEpochMillis != null -> "completion recorded"
+        else -> "timestamps not recorded"
+    }
+
+private fun ReportMetadata.stageTimingPreview(): String =
+    if (stageTimings.isEmpty()) {
+        "no stage timings"
+    } else {
+        stageTimings
+            .take(2)
+            .joinToString(" / ") { timing ->
+                "${timing.stageName ?: timing.stageId}: ${timing.durationMillis.renderDuration()}"
+            }
+    }
+
 private fun ModelExecutionInfo?.renderModelName(): String =
     this?.modelName?.takeIf { it.isNotBlank() }
         ?: this?.modelId?.takeIf { it.isNotBlank() }
         ?: "not recorded"
+
+private fun GraphReport.graphPreviewTitle(): String =
+    identification.chromatogramTitle.value?.takeIf { it.isNotBlank() }
+        ?: identification.ionOrChannel.value?.takeIf { it.isNotBlank() }
+        ?: identification.sampleName.value?.takeIf { it.isNotBlank() }
+        ?: "Untitled graph"
+
+private fun GraphReport.graphPreviewSeverity(): ReportSeverity {
+    val allGraphWarnings = warnings + axisCalibration.warnings + peaks.flatMap { it.warnings }
+    return allGraphWarnings.maxByOrNull { it.severity.rank() }?.severity
+        ?: when {
+            source.cropConfidence != null && source.cropConfidence < 0.70 -> ReportSeverity.SERIOUS
+            source.cropConfidence != null && source.cropConfidence < 0.85 -> ReportSeverity.WARNING
+            else -> ReportSeverity.INFO
+        }
+}
+
+private fun GraphReport.graphPreviewQualityLabel(): String =
+    when (graphPreviewSeverity()) {
+        ReportSeverity.FAILED -> "Failed"
+        ReportSeverity.SERIOUS -> "Review"
+        ReportSeverity.WARNING -> "Check"
+        ReportSeverity.INFO -> "Ready"
+    }
 
 private fun ReportWarning.renderWarning(includeCode: Boolean): String {
     val location = when {
@@ -961,6 +1183,9 @@ private fun ReportPeak.overlayColor(): Color {
         else -> Color(0xFF2E7D32)
     }
 }
+
+private fun PixelRect?.renderRect(): String =
+    this?.let { "${it.width}x${it.height} @ ${it.x},${it.y}" } ?: "not recorded"
 
 private fun String.overlayLabel(): String =
     when (this) {

@@ -271,6 +271,15 @@ Required content:
 - total analysis time;
 - model and runtime used.
 
+The in-app report should also include a compact metadata band near the top of the report with:
+
+- selected and executed model names;
+- executed runtime and backend label when available;
+- total analysis duration and timestamp availability;
+- device name and processing mode;
+- stage timing count plus a short timing preview;
+- per-graph preview cards with graph title or ion, crop confidence, detected bounds, peak count, and overlay source.
+
 ### 2. Source And Graph Preparation
 
 Purpose: make the image preparation auditable.

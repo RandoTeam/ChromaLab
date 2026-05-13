@@ -137,7 +137,7 @@ Goal: make the user-facing report match the reference depth and read like a prof
 - [~] 8.2 In-app structured preview exists.
 - [x] 8.3 Build final report screen with clear sections, readable tables, warnings, and technical appendix.
 - [x] 8.4 Add rendered graph overlay with signal, baseline, peaks, boundaries, and labels.
-- [ ] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
+- [x] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
 - [ ] 8.6 Export polished Markdown/HTML/PDF-ready output from the same structured report.
 - [ ] 8.7 Apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
 - [ ] 8.8 Convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
@@ -150,6 +150,7 @@ Exit criteria:
 - Camera/photo analysis works as an assisted automatic flow: the user should not have to manually align the graph with pixel-level precision.
 - The in-app report view groups overview, warnings, graph sections, peak tables, quality, Kovats data, interpretation, and technical appendix instead of showing raw Markdown.
 - The report graph section renders signal/baseline layers, integration boundaries, peak markers, and labels from calculation data when available, with a metric-based fallback for stored reports.
+- The report has a compact run metadata band with model/runtime/device/time/stage summary and per-graph preview cards.
 
 ## Phase 9 - Model Runtime Separation And GGUF/VLM Reliability
 
@@ -206,7 +207,8 @@ Exit criteria:
 - `8419d9d` - Add report value provenance audit.
 - `da78483` - Add structured report warning rules.
 - `7be00d3` - Build structured final report screen.
+- `02108cb` - Add report graph overlay.
 
 ## Next Recommended Slice
 
-Start Phase 8.5: add compact report metadata for graph preview, analysis time, model name, executed runtime, device, and stage timings.
+Start Phase 8.6: export polished Markdown/HTML/PDF-ready output from the same structured report.
