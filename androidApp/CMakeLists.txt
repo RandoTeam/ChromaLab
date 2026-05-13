@@ -11,6 +11,13 @@ project(llama_bridge LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Android debug APKs are used for on-device model validation, but llama.cpp
+# itself must stay optimized or CPU inference becomes unusably slow.
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 -DNDEBUG")
+endif()
+
 # ---- llama.cpp source tree ----
 set(LLAMA_CPP_DIR "${CMAKE_SOURCE_DIR}/libs/llama.cpp")
 

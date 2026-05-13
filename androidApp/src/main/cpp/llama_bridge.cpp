@@ -724,11 +724,7 @@ static std::string run_text_completion(
     llama_memory_clear(llama_get_memory(mc->ctx), true);
 
     const auto prompt_eval_started = std::chrono::steady_clock::now();
-    const int configured_batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
-    const int batch_size = std::clamp(configured_batch_size, 1, 16);
-    if (batch_size != configured_batch_size) {
-        LOGI("Text prompt eval batch capped: configured=%d effective=%d", configured_batch_size, batch_size);
-    }
+    const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
     for (int offset = 0; offset < n_tokens; offset += batch_size) {
         const int n_chunk = std::min(batch_size, n_tokens - offset);
         LOGI("Text prompt eval batch start: offset=%d count=%d", offset, n_chunk);
