@@ -26,6 +26,8 @@ data class ModelManagerState(
     val availableStorageGb: Float = 0f,
     val totalModelDiskUsageGb: Float = 0f,
     val threadCount: Int = 4,
+    /** Number of HTTP range chunks used for model file downloads. */
+    val downloadParallelism: Int = 4,
     /** Auto-unload VLM model after N minutes of inactivity (1–30, 0 = disabled). */
     val autoUnloadMinutes: Int = 5,
     /** Custom (imported) models that aren't in the builtin registry. */

@@ -3,6 +3,8 @@ package com.chromalab.feature.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -22,11 +24,13 @@ fun MoreScreen(
     activeModelName: String?,
     activeModelSummary: String?,
     threadCount: Int,
+    downloadParallelism: Int,
     autoUnloadMinutes: Int,
     onOpenModelManager: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenAbout: () -> Unit,
     onThreadCountChange: (Int) -> Unit,
+    onDownloadParallelismChange: (Int) -> Unit,
     onAutoUnloadChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -64,6 +68,13 @@ fun MoreScreen(
             ThreadSliderCard(
                 threadCount = threadCount,
                 onThreadCountChange = onThreadCountChange,
+            )
+        }
+
+        item {
+            DownloadParallelismCard(
+                downloadParallelism = downloadParallelism,
+                onDownloadParallelismChange = onDownloadParallelismChange,
             )
         }
 
@@ -200,6 +211,58 @@ private fun ThreadSliderCard(
                 steps = maxThreads - 2,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+@Composable
+private fun DownloadParallelismCard(
+    downloadParallelism: Int,
+    onDownloadParallelismChange: (Int) -> Unit,
+) {
+    val options = listOf(1, 2, 4, 8, 10, 12, 16)
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Download,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Параллельное скачивание",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        "$downloadParallelism HTTP range-поток(ов) для одного файла",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(options) { option ->
+                    FilterChip(
+                        selected = option == downloadParallelism,
+                        onClick = { onDownloadParallelismChange(option) },
+                        label = { Text("${option}x") },
+                    )
+                }
+            }
         }
     }
 }

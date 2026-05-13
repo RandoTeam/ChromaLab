@@ -104,6 +104,7 @@ class ModelManagerController(
                 availableStorageGb = manager.getAvailableStorageBytes() / (1024f * 1024 * 1024),
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),
                 threadCount = manager.threadCount,
+                downloadParallelism = manager.downloadParallelism,
                 autoUnloadMinutes = manager.autoUnloadMinutes,
                 customModels = customs,
             )
@@ -131,7 +132,11 @@ class ModelManagerController(
         val job = scope.launch {
             try {
                 val targetDir = manager.getModelDir(model.id)
-                downloader.downloadModel(model, targetDir) { progress ->
+                downloader.downloadModel(
+                    model = model,
+                    targetDir = targetDir,
+                    parallelism = manager.downloadParallelism,
+                ) { progress ->
                     _state.update {
                         val jobState = ModelDownloadUiState(
                             modelId = model.id,
@@ -388,6 +393,12 @@ class ModelManagerController(
     fun setThreadCount(count: Int) {
         manager.threadCount = count
         _state.update { it.copy(threadCount = count) }
+    }
+
+    /** Update HTTP range chunk count for future model downloads. */
+    fun setDownloadParallelism(parallelism: Int) {
+        manager.downloadParallelism = parallelism
+        _state.update { it.copy(downloadParallelism = manager.downloadParallelism) }
     }
 
     /** Update auto-unload timeout (minutes). 0 = disabled. */

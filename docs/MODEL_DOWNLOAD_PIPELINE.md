@@ -12,11 +12,20 @@ Model downloads now use per-model jobs in the in-app model manager.
 - The existing downloader still downloads each model file sequentially.
 - Downloads still depend on the app process and current controller scope.
 
-## Not In Phase 1
+## Phase 2 Status
+
+Single model files can now use HTTP range chunk downloading.
+
+- The user can choose 1x, 2x, 4x, 8x, 10x, 12x, or 16x download parallelism in More settings.
+- New downloads use the selected value; already running downloads keep the value they started with.
+- Large files first probe HTTP range support with `Range: bytes=0-0`.
+- If the server does not return partial content, the downloader falls back to the older sequential/resumable path.
+- File validation still runs after each file, so a completed download is checked before the model is treated as available.
+
+## Not In Phase 2
 
 - Foreground/background Android download service.
-- Parallel HTTP range chunks inside one file.
 - Global speed limiter.
 - Persistent restart after process death.
 
-These are intentionally left for the next phases so the first change only removes the single-download bottleneck without changing storage format or runtime loading.
+These are intentionally left for the next phases so chunked downloading does not change storage format or runtime loading.

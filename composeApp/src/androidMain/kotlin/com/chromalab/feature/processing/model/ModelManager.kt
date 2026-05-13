@@ -55,6 +55,7 @@ class ModelManager(private val context: Context) {
     companion object {
         private const val KEY_ACTIVE_MODEL = "active_model_id"
         private const val KEY_THREAD_COUNT = "thread_count"
+        private const val KEY_DOWNLOAD_PARALLELISM = "download_parallelism"
         private const val KEY_ACCEL_BACKEND = "accel_backend"
         private const val KEY_AUTO_UNLOAD_MINUTES = "auto_unload_minutes"
     }
@@ -295,6 +296,11 @@ class ModelManager(private val context: Context) {
         get() = prefs.getInt(KEY_THREAD_COUNT, Runtime.getRuntime().availableProcessors() / 2)
         set(value) = prefs.edit().putInt(KEY_THREAD_COUNT, value.coerceIn(1, 16)).apply()
 
+    /** Number of HTTP range chunks used for a single model file download. */
+    var downloadParallelism: Int
+        get() = sanitizeDownloadParallelism(prefs.getInt(KEY_DOWNLOAD_PARALLELISM, 4))
+        set(value) = prefs.edit().putInt(KEY_DOWNLOAD_PARALLELISM, sanitizeDownloadParallelism(value)).apply()
+
     /** Acceleration backend name. */
     var accelBackend: String
         get() = prefs.getString(KEY_ACCEL_BACKEND, "CPU") ?: "CPU"
@@ -304,6 +310,11 @@ class ModelManager(private val context: Context) {
     var autoUnloadMinutes: Int
         get() = prefs.getInt(KEY_AUTO_UNLOAD_MINUTES, 5)
         set(value) = prefs.edit().putInt(KEY_AUTO_UNLOAD_MINUTES, value.coerceIn(0, 30)).apply()
+
+    private fun sanitizeDownloadParallelism(value: Int): Int {
+        val allowed = intArrayOf(1, 2, 4, 8, 10, 12, 16)
+        return allowed.minBy { kotlin.math.abs(it - value) }
+    }
 
     // ===== Device Info =====
 
