@@ -101,7 +101,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
     val actions = remember(controller, importLauncher, exportLauncher) {
         ModelManagerActions(
             download = { controller.download(it) },
-            cancelDownload = { controller.cancelDownload() },
+            cancelDownload = { controller.cancelDownload(it) },
             activate = { controller.activate(it) },
             deactivate = { controller.deactivate() },
             delete = { controller.delete(it) },

@@ -49,9 +49,7 @@ import com.chromalab.feature.processing.model.ModelRegistry
 fun ModelManagerScreen(
     downloadedModelIds: Set<String>,
     activeModelId: String?,
-    downloadingModelId: String?,
-    downloadProgress: Float,
-    downloadSpeedMbps: Float,
+    downloadJobs: Map<String, ModelDownloadUiState>,
     activatingModelId: String?,
     activationError: String?,
     deviceRamMb: Int,
@@ -64,7 +62,7 @@ fun ModelManagerScreen(
     onDelete: (String) -> Unit,
     onActivate: (String) -> Unit,
     onDeactivate: () -> Unit = {},
-    onCancelDownload: () -> Unit = {},
+    onCancelDownload: (String) -> Unit = {},
     onExport: (String) -> Unit = {},
     onImport: () -> Unit,
     onHuggingFaceQueryChange: (String) -> Unit = {},
@@ -120,20 +118,21 @@ fun ModelManagerScreen(
 
             val liteRTModels = ModelRegistry.standaloneModels(ModelRuntime.LITERT_LM)
             items(liteRTModels, key = { it.id }) { model ->
+                val downloadJob = downloadJobs[model.id]
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
                     isActive = model.id == activeModelId,
-                    isDownloading = model.id == downloadingModelId,
+                    isDownloading = downloadJob.isRunning(),
                     isActivating = model.id == activatingModelId,
-                    downloadProgress = if (model.id == downloadingModelId) downloadProgress else 0f,
-                    downloadSpeedMbps = if (model.id == downloadingModelId) downloadSpeedMbps else 0f,
+                    downloadProgress = downloadJob?.progress ?: 0f,
+                    downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
                     onActivate = { onActivate(model.id) },
                     onExport = { onExport(model.id) },
-                    onCancelDownload = onCancelDownload,
+                    onCancelDownload = { onCancelDownload(model.id) },
                 )
             }
 
@@ -143,8 +142,7 @@ fun ModelManagerScreen(
                 HuggingFaceSearchCard(
                     state = huggingFaceSearch,
                     downloadedModelIds = downloadedModelIds,
-                    downloadingModelId = downloadingModelId,
-                    downloadProgress = downloadProgress,
+                    downloadJobs = downloadJobs,
                     deviceRamMb = deviceRamMb,
                     onQueryChange = onHuggingFaceQueryChange,
                     onSortChange = onHuggingFaceSortChange,
@@ -171,9 +169,7 @@ fun ModelManagerScreen(
                         group = group,
                         downloadedModelIds = downloadedModelIds,
                         activeModelId = activeModelId,
-                        downloadingModelId = downloadingModelId,
-                        downloadProgress = downloadProgress,
-                        downloadSpeedMbps = downloadSpeedMbps,
+                        downloadJobs = downloadJobs,
                         activatingModelId = activatingModelId,
                         deviceRamMb = deviceRamMb,
                         onDownload = onDownload,
@@ -188,20 +184,21 @@ fun ModelManagerScreen(
             // Standalone GGUF models (e.g. Qwen3.5-VL-9B)
             val standaloneGguf = ModelRegistry.standaloneModels(ModelRuntime.LLAMA_CPP)
             items(standaloneGguf, key = { it.id }) { model ->
+                val downloadJob = downloadJobs[model.id]
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
                     isActive = model.id == activeModelId,
-                    isDownloading = model.id == downloadingModelId,
+                    isDownloading = downloadJob.isRunning(),
                     isActivating = model.id == activatingModelId,
-                    downloadProgress = if (model.id == downloadingModelId) downloadProgress else 0f,
-                    downloadSpeedMbps = if (model.id == downloadingModelId) downloadSpeedMbps else 0f,
+                    downloadProgress = downloadJob?.progress ?: 0f,
+                    downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
                     onActivate = { onActivate(model.id) },
                     onExport = { onExport(model.id) },
-                    onCancelDownload = onCancelDownload,
+                    onCancelDownload = { onCancelDownload(model.id) },
                 )
             }
 
@@ -404,18 +401,23 @@ private fun SectionHeader(
     }
 }
 
+private fun ModelDownloadUiState?.isRunning(): Boolean =
+    this?.phase == ModelDownloadUiPhase.QUEUED ||
+        this?.phase == ModelDownloadUiPhase.CONNECTING ||
+        this?.phase == ModelDownloadUiPhase.DOWNLOADING ||
+        this?.phase == ModelDownloadUiPhase.VALIDATING
+
 @Composable
 private fun HuggingFaceSearchCard(
     state: HuggingFaceSearchState,
     downloadedModelIds: Set<String>,
-    downloadingModelId: String?,
-    downloadProgress: Float,
+    downloadJobs: Map<String, ModelDownloadUiState>,
     deviceRamMb: Int,
     onQueryChange: (String) -> Unit,
     onSortChange: (HuggingFaceSortOption) -> Unit,
     onSearch: () -> Unit,
     onDownload: (ModelInfo) -> Unit,
-    onCancelDownload: () -> Unit,
+    onCancelDownload: (String) -> Unit,
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -495,17 +497,18 @@ private fun HuggingFaceSearchCard(
             }
 
             state.results.forEachIndexed { index, result ->
+                val downloadJob = downloadJobs[result.modelInfo.id]
                 if (index > 0) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
                 HuggingFaceResultRow(
                     result = result,
                     isDownloaded = result.modelInfo.id in downloadedModelIds,
-                    isDownloading = result.modelInfo.id == downloadingModelId,
-                    downloadProgress = if (result.modelInfo.id == downloadingModelId) downloadProgress else 0f,
+                    isDownloading = downloadJob.isRunning(),
+                    downloadProgress = downloadJob?.progress ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(result.modelInfo) },
-                    onCancelDownload = onCancelDownload,
+                    onCancelDownload = { onCancelDownload(result.modelInfo.id) },
                 )
             }
         }
@@ -621,16 +624,14 @@ private fun ExpandableModelGroup(
     group: ModelGroup,
     downloadedModelIds: Set<String>,
     activeModelId: String?,
-    downloadingModelId: String?,
-    downloadProgress: Float,
-    downloadSpeedMbps: Float,
+    downloadJobs: Map<String, ModelDownloadUiState>,
     activatingModelId: String?,
     deviceRamMb: Int,
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
     onActivate: (String) -> Unit,
     onExport: (String) -> Unit,
-    onCancelDownload: () -> Unit,
+    onCancelDownload: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -735,20 +736,21 @@ private fun ExpandableModelGroup(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     group.variants.forEach { variant ->
+                        val downloadJob = downloadJobs[variant.id]
                         QuantVariantCard(
                             variant = variant,
                             isDownloaded = variant.id in downloadedModelIds,
                             isActive = variant.id == activeModelId,
-                            isDownloading = variant.id == downloadingModelId,
+                            isDownloading = downloadJob.isRunning(),
                             isActivating = variant.id == activatingModelId,
-                            downloadProgress = if (variant.id == downloadingModelId) downloadProgress else 0f,
-                            downloadSpeedMbps = if (variant.id == downloadingModelId) downloadSpeedMbps else 0f,
+                            downloadProgress = downloadJob?.progress ?: 0f,
+                            downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                             deviceRamMb = deviceRamMb,
                             onDownload = { onDownload(variant) },
                             onDelete = { onDelete(variant.id) },
                             onActivate = { onActivate(variant.id) },
                             onExport = { onExport(variant.id) },
-                            onCancelDownload = onCancelDownload,
+                            onCancelDownload = { onCancelDownload(variant.id) },
                         )
                     }
                 }

@@ -12,6 +12,7 @@ data class ModelManagerState(
     val activeModelName: String? = null,
     /** Short summary for MoreScreen: e.g. "LiteRT GPU · 2.6 GB" */
     val activeModelSummary: String? = null,
+    val downloadJobs: Map<String, ModelDownloadUiState> = emptyMap(),
     val downloadingModelId: String? = null,
     val downloadProgress: Float = 0f,
     val downloadSpeedMbps: Float = 0f,
@@ -33,6 +34,24 @@ data class ModelManagerState(
     val isImporting: Boolean = false,
     /** Hugging Face model search state. */
     val huggingFaceSearch: HuggingFaceSearchState = HuggingFaceSearchState(),
+)
+
+enum class ModelDownloadUiPhase {
+    QUEUED,
+    CONNECTING,
+    DOWNLOADING,
+    VALIDATING,
+    COMPLETE,
+    ERROR,
+}
+
+data class ModelDownloadUiState(
+    val modelId: String,
+    val phase: ModelDownloadUiPhase,
+    val progress: Float = 0f,
+    val speedMbps: Float = 0f,
+    val fileName: String = "",
+    val error: String? = null,
 )
 
 /**
