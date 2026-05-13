@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 3.5.
-- Next phase to start: Phase 3.6.
+- Current completed phase: Phase 3.6.
+- Next phase to start: Phase 3.7.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -52,8 +52,24 @@ Status: in progress.
 - [x] Phase 3.3: Add thinking toggle only for models that actually support it.
 - [x] Phase 3.4: Disable unsupported model/runtime choices with clear UI reasons instead of hiding them silently.
 - [x] Phase 3.5: Keep selection separate from loading; loading still starts only on first message or explicit runtime action.
-- [ ] Phase 3.6: Validate that chromatogram model/runtime flows are not affected.
+- [x] Phase 3.6: Validate that chromatogram model/runtime flows are not affected.
 - [ ] Phase 3.7: Commit Phase 3 work slices separately.
+
+### Phase 3.6 Validation Notes
+
+- Chat model picker selection stays inside `ChatController.setChatModel()` and updates only
+  the selected chat session. It does not call the app-level model manager or load a model.
+- Chat runtime loading still starts from `AndroidChatTextGenerator.generate()` through
+  `ModelManagerController.activateForChat()` when a message is sent.
+- Chromatogram navigation still calls `prepareForChromatogramWorkflow()` on capture,
+  camera, file import, processing, and analysis routes, so an already loaded chat/text
+  runtime is released before chromatogram work unless it is a reusable chromatogram VLM.
+- Chromatogram VLM loading still goes through `ChartAnalysisReader.ensureModelLoaded()`
+  and `ModelManagerController.activateForPipeline()`, which reads
+  `manager.getChromatogramModelId()`, requires real image input, and loads GGUF with
+  `mmproj` only for vision-capable packages.
+- Phase 3 chat UI changes did not touch calculation, graph detection, crop, OCR, curve,
+  or report-generation modules.
 
 ## Phase 4 - Message Layout And Telemetry
 
