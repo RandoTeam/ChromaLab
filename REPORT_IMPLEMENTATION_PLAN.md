@@ -135,7 +135,7 @@ Goal: make the user-facing report match the reference depth and read like a prof
 
 - [~] 8.1 Structured Markdown report exists.
 - [~] 8.2 In-app structured preview exists.
-- [ ] 8.3 Build final report screen with clear sections, readable tables, warnings, and technical appendix.
+- [x] 8.3 Build final report screen with clear sections, readable tables, warnings, and technical appendix.
 - [ ] 8.4 Add rendered graph overlay with signal, baseline, peaks, boundaries, and labels.
 - [ ] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
 - [ ] 8.6 Export polished Markdown/HTML/PDF-ready output from the same structured report.
@@ -148,6 +148,7 @@ Exit criteria:
 - It follows the reference format without becoming free-form LLM prose.
 - The mobile UI stays minimal, visual, and task-focused; it must not expose raw debug/audit data as the primary experience.
 - Camera/photo analysis works as an assisted automatic flow: the user should not have to manually align the graph with pixel-level precision.
+- The in-app report view groups overview, warnings, graph sections, peak tables, quality, Kovats data, interpretation, and technical appendix instead of showing raw Markdown.
 
 ## Phase 9 - Model Runtime Separation And GGUF/VLM Reliability
 
@@ -202,7 +203,8 @@ Exit criteria:
 - `4707498` - Add mz 92 alkylbenzene knowledge data.
 - `30df15d` - Add n-paraffin Kovats reference support.
 - `8419d9d` - Add report value provenance audit.
+- `da78483` - Add structured report warning rules.
 
 ## Next Recommended Slice
 
-Start Phase 8.3: build the final report screen with readable sections, tables, warnings, and technical appendix, using the mobile UI/UX guardrails.
+Start Phase 8.4: add the rendered graph overlay with signal, baseline, peak markers, integration boundaries, and labels.

@@ -128,8 +128,8 @@ fun ExportCalculationScreen(
         )
 
         ExportButton(
-            title = if (showStructuredPreview) "Hide structured report preview" else "Preview structured report",
-            subtitle = "In-app preview before saving the contract-backed report",
+            title = if (showStructuredPreview) "Hide final report" else "Open final report",
+            subtitle = "Readable report screen with warnings, peak table, and appendix",
             icon = Icons.Filled.Description,
             color = MaterialTheme.colorScheme.tertiary,
             outlined = true,
