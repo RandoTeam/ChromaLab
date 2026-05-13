@@ -155,7 +155,7 @@ public:
           started(std::chrono::steady_clock::now()),
           done(false),
           worker(&NativeStageWatchdog::run, this) {
-        LOGI("GGUF image stage start: %s", stage_name.c_str());
+        LOGI("GGUF native stage start: %s", stage_name.c_str());
     }
 
     ~NativeStageWatchdog() {
@@ -163,7 +163,7 @@ public:
         if (worker.joinable()) {
             worker.join();
         }
-        LOGI("GGUF image stage done: %s elapsed=%lld ms",
+        LOGI("GGUF native stage done: %s elapsed=%lld ms",
              stage_name.c_str(), elapsed_ms_since(started));
     }
 
@@ -185,7 +185,7 @@ private:
             }
 
             if (last_warning_ms == 0 || elapsed_ms - last_warning_ms >= repeat_every_ms) {
-                LOGW("GGUF image stage still running: %s elapsed=%lld ms",
+                LOGW("GGUF native stage still running: %s elapsed=%lld ms",
                      stage_name.c_str(), elapsed_ms);
                 last_warning_ms = elapsed_ms;
             }
@@ -357,8 +357,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     const char *base   = env->GetStringUTFChars(basePath, nullptr);
     const char *mmproj = env->GetStringUTFChars(mmprojPath, nullptr);
 
-    LOGI("nativeLoadModel: base=%s, threads=%d, ctx=%d, batch=%d",
-         base, threads, contextSize, batchSize);
+    LOGI("nativeLoadModel: base=%s, mmproj=%s, threads=%d, ctx=%d, batch=%d",
+         base, mmproj ? mmproj : "", threads, contextSize, batchSize);
 
     // Init backend once (idempotent)
     static bool backend_inited = false;
@@ -372,7 +372,10 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     // 1) Load model
     llama_model_params model_params = llama_model_default_params();
     model_params.n_gpu_layers = 0; // CPU only for now
-    mc->model = llama_model_load_from_file(base, model_params);
+    {
+        NativeStageWatchdog watchdog("llama_model_load", 30000, 30000);
+        mc->model = llama_model_load_from_file(base, model_params);
+    }
     if (!mc->model) {
         LOGE("Failed to load model: %s", base);
         env->ReleaseStringUTFChars(basePath, base);
@@ -387,7 +390,10 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
     ctx_params.n_threads = (threads > 0) ? threads : 4;
     ctx_params.n_threads_batch = ctx_params.n_threads;
-    mc->ctx = llama_init_from_model(mc->model, ctx_params);
+    {
+        NativeStageWatchdog watchdog("llama_context_init", 30000, 30000);
+        mc->ctx = llama_init_from_model(mc->model, ctx_params);
+    }
     if (!mc->ctx) {
         LOGE("Failed to create context");
         llama_model_free(mc->model);
@@ -405,7 +411,10 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         mtmd_context_params mtmd_params = mtmd_context_params_default();
         mtmd_params.n_threads = ctx_params.n_threads;
         mtmd_params.use_gpu = false; // CPU for now
-        mc->mtmd = mtmd_init_from_file(mmproj, mc->model, mtmd_params);
+        {
+            NativeStageWatchdog watchdog("mtmd_init_from_file", 30000, 30000);
+            mc->mtmd = mtmd_init_from_file(mmproj, mc->model, mtmd_params);
+        }
         if (mc->mtmd) {
             LOGI("MTMD vision encoder loaded: %s", mmproj);
         } else {

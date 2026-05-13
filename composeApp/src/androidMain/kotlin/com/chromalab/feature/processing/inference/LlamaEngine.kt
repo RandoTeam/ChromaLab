@@ -1,11 +1,22 @@
 package com.chromalab.feature.processing.inference
 
+import android.util.Log
 import com.chromalab.feature.processing.inference.InferenceConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+
+private const val TAG = "ChromaLabLlama"
+
+private fun log(message: String) {
+    Log.i(TAG, message)
+}
+
+private fun logError(message: String, throwable: Throwable? = null) {
+    Log.e(TAG, message, throwable)
+}
 
 /**
  * llama.cpp inference engine for .gguf models.
@@ -38,9 +49,9 @@ class LlamaEngine : InferenceEngine {
                 try {
                     System.loadLibrary("llama_bridge")
                     nativeLoaded = true
-                    println("LLAMA[NATIVE] Library loaded successfully")
+                    log("Native library loaded successfully")
                 } catch (e: UnsatisfiedLinkError) {
-                    println("LLAMA[NATIVE] Failed to load library: ${e.message}")
+                    logError("Failed to load native library: ${e.message}", e)
                 }
             }
         }
@@ -111,8 +122,8 @@ class LlamaEngine : InferenceEngine {
             config = InferenceConfig.forModelFamily(modelFamily)
             val ctx = contextSize ?: config.contextSize
             val batch = batchSize ?: config.batchSize
-            println("LLAMA[LOAD] Loading model: $basePath + $mmprojPath, threads=$threads")
-            println("LLAMA[LOAD] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}, repeatLastN=${config.repeatLastN}, ctx=$ctx, batch=$batch")
+            log("Loading model base=$basePath mmproj=$mmprojPath threads=$threads")
+            log("Config maxTokens=${config.maxTokens} repeatPenalty=${config.repeatPenalty} repeatLastN=${config.repeatLastN} ctx=$ctx batch=$batch")
 
             modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0, ctx, batch)
             if (modelHandle == 0L) {
@@ -124,7 +135,7 @@ class LlamaEngine : InferenceEngine {
             backendName = "llama.cpp CPU"
             loaded = true
             hasVisionProjector = mmprojPath.isNotBlank()
-            println("LLAMA[LOAD] Model loaded, handle=$modelHandle")
+            log("Model loaded handle=$modelHandle vision=$hasVisionProjector")
         }
     }
 
@@ -134,8 +145,7 @@ class LlamaEngine : InferenceEngine {
                 check(loaded && nativeLoaded) { "Model not loaded" }
                 check(hasVisionProjector) { "GGUF image analysis requires an mmproj vision projector" }
 
-                println("LLAMA[INFER] Analyzing chart: $imagePath")
-                println("LLAMA[INFER] Config: maxTokens=${config.maxTokens}, repeatPenalty=${config.repeatPenalty}")
+                log("Analyze chart image=$imagePath maxTokens=${config.maxTokens} repeatPenalty=${config.repeatPenalty}")
 
                 try {
                     val responseText = nativeInferWithImage(
@@ -147,7 +157,7 @@ class LlamaEngine : InferenceEngine {
                         config.repeatPenalty,
                         config.repeatLastN,
                     )
-                    println("LLAMA[INFER] Response length: ${responseText.length}")
+                    log("Analyze chart response chars=${responseText.length}")
                     ChartPrompts.parseResponse(responseText)
                 } finally {
                     unloadIfRequestedLocked()
@@ -165,7 +175,7 @@ class LlamaEngine : InferenceEngine {
             nativeLock.withLock {
                 check(loaded && nativeLoaded) { "Model not loaded" }
 
-                println("LLAMA[RAW] Inferring: $imagePath")
+                log("Raw inference image=$imagePath")
                 val maxTokens = options.maxTokens ?: config.maxTokens
                 val temperature = options.temperature ?: 0f
                 val topP = options.topP ?: 1f
@@ -185,12 +195,12 @@ class LlamaEngine : InferenceEngine {
                             repeatLastN,
                         )
                     } else if (hasImage) {
-                        println("LLAMA[RAW] Image inference requested, but no mmproj is loaded")
+                        log("Image inference requested, but no mmproj is loaded")
                         ""
                     } else {
                         val textPrompt = formatGgufTextPrompt(prompt, config.promptStyle)
                         if (textPrompt != prompt) {
-                            println("LLAMA[RAW] Applied ${config.promptStyle} prompt formatting for text inference")
+                            log("Applied ${config.promptStyle} prompt formatting for text inference")
                         }
                         nativeInferText(
                             modelHandle, textPrompt,
@@ -202,7 +212,7 @@ class LlamaEngine : InferenceEngine {
                             repeatLastN,
                         )
                     }
-                    println("LLAMA[RAW] Response length: ${responseText.length}")
+                    log("Raw response chars=${responseText.length}")
                     if (responseText.isBlank()) {
                         val mode = if (hasImage) "image" else "text"
                         throw IllegalStateException(
@@ -233,7 +243,7 @@ class LlamaEngine : InferenceEngine {
             unloadRequested = true
             loaded = false
             hasVisionProjector = false
-            println("LLAMA[UNLOAD] Deferred until active inference finishes")
+            log("Unload deferred until active inference finishes")
             return
         }
 
@@ -255,13 +265,13 @@ class LlamaEngine : InferenceEngine {
         try {
             nativeUnloadModel(modelHandle)
         } catch (e: Exception) {
-            println("LLAMA[UNLOAD] Error: ${e.message}")
+            logError("Unload error: ${e.message}", e)
         }
         modelHandle = 0L
         loaded = false
         hasVisionProjector = false
         unloadRequested = false
-        println("LLAMA[UNLOAD] Model unloaded")
+        log("Model unloaded")
     }
 
     override fun getBackendName(): String = backendName

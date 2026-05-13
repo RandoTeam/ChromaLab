@@ -167,7 +167,7 @@ Goal: keep chromatography models, chat models, OCR-only models, LiteRT, and GGUF
 - [~] 9.6 Diagnose and fix empty GGUF chat responses and stuck GGUF image-analysis stages.
   - [x] 9.6a Format GGUF text/chat prompts according to the active model prompt style and fail blank native responses explicitly.
   - [x] 9.6b Add native image-stage watchdog diagnostics for `mtmd_tokenize` / `mtmd_helper_eval_chunks` stalls.
-  - [ ] 9.6c Use device logs from GGUF image watchdogs to fix the concrete stalled native stage.
+  - [x] 9.6c Reject active OCR-only VLMs from the strict chromatogram photo pipeline and add native GGUF load-stage diagnostics.
 - [ ] 9.7 Prevent LiteRT from being silently used when a GGUF model was selected.
 
 Exit criteria:
@@ -179,6 +179,7 @@ Exit criteria:
 - Report metadata stores selected and executed runtime independently; missing executed-engine evidence remains `UNKNOWN`.
 - GGUF chat/text inference applies model prompt-style formatting instead of sending raw generic transcripts to every model.
 - Native GGUF image inference logs long-running bitmap load, tokenization, chunk evaluation, and decode stages instead of appearing silent.
+- Strict chromatogram photo analysis does not reuse an already-active OCR/document VLM such as PaddleOCR-VL, dots.mocr, or DeepSeek-OCR as a graph-analysis model.
 
 ## Phase 10 - Alpha Release Validation
 
@@ -227,7 +228,8 @@ Exit criteria:
 - `7b194e7` - Require GGUF vision package before analysis.
 - `6066607` - Record executed runtime separately.
 - `c584dc8` - Format GGUF chat prompts.
+- `fa6df97` - Add GGUF image stage watchdog logs.
 
 ## Next Recommended Slice
 
-Continue Phase 9.6c: use native watchdog logs from device testing to fix the concrete stalled GGUF image stage.
+Continue Phase 9.7: prevent LiteRT from being silently used when a GGUF model was selected.

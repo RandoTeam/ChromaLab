@@ -2,6 +2,7 @@ package com.chromalab.feature.settings
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
@@ -22,6 +23,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private const val TAG = "ChromaLabModels"
+
+private fun logModel(message: String) {
+    Log.i(TAG, message)
+}
+
+private fun logModelError(message: String, throwable: Throwable? = null) {
+    Log.e(TAG, message, throwable)
+}
 
 /**
  * Controller bridging ModelManager (Android) → ModelManagerState (common UI).
@@ -448,10 +459,17 @@ class ModelManagerController(
         if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
             VlmEngineHolder.activeEngine?.supportsImageInput() == true
         ) {
-            println("MODEL[LAZY] Already loaded")
-            // Reset auto-unload timer (model is being used)
-            cancelAutoUnloadTimer()
-            return true
+            if (VlmEngineHolder.activeExecutedModelIsChromatogramVision()) {
+                logModel("Chromatogram VLM already loaded: ${VlmEngineHolder.activeModelDiagnostics()}")
+                // Reset auto-unload timer (model is being used)
+                cancelAutoUnloadTimer()
+                return true
+            }
+
+            logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
+            VlmEngineHolder.activeEngine = null
+            VlmEngineHolder.activeConfig = null
+            VlmEngineHolder.executedModel = null
         }
 
         if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
@@ -480,7 +498,7 @@ class ModelManagerController(
                     .thenBy { it.info.totalSizeBytes }
             )
         if (models.isEmpty()) {
-            println("MODEL[LAZY] No chromatogram vision model can be loaded on this device")
+            logModel("No chromatogram vision model can be loaded on this device")
             onProgress?.invoke("No loaded/downloaded chromatogram VLM fits this device")
             return false
         }
@@ -488,7 +506,7 @@ class ModelManagerController(
         // Priority: active choice > chromatography ranking > package size.
         val model = models.first()
 
-        println("MODEL[LAZY] Auto-loading: ${model.info.displayName} (${model.info.family})")
+        logModel("Auto-loading chromatogram VLM: ${model.info.displayName} (${model.info.family}, ${model.info.runtime})")
         onProgress?.invoke("Загрузка AI модели: ${model.info.displayName}")
 
         return try {
@@ -538,7 +556,7 @@ class ModelManagerController(
                 VlmEngineHolder.selectedModel = selectedModel ?: model.info.toActiveInferenceModel()
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 onProgress?.invoke("AI модель готова")
-                println("MODEL[LAZY] Loaded: ${model.info.displayName} (promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
+                logModel("Loaded chromatogram VLM: ${model.info.displayName} backend=${engine.getBackendName()} promptStyle=${VlmEngineHolder.activeConfig?.promptStyle}")
                 // Schedule auto-unload timer
                 scheduleAutoUnload()
                 true
@@ -546,7 +564,7 @@ class ModelManagerController(
                 false
             }
         } catch (e: Throwable) {
-            println("MODEL[LAZY] Auto-load failed: ${e.message}")
+            logModelError("Auto-load failed: ${e.message}", e)
             manager.clearActiveModel()
             VlmEngineHolder.selectedModel = selectedModel
             VlmEngineHolder.executedModel = null
