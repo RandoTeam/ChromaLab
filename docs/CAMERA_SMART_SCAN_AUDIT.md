@@ -301,3 +301,16 @@ Implemented on 2026-05-13:
 Remaining later work:
 
 - Phase 5.2 should turn OCR/model axis readings into explicit calibration candidates with geometry, transform confidence, and rejection reasons.
+
+## Phase 5.2 Implementation Notes
+
+Implemented on 2026-05-13:
+
+- `ReportAxisCalibration` now stores structured calibration candidates in addition to final axis fields.
+- OCR axis readings are converted into `ocr-x-axis` and `ocr-y-axis` candidates with source, unit, confidence, numeric readings, graph-relative pixel positions, status, and rejection reasons.
+- Candidates remain explicit audit data; Phase 5.2 does not silently promote weak OCR into a final pixel-to-unit transform.
+- Structured Markdown export now renders calibration candidates below the axis calibration table.
+
+Remaining later work:
+
+- Phase 5.3 should validate candidate monotonicity, tick spacing, visible range, and geometry before a candidate can support release-quality calibration.

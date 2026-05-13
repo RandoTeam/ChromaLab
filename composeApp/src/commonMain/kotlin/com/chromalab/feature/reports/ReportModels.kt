@@ -145,9 +145,43 @@ data class ReportAxisCalibration(
     val xAxis: AxisReport = AxisReport(),
     val yAxis: AxisReport = AxisReport(),
     val calibrationConfidence: Double? = null,
+    val calibrationCandidates: List<AxisCalibrationCandidate> = emptyList(),
     val pixelToUnitTransform: PixelToUnitTransform? = null,
     val warnings: List<ReportWarning> = emptyList(),
 )
+
+@Serializable
+data class AxisCalibrationCandidate(
+    val candidateId: String,
+    val axis: ReportAxisName,
+    val source: ReportValueSource = ReportValueSource.UNKNOWN,
+    val status: AxisCalibrationCandidateStatus = AxisCalibrationCandidateStatus.CANDIDATE,
+    val unit: String? = null,
+    val confidence: Double? = null,
+    val points: List<AxisCalibrationCandidatePoint> = emptyList(),
+    val rejectionReasons: List<String> = emptyList(),
+)
+
+@Serializable
+data class AxisCalibrationCandidatePoint(
+    val value: Double,
+    val pixel: Double? = null,
+    val text: String? = null,
+    val confidence: Double? = null,
+)
+
+@Serializable
+enum class ReportAxisName {
+    X,
+    Y,
+}
+
+@Serializable
+enum class AxisCalibrationCandidateStatus {
+    CANDIDATE,
+    INSUFFICIENT_DATA,
+    REJECTED,
+}
 
 @Serializable
 data class AxisReport(

@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.report
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrTextElement
+import com.chromalab.feature.reports.AxisCalibrationCandidateStatus
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
 import com.chromalab.feature.reports.InputSourceType
@@ -168,6 +169,42 @@ class ProcessingReportMetadataBuilderTest {
                         confidence = 0.80f,
                     ),
                     OcrTextElement(
+                        text = "10.00",
+                        numericValue = 10f,
+                        x = 100f,
+                        y = 410f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.78f,
+                    ),
+                    OcrTextElement(
+                        text = "25.00",
+                        numericValue = 25f,
+                        x = 480f,
+                        y = 410f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.78f,
+                    ),
+                    OcrTextElement(
+                        text = "10000",
+                        numericValue = 10_000f,
+                        x = 55f,
+                        y = 100f,
+                        width = 40f,
+                        height = 16f,
+                        confidence = 0.79f,
+                    ),
+                    OcrTextElement(
+                        text = "0",
+                        numericValue = 0f,
+                        x = 55f,
+                        y = 392f,
+                        width = 12f,
+                        height = 16f,
+                        confidence = 0.79f,
+                    ),
+                    OcrTextElement(
                         text = """Ion 44.00: OTHER_SAMPLE.D\data.ms""",
                         numericValue = null,
                         x = 900f,
@@ -204,6 +241,18 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("Abundance", graph.axisCalibration?.yAxis?.label?.value)
         assertEquals("counts", graph.axisCalibration?.yAxis?.unit?.value)
         assertEquals(listOf(0.0, 8_000.0, 9_000.0, 10_000.0), graph.axisCalibration?.yAxis?.majorTicks?.map { it.value })
+        val candidates = graph.axisCalibration?.calibrationCandidates.orEmpty()
+        val xCandidate = candidates.single { it.candidateId == "ocr-x-axis" }
+        val yCandidate = candidates.single { it.candidateId == "ocr-y-axis" }
+        assertEquals(AxisCalibrationCandidateStatus.CANDIDATE, xCandidate.status)
+        assertEquals(AxisCalibrationCandidateStatus.CANDIDATE, yCandidate.status)
+        assertEquals(ReportValueSource.OCR, xCandidate.source)
+        assertEquals("min", xCandidate.unit)
+        assertEquals(10.0, xCandidate.points.first { it.value == 10.0 }.pixel)
+        assertEquals(390.0, xCandidate.points.first { it.value == 25.0 }.pixel)
+        assertEquals("counts", yCandidate.unit)
+        assertEquals(8.0, yCandidate.points.first { it.value == 10_000.0 }.pixel)
+        assertEquals(300.0, yCandidate.points.first { it.value == 0.0 }.pixel)
     }
 
     @Test

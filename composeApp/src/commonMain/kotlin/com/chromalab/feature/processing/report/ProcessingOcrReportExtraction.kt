@@ -3,14 +3,19 @@ package com.chromalab.feature.processing.report
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrStatus
 import com.chromalab.feature.processing.ocr.OcrTextElement
+import com.chromalab.feature.reports.AxisCalibrationCandidate
+import com.chromalab.feature.reports.AxisCalibrationCandidatePoint
+import com.chromalab.feature.reports.AxisCalibrationCandidateStatus
 import com.chromalab.feature.reports.AxisReport
 import com.chromalab.feature.reports.ChromatogramIdentification
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ReportAxisCalibration
+import com.chromalab.feature.reports.ReportAxisName
 import com.chromalab.feature.reports.ReportDoubleValue
 import com.chromalab.feature.reports.ReportTextValue
 import com.chromalab.feature.reports.ReportValueSource
 import com.chromalab.feature.reports.ReportValueStatus
+import kotlin.math.abs
 
 internal data class ProcessingOcrReportExtraction(
     val titleOcrConfidence: Double? = null,
@@ -56,6 +61,26 @@ internal fun AxisOcrResult?.toProcessingOcrReportExtraction(
     val yTickUnit = result.yUnit.normalizeAxisUnit() ?: inferAxisUnitFromLabel(yLabel, AxisSide.Y)
     val xTicks = xTickValues.toDetectedTicks(xTickUnit, xSource)
     val yTicks = yTickValues.toDetectedTicks(yTickUnit, ySource)
+    val calibrationCandidates = listOfNotNull(
+        buildAxisCalibrationCandidate(
+            axis = AxisSide.X,
+            values = xTickValues,
+            unit = xTickUnit,
+            source = xSource,
+            confidence = result.confidence.toReportConfidence(),
+            elements = graphElements,
+            bounds = detectedGraphBounds,
+        ),
+        buildAxisCalibrationCandidate(
+            axis = AxisSide.Y,
+            values = yTickValues,
+            unit = yTickUnit,
+            source = ySource,
+            confidence = result.confidence.toReportConfidence(),
+            elements = graphElements,
+            bounds = detectedGraphBounds,
+        ),
+    )
     val xLabelValue = xLabel?.let { detectedText(it, titleConfidence, ReportValueSource.OCR) }
     val yLabelValue = yLabel?.let { detectedText(it, titleConfidence, ReportValueSource.OCR) }
     val xUnitValue = result.xUnit.toAxisUnitValue(xLabel, AxisSide.X, result.confidence)
@@ -77,6 +102,7 @@ internal fun AxisOcrResult?.toProcessingOcrReportExtraction(
         xTicks = xTicks,
         yTicks = yTicks,
         confidence = result.confidence.toReportConfidence(),
+        calibrationCandidates = calibrationCandidates,
     )
 
     return ProcessingOcrReportExtraction(
@@ -130,9 +156,16 @@ private fun buildAxisCalibration(
     xTicks: List<ReportDoubleValue>,
     yTicks: List<ReportDoubleValue>,
     confidence: Double?,
+    calibrationCandidates: List<AxisCalibrationCandidate>,
 ): ReportAxisCalibration? {
-    val hasX = xLabel != null || xUnit != null || xTicks.isNotEmpty()
-    val hasY = yLabel != null || yUnit != null || yTicks.isNotEmpty()
+    val hasX = xLabel != null ||
+        xUnit != null ||
+        xTicks.isNotEmpty() ||
+        calibrationCandidates.any { it.axis == ReportAxisName.X }
+    val hasY = yLabel != null ||
+        yUnit != null ||
+        yTicks.isNotEmpty() ||
+        calibrationCandidates.any { it.axis == ReportAxisName.Y }
     if (!hasX && !hasY) return null
 
     return ReportAxisCalibration(
@@ -151,7 +184,126 @@ private fun buildAxisCalibration(
             majorTicks = yTicks.sortedBy { it.value ?: Double.MAX_VALUE },
         ),
         calibrationConfidence = confidence,
+        calibrationCandidates = calibrationCandidates,
     )
+}
+
+private fun buildAxisCalibrationCandidate(
+    axis: AxisSide,
+    values: List<Float>,
+    unit: String?,
+    source: ReportValueSource,
+    confidence: Double?,
+    elements: List<OcrTextElement>,
+    bounds: PixelRect?,
+): AxisCalibrationCandidate? {
+    val normalizedValues = values
+        .filter { !it.isNaN() && !it.isInfinite() }
+        .distinct()
+        .sorted()
+
+    if (normalizedValues.isEmpty()) return null
+
+    val candidatePoints = normalizedValues.map { value ->
+        val element = elements
+            .filter { it.numericValue.matchesAxisValue(value) }
+            .maxByOrNull { it.axisNumericScore(bounds, axis) }
+        AxisCalibrationCandidatePoint(
+            value = value.toDouble(),
+            pixel = element?.axisPixel(bounds, axis),
+            text = element?.text?.cleanText(),
+            confidence = element?.confidence.toReportConfidence(),
+        )
+    }
+    val localizedPixelCount = candidatePoints
+        .mapNotNull { it.pixel }
+        .distinctBy { (it * 2.0).toInt() }
+        .size
+    val reasons = buildList {
+        if (normalizedValues.size < 2) {
+            add("Fewer than two distinct numeric axis readings were available.")
+        }
+        if (bounds == null) {
+            add("Detected graph bounds were unavailable; candidate pixels could not be made graph-relative.")
+        }
+        if (normalizedValues.size >= 2 && localizedPixelCount < 2) {
+            add("Fewer than two OCR readings had localized pixel positions for this axis.")
+        }
+    }
+
+    return AxisCalibrationCandidate(
+        candidateId = when (axis) {
+            AxisSide.X -> "ocr-x-axis"
+            AxisSide.Y -> "ocr-y-axis"
+        },
+        axis = axis.toReportAxisName(),
+        source = source,
+        status = if (reasons.isEmpty()) {
+            AxisCalibrationCandidateStatus.CANDIDATE
+        } else {
+            AxisCalibrationCandidateStatus.INSUFFICIENT_DATA
+        },
+        unit = unit,
+        confidence = confidence,
+        points = candidatePoints,
+        rejectionReasons = reasons,
+    )
+}
+
+private fun AxisSide.toReportAxisName(): ReportAxisName =
+    when (this) {
+        AxisSide.X -> ReportAxisName.X
+        AxisSide.Y -> ReportAxisName.Y
+    }
+
+private fun OcrTextElement.axisPixel(
+    bounds: PixelRect?,
+    axis: AxisSide,
+): Double? {
+    val graphBounds = bounds ?: return null
+    return when (axis) {
+        AxisSide.X -> (x + width / 2f - graphBounds.x).toDouble()
+        AxisSide.Y -> (y + height / 2f - graphBounds.y).toDouble()
+    }
+}
+
+private fun OcrTextElement.axisNumericScore(
+    bounds: PixelRect?,
+    axis: AxisSide,
+): Int {
+    val graphBounds = bounds ?: return 1
+    val centerX = x + width / 2f
+    val centerY = y + height / 2f
+    val graphRight = graphBounds.x + graphBounds.width
+    val graphBottom = graphBounds.y + graphBounds.height
+    var score = 1
+
+    when (axis) {
+        AxisSide.X -> {
+            if (centerY >= graphBottom - graphBounds.height * 0.08f) score += 4
+            if (centerX >= graphBounds.x - graphBounds.width * 0.10f &&
+                centerX <= graphRight + graphBounds.width * 0.10f
+            ) {
+                score += 3
+            }
+        }
+        AxisSide.Y -> {
+            if (centerX <= graphBounds.x + graphBounds.width * 0.12f) score += 4
+            if (centerY >= graphBounds.y - graphBounds.height * 0.10f &&
+                centerY <= graphBottom + graphBounds.height * 0.10f
+            ) {
+                score += 3
+            }
+        }
+    }
+
+    return score
+}
+
+private fun Float?.matchesAxisValue(value: Float): Boolean {
+    val numericValue = this ?: return false
+    val tolerance = maxOf(0.01f, abs(value) * 0.001f)
+    return abs(numericValue - value) <= tolerance
 }
 
 private fun List<OcrTextElement>.filterForGraph(bounds: PixelRect?): List<OcrTextElement> {

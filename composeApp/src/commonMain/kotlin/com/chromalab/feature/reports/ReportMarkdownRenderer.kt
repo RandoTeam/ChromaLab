@@ -102,6 +102,7 @@ object ReportMarkdownRenderer {
         appendLine()
         appendLine("- Calibration confidence: ${graph.axisCalibration.calibrationConfidence.renderPercent()}")
         appendLine("- Pixel transform: ${graph.axisCalibration.pixelToUnitTransform.render()}")
+        renderCalibrationCandidates(graph.axisCalibration.calibrationCandidates)
     }
 
     private fun StringBuilder.renderPeakTable(graph: GraphReport, showGraphHeader: Boolean) {
@@ -317,6 +318,38 @@ object ReportMarkdownRenderer {
                 axis.majorTicks.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.render() } ?: notCalculated(),
             ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
         )
+    }
+
+    private fun StringBuilder.renderCalibrationCandidates(candidates: List<AxisCalibrationCandidate>) {
+        if (candidates.isEmpty()) return
+
+        appendLine()
+        appendLine("Calibration candidates:")
+        appendLine("| Candidate | Axis | Source | Status | Unit | Points | Confidence | Notes |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- |")
+        candidates.forEach { candidate ->
+            appendLine(
+                listOf(
+                    candidate.candidateId,
+                    candidate.axis.name,
+                    candidate.source.name,
+                    candidate.status.name,
+                    candidate.unit ?: notCalculated(),
+                    candidate.points.renderCandidatePoints(candidate.unit),
+                    candidate.confidence.renderPercent(),
+                    candidate.rejectionReasons.takeIf { it.isNotEmpty() }?.joinToString("; ") ?: "",
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+    }
+
+    private fun List<AxisCalibrationCandidatePoint>.renderCandidatePoints(unit: String?): String {
+        if (isEmpty()) return notCalculated()
+        val suffix = unit?.takeIf { it.isNotBlank() }?.let { " $it" } ?: ""
+        return joinToString("; ") { point ->
+            val pixel = point.pixel?.let { "@ ${it.formatDouble()} px" } ?: "@ pixel not localized"
+            "${point.value.formatDouble()}$suffix $pixel"
+        }
     }
 
     private fun StringBuilder.row(label: String, value: String?) {
