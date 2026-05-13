@@ -232,7 +232,7 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("91.70 to 92.70", graph.identification?.ionRange?.value)
         assertEquals("BELIY TIGR_1", graph.identification?.sampleName?.value)
         assertEquals("""BELIY TIGR_1.D\data.ms""", graph.identification?.samplePathOrInstrumentLabel?.value)
-        assertEquals(0.86, graph.source?.titleOcrConfidence)
+        assertEquals(0.86, graph.source?.titleOcrConfidence ?: -1.0, 0.0000001)
         assertEquals("Time", graph.axisCalibration?.xAxis?.label?.value)
         assertEquals("min", graph.axisCalibration?.xAxis?.unit?.value)
         assertEquals(ReportValueStatus.INFERRED, graph.axisCalibration?.xAxis?.unit?.status)
@@ -259,8 +259,8 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(9.605263157894736, transform.xOffset, 0.0000001)
         assertEquals(-34.24657534246575, transform.yScale, 0.0000001)
         assertEquals(10_273.972602739726, transform.yOffset, 0.0000001)
-        assertEquals(0.95625, graph.axisCalibration?.calibrationConfidence ?: -1.0, 0.0000001)
-        assertEquals(emptyList(), graph.axisCalibration?.warnings)
+        assertEquals(0.95625, graph.axisCalibration.calibrationConfidence ?: -1.0, 0.0000001)
+        assertEquals(emptyList(), graph.axisCalibration.warnings)
     }
 
     @Test

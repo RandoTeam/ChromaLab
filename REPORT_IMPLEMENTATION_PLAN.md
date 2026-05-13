@@ -101,7 +101,7 @@ Exit criteria:
 Goal: prove that peak detection, integration, and metrics are correct for synthetic and real chromatograms.
 
 - [~] 6.1 Apply boundary method, negative clamp, max peak width, and integration mode in `CalculationEngine`.
-- [ ] 6.2 Replace stale `commonTest` calculation tests that target old APIs.
+- [x] 6.2 Replace stale `commonTest` calculation tests that target old APIs.
 - [ ] 6.3 Add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
 - [ ] 6.4 Add real-photo fixtures, starting with Belyi Tigr Ion 92.
 - [ ] 6.5 Validate the early dominant peak tension in the Belyi Tigr screenshot instead of blindly copying reference text.
@@ -198,4 +198,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 6.2: replace stale `commonTest` calculation tests that target old APIs.
+Start Phase 6.3: add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
