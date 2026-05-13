@@ -571,6 +571,11 @@ object ModelRegistry {
             family.contains("qwen")
     }
 
+    fun hasGgufVisionFilePair(model: ModelInfo): Boolean =
+        model.runtime == ModelRuntime.LLAMA_CPP &&
+            model.files.any { it.type == ModelFileType.GGUF_BASE } &&
+            model.files.any { it.type == ModelFileType.GGUF_MMPROJ }
+
     fun chromatogramVisionPriority(model: ModelInfo): Int {
         val family = model.family.lowercase()
         val id = model.id.lowercase()

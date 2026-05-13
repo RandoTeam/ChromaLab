@@ -255,10 +255,15 @@ class ModelManagerController(
                     ModelRuntime.LLAMA_CPP -> {
                         val llama = LlamaEngine()
                         val enableVision = manager.llamaShouldLoadVisionProjector(model.info)
+                        val visionPackage = if (enableVision) {
+                            manager.requireGgufVisionPackage(model)
+                        } else {
+                            null
+                        }
                         withContext(Dispatchers.IO) {
                             llama.loadModel(
-                                basePath = model.primaryPath,
-                                mmprojPath = if (enableVision) model.mmprojPath ?: "" else "",
+                                basePath = visionPackage?.basePath ?: model.primaryPath,
+                                mmprojPath = visionPackage?.mmprojPath ?: "",
                                 threads = manager.threadCount,
                                 modelFamily = model.info.family,
                                 contextSize = manager.llamaContextSize(model.info, enableVision),
@@ -493,15 +498,14 @@ class ModelManagerController(
                 ModelRuntime.LLAMA_CPP -> {
                     onProgress?.invoke("Загрузка GGUF модели...")
                     val llama = LlamaEngine()
-                    val mmprojPath = model.mmprojPath
-                        ?: throw IllegalStateException("Vision projector is missing for ${model.info.displayName}")
                     if (!manager.llamaShouldLoadVisionProjector(model.info)) {
                         throw IllegalStateException(manager.compatibilityMessage(model.info, forVision = true))
                     }
+                    val visionPackage = manager.requireGgufVisionPackage(model)
                     withContext(Dispatchers.IO) {
                         llama.loadModel(
-                            basePath = model.primaryPath,
-                            mmprojPath = mmprojPath,
+                            basePath = visionPackage.basePath,
+                            mmprojPath = visionPackage.mmprojPath,
                             threads = manager.threadCount,
                             modelFamily = model.info.family,
                             contextSize = manager.llamaContextSize(model.info, forVision = true),

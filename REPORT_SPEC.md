@@ -422,7 +422,7 @@ Required warning examples:
 - all areas are suspiciously similar;
 - dominant peak not checked for anomaly;
 - selected model differs from executed runtime;
-- GGUF model used without required vision adapter or mmproj;
+- GGUF model used without a valid base `.gguf` plus a separate valid `mmproj` vision projector;
 - OCR-only model attempted for text chat or full chromatogram analysis;
 - Kovats index differs from literature beyond threshold.
 

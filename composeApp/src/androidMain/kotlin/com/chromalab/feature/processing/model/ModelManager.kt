@@ -35,6 +35,11 @@ data class DownloadedModel(
         get() = info.files.sumOf { File(localDir, it.fileName).let { f -> if (f.exists()) f.length() else 0L } }
 }
 
+data class GgufVisionPackage(
+    val basePath: String,
+    val mmprojPath: String,
+)
+
 /**
  * Manages model storage, download state, and active model selection.
  * Models are stored in: app internal storage / models / <model-id> /
@@ -329,6 +334,9 @@ class ModelManager(private val context: Context) {
 
     /** Whether a model can be loaded for text/chat use on this device. */
     fun canLoadForText(model: ModelInfo): Boolean {
+        if (model.runtime == ModelRuntime.LLAMA_CPP && model.files.none { it.type == ModelFileType.GGUF_BASE }) {
+            return false
+        }
         val requiredRam = when (model.runtime) {
             ModelRuntime.LITERT_LM -> 4096
             ModelRuntime.LLAMA_CPP -> maxOf(model.minRamMb, baseModelSizeMb(model) + 768)
@@ -340,6 +348,9 @@ class ModelManager(private val context: Context) {
     /** Whether a model can safely receive image input on this device. */
     fun canLoadForVision(model: ModelInfo): Boolean {
         if (!model.supportsVision) return false
+        if (model.runtime == ModelRuntime.LLAMA_CPP && !ModelRegistry.hasGgufVisionFilePair(model)) {
+            return false
+        }
         val conservative = isConservativeDevice()
         val smallGgufVision = isSmallGgufVisionModel(model)
         val requiredRam = when (model.runtime) {
@@ -384,6 +395,38 @@ class ModelManager(private val context: Context) {
 
     fun llamaShouldLoadVisionProjector(model: ModelInfo): Boolean =
         model.runtime == ModelRuntime.LLAMA_CPP && canLoadForVision(model)
+
+    fun requireGgufVisionPackage(model: DownloadedModel): GgufVisionPackage {
+        require(model.info.runtime == ModelRuntime.LLAMA_CPP) {
+            "GGUF vision package requested for non-GGUF model: ${model.info.displayName}"
+        }
+        val baseSpec = model.info.files.find { it.type == ModelFileType.GGUF_BASE }
+            ?: throw IllegalStateException("GGUF image analysis requires a base model file for ${model.info.displayName}")
+        val mmprojSpec = model.info.files.find { it.type == ModelFileType.GGUF_MMPROJ }
+            ?: throw IllegalStateException("GGUF image analysis requires a matching mmproj vision projector for ${model.info.displayName}")
+        val baseFile = File(model.localDir, baseSpec.fileName)
+        val mmprojFile = File(model.localDir, mmprojSpec.fileName)
+
+        if (!baseFile.isFile || baseFile.length() <= 0L) {
+            throw IllegalStateException("GGUF base model file is missing or empty: ${baseSpec.fileName}")
+        }
+        if (!mmprojFile.isFile || mmprojFile.length() <= 0L) {
+            throw IllegalStateException("GGUF mmproj vision projector is missing or empty: ${mmprojSpec.fileName}")
+        }
+        if (baseFile.canonicalPath == mmprojFile.canonicalPath) {
+            throw IllegalStateException("GGUF base model and mmproj must be separate files for image analysis")
+        }
+        if (!GgufValidator.isGguf(baseFile)) {
+            throw IllegalStateException("GGUF base model file is invalid: ${baseSpec.fileName}")
+        }
+        if (!GgufValidator.isGguf(mmprojFile)) {
+            throw IllegalStateException("GGUF mmproj vision projector is invalid: ${mmprojSpec.fileName}")
+        }
+        return GgufVisionPackage(
+            basePath = baseFile.absolutePath,
+            mmprojPath = mmprojFile.absolutePath,
+        )
+    }
 
     fun llamaContextSize(model: ModelInfo, forVision: Boolean): Int {
         val config = InferenceConfig.forModelFamily(model.family)
@@ -473,8 +516,9 @@ class ModelManager(private val context: Context) {
             else -> "custom"
         }
 
-        val hasVision = modelFiles.any { it.type == ModelFileType.GGUF_MMPROJ } ||
-                modelFiles.any { it.type == ModelFileType.LITERT_BUNDLE }
+        val hasVision = modelFiles.any { it.type == ModelFileType.LITERT_BUNDLE } ||
+            (modelFiles.any { it.type == ModelFileType.GGUF_BASE } &&
+                modelFiles.any { it.type == ModelFileType.GGUF_MMPROJ })
 
         return ModelInfo(
             id = dir.name,
