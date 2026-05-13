@@ -452,12 +452,14 @@ private fun ChatComposer(
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
-    Surface(tonalElevation = 3.dp) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().imePadding(),
+        tonalElevation = 3.dp,
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .imePadding()
                 .padding(Spacing.sm),
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
