@@ -662,7 +662,6 @@ fun ProcessingFlowScreen(
                         val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                         val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
                         val executedRuntime = executedReportModel?.runtime
-                            ?: selectedReportModel?.runtime
                             ?: ExecutedRuntime.UNKNOWN
                         val reportStageTimings = stageDurationMillis.toReportStageTimings()
                         val reportDeviceName = currentReportDeviceName()
@@ -821,7 +820,6 @@ fun ProcessingFlowScreen(
                     val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                     val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
                     val executedRuntime = executedReportModel?.runtime
-                        ?: selectedReportModel?.runtime
                         ?: ExecutedRuntime.UNKNOWN
                     val reportStageTimings = stageDurationMillis.toReportStageTimings()
                     val reportDeviceName = currentReportDeviceName()

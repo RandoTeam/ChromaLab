@@ -19,6 +19,7 @@ import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProcessingReportMetadataBuilderTest {
@@ -124,6 +125,33 @@ class ProcessingReportMetadataBuilderTest {
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Auto-sweep selected config: high_contrast"),
         )
+    }
+
+    @Test
+    fun selectedModelRuntimeIsNotUsedAsExecutedRuntime() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = null,
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 256,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+            selectedModel = ModelExecutionInfo(
+                modelId = "tiny-gguf-vlm",
+                modelName = "Tiny GGUF VLM",
+                runtime = ExecutedRuntime.GGUF,
+            ),
+            executedModel = null,
+        )
+
+        val metadata = StoredReportMetadataCodec.decodeOrNull(config)
+
+        assertNotNull(metadata)
+        assertEquals(ExecutedRuntime.GGUF, metadata.selectedModel?.runtime)
+        assertNull(metadata.executedModel)
+        assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
     }
 
     @Test
