@@ -137,11 +137,15 @@ Goal: make the user-facing report match the reference depth and read like a prof
 - [ ] 8.4 Add rendered graph overlay with signal, baseline, peaks, boundaries, and labels.
 - [ ] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
 - [ ] 8.6 Export polished Markdown/HTML/PDF-ready output from the same structured report.
+- [ ] 8.7 Apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
+- [ ] 8.8 Convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
 
 Exit criteria:
 
 - The final report is complete, readable, and traceable.
 - It follows the reference format without becoming free-form LLM prose.
+- The mobile UI stays minimal, visual, and task-focused; it must not expose raw debug/audit data as the primary experience.
+- Camera/photo analysis works as an assisted automatic flow: the user should not have to manually align the graph with pixel-level precision.
 
 ## Phase 9 - Model Runtime Separation And GGUF/VLM Reliability
 
