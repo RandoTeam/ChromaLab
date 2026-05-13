@@ -61,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -813,7 +814,12 @@ private fun ChatAcceleratorSelector(
     selectedAccelerator: ChatRuntimeAccelerator,
     onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
 ) {
-    if (!option.runtime.capabilities.supportsRuntimeSelection) return
+    if (
+        !option.runtime.compatibility.isSelectableForChat ||
+        !option.runtime.capabilities.supportsRuntimeSelection
+    ) {
+        return
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
@@ -847,6 +853,7 @@ private fun ChatModelPickerRow(
     selected: Boolean,
     onSelectModel: (ChatModelOption) -> Unit,
 ) {
+    val isSelectable = option.runtime.compatibility.isSelectableForChat
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -854,7 +861,8 @@ private fun ChatModelPickerRow(
                 color = if (selected) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent,
                 shape = RoundedCornerShape(8.dp),
             )
-            .clickable(enabled = !option.isActivating) { onSelectModel(option) }
+            .alpha(if (isSelectable) 1f else 0.62f)
+            .clickable(enabled = isSelectable && !option.isActivating) { onSelectModel(option) }
             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
@@ -887,9 +895,23 @@ private fun ChatModelPickerRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (!isSelectable) {
+                Text(
+                    text = option.runtime.compatibility.reason ?: "Модель недоступна для общего чата.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         when {
             option.isActivating -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            !isSelectable -> Text(
+                "Недоступна",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
             selected -> Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = "Выбрана",

@@ -269,7 +269,7 @@ fun App() {
 }
 
 private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
-    val builtinOptions = ModelRegistry.chatModels()
+    val builtinOptions = ModelRegistry.builtinModels
         .filter { it.id in downloadedModelIds }
         .map { model ->
             ChatModelOption(
@@ -286,7 +286,6 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
         }
 
     val customOptions = customModels
-        .filter { it.supportsTextChat }
         .filterNot { custom -> builtinOptions.any { it.id == custom.id } }
         .map { custom ->
             ChatModelOption(
@@ -319,6 +318,7 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
 
     return (builtinOptions + customOptions).sortedWith(
         compareByDescending<ChatModelOption> { it.isActive }
+            .thenByDescending { it.runtime.compatibility.isSelectableForChat }
             .thenBy { it.name.lowercase() }
     )
 }
