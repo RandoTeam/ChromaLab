@@ -102,7 +102,7 @@ Goal: prove that peak detection, integration, and metrics are correct for synthe
 
 - [~] 6.1 Apply boundary method, negative clamp, max peak width, and integration mode in `CalculationEngine`.
 - [x] 6.2 Replace stale `commonTest` calculation tests that target old APIs.
-- [ ] 6.3 Add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
+- [x] 6.3 Add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
 - [ ] 6.4 Add real-photo fixtures, starting with Belyi Tigr Ion 92.
 - [ ] 6.5 Validate the early dominant peak tension in the Belyi Tigr screenshot instead of blindly copying reference text.
 - [ ] 6.6 Add regression gates for area percent, FWHM, baseline, noise, and confidence flags.
@@ -198,4 +198,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 6.3: add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
+Start Phase 6.4: add real-photo fixtures, starting with Belyi Tigr Ion 92.
