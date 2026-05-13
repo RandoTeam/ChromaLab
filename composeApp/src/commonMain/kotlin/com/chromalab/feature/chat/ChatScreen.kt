@@ -497,12 +497,52 @@ private fun MessageBubble(message: ChatMessage) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             } else {
+                if (message.thinkingContent.isNotBlank()) {
+                    ChatThinkingBlock(message.thinkingContent)
+                }
                 StreamingMessageText(message)
             }
             if (!isUser && !message.isStreaming && message.stats != null) {
                 Spacer(Modifier.height(2.dp))
                 MessageStatsRow(message.stats)
             }
+        }
+    }
+}
+
+@Composable
+private fun ChatThinkingBlock(text: String) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.56f),
+        shape = RoundedCornerShape(12.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    Icons.Filled.SmartToy,
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Thinking",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = text,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

@@ -39,6 +39,7 @@ data class ChatMessage(
     val chatId: String,
     val role: ChatRole,
     val content: String,
+    val thinkingContent: String = "",
     val createdAt: Long,
     val modelName: String? = null,
     val isStreaming: Boolean = false,
@@ -61,6 +62,11 @@ data class ChatMessageStats(
 data class ChatArchive(
     val sessions: List<ChatSession> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
+)
+
+data class ChatGenerationPartial(
+    val contentDelta: String = "",
+    val thinkingDelta: String = "",
 )
 
 data class ChatState(
@@ -174,7 +180,7 @@ interface ChatTextGenerator {
         modelId: String,
         modelName: String?,
         runtimeAccelerator: ChatRuntimeAccelerator,
-        onPartial: (String) -> Unit,
+        onPartial: (ChatGenerationPartial) -> Unit,
     ): String
 }
 

@@ -74,10 +74,10 @@ private class DesktopChatTextGenerator : ChatTextGenerator {
         modelId: String,
         modelName: String?,
         runtimeAccelerator: ChatRuntimeAccelerator,
-        onPartial: (String) -> Unit,
+        onPartial: (ChatGenerationPartial) -> Unit,
     ): String {
         val response = "Desktop chat currently stores history only. On-device generation is wired on Android through LiteRT and GGUF."
-        onPartial(response)
+        onPartial(ChatGenerationPartial(contentDelta = response))
         return response
     }
 }

@@ -80,7 +80,7 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
         modelId: String,
         modelName: String?,
         runtimeAccelerator: ChatRuntimeAccelerator,
-        onPartial: (String) -> Unit,
+        onPartial: (ChatGenerationPartial) -> Unit,
     ): String {
         val controller = VlmEngineHolder.controller
             ?: error("Model controller is not ready.")
@@ -101,7 +101,9 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
                 imagePath = "__chromalab_text_only__",
                 prompt = buildChatPrompt(messages, settings),
                 options = settings.toGenerationOptions(),
-                onPartial = onPartial,
+                onPartial = { chunk ->
+                    onPartial(ChatGenerationPartial(contentDelta = chunk))
+                },
             )
         } finally {
             VlmEngineHolder.isInferring = false

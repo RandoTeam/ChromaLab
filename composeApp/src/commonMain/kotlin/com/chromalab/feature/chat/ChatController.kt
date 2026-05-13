@@ -195,10 +195,13 @@ class ChatController(
                         modelId = selectedModelId,
                         modelName = selectedModelName,
                         runtimeAccelerator = selectedRuntimeAccelerator,
-                        onPartial = { chunk ->
-                            if (chunk.isNotEmpty()) {
+                        onPartial = { partial ->
+                            if (partial.contentDelta.isNotEmpty() || partial.thinkingDelta.isNotEmpty()) {
                                 updateMessage(chatId, assistantId) { message ->
-                                    message.copy(content = message.content + chunk)
+                                    message.copy(
+                                        content = message.content + partial.contentDelta,
+                                        thinkingContent = message.thinkingContent + partial.thinkingDelta,
+                                    )
                                 }
                                 publish(chatId, isGenerating = true)
                             }
