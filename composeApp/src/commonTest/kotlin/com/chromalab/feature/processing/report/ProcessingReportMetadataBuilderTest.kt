@@ -260,6 +260,7 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(-34.24657534246575, transform.yScale, 0.0000001)
         assertEquals(10_273.972602739726, transform.yOffset, 0.0000001)
         assertEquals(0.95625, graph.axisCalibration?.calibrationConfidence ?: -1.0, 0.0000001)
+        assertEquals(emptyList(), graph.axisCalibration?.warnings)
     }
 
     @Test
@@ -324,6 +325,91 @@ class ProcessingReportMetadataBuilderTest {
         assertTrue(xCandidate.rejectionReasons.any { it.contains("visible graph range") })
         assertEquals(null, graph?.axisCalibration?.pixelToUnitTransform)
         assertEquals(null, graph?.axisCalibration?.calibrationConfidence)
+        val warningCodes = graph?.axisCalibration?.warnings.orEmpty().map { it.code }
+        assertTrue("axis.x.geometry_inconsistent" in warningCodes)
+        assertTrue("axis.y.ticks_missing" in warningCodes)
+        assertTrue("axis.y.candidate_missing" in warningCodes)
+        assertTrue("axis.transform_missing" in warningCodes)
+        assertEquals(ReportSeverity.SERIOUS, graph?.axisCalibration?.warnings?.single { it.code == "axis.transform_missing" }?.severity)
+    }
+
+    @Test
+    fun processingMetadataWarnsAboutWeakOcrAndTiltedTickAlignment() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\normalized_photo.jpg""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 512,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_750L,
+            detectedGraphBounds = PixelRect(100, 100, 400, 300),
+            axisOcrResult = AxisOcrResult(
+                rawElements = listOf(
+                    OcrTextElement(
+                        text = "10.00",
+                        numericValue = 10f,
+                        x = 105f,
+                        y = 405f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.62f,
+                    ),
+                    OcrTextElement(
+                        text = "20.00",
+                        numericValue = 20f,
+                        x = 255f,
+                        y = 435f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.62f,
+                    ),
+                    OcrTextElement(
+                        text = "30.00",
+                        numericValue = 30f,
+                        x = 405f,
+                        y = 465f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.62f,
+                    ),
+                    OcrTextElement(
+                        text = "10000",
+                        numericValue = 10_000f,
+                        x = 55f,
+                        y = 100f,
+                        width = 40f,
+                        height = 16f,
+                        confidence = 0.62f,
+                    ),
+                    OcrTextElement(
+                        text = "0",
+                        numericValue = 0f,
+                        x = 55f,
+                        y = 392f,
+                        width = 12f,
+                        height = 16f,
+                        confidence = 0.62f,
+                    ),
+                ),
+                suggestedXValues = listOf(10f, 20f, 30f),
+                suggestedYValues = listOf(10_000f, 0f),
+                xUnit = "Time-->",
+                yUnit = "Abundance",
+                confidence = 0.62f,
+                timestamp = 1_234L,
+            ),
+        )
+
+        val graph = StoredReportMetadataCodec.decodeOrNull(config)?.graphs?.single()
+        val warningCodes = graph?.axisCalibration?.warnings.orEmpty().map { it.code }
+
+        assertNotNull(graph?.axisCalibration?.pixelToUnitTransform)
+        assertTrue("axis.ocr_confidence_weak" in warningCodes)
+        assertTrue("axis.x.tick_ocr_confidence_weak" in warningCodes)
+        assertTrue("axis.y.tick_ocr_confidence_weak" in warningCodes)
+        assertTrue("axis.x.alignment_tilt_suspected" in warningCodes)
     }
 
     @Test

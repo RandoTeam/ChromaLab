@@ -103,6 +103,7 @@ object ReportMarkdownRenderer {
         appendLine("- Calibration confidence: ${graph.axisCalibration.calibrationConfidence.renderPercent()}")
         appendLine("- Pixel transform: ${graph.axisCalibration.pixelToUnitTransform.render()}")
         renderCalibrationCandidates(graph.axisCalibration.calibrationCandidates)
+        renderAxisCalibrationWarnings(graph.axisCalibration.warnings)
     }
 
     private fun StringBuilder.renderPeakTable(graph: GraphReport, showGraphHeader: Boolean) {
@@ -230,7 +231,11 @@ object ReportMarkdownRenderer {
     }
 
     private fun StringBuilder.renderWarnings(report: ChromatogramReport) {
-        val warnings = report.warnings + report.graphs.flatMap { it.warnings }
+        val warnings = report.warnings + report.graphs.flatMap { graph ->
+            graph.warnings + graph.axisCalibration.warnings.map { warning ->
+                if (warning.graphIndex == null) warning.copy(graphIndex = graph.graphIndex) else warning
+            }
+        }
         if (warnings.isEmpty()) {
             appendLine("No warnings recorded.")
             return
@@ -338,6 +343,24 @@ object ReportMarkdownRenderer {
                     candidate.points.renderCandidatePoints(candidate.unit),
                     candidate.confidence.renderPercent(),
                     candidate.rejectionReasons.takeIf { it.isNotEmpty() }?.joinToString("; ") ?: "",
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+    }
+
+    private fun StringBuilder.renderAxisCalibrationWarnings(warnings: List<ReportWarning>) {
+        if (warnings.isEmpty()) return
+
+        appendLine()
+        appendLine("Axis calibration warnings:")
+        appendLine("| Severity | Code | Message |")
+        appendLine("| --- | --- | --- |")
+        warnings.forEach { warning ->
+            appendLine(
+                listOf(
+                    warning.severity.name,
+                    warning.code,
+                    warning.message,
                 ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
             )
         }

@@ -13,9 +13,11 @@ import com.chromalab.feature.reports.PixelToUnitTransform
 import com.chromalab.feature.reports.ReportAxisCalibration
 import com.chromalab.feature.reports.ReportAxisName
 import com.chromalab.feature.reports.ReportDoubleValue
+import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportTextValue
 import com.chromalab.feature.reports.ReportValueSource
 import com.chromalab.feature.reports.ReportValueStatus
+import com.chromalab.feature.reports.ReportWarning
 import kotlin.math.abs
 
 internal data class ProcessingOcrReportExtraction(
@@ -62,6 +64,12 @@ internal fun AxisOcrResult?.toProcessingOcrReportExtraction(
     val yTickUnit = result.yUnit.normalizeAxisUnit() ?: inferAxisUnitFromLabel(yLabel, AxisSide.Y)
     val xTicks = xTickValues.toDetectedTicks(xTickUnit, xSource)
     val yTicks = yTickValues.toDetectedTicks(yTickUnit, ySource)
+    val axisAlignmentWarnings = detectAxisAlignmentWarnings(
+        xValues = xTickValues,
+        yValues = yTickValues,
+        elements = graphElements,
+        bounds = detectedGraphBounds,
+    )
     val calibrationCandidates = listOfNotNull(
         buildAxisCalibrationCandidate(
             axis = AxisSide.X,
@@ -105,6 +113,7 @@ internal fun AxisOcrResult?.toProcessingOcrReportExtraction(
         confidence = result.confidence.toReportConfidence(),
         calibrationCandidates = calibrationCandidates,
         bounds = detectedGraphBounds,
+        axisAlignmentWarnings = axisAlignmentWarnings,
     )
 
     return ProcessingOcrReportExtraction(
@@ -160,6 +169,7 @@ private fun buildAxisCalibration(
     confidence: Double?,
     calibrationCandidates: List<AxisCalibrationCandidate>,
     bounds: PixelRect?,
+    axisAlignmentWarnings: List<ReportWarning>,
 ): ReportAxisCalibration? {
     val transformSelection = buildPixelToUnitTransform(calibrationCandidates, bounds, confidence)
     val hasX = xLabel != null ||
@@ -190,8 +200,130 @@ private fun buildAxisCalibration(
         calibrationConfidence = transformSelection?.confidence,
         calibrationCandidates = calibrationCandidates,
         pixelToUnitTransform = transformSelection?.transform,
+        warnings = buildAxisCalibrationWarnings(
+            xTicks = xTicks,
+            yTicks = yTicks,
+            calibrationCandidates = calibrationCandidates,
+            transformSelection = transformSelection,
+            axisOcrConfidence = confidence,
+            axisAlignmentWarnings = axisAlignmentWarnings,
+        ),
     )
 }
+
+private fun buildAxisCalibrationWarnings(
+    xTicks: List<ReportDoubleValue>,
+    yTicks: List<ReportDoubleValue>,
+    calibrationCandidates: List<AxisCalibrationCandidate>,
+    transformSelection: AxisTransformSelection?,
+    axisOcrConfidence: Double?,
+    axisAlignmentWarnings: List<ReportWarning>,
+): List<ReportWarning> =
+    buildList {
+        if (axisOcrConfidence == null) {
+            add(axisWarning("axis.ocr_confidence_missing", "Axis OCR confidence is missing."))
+        } else if (axisOcrConfidence < WEAK_AXIS_OCR_CONFIDENCE_THRESHOLD) {
+            add(
+                axisWarning(
+                    code = "axis.ocr_confidence_weak",
+                    message = "Axis OCR confidence is weak (${axisOcrConfidence.renderPercentForWarning()}).",
+                ),
+            )
+        }
+
+        addAll(buildSingleAxisWarnings(ReportAxisName.X, xTicks, calibrationCandidates))
+        addAll(buildSingleAxisWarnings(ReportAxisName.Y, yTicks, calibrationCandidates))
+        addAll(axisAlignmentWarnings)
+
+        if (transformSelection == null) {
+            add(
+                axisWarning(
+                    code = "axis.transform_missing",
+                    message = "No validated X/Y pixel-to-unit transform is available; release-quality calibrated calculations must not be claimed.",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+        }
+    }.distinctBy { warning ->
+        listOf(warning.code, warning.message).joinToString("|")
+    }
+
+private fun buildSingleAxisWarnings(
+    axis: ReportAxisName,
+    ticks: List<ReportDoubleValue>,
+    calibrationCandidates: List<AxisCalibrationCandidate>,
+): List<ReportWarning> =
+    buildList {
+        val candidate = calibrationCandidates.firstOrNull { it.axis == axis }
+        if (ticks.size < MIN_AXIS_TICK_COUNT) {
+            add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.ticks_missing",
+                    message = "${axis.displayName} has fewer than two detected tick labels.",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+        }
+        if (candidate == null) {
+            add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.candidate_missing",
+                    message = "No ${axis.displayName.lowercase()} calibration candidate was produced.",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+            return@buildList
+        }
+
+        val localizedTickCount = candidate.points.count { it.pixel != null }
+        if (localizedTickCount < MIN_AXIS_TICK_COUNT) {
+            add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.localized_ticks_missing",
+                    message = "${axis.displayName} has fewer than two localized tick pixels.",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+        }
+
+        when (candidate.status) {
+            AxisCalibrationCandidateStatus.INSUFFICIENT_DATA -> add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.calibration_insufficient",
+                    message = "${axis.displayName} calibration candidate has insufficient data: ${candidate.rejectionReasons.joinToWarningMessage()}",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+            AxisCalibrationCandidateStatus.REJECTED -> add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.geometry_inconsistent",
+                    message = "${axis.displayName} calibration geometry is inconsistent: ${candidate.rejectionReasons.joinToWarningMessage()}",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+            AxisCalibrationCandidateStatus.CANDIDATE -> add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.calibration_unvalidated",
+                    message = "${axis.displayName} calibration candidate was not validated.",
+                    severity = ReportSeverity.SERIOUS,
+                ),
+            )
+            AxisCalibrationCandidateStatus.VALIDATED -> Unit
+        }
+
+        val tickConfidence = candidate.points
+            .mapNotNull { it.confidence }
+            .takeIf { it.isNotEmpty() }
+            ?.average()
+        if (tickConfidence != null && tickConfidence < WEAK_TICK_OCR_CONFIDENCE_THRESHOLD) {
+            add(
+                axisWarning(
+                    code = "axis.${axis.codeName}.tick_ocr_confidence_weak",
+                    message = "${axis.displayName} tick OCR confidence is weak (${tickConfidence.renderPercentForWarning()}).",
+                ),
+            )
+        }
+    }
 
 private fun buildPixelToUnitTransform(
     candidates: List<AxisCalibrationCandidate>,
@@ -418,6 +550,62 @@ private fun validateAxisCandidateGeometry(
     }
 }
 
+private fun detectAxisAlignmentWarnings(
+    xValues: List<Float>,
+    yValues: List<Float>,
+    elements: List<OcrTextElement>,
+    bounds: PixelRect?,
+): List<ReportWarning> {
+    val graphBounds = bounds ?: return emptyList()
+    return listOfNotNull(
+        detectSingleAxisAlignmentWarning(AxisSide.X, xValues, elements, graphBounds),
+        detectSingleAxisAlignmentWarning(AxisSide.Y, yValues, elements, graphBounds),
+    )
+}
+
+private fun detectSingleAxisAlignmentWarning(
+    axis: AxisSide,
+    values: List<Float>,
+    elements: List<OcrTextElement>,
+    bounds: PixelRect,
+): ReportWarning? {
+    val matchedElements = values
+        .filter { !it.isNaN() && !it.isInfinite() }
+        .distinct()
+        .mapNotNull { value ->
+            elements
+                .filter { it.numericValue.matchesAxisValue(value) }
+                .maxByOrNull { it.axisNumericScore(bounds, axis) }
+        }
+        .distinctBy { element ->
+            listOf(
+                element.text.normalizedTextKey(),
+                (element.x / 4f).toInt(),
+                (element.y / 4f).toInt(),
+            ).joinToString("|")
+        }
+    if (matchedElements.size < MIN_TILT_ALIGNMENT_TICK_COUNT) return null
+
+    val orthogonalPositions = matchedElements.map { element ->
+        when (axis) {
+            AxisSide.X -> element.y + element.height / 2f
+            AxisSide.Y -> element.x + element.width / 2f
+        }.toDouble()
+    }
+    val spread = (orthogonalPositions.maxOrNull() ?: return null) -
+        (orthogonalPositions.minOrNull() ?: return null)
+    val threshold = when (axis) {
+        AxisSide.X -> maxOf(MIN_TILT_ALIGNMENT_SPREAD_PX, bounds.height * TILT_ALIGNMENT_SPREAD_FRACTION)
+        AxisSide.Y -> maxOf(MIN_TILT_ALIGNMENT_SPREAD_PX, bounds.width * TILT_ALIGNMENT_SPREAD_FRACTION)
+    }
+    if (spread <= threshold) return null
+
+    return axisWarning(
+        code = "axis.${axis.toReportAxisName().codeName}.alignment_tilt_suspected",
+        message = "${axis.toReportAxisName().displayName} tick labels are not aligned; image tilt or perspective correction may be incomplete.",
+    )
+}
+
 private data class LocalizedAxisPoint(
     val value: Double,
     val pixel: Double,
@@ -451,6 +639,36 @@ private fun AxisSide.toReportAxisName(): ReportAxisName =
         AxisSide.X -> ReportAxisName.X
         AxisSide.Y -> ReportAxisName.Y
     }
+
+private val ReportAxisName.codeName: String
+    get() = name.lowercase()
+
+private val ReportAxisName.displayName: String
+    get() = when (this) {
+        ReportAxisName.X -> "X-axis"
+        ReportAxisName.Y -> "Y-axis"
+    }
+
+private fun axisWarning(
+    code: String,
+    message: String,
+    severity: ReportSeverity = ReportSeverity.WARNING,
+): ReportWarning =
+    ReportWarning(
+        code = code,
+        message = message,
+        severity = severity,
+        stage = "axis_calibration",
+    )
+
+private fun List<String>.joinToWarningMessage(): String =
+    takeIf { it.isNotEmpty() }?.joinToString("; ") ?: "no detailed reason recorded."
+
+private fun Double.renderPercentForWarning(): String =
+    "${(coerceIn(0.0, 1.0) * 100.0).formatWarningNumber()}%"
+
+private fun Double.formatWarningNumber(): String =
+    if (abs(this) >= 10.0) "%.1f".format(this) else "%.2f".format(this)
 
 private fun OcrTextElement.axisPixel(
     bounds: PixelRect?,
@@ -769,3 +987,10 @@ private val samplePathRegex = Regex(
     pattern = """[A-Za-z0-9 _.-]+\.D[\\/][A-Za-z0-9 _.-]+\.ms""",
     option = RegexOption.IGNORE_CASE,
 )
+
+private const val MIN_AXIS_TICK_COUNT = 2
+private const val MIN_TILT_ALIGNMENT_TICK_COUNT = 3
+private const val MIN_TILT_ALIGNMENT_SPREAD_PX = 8.0
+private const val TILT_ALIGNMENT_SPREAD_FRACTION = 0.04
+private const val WEAK_AXIS_OCR_CONFIDENCE_THRESHOLD = 0.70
+private const val WEAK_TICK_OCR_CONFIDENCE_THRESHOLD = 0.70

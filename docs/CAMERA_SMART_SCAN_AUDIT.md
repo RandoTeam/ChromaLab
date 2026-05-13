@@ -340,3 +340,16 @@ Implemented on 2026-05-13:
 Remaining later work:
 
 - Phase 5.5 should add explicit warnings for weak OCR, missing ticks, tilted image, inconsistent axis geometry, and missing validated transforms.
+
+## Phase 5.5 Implementation Notes
+
+Implemented on 2026-05-13:
+
+- Axis calibration metadata now records explicit warnings for missing tick labels, missing calibration candidates, insufficient localized tick pixels, rejected geometry, weak OCR confidence, and missing validated transforms.
+- A missing validated X/Y transform is recorded as a serious axis-calibration warning because calibrated release-quality calculations cannot be claimed without it.
+- OCR tick alignment is checked for likely tilt or incomplete perspective correction when at least three labels are localized on an axis.
+- Structured Markdown now renders axis-calibration warnings inside the calibration section and includes them in the global warnings table.
+
+Remaining later work:
+
+- Phase 6.2 should replace stale calculation tests before broader calculation-engine regression checks can run.

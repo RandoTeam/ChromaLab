@@ -89,7 +89,7 @@ Goal: make pixel-to-unit conversion auditable and accurate enough for real chrom
 - [x] 5.2 Convert OCR/model axis readings into structured calibration candidates.
 - [x] 5.3 Validate X/Y tick monotonicity, spacing, and visible range.
 - [x] 5.4 Persist `PixelToUnitTransform` and calibration confidence.
-- [ ] 5.5 Show clear warnings for weak OCR, missing ticks, tilted image, or inconsistent axis geometry.
+- [x] 5.5 Show clear warnings for weak OCR, missing ticks, tilted image, or inconsistent axis geometry.
 
 Exit criteria:
 
@@ -194,4 +194,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 5.5: show clear warnings for weak OCR, missing ticks, tilted image, or inconsistent axis geometry.
+Start Phase 6.2: replace stale `commonTest` calculation tests that target old APIs.

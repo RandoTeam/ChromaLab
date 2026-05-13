@@ -47,6 +47,11 @@ It demonstrates the target report shape only. Representative numbers are placeho
 - Calibration confidence: 76.00%
 - Pixel transform: fixture-linear-axis-estimate: x=0.0875*px+8.0000, y=-24.80*px+10000
 
+Axis calibration warnings:
+| Severity | Code | Message |
+| --- | --- | --- |
+| INFO | fixture.axis_calibration_visual_estimate | Axis transform is a visual fixture estimate, not a validated calibration result. |
+
 ## 4. Peak table
 
 | # | RT | Height | Area | Area % | FWHM | W_base | S/N | Asymmetry | Compound | Formula | C# | Kovats | Confidence | Flags |
@@ -131,6 +136,7 @@ Unresolved assignments:
 | Severity | Code | Stage | Graph | Peak | Message |
 | --- | --- | --- | --- | --- | --- |
 | INFO | fixture.numeric_truth_not_locked | fixture | 1 |  | This fixture validates report shape and completeness; numeric values are not locked ground truth. |
+| INFO | fixture.axis_calibration_visual_estimate | axis_calibration | 1 |  | Axis transform is a visual fixture estimate, not a validated calibration result. |
 | WARNING | fixture.dominant_peak_reference_discrepancy | fixture | 1 |  | Reference text claims a dominant peak near 49 min, while the supplied screenshot visually shows a dominant early peak. |
 
 ## 10. Technical appendix
