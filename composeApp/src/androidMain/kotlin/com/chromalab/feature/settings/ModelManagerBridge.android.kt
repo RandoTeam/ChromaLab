@@ -102,8 +102,6 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
         ModelManagerActions(
             download = { controller.download(it) },
             cancelDownload = { controller.cancelDownload(it) },
-            activate = { controller.activate(it) },
-            deactivate = { controller.deactivate() },
             delete = { controller.delete(it) },
             setThreadCount = { controller.setThreadCount(it) },
             setDownloadParallelism = { controller.setDownloadParallelism(it) },

@@ -124,7 +124,7 @@ Technical rule:
 
 Goal: downloaded models are stored on disk, but not loaded into memory until the active workflow needs them.
 
-Status: in progress. Phase 5.1, Phase 5.2, Phase 5.3, Phase 5.4, and Phase 5.5 are implemented; full idle guarantees are still pending.
+Status: complete for the current model lifecycle scope. Phase 5.1 through Phase 5.6 are implemented.
 
 Subpoints:
 
@@ -138,8 +138,8 @@ Subpoints:
 - Done: unload chat model when entering camera/chromatogram analysis if memory is needed.
 - Done: load the selected chromatogram model only when image/photo analysis reaches the neural stage.
 - Done: unload the chromatogram model after the analysis report is produced.
-- Not done: ensure no background model loading happens while the app is idle.
-- Not done: keep local import/export model flows intact.
+- Done: ensure no background model loading happens while the app is idle.
+- Done: keep local import/export model flows intact.
 
 Technical rule:
 
@@ -149,10 +149,11 @@ Technical rule:
 - Phase 5.3 stores chat model choice per chat and loads the selected model lazily on first generation. GGUF chat loads text-only without `mmproj`; chromatogram analysis still loads its own vision package.
 - Phase 5.4 frees a loaded chat/text engine when entering capture, camera, import, processing, or analysis routes. It does not pre-load a chromatogram VLM and it keeps a compatible already-loaded chromatogram vision model reusable.
 - Phase 5.5 unloads a loaded chromatogram vision runtime after processing produces a saved signal/report and when leaving the calculation analysis screen. It is idempotent and does not unload unrelated text/chat engines.
+- Phase 5.6 removes the legacy model activation/deactivation actions from the shared model manager action surface. Runtime loading is now reachable only from explicit workflow loaders: chat generation and chromatogram VLM pipeline stages. Import/export remains storage-only.
 
 ## Current Next Phase
 
-The next phase to work on is Phase 5.6 - Idle No-Load Guarantees.
+The next phase should be selected from the broader MVP roadmap; the Phase 5 model lifecycle contract is complete.
 
 Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 

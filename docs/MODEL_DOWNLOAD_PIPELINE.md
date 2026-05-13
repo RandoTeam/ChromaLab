@@ -94,10 +94,19 @@ Chromatogram vision models are released when the report workflow no longer needs
 - Cleanup only unloads a loaded image-capable chromatogram model; unrelated text/chat engines are ignored.
 - If inference is still running, cleanup does not unload mid-generation and falls back to the configured auto-unload timer.
 
+## Phase 5.6 Status
+
+Idle screens can no longer trigger model runtime loading through the shared settings action layer.
+
+- The common model manager actions no longer expose activate/deactivate callbacks.
+- The Android model manager bridge no longer wires activation actions into UI-accessible actions.
+- Runtime loading remains available only through explicit workflow methods: chat generation uses `activateForChat`, and chromatogram analysis uses `activateForPipeline`.
+- Model import/export actions remain present and storage-only.
+- Download, delete, search, import, export, role selection, and lifecycle cleanup actions remain available.
+
 ## Still Not In Current Download/Lifecycle Scope
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Full idle no-load guarantees.
 
-These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.
+These are intentionally left for later phases outside the model loading lifecycle contract.

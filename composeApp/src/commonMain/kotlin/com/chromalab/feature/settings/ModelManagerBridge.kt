@@ -12,8 +12,6 @@ import com.chromalab.feature.processing.model.ModelInfo
 data class ModelManagerActions(
     val download: (ModelInfo) -> Unit = {},
     val cancelDownload: (String) -> Unit = {},
-    val activate: (String) -> Unit = {},
-    val deactivate: () -> Unit = {},
     val delete: (String) -> Unit = {},
     val setThreadCount: (Int) -> Unit = {},
     val setDownloadParallelism: (Int) -> Unit = {},

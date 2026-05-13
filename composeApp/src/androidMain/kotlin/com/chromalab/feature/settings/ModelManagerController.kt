@@ -230,13 +230,7 @@ class ModelManagerController(
         }
     }
 
-    /** Activate a downloaded chat model — creates inference engine + sets VlmEngineHolder. */
-    fun activate(modelId: String) {
-        scope.launch {
-            activateForChat(modelId)
-        }
-    }
-
+    /** Lazily load a downloaded chat model only when chat generation needs inference. */
     suspend fun activateForChat(modelId: String): Boolean {
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
         if (loadedId == modelId && VlmEngineHolder.activeEngine?.isLoaded() == true) {
@@ -345,17 +339,6 @@ class ModelManagerController(
             refresh()
             false
         }
-    }
-
-    /** Deactivate (unload) the current model without deleting files. */
-    fun deactivate() {
-        VlmEngineHolder.activeEngine = null
-        VlmEngineHolder.activeConfig = null
-        VlmEngineHolder.selectedModel = null
-        VlmEngineHolder.executedModel = null
-        manager.clearActiveModel()
-        refresh()
-        println("MODEL[CTRL] Model deactivated")
     }
 
     /** Delete a downloaded model. */
