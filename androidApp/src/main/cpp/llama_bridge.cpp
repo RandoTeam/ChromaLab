@@ -143,6 +143,49 @@ static long long elapsed_ms_since(
     ).count();
 }
 
+static size_t count_occurrences(const std::string &text, const std::string &needle) {
+    if (needle.empty()) return 0;
+    size_t count = 0;
+    size_t pos = text.find(needle);
+    while (pos != std::string::npos) {
+        ++count;
+        pos = text.find(needle, pos + needle.size());
+    }
+    return count;
+}
+
+static std::string one_line_preview(const std::string &text, size_t max_chars = 180) {
+    std::string out;
+    out.reserve(std::min(text.size(), max_chars));
+    bool last_space = false;
+    for (char ch : text) {
+        const bool is_space = std::isspace(static_cast<unsigned char>(ch));
+        if (is_space) {
+            if (!last_space && !out.empty()) {
+                out.push_back(' ');
+            }
+            last_space = true;
+        } else {
+            out.push_back(ch);
+            last_space = false;
+        }
+        if (out.size() >= max_chars) {
+            out.append("...");
+            break;
+        }
+    }
+    return out;
+}
+
+static const char * chunk_type_name(enum mtmd_input_chunk_type type) {
+    switch (type) {
+        case MTMD_INPUT_CHUNK_TYPE_TEXT:  return "text";
+        case MTMD_INPUT_CHUNK_TYPE_IMAGE: return "image";
+        case MTMD_INPUT_CHUNK_TYPE_AUDIO: return "audio";
+    }
+    return "unknown";
+}
+
 class NativeStageWatchdog {
 public:
     NativeStageWatchdog(
@@ -269,6 +312,10 @@ static std::string run_text_completion(
         return "";
     }
 
+    LOGI("Text prompt tokenized: chars=%d tokens=%d n_predict=%d ctx=%d batch=%d add_special=1 parse_special=1 preview=%s",
+         prompt_len, n_tokens, n_predict, mc->n_ctx, mc->n_batch,
+         one_line_preview(std::string(prompt)).c_str());
+
     tokens.resize((size_t)n_tokens);
 
     int max_prompt_tokens = mc->n_ctx - n_predict - 4;
@@ -307,6 +354,9 @@ static std::string run_text_completion(
         int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
         if (len > 0) {
             result_text.append(buf, len);
+        }
+        if (i == 0) {
+            LOGI("Text first token: id=%d elapsed=%lld ms", (int)token_id, elapsed_ms_since(started));
         }
 
         if (json_task && json_object_complete(result_text)) {
@@ -372,6 +422,8 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     // 1) Load model
     llama_model_params model_params = llama_model_default_params();
     model_params.n_gpu_layers = 0; // CPU only for now
+    LOGI("GGUF load params: backendCode=%d n_gpu_layers=%d threads=%d requested_ctx=%d requested_batch=%d",
+         backendCode, model_params.n_gpu_layers, threads, contextSize, batchSize);
     {
         NativeStageWatchdog watchdog("llama_model_load", 30000, 30000);
         mc->model = llama_model_load_from_file(base, model_params);
@@ -390,6 +442,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
     ctx_params.n_threads = (threads > 0) ? threads : 4;
     ctx_params.n_threads_batch = ctx_params.n_threads;
+    LOGI("GGUF context params: n_ctx=%d n_batch=%d n_threads=%d n_threads_batch=%d",
+         (int)ctx_params.n_ctx, (int)ctx_params.n_batch,
+         (int)ctx_params.n_threads, (int)ctx_params.n_threads_batch);
     {
         NativeStageWatchdog watchdog("llama_context_init", 30000, 30000);
         mc->ctx = llama_init_from_model(mc->model, ctx_params);
@@ -411,12 +466,23 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         mtmd_context_params mtmd_params = mtmd_context_params_default();
         mtmd_params.n_threads = ctx_params.n_threads;
         mtmd_params.use_gpu = false; // CPU for now
+        LOGI("MTMD params: use_gpu=%d warmup=%d n_threads=%d image_min_tokens=%d image_max_tokens=%d marker=%s",
+             mtmd_params.use_gpu ? 1 : 0,
+             mtmd_params.warmup ? 1 : 0,
+             mtmd_params.n_threads,
+             mtmd_params.image_min_tokens,
+             mtmd_params.image_max_tokens,
+             mtmd_params.media_marker ? mtmd_params.media_marker : "");
         {
             NativeStageWatchdog watchdog("mtmd_init_from_file", 30000, 30000);
             mc->mtmd = mtmd_init_from_file(mmproj, mc->model, mtmd_params);
         }
         if (mc->mtmd) {
             LOGI("MTMD vision encoder loaded: %s", mmproj);
+            LOGI("MTMD support: vision=%d audio=%d mrope=%d",
+                 mtmd_support_vision(mc->mtmd) ? 1 : 0,
+                 mtmd_support_audio(mc->mtmd) ? 1 : 0,
+                 mtmd_decode_use_mrope(mc->mtmd) ? 1 : 0);
         } else {
             LOGE("Failed to load mmproj: %s", mmproj);
             llama_free(mc->ctx);
@@ -523,7 +589,12 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         // 2. Build prompt with media marker
         const char *marker = mtmd_default_marker();
         std::string full_prompt = build_multimodal_prompt(pmt, marker);
-        LOGI("MTMD prompt prepared: chars=%zu, marker=%s", full_prompt.size(), marker);
+        LOGI("MTMD prompt prepared: chars=%zu marker=%s marker_count=%zu role_markers=%zu preview=%s",
+             full_prompt.size(),
+             marker,
+             count_occurrences(full_prompt, marker ? std::string(marker) : std::string("<__media__>")),
+             count_occurrences(full_prompt, "<|im_start|>"),
+             one_line_preview(full_prompt).c_str());
 
         // 3. Tokenize
         mtmd_input_text input_text;
@@ -551,6 +622,23 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             env->ReleaseStringUTFChars(imagePath, img_path);
             env->ReleaseStringUTFChars(prompt, pmt);
             return env->NewStringUTF("{\"x\": [], \"y\": []}");
+        }
+
+        const size_t chunk_count = mtmd_input_chunks_size(chunks);
+        LOGI("MTMD chunks: count=%zu total_tokens=%zu total_pos=%d",
+             chunk_count,
+             mtmd_helper_get_n_tokens(chunks),
+             (int)mtmd_helper_get_n_pos(chunks));
+        for (size_t i = 0; i < std::min<size_t>(chunk_count, 8); ++i) {
+            const mtmd_input_chunk *chunk = mtmd_input_chunks_get(chunks, i);
+            if (!chunk) continue;
+            const char *chunk_id = mtmd_input_chunk_get_id(chunk);
+            LOGI("MTMD chunk[%zu]: type=%s tokens=%zu pos=%d id=%s",
+                 i,
+                 chunk_type_name(mtmd_input_chunk_get_type(chunk)),
+                 mtmd_input_chunk_get_n_tokens(chunk),
+                 (int)mtmd_input_chunk_get_n_pos(chunk),
+                 chunk_id ? chunk_id : "");
         }
 
         // 4. Clear KV cache and eval chunks
@@ -618,6 +706,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             int len = llama_token_to_piece(vocab, token_id, buf, sizeof(buf), 0, true);
             if (len > 0) {
                 result_text.append(buf, len);
+            }
+            if (i == 0) {
+                LOGI("Image first token: id=%d elapsed=%lld ms", (int)token_id, elapsed_ms_since(started));
             }
 
             // Prepare next batch — single token

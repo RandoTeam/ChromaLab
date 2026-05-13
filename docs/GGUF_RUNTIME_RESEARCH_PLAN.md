@@ -343,6 +343,33 @@ Start with Phase GGUF-R1.1:
 Only after GGUF-R1 identifies the exact divergence should we change production
 chat or chromatogram behavior.
 
+## Implementation Log
+
+### 2026-05-13: GGUF-R1.1
+
+Status: implemented as a debug-only diagnostics entry point.
+
+- Android debug builds now accept the intent action
+  `com.chromalab.app.DEBUG_GGUF_PARITY`.
+- The runner selects the requested downloaded GGUF model, or the active GGUF
+  model, and runs a text-only probe with base GGUF only.
+- If `imagePath` is supplied, the runner loads a separate vision session with
+  base GGUF plus `mmproj` and runs a one-image sanity prompt.
+- The native bridge now logs current CPU-only/offload settings, prompt token
+  counts, media marker counts, mtmd chunk counts, image token/position counts,
+  and first-token timing.
+- This diagnostics path does not produce chromatogram reports and does not
+  change LiteRT/Gemma behavior.
+
+Example adb command:
+
+```bash
+adb shell am start -n com.chromalab.app/.MainActivity \
+  -a com.chromalab.app.DEBUG_GGUF_PARITY \
+  --es modelId qwen3vl-2b-q4km \
+  --es imagePath /sdcard/Download/chromatogram.jpg
+```
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.
