@@ -314,3 +314,16 @@ Implemented on 2026-05-13:
 Remaining later work:
 
 - Phase 5.3 should validate candidate monotonicity, tick spacing, visible range, and geometry before a candidate can support release-quality calibration.
+
+## Phase 5.3 Implementation Notes
+
+Implemented on 2026-05-13:
+
+- OCR calibration candidates now run structural and geometry validation before report storage.
+- Valid candidates are marked `VALIDATED`; candidates with too little data remain `INSUFFICIENT_DATA`; non-monotonic, out-of-range, or non-linear candidates are marked `REJECTED`.
+- X-axis validation requires values to increase left-to-right. Y-axis validation requires values to decrease top-to-bottom because image Y grows downward.
+- Validation rejects candidates with localized tick pixels outside the visible graph range or with inconsistent tick spacing for a linear calibration.
+
+Remaining later work:
+
+- Phase 5.4 should persist the selected `PixelToUnitTransform` only from validated calibration data and record calibration confidence separately from raw OCR confidence.

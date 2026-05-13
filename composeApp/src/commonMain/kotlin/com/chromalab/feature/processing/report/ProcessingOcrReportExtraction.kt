@@ -219,7 +219,7 @@ private fun buildAxisCalibrationCandidate(
         .mapNotNull { it.pixel }
         .distinctBy { (it * 2.0).toInt() }
         .size
-    val reasons = buildList {
+    val structuralReasons = buildList {
         if (normalizedValues.size < 2) {
             add("Fewer than two distinct numeric axis readings were available.")
         }
@@ -230,6 +230,12 @@ private fun buildAxisCalibrationCandidate(
             add("Fewer than two OCR readings had localized pixel positions for this axis.")
         }
     }
+    val geometryReasons = if (structuralReasons.isEmpty()) {
+        validateAxisCandidateGeometry(axis, candidatePoints, bounds)
+    } else {
+        emptyList()
+    }
+    val reasons = structuralReasons + geometryReasons
 
     return AxisCalibrationCandidate(
         candidateId = when (axis) {
@@ -238,10 +244,16 @@ private fun buildAxisCalibrationCandidate(
         },
         axis = axis.toReportAxisName(),
         source = source,
-        status = if (reasons.isEmpty()) {
-            AxisCalibrationCandidateStatus.CANDIDATE
-        } else {
-            AxisCalibrationCandidateStatus.INSUFFICIENT_DATA
+        status = when {
+            structuralReasons.isNotEmpty() -> {
+                AxisCalibrationCandidateStatus.INSUFFICIENT_DATA
+            }
+            geometryReasons.isNotEmpty() -> {
+                AxisCalibrationCandidateStatus.REJECTED
+            }
+            else -> {
+                AxisCalibrationCandidateStatus.VALIDATED
+            }
         },
         unit = unit,
         confidence = confidence,
@@ -249,6 +261,77 @@ private fun buildAxisCalibrationCandidate(
         rejectionReasons = reasons,
     )
 }
+
+private fun validateAxisCandidateGeometry(
+    axis: AxisSide,
+    points: List<AxisCalibrationCandidatePoint>,
+    bounds: PixelRect?,
+): List<String> {
+    val graphBounds = bounds ?: return emptyList()
+    val localized = points
+        .mapNotNull { point -> point.pixel?.let { pixel -> LocalizedAxisPoint(point.value, pixel) } }
+        .sortedBy { it.pixel }
+    if (localized.size < 2) return emptyList()
+
+    val axisLimit = when (axis) {
+        AxisSide.X -> graphBounds.width.toDouble()
+        AxisSide.Y -> graphBounds.height.toDouble()
+    }
+    val tolerance = axisLimit * 0.05
+
+    return buildList {
+        if (localized.any { point -> point.pixel < -tolerance || point.pixel > axisLimit + tolerance }) {
+            add("At least one localized tick pixel is outside the visible graph range.")
+        }
+
+        val values = localized.map { it.value }
+        val minValue = values.minOrNull()
+        val maxValue = values.maxOrNull()
+        if (minValue == null || maxValue == null || maxValue <= minValue) {
+            add("Axis readings do not define a positive visible value range.")
+        }
+
+        val valueDeltasByPixel = localized.zipWithNext { left, right -> right.value - left.value }
+        val isMonotonic = when (axis) {
+            AxisSide.X -> valueDeltasByPixel.all { it > 0.0 }
+            AxisSide.Y -> valueDeltasByPixel.all { it < 0.0 }
+        }
+        if (!isMonotonic) {
+            add(
+                when (axis) {
+                    AxisSide.X -> "X-axis readings are not monotonic increasing from left to right."
+                    AxisSide.Y -> "Y-axis readings are not monotonic decreasing from top to bottom."
+                },
+            )
+        }
+
+        val slopes = localized.zipWithNext { left, right ->
+            val pixelDelta = right.pixel - left.pixel
+            if (pixelDelta <= 0.0) {
+                null
+            } else {
+                abs(right.value - left.value) / pixelDelta
+            }
+        }.filterNotNull()
+
+        if (slopes.size >= 2) {
+            val medianSlope = slopes.sorted()[slopes.size / 2]
+            if (medianSlope <= 0.0) {
+                add("Axis tick spacing cannot be evaluated because the median slope is zero.")
+            } else {
+                val maxRelativeDeviation = slopes.maxOf { slope -> abs(slope - medianSlope) / medianSlope }
+                if (maxRelativeDeviation > 0.40) {
+                    add("Axis tick spacing is inconsistent with a linear calibration candidate.")
+                }
+            }
+        }
+    }
+}
+
+private data class LocalizedAxisPoint(
+    val value: Double,
+    val pixel: Double,
+)
 
 private fun AxisSide.toReportAxisName(): ReportAxisName =
     when (this) {

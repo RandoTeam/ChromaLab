@@ -87,7 +87,7 @@ Goal: make pixel-to-unit conversion auditable and accurate enough for real chrom
 
 - [x] 5.1 Extract chromatogram title, ion/channel, sample label, X-axis label, Y-axis label, and tick labels.
 - [x] 5.2 Convert OCR/model axis readings into structured calibration candidates.
-- [ ] 5.3 Validate X/Y tick monotonicity, spacing, and visible range.
+- [x] 5.3 Validate X/Y tick monotonicity, spacing, and visible range.
 - [ ] 5.4 Persist `PixelToUnitTransform` and calibration confidence.
 - [ ] 5.5 Show clear warnings for weak OCR, missing ticks, tilted image, or inconsistent axis geometry.
 
@@ -194,4 +194,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 5.3: validate X/Y tick monotonicity, spacing, and visible range.
+Start Phase 5.4: persist `PixelToUnitTransform` and calibration confidence.

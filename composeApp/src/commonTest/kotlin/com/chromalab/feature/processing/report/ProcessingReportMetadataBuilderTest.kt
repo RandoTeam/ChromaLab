@@ -244,8 +244,8 @@ class ProcessingReportMetadataBuilderTest {
         val candidates = graph.axisCalibration?.calibrationCandidates.orEmpty()
         val xCandidate = candidates.single { it.candidateId == "ocr-x-axis" }
         val yCandidate = candidates.single { it.candidateId == "ocr-y-axis" }
-        assertEquals(AxisCalibrationCandidateStatus.CANDIDATE, xCandidate.status)
-        assertEquals(AxisCalibrationCandidateStatus.CANDIDATE, yCandidate.status)
+        assertEquals(AxisCalibrationCandidateStatus.VALIDATED, xCandidate.status)
+        assertEquals(AxisCalibrationCandidateStatus.VALIDATED, yCandidate.status)
         assertEquals(ReportValueSource.OCR, xCandidate.source)
         assertEquals("min", xCandidate.unit)
         assertEquals(10.0, xCandidate.points.first { it.value == 10.0 }.pixel)
@@ -253,6 +253,68 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("counts", yCandidate.unit)
         assertEquals(8.0, yCandidate.points.first { it.value == 10_000.0 }.pixel)
         assertEquals(300.0, yCandidate.points.first { it.value == 0.0 }.pixel)
+    }
+
+    @Test
+    fun processingMetadataRejectsInvalidAxisCalibrationCandidate() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\normalized_photo.jpg""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 512,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_750L,
+            detectedGraphBounds = PixelRect(100, 100, 400, 300),
+            axisOcrResult = AxisOcrResult(
+                rawElements = listOf(
+                    OcrTextElement(
+                        text = "10.00",
+                        numericValue = 10f,
+                        x = 390f,
+                        y = 410f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.78f,
+                    ),
+                    OcrTextElement(
+                        text = "20.00",
+                        numericValue = 20f,
+                        x = 190f,
+                        y = 410f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.78f,
+                    ),
+                    OcrTextElement(
+                        text = "30.00",
+                        numericValue = 30f,
+                        x = 540f,
+                        y = 410f,
+                        width = 20f,
+                        height = 14f,
+                        confidence = 0.78f,
+                    ),
+                ),
+                suggestedXValues = listOf(10f, 20f, 30f),
+                suggestedYValues = emptyList(),
+                xUnit = "Time-->",
+                yUnit = null,
+                confidence = 0.82f,
+                timestamp = 1_234L,
+            ),
+        )
+
+        val graph = StoredReportMetadataCodec.decodeOrNull(config)?.graphs?.single()
+        val xCandidate = graph?.axisCalibration?.calibrationCandidates
+            .orEmpty()
+            .single { it.candidateId == "ocr-x-axis" }
+
+        assertEquals(AxisCalibrationCandidateStatus.REJECTED, xCandidate.status)
+        assertTrue(xCandidate.rejectionReasons.any { it.contains("monotonic") })
+        assertTrue(xCandidate.rejectionReasons.any { it.contains("spacing") })
+        assertTrue(xCandidate.rejectionReasons.any { it.contains("visible graph range") })
     }
 
     @Test

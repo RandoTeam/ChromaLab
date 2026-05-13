@@ -179,6 +179,7 @@ enum class ReportAxisName {
 @Serializable
 enum class AxisCalibrationCandidateStatus {
     CANDIDATE,
+    VALIDATED,
     INSUFFICIENT_DATA,
     REJECTED,
 }
