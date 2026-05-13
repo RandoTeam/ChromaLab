@@ -6,14 +6,14 @@ The fixture is a report-format reference, not a locked numeric answer. Future ca
 
 ## Source Materials
 
-The source materials were provided outside the repository and are not committed in this fixture.
+The chromatogram screenshot is now committed as a neutral desktop-test resource. The human reference analysis remains outside the repository and is tracked only by hash.
 
 | Asset | Role | SHA-256 | Notes |
 | --- | --- | --- | --- |
-| `photo_2026-05-10_06-16-01.jpg` | Screenshot/photo containing the chromatogram graph | `D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE` | 576 x 1280 JPEG, phone screenshot/document page context |
+| `composeApp/src/desktopTest/resources/fixtures/belyi_tigr_ion92/photo_2026-05-10_06-16-01.jpg` | Screenshot/photo containing the chromatogram graph | `D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE` | 576 x 1280 JPEG, 57090 bytes, phone screenshot/document page context |
 | `reference_analysis.md.resolved` | Human reference for report structure and depth | `8D68B75738DD33DFFD74CFB83696F3485C46D3E8AE6A770CAA562A02D0404DB0` | Use as format reference, not as guaranteed numeric truth |
 
-Do not add user-specific absolute paths to this fixture. If assets are copied into a future test dataset, place them under a neutral test-data directory and preserve the hashes above.
+Do not add user-specific absolute paths to this fixture. Keep committed assets under neutral test-data/resource directories and preserve the hashes above.
 
 ## Visible Chromatogram Facts
 
@@ -103,6 +103,18 @@ This fixture should later become a regression case for:
 - warning generation.
 
 The fixture intentionally does not define exact final peak counts, areas, or compound assignments yet. Those belong to later phases after the image-to-signal extraction and calculation engine are validated against real data.
+
+## Real-Photo Fixture
+
+Phase 6.4 adds the first executable real-photo fixture for this case:
+
+```text
+composeApp/src/desktopTest/kotlin/com/chromalab/feature/calculation/algorithm/BelyiTigrRealPhotoFixtureTest.kt
+```
+
+The test verifies that the committed JPEG keeps its expected SHA-256, byte size, and image dimensions. It also locks the analysis contract that this input needs graph cropping, selected/rejected preprocessing metadata, and explicit warnings for crop, axis confidence, and the early-dominant-peak reference tension.
+
+This fixture still does not lock peak areas, FWHM, baseline, noise, or compound assignments. Those values must come from later graph extraction and calculation validation, not from manual reference prose.
 
 ## Executable Fixture
 

@@ -1,13 +1,15 @@
 {
   "fixtureId": "belyi_tigr_ion92_report_reference",
-  "phase": "1.2",
+  "phase": "1.2/6.4",
   "purpose": "Report structure and completeness reference for the Belyi Tigr Ion 92 chromatogram case.",
   "numericTruthStatus": "not_locked",
   "assets": {
     "image": {
       "fileName": "photo_2026-05-10_06-16-01.jpg",
-      "committed": false,
+      "committed": true,
+      "repositoryPath": "composeApp/src/desktopTest/resources/fixtures/belyi_tigr_ion92/photo_2026-05-10_06-16-01.jpg",
       "sha256": "D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE",
+      "sizeBytes": 57090,
       "width": 576,
       "height": 1280,
       "format": "jpeg",
