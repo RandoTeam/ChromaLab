@@ -117,7 +117,7 @@ Exit criteria:
 Goal: make chemical interpretation offline, structured, and conservative.
 
 - [x] 7.1 Define local knowledge-pack schema for chromatogram types, ion fragments, compound classes, carbon numbers, and Kovats references.
-- [ ] 7.2 Add `m/z 92` and alkylbenzene-oriented reference data.
+- [x] 7.2 Add `m/z 92` and alkylbenzene-oriented reference data.
 - [ ] 7.3 Add n-paraffin reference series support for Kovats calculations.
 - [ ] 7.4 Distinguish calculated, detected, inferred, local-knowledge, and model-suggested values.
 - [ ] 7.5 Add warning rules for co-elution, contamination, weak baseline, weak crop, and unsupported model/runtime.
@@ -195,7 +195,9 @@ Exit criteria:
 - `a15d669` - Allow upstream metadata in report mapping.
 - `c123e8d` - Pass calculation metadata to report export.
 - `791e556` - Persist report metadata contract.
+- `baa95a0` - Add calculation regression quality gates.
+- `6bd442f` - Add local knowledge pack schema.
 
 ## Next Recommended Slice
 
-Start Phase 7.2: add `m/z 92` and alkylbenzene-oriented reference data.
+Start Phase 7.3: add n-paraffin reference series support for Kovats calculations.
