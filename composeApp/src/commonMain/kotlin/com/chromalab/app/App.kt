@@ -193,11 +193,13 @@ fun App() {
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = { signalId ->
+                            modelActions.unloadChromatogramModelAfterAnalysis()
                             navController.navigate(Route.Analysis(signalId.toString())) {
                                 popUpTo(Route.Capture) { inclusive = false }
                             }
                         },
                         onCancel = {
+                            modelActions.unloadChromatogramModelAfterAnalysis()
                             navController.popBackStack(Route.Capture, inclusive = false)
                         },
                     )
@@ -210,9 +212,11 @@ fun App() {
                     AnalysisFlowScreen(
                         signalId = signalId,
                         onFinish = {
+                            modelActions.unloadChromatogramModelAfterAnalysis()
                             navController.popBackStack(Route.Calculations, inclusive = false)
                         },
                         onCancel = {
+                            modelActions.unloadChromatogramModelAfterAnalysis()
                             navController.popBackStack(Route.Calculations, inclusive = false)
                         },
                     )

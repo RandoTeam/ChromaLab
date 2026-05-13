@@ -23,6 +23,7 @@ data class ModelManagerActions(
     val scheduleAutoUnload: () -> Unit = {},
     val cancelAutoUnloadTimer: () -> Unit = {},
     val prepareForChromatogramWorkflow: () -> Unit = {},
+    val unloadChromatogramModelAfterAnalysis: () -> Unit = {},
     val onImport: () -> Unit = {},
     /** Export model files to user-chosen location. */
     val onExport: (String) -> Unit = {},

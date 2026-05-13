@@ -124,7 +124,7 @@ Technical rule:
 
 Goal: downloaded models are stored on disk, but not loaded into memory until the active workflow needs them.
 
-Status: in progress. Phase 5.1, Phase 5.2, Phase 5.3, and Phase 5.4 are implemented; post-analysis unload and full idle guarantees are still pending.
+Status: in progress. Phase 5.1, Phase 5.2, Phase 5.3, Phase 5.4, and Phase 5.5 are implemented; full idle guarantees are still pending.
 
 Subpoints:
 
@@ -137,7 +137,7 @@ Subpoints:
 - Done: unload chat model after leaving chat according to an auto-unload timer.
 - Done: unload chat model when entering camera/chromatogram analysis if memory is needed.
 - Done: load the selected chromatogram model only when image/photo analysis reaches the neural stage.
-- Not done: unload the chromatogram model after the analysis report is produced.
+- Done: unload the chromatogram model after the analysis report is produced.
 - Not done: ensure no background model loading happens while the app is idle.
 - Not done: keep local import/export model flows intact.
 
@@ -148,10 +148,11 @@ Technical rule:
 - Phase 5.2 stores chromatogram model selection separately from the chat/global active model. If the selected chromatogram model is missing or cannot load, the pipeline stops the neural stage instead of silently choosing a weaker replacement.
 - Phase 5.3 stores chat model choice per chat and loads the selected model lazily on first generation. GGUF chat loads text-only without `mmproj`; chromatogram analysis still loads its own vision package.
 - Phase 5.4 frees a loaded chat/text engine when entering capture, camera, import, processing, or analysis routes. It does not pre-load a chromatogram VLM and it keeps a compatible already-loaded chromatogram vision model reusable.
+- Phase 5.5 unloads a loaded chromatogram vision runtime after processing produces a saved signal/report and when leaving the calculation analysis screen. It is idempotent and does not unload unrelated text/chat engines.
 
 ## Current Next Phase
 
-The next phase to work on is Phase 5.5 - Post-Analysis Model Unload.
+The next phase to work on is Phase 5.6 - Idle No-Load Guarantees.
 
 Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 

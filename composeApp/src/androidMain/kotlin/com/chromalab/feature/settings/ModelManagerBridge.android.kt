@@ -113,6 +113,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             scheduleAutoUnload = { controller.scheduleAutoUnload() },
             cancelAutoUnloadTimer = { controller.cancelAutoUnloadTimer() },
             prepareForChromatogramWorkflow = { controller.prepareForChromatogramWorkflow() },
+            unloadChromatogramModelAfterAnalysis = { controller.unloadChromatogramModelAfterAnalysis() },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
             onHuggingFaceQueryChange = { controller.updateHuggingFaceQuery(it) },
             onHuggingFaceSortChange = { controller.setHuggingFaceSort(it) },

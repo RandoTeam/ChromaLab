@@ -503,6 +503,35 @@ class ModelManagerController(
         refresh()
     }
 
+    /**
+     * Release the chromatogram vision runtime after the image/report workflow has produced
+     * its saved result. This keeps the app idle without a heavy VLM in memory.
+     */
+    fun unloadChromatogramModelAfterAnalysis() {
+        cancelAutoUnloadTimer()
+
+        val engine = VlmEngineHolder.activeEngine
+        if (engine?.isLoaded() != true) return
+
+        if (VlmEngineHolder.isInferring) {
+            logModel("Post-analysis unload skipped because inference is still running")
+            scheduleAutoUnload()
+            return
+        }
+
+        if (!engine.supportsImageInput() || !VlmEngineHolder.activeExecutedModelIsChromatogramVision()) {
+            return
+        }
+
+        logModel("Unloading chromatogram VLM after analysis: ${VlmEngineHolder.activeModelDiagnostics()}")
+        VlmEngineHolder.activeEngine = null
+        VlmEngineHolder.activeConfig = null
+        VlmEngineHolder.selectedModel = null
+        VlmEngineHolder.executedModel = null
+        manager.clearActiveModel()
+        refresh()
+    }
+
     /** Import a model file from a user-selected URI. */
     fun importFile(uri: Uri) {
         scope.launch {

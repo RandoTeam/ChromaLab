@@ -85,10 +85,19 @@ Camera and chromatogram workflows now get a memory handoff before analysis.
 - The handoff never loads a neural model early; the processing pipeline still lazy-loads the selected VLM only when the neural stage starts.
 - If inference is already running, the handoff does not unload the active engine mid-generation.
 
+## Phase 5.5 Status
+
+Chromatogram vision models are released when the report workflow no longer needs them.
+
+- After image processing auto-saves the signal/report and navigates to calculation analysis, the active chromatogram VLM is unloaded.
+- Leaving the calculation analysis screen also runs the same cleanup as a fallback.
+- Cleanup only unloads a loaded image-capable chromatogram model; unrelated text/chat engines are ignored.
+- If inference is still running, cleanup does not unload mid-generation and falls back to the configured auto-unload timer.
+
 ## Still Not In Current Download/Lifecycle Scope
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Post-analysis unload and full idle no-load guarantees.
+- Full idle no-load guarantees.
 
 These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.
