@@ -1,5 +1,7 @@
 package com.chromalab.feature.chat
 
+import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.model.ModelRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -221,6 +223,9 @@ class ChatController(
                         totalTokens = promptTokens + completionTokens,
                         durationMs = durationMs,
                         tokensPerSecond = completionTokens * 1000.0 / durationMs,
+                        modelName = selectedModelName,
+                        backendLabel = chatBackendLabelFor(selectedModelId),
+                        acceleratorLabel = selectedRuntimeAccelerator.label,
                     )
 
                     archive = archive.copy(
@@ -294,6 +299,13 @@ class ChatController(
         val charEstimate = (trimmed.length + 3) / 4
         return maxOf(1, maxOf(wordEstimate, charEstimate))
     }
+
+    private fun chatBackendLabelFor(modelId: String): String =
+        when (ModelRegistry.findById(modelId)?.runtime) {
+            ModelRuntime.LITERT_LM -> ChatRuntimeBackend.LITERT_LM.label
+            ModelRuntime.LLAMA_CPP -> ChatRuntimeBackend.LLAMA_CPP.label
+            null -> ChatRuntimeBackend.IMPORTED.label
+        }
 
     private fun publish(
         selectedChatId: String?,

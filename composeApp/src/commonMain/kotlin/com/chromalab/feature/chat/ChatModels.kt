@@ -52,6 +52,9 @@ data class ChatMessageStats(
     val totalTokens: Int = 0,
     val durationMs: Long = 0,
     val tokensPerSecond: Double = 0.0,
+    val modelName: String? = null,
+    val backendLabel: String? = null,
+    val acceleratorLabel: String? = null,
 )
 
 @Serializable

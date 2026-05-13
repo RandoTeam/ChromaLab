@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 4.3.
-- Next phase to start: Phase 4.4.
+- Current completed phase: Phase 4.6.
+- Next phase to start: Phase 4.7.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -87,9 +87,9 @@ Status: in progress.
 - [x] Phase 4.1: Rework message rows toward Gallery's calmer chat hierarchy.
 - [x] Phase 4.2: Use lighter assistant response presentation and preserve user/assistant alignment.
 - [x] Phase 4.3: Keep token/time stats under completed assistant messages.
-- [ ] Phase 4.4: Extend stats with model name, backend, accelerator, duration, and tokens/sec where data is available.
-- [ ] Phase 4.5: Preserve readable scientific output, tables, and markdown-like report fragments.
-- [ ] Phase 4.6: Validate long messages and small-screen wrapping.
+- [x] Phase 4.4: Extend stats with model name, backend, accelerator, duration, and tokens/sec where data is available.
+- [x] Phase 4.5: Preserve readable scientific output, tables, and markdown-like report fragments.
+- [x] Phase 4.6: Validate long messages and small-screen wrapping.
 - [ ] Phase 4.7: Commit Phase 4 work slices separately.
 
 ## Phase 5 - Streaming Text And Thinking Block

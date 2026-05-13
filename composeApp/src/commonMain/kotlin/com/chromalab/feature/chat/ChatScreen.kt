@@ -64,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -534,9 +535,15 @@ private fun StreamingMessageText(message: ChatMessage) {
         message.isStreaming -> "Генерация..."
         else -> message.content
     }
+    val textStyle = if (message.content.looksLikeStructuredOutput()) {
+        MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+    } else {
+        MaterialTheme.typography.bodyMedium
+    }
     Text(
         text = if (message.isStreaming && cursorVisible) "$text|" else text,
-        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.fillMaxWidth(),
+        style = textStyle,
     )
 }
 
@@ -547,13 +554,40 @@ private fun MessageStatsRow(stats: ChatMessageStats) {
         shape = RoundedCornerShape(24.dp),
     ) {
         Text(
-            text = "Prompt ${stats.promptTokens} tok | answer ${stats.completionTokens} tok | total ${stats.totalTokens} tok | ${formatDuration(stats.durationMs)} | ${formatRate(stats.tokensPerSecond)} tok/s",
+            text = formatStatsText(stats),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+private fun formatStatsText(stats: ChatMessageStats): String =
+    buildList {
+        stats.modelName?.takeIf { it.isNotBlank() }?.let(::add)
+        stats.backendLabel?.takeIf { it.isNotBlank() }?.let(::add)
+        stats.acceleratorLabel?.takeIf { it.isNotBlank() }?.let { add(it) }
+        add("prompt ${stats.promptTokens} tok")
+        add("answer ${stats.completionTokens} tok")
+        add("total ${stats.totalTokens} tok")
+        add(formatDuration(stats.durationMs))
+        add("${formatRate(stats.tokensPerSecond)} tok/s")
+    }.joinToString(" | ")
+
+private fun String.looksLikeStructuredOutput(): Boolean {
+    val trimmed = trim()
+    if (trimmed.isEmpty()) return false
+    if ("```" in trimmed) return true
+    val lines = trimmed.lines()
+    if (lines.any { it.count { char -> char == '|' } >= 2 }) return true
+    return lines.any { line ->
+        line.contains('\t') ||
+            line.contains("Retention", ignoreCase = true) ||
+            line.contains("Peak", ignoreCase = true) ||
+            line.contains("Area", ignoreCase = true) ||
+            line.contains("RT", ignoreCase = false)
     }
 }
 
