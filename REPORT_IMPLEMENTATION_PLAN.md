@@ -105,7 +105,7 @@ Goal: prove that peak detection, integration, and metrics are correct for synthe
 - [x] 6.3 Add synthetic fixtures with known peak RT, height, area, width, S/N, and overlap behavior.
 - [x] 6.4 Add real-photo fixtures, starting with Belyi Tigr Ion 92.
 - [x] 6.5 Validate the early dominant peak tension in the Belyi Tigr screenshot instead of blindly copying reference text.
-- [ ] 6.6 Add regression gates for area percent, FWHM, baseline, noise, and confidence flags.
+- [x] 6.6 Add regression gates for area percent, FWHM, baseline, noise, and confidence flags.
 
 Exit criteria:
 
@@ -198,4 +198,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 6.6: add regression gates for area percent, FWHM, baseline, noise, and confidence flags.
+Start Phase 7.1: define local knowledge-pack schema for chromatogram types, ion fragments, compound classes, carbon numbers, and Kovats references.

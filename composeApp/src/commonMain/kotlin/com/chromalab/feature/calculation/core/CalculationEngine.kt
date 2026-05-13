@@ -84,6 +84,7 @@ object CalculationEngine {
 
         // Stage 5: Noise estimation (§2.14)
         val noiseMethod = parseNoiseMethod(params.noiseMethod)
+        val snrMethod = parseSnrMethod(noiseMethod)
         val noiseResult = NoiseEstimator.estimate(
             points = detectionPoints,
             method = noiseMethod,
@@ -152,6 +153,7 @@ object CalculationEngine {
             val snr = SnrCalculator.calculate(
                 peakHeight = candidate.apexIntensity,
                 noiseResult = noiseResult,
+                method = snrMethod,
             )
 
             // Full metrics
@@ -339,6 +341,12 @@ object CalculationEngine {
         return NoiseMethod.entries.find {
             it.name == normalized || it.label.equals(value, ignoreCase = true)
         } ?: NoiseMethod.PEAK_TO_PEAK
+    }
+
+    private fun parseSnrMethod(noiseMethod: NoiseMethod): SnrMethod = when (noiseMethod) {
+        NoiseMethod.PEAK_TO_PEAK -> SnrMethod.PEAK_TO_PEAK
+        NoiseMethod.RMS -> SnrMethod.RMS
+        NoiseMethod.MAD -> SnrMethod.ROBUST
     }
 
     private fun parseBoundaryMethod(value: String): BoundaryMethod {
