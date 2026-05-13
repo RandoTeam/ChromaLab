@@ -37,4 +37,18 @@ class GgufTextPromptFormatterTest {
 
         assertEquals(prompt, formatGgufTextPrompt(prompt, PromptStyle.RAW))
     }
+
+    @Test
+    fun liteRtQwenFamilyUsesSdkManagedPromptStyle() {
+        val config = InferenceConfig.forModelFamily("litert-qwen3.5-vlm")
+
+        assertEquals(PromptStyle.LITERT, config.promptStyle)
+    }
+
+    @Test
+    fun fastVlmFamilyUsesSdkManagedPromptStyle() {
+        val config = InferenceConfig.forModelFamily("fastvlm-litert")
+
+        assertEquals(PromptStyle.LITERT, config.promptStyle)
+    }
 }

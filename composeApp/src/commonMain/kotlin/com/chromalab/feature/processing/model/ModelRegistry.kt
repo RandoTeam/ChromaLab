@@ -63,10 +63,11 @@ data class ModelGroup(
 /**
  * Registry of all known built-in models.
  *
- * URLs verified against HuggingFace API on 2026-05-11.
+ * URLs verified against HuggingFace API on 2026-05-13.
  *
  * Available models:
- *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB)
+ *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB),
+ *               FastVLM 0.5B (1.08 GB), Qwen3.5 0.8B VLM (1.08 GB)
  *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
  *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M),
  *               PaddleOCR-VL-1.5 (Q8_0, BF16),
@@ -78,6 +79,7 @@ data class ModelGroup(
 object ModelRegistry {
 
     private const val HF_BASE = "https://huggingface.co"
+    private const val LITERT_COMMUNITY = "$HF_BASE/litert-community"
     private const val UNSLOTH = "$HF_BASE/unsloth"
     private const val GGML_ORG = "$HF_BASE/ggml-org"
 
@@ -143,6 +145,44 @@ object ModelRegistry {
         isBuiltin = true,
         supportsVision = true,
         description = "Высокая точность с NPU/GPU. 12+ GB RAM. ~12.9 GB.",
+    )
+
+    private val fastVlm05B = ModelInfo(
+        id = "fastvlm-05b-litert",
+        displayName = "FastVLM 0.5B",
+        family = "fastvlm-litert",
+        runtime = ModelRuntime.LITERT_LM,
+        files = listOf(
+            ModelFile(
+                fileName = "FastVLM-0.5B.litertlm",
+                sizeBytes = 1_156_349_952L,
+                type = ModelFileType.LITERT_BUNDLE,
+                downloadUrl = "$LITERT_COMMUNITY/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm",
+            ),
+        ),
+        minRamMb = 4096,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Experimental non-Google LiteRT-LM VLM. Image input, CPU/GPU/Qualcomm NPU candidates. License: Apple AMLR.",
+    )
+
+    private val qwen35LiteRt08B = ModelInfo(
+        id = "qwen35-08b-litert-vlm",
+        displayName = "Qwen3.5 0.8B LiteRT VLM",
+        family = "litert-qwen3.5-vlm",
+        runtime = ModelRuntime.LITERT_LM,
+        files = listOf(
+            ModelFile(
+                fileName = "qwen35_mm_q8_ekv2048.litertlm",
+                sizeBytes = 1_159_757_824L,
+                type = ModelFileType.LITERT_BUNDLE,
+                downloadUrl = "$HF_BASE/GabrieleConte/Qwen3.5-0.8B-LiteRT/resolve/main/qwen35_mm_q8_ekv2048.litertlm",
+            ),
+        ),
+        minRamMb = 4096,
+        isBuiltin = true,
+        supportsVision = true,
+        description = "Experimental Apache-2.0 LiteRT-LM multimodal Qwen package with bundled vision encoder and adapter.",
     )
 
     // ===== Qwen3-VL-2B quantization variants =====
@@ -459,6 +499,8 @@ object ModelRegistry {
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
         gemma4E4B,
+        fastVlm05B,
+        qwen35LiteRt08B,
         // PaddleOCR-VL (specialized OCR)
         paddleOCR_Q8_0, paddleOCR_BF16,
         // dots.mocr (chart→structure)
@@ -566,6 +608,7 @@ object ModelRegistry {
         if (!model.supportsVision) return false
         val family = model.family.lowercase()
         return family.contains("gemma") ||
+            family.contains("fastvlm") ||
             family.contains("smolvlm") ||
             family.contains("moondream") ||
             family.contains("qwen")
@@ -581,12 +624,14 @@ object ModelRegistry {
         val id = model.id.lowercase()
         return when {
             id == "gemma4-e2b" -> 0
-            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q3") -> 1
-            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q4") -> 2
-            family.contains("smolvlm") && id.contains("q4") -> 3
-            family.contains("moondream") -> 4
-            id == "gemma4-e4b" -> 5
-            family.contains("qwen") -> 6
+            family.contains("fastvlm") -> 1
+            id == "qwen35-08b-litert-vlm" -> 2
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q3") -> 3
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q4") -> 4
+            family.contains("smolvlm") && id.contains("q4") -> 5
+            family.contains("moondream") -> 6
+            id == "gemma4-e4b" -> 7
+            family.contains("qwen") -> 8
             else -> 100
         }
     }

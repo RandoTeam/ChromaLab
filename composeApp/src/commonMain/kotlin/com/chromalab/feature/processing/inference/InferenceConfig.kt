@@ -58,7 +58,7 @@ enum class PromptStyle {
  * | DeepSeek-OCR         | 2048      | 1.0           | 4096        | DEEPSEEK_OCR    |
  * | SmolVLM2             | 768       | 1.1           | 4096        | RAW             |
  * | Moondream2           | 768       | 1.1           | 4096        | DIRECT_QUESTION |
- * | Gemma 4 (LiteRT)     | 768       | 1.0           | 4096        | LITERT          |
+ * | LiteRT-LM VLM        | 768       | 1.0           | 4096        | LITERT          |
  */
 data class InferenceConfig(
     /** Maximum tokens to generate. */
@@ -153,6 +153,19 @@ data class InferenceConfig(
         val GEMMA = InferenceConfig(
             maxTokens = 768,
             repeatPenalty = 1.0f, // LiteRT handles this
+            repeatLastN = 0,
+            contextSize = 4096,
+            batchSize = 512,
+            promptStyle = PromptStyle.LITERT,
+        )
+
+        /**
+         * Preset for LiteRT-LM multimodal bundles that receive image/text via
+         * the SDK Message/Content API. Do not wrap these prompts in ChatML text.
+         */
+        val LITERT_VLM = InferenceConfig(
+            maxTokens = 768,
+            repeatPenalty = 1.0f,
             repeatLastN = 0,
             contextSize = 4096,
             batchSize = 512,
@@ -273,6 +286,8 @@ data class InferenceConfig(
          * Select the optimal config for a model by its family.
          */
         fun forModelFamily(family: String): InferenceConfig = when {
+            family.contains("fastvlm-litert", ignoreCase = true) -> LITERT_VLM
+            family.contains("litert-qwen", ignoreCase = true) -> LITERT_VLM
             family.contains("paddleocr", ignoreCase = true) -> PADDLEOCR_VL
             family.contains("dots", ignoreCase = true) -> DOTS_MOCR
             family.contains("deepseek-ocr", ignoreCase = true) -> DEEPSEEK_OCR
