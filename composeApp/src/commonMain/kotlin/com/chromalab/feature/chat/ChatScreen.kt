@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -57,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +79,7 @@ fun ChatScreen(
         topBar = {
             ChatTopBar(
                 selected = selected,
-                activeModelName = state.activeModelName,
+                activeModelName = selected?.modelName ?: state.activeModelName,
                 onBack = { actions.selectChat(null) },
                 onNewChat = actions.createChat,
                 onOpenModelManager = onOpenModelManager,
@@ -85,11 +88,9 @@ fun ChatScreen(
         },
         bottomBar = {
             if (selected != null) {
-                val selectedModelReady = selected.modelId == null || selected.modelId == state.activeModelId
                 ChatComposer(
-                    enabled = !state.isGenerating && state.activeModelName != null && selectedModelReady,
+                    enabled = !state.isGenerating && selected.modelId != null,
                     isGenerating = state.isGenerating,
-                    modelReady = selectedModelReady,
                     onSend = actions.sendMessage,
                 )
             }
@@ -110,6 +111,7 @@ fun ChatScreen(
             } else {
                 ChatThreadContent(
                     state = state,
+                    selected = selected,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -127,7 +129,7 @@ fun ChatScreen(
                 Text("Ошибка чата", style = MaterialTheme.typography.titleMedium)
                 Text(state.error, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Button(onClick = actions.clearError, modifier = Modifier.align(Alignment.End)) {
-                    Text("ОК")
+                    Text("OK")
                 }
             }
         }
@@ -179,20 +181,35 @@ private fun ChatTopBar(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                 )
-                Text(
-                    text = activeModelName ?: "Активная модель не выбрана",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+                if (selected == null) {
+                    Text(
+                        text = activeModelName ?: "Активная модель не выбрана",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
             }
             if (selected != null) {
+                AssistChip(
+                    onClick = onSettings,
+                    label = {
+                        Text(
+                            text = activeModelName ?: "Выбрать модель",
+                            maxLines = 1,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.SmartToy, contentDescription = null, modifier = Modifier.size(16.dp))
+                    },
+                    modifier = Modifier.widthIn(max = 180.dp),
+                )
                 IconButton(onClick = onSettings) {
                     Icon(Icons.Filled.Tune, contentDescription = "Настройки")
                 }
             }
             IconButton(onClick = onOpenModelManager) {
-                Icon(Icons.Filled.SmartToy, contentDescription = "Models")
+                Icon(Icons.Filled.SmartToy, contentDescription = "Модели")
             }
             IconButton(onClick = onNewChat) {
                 Icon(Icons.Filled.Add, contentDescription = "Новый чат")
@@ -222,7 +239,7 @@ private fun ChatListContent(
                 )
                 Text("Нет чатов", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Создайте чат и выберите активную модель в менеджере моделей.",
+                    "Создайте чат и выберите модель из общего менеджера моделей.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -232,7 +249,7 @@ private fun ChatListContent(
                     Text("Новый чат")
                 }
                 TextButton(onClick = onOpenModelManager) {
-                    Text("Model manager")
+                    Text("Менеджер моделей")
                 }
             }
         }
@@ -297,10 +314,12 @@ private fun ChatSessionCard(
 @Composable
 private fun ChatThreadContent(
     state: ChatState,
+    selected: ChatSession?,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-    LaunchedEffect(state.messages.size, state.isGenerating) {
+    val lastMessageContent = state.messages.lastOrNull()?.content
+    LaunchedEffect(state.messages.size, lastMessageContent, state.isGenerating) {
         if (state.messages.isNotEmpty()) {
             listState.animateScrollToItem(state.messages.lastIndex)
         }
@@ -312,14 +331,14 @@ private fun ChatThreadContent(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        if (state.activeModelName == null) {
+        if (selected?.modelId == null) {
             item {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
-                        "Активируйте LiteRT модель в менеджере моделей перед отправкой сообщения.",
+                        "Выберите LiteRT или GGUF модель в настройках чата перед отправкой сообщения.",
                         modifier = Modifier.padding(Spacing.md),
                         color = MaterialTheme.colorScheme.onErrorContainer,
                     )
@@ -329,14 +348,14 @@ private fun ChatThreadContent(
         items(state.messages, key = { it.id }) { message ->
             MessageBubble(message)
         }
-        if (state.isGenerating) {
+        if (state.isGenerating && state.messages.none { it.isStreaming }) {
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Text("Модель отвечает…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Модель отвечает...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -365,16 +384,71 @@ private fun MessageBubble(message: ChatMessage) {
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(message.content, style = MaterialTheme.typography.bodyMedium)
+            if (isUser) {
+                Text(message.content, style = MaterialTheme.typography.bodyMedium)
+            } else {
+                StreamingMessageText(message)
+            }
+            if (!isUser && !message.isStreaming && message.stats != null) {
+                MessageStatsRow(message.stats)
+            }
         }
     }
+}
+
+@Composable
+private fun StreamingMessageText(message: ChatMessage) {
+    var visibleText by remember(message.id) { mutableStateOf("") }
+    var cursorVisible by remember(message.id) { mutableStateOf(true) }
+
+    LaunchedEffect(message.id, message.content, message.isStreaming) {
+        if (!message.isStreaming) {
+            visibleText = message.content
+            return@LaunchedEffect
+        }
+        if (!message.content.startsWith(visibleText)) {
+            visibleText = ""
+        }
+        while (visibleText.length < message.content.length) {
+            val nextLength = (visibleText.length + 3).coerceAtMost(message.content.length)
+            visibleText = message.content.take(nextLength)
+            delay(18)
+        }
+    }
+
+    LaunchedEffect(message.id, message.isStreaming) {
+        cursorVisible = true
+        while (message.isStreaming) {
+            delay(450)
+            cursorVisible = !cursorVisible
+        }
+        cursorVisible = false
+    }
+
+    val text = when {
+        visibleText.isNotBlank() -> visibleText
+        message.isStreaming -> "Генерация..."
+        else -> message.content
+    }
+    Text(
+        text = if (message.isStreaming && cursorVisible) "$text|" else text,
+        style = MaterialTheme.typography.bodyMedium,
+    )
+}
+
+@Composable
+private fun MessageStatsRow(stats: ChatMessageStats) {
+    Text(
+        text = "Prompt ${stats.promptTokens} tok · answer ${stats.completionTokens} tok · ${formatDuration(stats.durationMs)} · ${formatRate(stats.tokensPerSecond)} tok/s",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
 private fun ChatComposer(
     enabled: Boolean,
     isGenerating: Boolean,
-    modelReady: Boolean,
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
@@ -424,39 +498,89 @@ private fun ChatSettingsSheet(
 ) {
     var local by remember(settings) { mutableStateOf(settings) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            ChatModelSelector(
-                selectedModelId = selectedModelId,
-                modelOptions = modelOptions,
-                onSelectModel = onSelectModel,
-                onOpenModelManager = onOpenModelManager,
-            )
-            Text("Настройки чата", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            OutlinedTextField(
-                value = local.systemPrompt,
-                onValueChange = { local = local.copy(systemPrompt = it) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                label = { Text("System prompt") },
-            )
-            SettingSlider("Temperature", local.temperature, 0f, 2f) {
-                local = local.copy(temperature = it)
+            item {
+                ChatModelSelector(
+                    selectedModelId = selectedModelId,
+                    modelOptions = modelOptions,
+                    onSelectModel = onSelectModel,
+                    onOpenModelManager = onOpenModelManager,
+                )
             }
-            SettingSlider("Top P", local.topP, 0.1f, 1f) {
-                local = local.copy(topP = it)
+            item {
+                Text("Настройки чата", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
-            SettingSlider("Max tokens", local.maxTokens.toFloat(), 128f, 4096f) {
-                local = local.copy(maxTokens = it.toInt())
+            item {
+                OutlinedTextField(
+                    value = local.systemPrompt,
+                    onValueChange = { local = local.copy(systemPrompt = it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    label = { Text("System prompt") },
+                )
             }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) { Text("Отмена") }
-                Spacer(Modifier.width(Spacing.sm))
-                Button(onClick = { onApply(local) }) { Text("Применить") }
+            item {
+                SettingSlider("Temperature", local.temperature, 0f, 2f) {
+                    local = local.copy(temperature = it)
+                }
             }
-            Spacer(Modifier.height(Spacing.md))
+            item {
+                SettingSlider("Top P", local.topP, 0.1f, 1f) {
+                    local = local.copy(topP = it)
+                }
+            }
+            item {
+                SettingSlider(
+                    label = "Top K",
+                    value = local.topK.toFloat(),
+                    min = 1f,
+                    max = 256f,
+                    valueFormatter = { it.roundToInt().toString() },
+                ) {
+                    local = local.copy(topK = it.roundToInt())
+                }
+            }
+            item {
+                SettingSlider(
+                    label = "Max tokens",
+                    value = local.maxTokens.toFloat(),
+                    min = 128f,
+                    max = 4096f,
+                    valueFormatter = { it.roundToInt().toString() },
+                ) {
+                    local = local.copy(maxTokens = it.roundToInt())
+                }
+            }
+            item {
+                SettingSlider("Repeat penalty", local.repeatPenalty, 0.8f, 1.5f) {
+                    local = local.copy(repeatPenalty = it)
+                }
+            }
+            item {
+                SettingSlider(
+                    label = "Repeat last N",
+                    value = local.repeatLastN.toFloat(),
+                    min = 0f,
+                    max = 2048f,
+                    valueFormatter = { it.roundToInt().toString() },
+                ) {
+                    local = local.copy(repeatLastN = it.roundToInt())
+                }
+            }
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Отмена") }
+                    Spacer(Modifier.width(Spacing.sm))
+                    Button(onClick = { onApply(local) }) { Text("Применить") }
+                }
+            }
+            item {
+                Spacer(Modifier.height(Spacing.md))
+            }
         }
     }
 }
@@ -490,9 +614,9 @@ private fun ChatModelSelector(
                     modifier = Modifier.fillMaxWidth().padding(Spacing.md),
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
-                    Text("No downloaded models", style = MaterialTheme.typography.bodyMedium)
+                    Text("Нет скачанных моделей", style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        "Download or import a model in the shared Model Manager.",
+                        "Скачайте или импортируйте модель в общем менеджере моделей.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -502,7 +626,7 @@ private fun ChatModelSelector(
         }
 
         modelOptions.forEach { option ->
-            val selected = selectedModelId == option.id || (selectedModelId == null && option.isActive)
+            val selected = selectedModelId == option.id
             Card(
                 modifier = Modifier.fillMaxWidth().clickable(
                     enabled = !option.isActivating,
@@ -533,7 +657,7 @@ private fun ChatModelSelector(
                     }
                     when {
                         option.isActivating -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        option.isActive -> Text("Active", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                        option.isActive -> Text("Loaded", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         selected -> Text("Selected", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                 }
@@ -548,13 +672,28 @@ private fun SettingSlider(
     value: Float,
     min: Float,
     max: Float,
+    valueFormatter: (Float) -> String = { "%.2f".format(it) },
     onChange: (Float) -> Unit,
 ) {
     Column {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(label, style = MaterialTheme.typography.labelMedium)
-            Text("%.2f".format(value), style = MaterialTheme.typography.labelMedium)
+            Text(valueFormatter(value), style = MaterialTheme.typography.labelMedium)
         }
         Slider(value = value, onValueChange = onChange, valueRange = min..max)
     }
 }
+
+private fun formatDuration(durationMs: Long): String =
+    if (durationMs < 1000) {
+        "${durationMs} ms"
+    } else {
+        "%.1f s".format(durationMs / 1000.0)
+    }
+
+private fun formatRate(tokensPerSecond: Double): String =
+    if (tokensPerSecond < 10) {
+        "%.1f".format(tokensPerSecond)
+    } else {
+        "%.0f".format(tokensPerSecond)
+    }

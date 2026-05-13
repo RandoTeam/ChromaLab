@@ -61,7 +61,13 @@ class ModelManagerController(
     /** Refresh state from disk / prefs. */
     fun refresh() {
         val downloaded = manager.getDownloadedModels()
-        val active = manager.getActiveModel()
+        val loadedModelId = if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
+            VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
+        } else {
+            null
+        }
+        val active = loadedModelId
+            ?.let { id -> downloaded.find { it.info.id == id } }
         val chromatogramModelId = manager.getChromatogramModelId()
         val chromatogramModel = chromatogramModelId
             ?.let { id -> downloaded.find { it.info.id == id } }
@@ -224,100 +230,120 @@ class ModelManagerController(
         }
     }
 
-    /** Activate a downloaded model — creates inference engine + sets VlmEngineHolder. */
+    /** Activate a downloaded chat model — creates inference engine + sets VlmEngineHolder. */
     fun activate(modelId: String) {
-        // Don't activate if already activating
-        if (_state.value.activatingModelId != null) return
+        scope.launch {
+            activateForChat(modelId)
+        }
+    }
 
+    suspend fun activateForChat(modelId: String): Boolean {
+        val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
+        if (loadedId == modelId && VlmEngineHolder.activeEngine?.isLoaded() == true) {
+            cancelAutoUnloadTimer()
+            refresh()
+            logModel("Chat model already loaded: ${VlmEngineHolder.activeModelDiagnostics()}")
+            return true
+        }
+
+        if (_state.value.activatingModelId != null) return false
         _state.update {
             it.copy(activatingModelId = modelId, activationError = null)
         }
 
-        scope.launch {
-            try {
-                val model = manager.getDownloadedModels().find { it.info.id == modelId }
-                    ?: run {
-                        _state.update {
-                            it.copy(
-                                activatingModelId = null,
-                                activationError = "Модель не найдена",
-                            )
-                        }
-                        return@launch
-                    }
-
-                if (!manager.canLoadForText(model.info)) {
+        return try {
+            val model = manager.getDownloadedModels().find { it.info.id == modelId }
+                ?: run {
                     _state.update {
                         it.copy(
                             activatingModelId = null,
-                            activationError = manager.compatibilityMessage(model.info, forVision = false),
+                            activationError = "Модель не найдена",
                         )
                     }
-                    return@launch
+                    return false
                 }
 
-                manager.setActiveModel(modelId)
-
-                // Create engine based on runtime
-                val engine: InferenceEngine? = when (model.info.runtime) {
-                    ModelRuntime.LLAMA_CPP -> {
-                        val llama = LlamaEngine()
-                        withContext(Dispatchers.IO) {
-                            llama.loadModel(
-                                basePath = model.primaryPath,
-                                mmprojPath = "",
-                                threads = manager.threadCount,
-                                modelFamily = model.info.family,
-                                contextSize = manager.llamaContextSize(model.info, forVision = false),
-                                batchSize = manager.llamaBatchSize(model.info, forVision = false),
-                            )
-                        }
-                        if (model.mmprojPath != null) {
-                            println("MODEL[CTRL] GGUF activated text-only for chat: ${model.info.displayName}; chromatogram analysis loads mmproj separately")
-                        }
-                        llama
-                    }
-                    ModelRuntime.LITERT_LM -> {
-                        val liteRT = LiteRTEngine()
-                        val enableVision = manager.canLoadForVision(model.info)
-                        withContext(Dispatchers.IO) {
-                            liteRT.loadModel(
-                                modelPath = model.primaryPath,
-                                preferGpu = manager.liteRtPreferAccelerator(model.info),
-                                enableVision = enableVision,
-                                maxNumTokens = manager.liteRtMaxTokens(model.info),
-                            )
-                        }
-                        if (!enableVision) {
-                            println("MODEL[CTRL] Vision disabled for ${model.info.displayName} on this device")
-                        }
-                        liteRT
-                    }
-                }
-
-                if (engine != null) {
-                    VlmEngineHolder.activeEngine = engine
-                    VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
-                    VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
-                    VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
-                    println("MODEL[CTRL] Engine activated: ${model.info.displayName} (family=${model.info.family}, promptStyle=${VlmEngineHolder.activeConfig?.promptStyle})")
-                }
-
-                _state.update { it.copy(activatingModelId = null, activationError = null) }
-                refresh()
-            } catch (e: Throwable) {
-                println("MODEL[CTRL] Activate failed: ${e.message}")
-                manager.clearActiveModel()
-                VlmEngineHolder.selectedModel = null
-                VlmEngineHolder.executedModel = null
+            if (!manager.canLoadForText(model.info)) {
                 _state.update {
                     it.copy(
                         activatingModelId = null,
-                        activationError = e.message ?: "Ошибка активации",
+                        activationError = manager.compatibilityMessage(model.info, forVision = false),
                     )
                 }
-                refresh()
+                return false
             }
+
+            if (VlmEngineHolder.activeEngine?.isLoaded() == true && loadedId != modelId) {
+                logModel("Unloading previous model before chat load: ${VlmEngineHolder.activeModelDiagnostics()}")
+                VlmEngineHolder.activeEngine = null
+                VlmEngineHolder.activeConfig = null
+                VlmEngineHolder.selectedModel = null
+                VlmEngineHolder.executedModel = null
+            }
+
+            cancelAutoUnloadTimer()
+            manager.setActiveModel(modelId)
+
+            // Create engine based on runtime. Chat loads text-only to keep memory lower than
+            // chromatogram vision analysis, which loads its own model/mmproj later.
+            val engine: InferenceEngine? = when (model.info.runtime) {
+                ModelRuntime.LLAMA_CPP -> {
+                    val llama = LlamaEngine()
+                    withContext(Dispatchers.IO) {
+                        llama.loadModel(
+                            basePath = model.primaryPath,
+                            mmprojPath = "",
+                            threads = manager.threadCount,
+                            modelFamily = model.info.family,
+                            contextSize = manager.llamaContextSize(model.info, forVision = false),
+                            batchSize = manager.llamaBatchSize(model.info, forVision = false),
+                        )
+                    }
+                    if (model.mmprojPath != null) {
+                        println("MODEL[CTRL] GGUF loaded text-only for chat: ${model.info.displayName}; chromatogram analysis loads mmproj separately")
+                    }
+                    llama
+                }
+                ModelRuntime.LITERT_LM -> {
+                    val liteRT = LiteRTEngine()
+                    withContext(Dispatchers.IO) {
+                        liteRT.loadModel(
+                            modelPath = model.primaryPath,
+                            preferGpu = manager.liteRtPreferAccelerator(model.info),
+                            enableVision = false,
+                            maxNumTokens = manager.liteRtMaxTokens(model.info),
+                        )
+                    }
+                    liteRT
+                }
+            }
+
+            if (engine != null) {
+                VlmEngineHolder.activeEngine = engine
+                VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
+                VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
+                VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
+                logModel("Chat engine loaded: ${model.info.displayName} (family=${model.info.family}, backend=${engine.getBackendName()})")
+            }
+
+            _state.update { it.copy(activatingModelId = null, activationError = null) }
+            refresh()
+            true
+        } catch (e: Throwable) {
+            println("MODEL[CTRL] Chat load failed: ${e.message}")
+            manager.clearActiveModel()
+            VlmEngineHolder.activeEngine = null
+            VlmEngineHolder.activeConfig = null
+            VlmEngineHolder.selectedModel = null
+            VlmEngineHolder.executedModel = null
+            _state.update {
+                it.copy(
+                    activatingModelId = null,
+                    activationError = e.message ?: "Ошибка загрузки модели чата",
+                    )
+            }
+            refresh()
+            false
         }
     }
 
@@ -427,6 +453,7 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.selectedModel = null
                 VlmEngineHolder.executedModel = null
+                manager.clearActiveModel()
                 refresh()
             }
         }

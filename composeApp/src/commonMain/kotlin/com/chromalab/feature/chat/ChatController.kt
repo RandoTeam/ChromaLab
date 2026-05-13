@@ -109,6 +109,15 @@ class ChatController(
 
         scope.launch {
             val now = chatNowMillis()
+            val session = archive.sessions.firstOrNull { it.id == chatId }
+            val selectedModelId = session?.modelId ?: state.value.activeModelId
+            val selectedModelName = session?.modelName ?: state.value.activeModelName
+            if (selectedModelId == null) {
+                publish(chatId, error = "Выберите модель чата перед отправкой сообщения.")
+                return@launch
+            }
+
+            val assistantId = "msg_${now}_assistant"
             val userMessage = ChatMessage(
                 id = "msg_${now}_user",
                 chatId = chatId,
@@ -116,32 +125,54 @@ class ChatController(
                 content = content,
                 createdAt = now,
             )
+            val assistantMessage = ChatMessage(
+                id = assistantId,
+                chatId = chatId,
+                role = ChatRole.ASSISTANT,
+                content = "",
+                createdAt = now + 1,
+                modelName = selectedModelName,
+                isStreaming = true,
+            )
+
             archive = archive.copy(
                 sessions = archive.sessions.map {
                     if (it.id == chatId) {
                         it.copy(
                             title = if (it.title == "Новый чат") content.take(48) else it.title,
-                            modelId = state.value.activeModelId ?: it.modelId,
-                            modelName = state.value.activeModelName ?: it.modelName,
+                            modelId = selectedModelId,
+                            modelName = selectedModelName ?: it.modelName,
                             updatedAt = now,
                         )
                     } else {
                         it
                     }
                 },
-                messages = archive.messages + userMessage,
+                messages = archive.messages + userMessage + assistantMessage,
             )
             persist()
             publish(chatId, isGenerating = true)
 
-            val session = archive.sessions.firstOrNull { it.id == chatId }
-            val contextMessages = archive.messages.filter { it.chatId == chatId }
+            val settings = session?.settings ?: ChatSettings()
+            val contextMessages = archive.messages.filter { it.chatId == chatId && it.id != assistantId }
+            val promptTokens = estimatePromptTokens(contextMessages, settings)
+            val startedAt = chatNowMillis()
+
             val response = runCatching {
                 withContext(Dispatchers.Default) {
                     generator.generate(
                         messages = contextMessages,
-                        settings = session?.settings ?: ChatSettings(),
-                        activeModelName = state.value.activeModelName,
+                        settings = settings,
+                        modelId = selectedModelId,
+                        modelName = selectedModelName,
+                        onPartial = { chunk ->
+                            if (chunk.isNotEmpty()) {
+                                updateMessage(chatId, assistantId) { message ->
+                                    message.copy(content = message.content + chunk)
+                                }
+                                publish(chatId, isGenerating = true)
+                            }
+                        },
                     )
                 }
             }
@@ -149,24 +180,51 @@ class ChatController(
             response.fold(
                 onSuccess = { answer ->
                     val done = chatNowMillis()
+                    val finalAnswer = answer.ifBlank {
+                        archive.messages.firstOrNull { it.id == assistantId }?.content.orEmpty()
+                    }.ifBlank {
+                        "Модель вернула пустой ответ."
+                    }
+                    val completionTokens = estimateTokens(finalAnswer)
+                    val durationMs = (done - startedAt).coerceAtLeast(1)
+                    val stats = ChatMessageStats(
+                        promptTokens = promptTokens,
+                        completionTokens = completionTokens,
+                        totalTokens = promptTokens + completionTokens,
+                        durationMs = durationMs,
+                        tokensPerSecond = completionTokens * 1000.0 / durationMs,
+                    )
+
                     archive = archive.copy(
                         sessions = archive.sessions.map {
                             if (it.id == chatId) it.copy(updatedAt = done) else it
                         },
-                        messages = archive.messages + ChatMessage(
-                            id = "msg_${done}_assistant",
-                            chatId = chatId,
-                            role = ChatRole.ASSISTANT,
-                            content = answer.ifBlank { "Модель вернула пустой ответ." },
-                            createdAt = done,
-                            modelName = state.value.activeModelName,
-                        ),
+                        messages = archive.messages.map { message ->
+                            if (message.id == assistantId) {
+                                message.copy(
+                                    content = finalAnswer,
+                                    isStreaming = false,
+                                    stats = stats,
+                                    modelName = selectedModelName,
+                                )
+                            } else {
+                                message
+                            }
+                        },
                     )
                     persist()
                     publish(chatId)
                 },
                 onFailure = { error ->
-                    publish(chatId, error = error.message ?: "Ошибка генерации")
+                    val message = error.message ?: "Ошибка генерации"
+                    updateMessage(chatId, assistantId) {
+                        it.copy(
+                            content = "Ошибка генерации: $message",
+                            isStreaming = false,
+                        )
+                    }
+                    persist()
+                    publish(chatId, error = message)
                 },
             )
         }
@@ -178,6 +236,35 @@ class ChatController(
 
     private suspend fun persist() {
         repository.save(archive)
+    }
+
+    private fun updateMessage(
+        chatId: String,
+        messageId: String,
+        transform: (ChatMessage) -> ChatMessage,
+    ) {
+        archive = archive.copy(
+            messages = archive.messages.map { message ->
+                if (message.chatId == chatId && message.id == messageId) transform(message) else message
+            },
+        )
+    }
+
+    private fun estimatePromptTokens(
+        messages: List<ChatMessage>,
+        settings: ChatSettings,
+    ): Int {
+        val historyTokens = messages.takeLast(24).sumOf { estimateTokens(it.content) }
+        return historyTokens + estimateTokens(settings.systemPrompt)
+    }
+
+    private fun estimateTokens(text: String): Int {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return 0
+
+        val wordEstimate = trimmed.splitToSequence(Regex("\\s+")).count()
+        val charEstimate = (trimmed.length + 3) / 4
+        return maxOf(1, maxOf(wordEstimate, charEstimate))
     }
 
     private fun publish(

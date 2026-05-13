@@ -16,6 +16,8 @@ data class ChatSettings(
     val topP: Float = 0.95f,
     val topK: Int = 40,
     val maxTokens: Int = 1024,
+    val repeatPenalty: Float = 1.05f,
+    val repeatLastN: Int = 128,
 )
 
 @Serializable
@@ -37,6 +39,17 @@ data class ChatMessage(
     val content: String,
     val createdAt: Long,
     val modelName: String? = null,
+    val isStreaming: Boolean = false,
+    val stats: ChatMessageStats? = null,
+)
+
+@Serializable
+data class ChatMessageStats(
+    val promptTokens: Int = 0,
+    val completionTokens: Int = 0,
+    val totalTokens: Int = 0,
+    val durationMs: Long = 0,
+    val tokensPerSecond: Double = 0.0,
 )
 
 @Serializable
@@ -85,7 +98,9 @@ interface ChatTextGenerator {
     suspend fun generate(
         messages: List<ChatMessage>,
         settings: ChatSettings,
-        activeModelName: String?,
+        modelId: String,
+        modelName: String?,
+        onPartial: (String) -> Unit,
     ): String
 }
 

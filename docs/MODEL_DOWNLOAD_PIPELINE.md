@@ -64,10 +64,21 @@ Model roles are now separated enough for chromatogram analysis to have its own m
 - The chromatogram pipeline first tries the selected chromatogram model, and stops the neural stage if that selected model is missing or incompatible instead of silently replacing it.
 - If no chromatogram model is selected, the pipeline still uses the existing ranked auto-pick behavior.
 
+## Phase 5.3 Status
+
+Chat model selection is now separate from immediate runtime loading.
+
+- Choosing a model inside chat only saves that chat's selected model.
+- Sending a message lazily loads the selected model if it is not already loaded.
+- GGUF chat loading uses the base model text-only and does not load `mmproj`.
+- LiteRT chat loading disables vision mode; chromatogram analysis still has its own vision loader.
+- Leaving the chat route schedules the existing auto-unload timer; returning to chat cancels the pending timer.
+- The model manager state reports an active model only when an engine is actually loaded.
+
 ## Still Not In Current Download/Lifecycle Scope
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Full chat lazy loading, post-analysis unload, and idle no-load guarantees.
+- Camera memory handoff, post-analysis unload, and full idle no-load guarantees.
 
 These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.

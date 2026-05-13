@@ -70,8 +70,12 @@ private class DesktopChatTextGenerator : ChatTextGenerator {
     override suspend fun generate(
         messages: List<ChatMessage>,
         settings: ChatSettings,
-        activeModelName: String?,
+        modelId: String,
+        modelName: String?,
+        onPartial: (String) -> Unit,
     ): String {
-        return "Desktop chat currently stores history only. On-device generation is wired on Android through LiteRT and GGUF."
+        val response = "Desktop chat currently stores history only. On-device generation is wired on Android through LiteRT and GGUF."
+        onPartial(response)
+        return response
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -53,6 +54,14 @@ fun App() {
             activeModelId = activeChatModelId,
             activeModelName = activeChatModelName,
         )
+        val isChatRoute = backStackEntry?.destination?.hasRoute(Route.Chats::class) == true
+        LaunchedEffect(isChatRoute) {
+            if (isChatRoute) {
+                modelActions.cancelAutoUnloadTimer()
+            } else {
+                modelActions.scheduleAutoUnload()
+            }
+        }
 
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -125,11 +134,7 @@ fun App() {
                         state = chatState,
                         actions = chatActions,
                         modelOptions = chatModelOptions,
-                        onSelectModel = { option ->
-                            if (option.id != modelState.activeModelId) {
-                                modelActions.activate(option.id)
-                            }
-                        },
+                        onSelectModel = {},
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                     )
                 }

@@ -76,17 +76,27 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
     override suspend fun generate(
         messages: List<ChatMessage>,
         settings: ChatSettings,
-        activeModelName: String?,
+        modelId: String,
+        modelName: String?,
+        onPartial: (String) -> Unit,
     ): String {
+        val controller = VlmEngineHolder.controller
+            ?: error("Model controller is not ready.")
+        val loaded = controller.activateForChat(modelId)
+        if (!loaded) {
+            error("Unable to load chat model: ${modelName ?: modelId}")
+        }
+
         val engine = VlmEngineHolder.activeEngine
-            ?: error("Active model is not loaded. Open Model Manager and activate a LiteRT or GGUF model.")
+            ?: error("Chat model is not loaded: ${modelName ?: modelId}")
 
         VlmEngineHolder.isInferring = true
         return try {
-            engine.inferRaw(
+            engine.inferRawStreaming(
                 imagePath = "__chromalab_text_only__",
                 prompt = buildChatPrompt(messages, settings),
                 options = settings.toGenerationOptions(),
+                onPartial = onPartial,
             )
         } finally {
             VlmEngineHolder.isInferring = false
@@ -119,6 +129,6 @@ private fun ChatSettings.toGenerationOptions(): GenerationOptions =
         temperature = temperature.coerceIn(0f, 2f),
         topP = topP.coerceIn(0.05f, 1f),
         topK = topK.coerceIn(1, 256),
-        repeatPenalty = 1.05f,
-        repeatLastN = 128,
+        repeatPenalty = repeatPenalty.coerceIn(0.8f, 1.5f),
+        repeatLastN = repeatLastN.coerceIn(0, 2048),
     )

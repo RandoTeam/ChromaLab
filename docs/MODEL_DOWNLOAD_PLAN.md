@@ -124,7 +124,7 @@ Technical rule:
 
 Goal: downloaded models are stored on disk, but not loaded into memory until the active workflow needs them.
 
-Status: in progress. Phase 5.1 and Phase 5.2 are implemented; chat lazy loading and post-analysis unload still use the older activation path.
+Status: in progress. Phase 5.1, Phase 5.2, and Phase 5.3 are implemented; camera memory handoff and post-analysis unload are still pending.
 
 Subpoints:
 
@@ -132,11 +132,11 @@ Subpoints:
 - Done: make the model manager a download/import/storage screen, not a memory-loading screen.
 - Done: separate chat-capable models from chromatogram/vision analysis models in the model registry/UI contract.
 - Done: add dedicated "use for chromatograms" selection.
-- Not done: load the selected chat model only when chat needs inference.
-- Not done: allow model selection inside chat without forcing a global always-loaded model.
-- Not done: unload chat model after leaving chat according to an auto-unload timer.
+- Done: load the selected chat model only when chat needs inference.
+- Done: allow model selection inside chat without forcing a global always-loaded model.
+- Done: unload chat model after leaving chat according to an auto-unload timer.
 - Not done: unload chat model when entering camera/chromatogram analysis if memory is needed.
-- Not done: load the selected chromatogram model only when image/photo analysis reaches the neural stage.
+- Done: load the selected chromatogram model only when image/photo analysis reaches the neural stage.
 - Not done: unload the chromatogram model after the analysis report is produced.
 - Not done: ensure no background model loading happens while the app is idle.
 - Not done: keep local import/export model flows intact.
@@ -146,10 +146,11 @@ Technical rule:
 - Model lifecycle changes must not weaken chromatogram analysis quality. If a required vision model cannot load, the analysis must stop with a clear error rather than producing a deterministic-only report.
 - Phase 5.1 intentionally leaves `activate()` available for chat and pipeline code until those workflows get their own explicit loaders.
 - Phase 5.2 stores chromatogram model selection separately from the chat/global active model. If the selected chromatogram model is missing or cannot load, the pipeline stops the neural stage instead of silently choosing a weaker replacement.
+- Phase 5.3 stores chat model choice per chat and loads the selected model lazily on first generation. GGUF chat loads text-only without `mmproj`; chromatogram analysis still loads its own vision package.
 
 ## Current Next Phase
 
-The next phase to work on is Phase 5.3 - Chat Lazy Loading.
+The next phase to work on is Phase 5.4 - Camera/Analysis Memory Handoff.
 
 Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 
