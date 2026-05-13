@@ -85,7 +85,11 @@ fun StructuredReportPreview(
             )
         }
 
-        WarningSummary(warnings = allWarnings)
+        QualitySummary(
+            report = report,
+            qualityState = qualityState,
+            warnings = allWarnings,
+        )
 
         report.graphs.forEach { graph ->
             GraphReportSection(
@@ -456,7 +460,11 @@ private fun AxisBlock(graph: GraphReport) {
         )
 
         if (graph.axisCalibration.warnings.isNotEmpty()) {
-            CompactWarningList(graph.axisCalibration.warnings, maxItems = 3)
+            QualityNotice(
+                title = "Axis calibration needs review",
+                message = "Axis labels, ticks, or geometry were not fully reliable. See the technical appendix for exact warning codes.",
+                severity = graph.axisCalibration.warnings.maxSeverity(),
+            )
         }
     }
 }
@@ -624,25 +632,40 @@ private fun InterpretationBlock(graph: GraphReport) {
 }
 
 @Composable
-private fun WarningSummary(warnings: List<ReportWarning>) {
-    ReportSection(title = "Warnings and red flags") {
-        if (warnings.isEmpty()) {
-            EmptyText("No warnings recorded.")
-            return@ReportSection
+private fun QualitySummary(
+    report: ChromatogramReport,
+    qualityState: QualityState,
+    warnings: List<ReportWarning>,
+) {
+    ReportSection(title = "Quality summary") {
+        QualityNotice(
+            title = qualityState.label,
+            message = qualityState.message,
+            severity = qualityState.severity,
+        )
+
+        MetricGrid(
+            rows = listOf(
+                "Critical issues" to warnings.countCritical().toString(),
+                "Review items" to warnings.countReviewItems().toString(),
+                "Graph checks" to report.graphs.count { it.graphPreviewSeverity().rank() >= ReportSeverity.WARNING.rank() }.toString(),
+                "Peak checks" to warnings.count { it.peakNumber != null }.toString(),
+            ),
+        )
+
+        report.userQualityItems(warnings).forEach { item ->
+            QualityNotice(
+                title = item.title,
+                message = item.message,
+                severity = item.severity,
+            )
         }
 
-        ReportSeverity.entries
-            .sortedByDescending { it.rank() }
-            .forEach { severity ->
-                val group = warnings.filter { it.severity == severity }
-                if (group.isNotEmpty()) {
-                    SeverityBadge(
-                        label = "${severity.label()} (${group.size})",
-                        severity = severity,
-                    )
-                    CompactWarningList(group, maxItems = 4)
-                }
-            }
+        Text(
+            text = "Detailed warning codes, stages, and value provenance are kept in the technical appendix.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -882,6 +905,43 @@ private fun CompactAnomalyList(
 }
 
 @Composable
+private fun QualityNotice(
+    title: String,
+    message: String,
+    severity: ReportSeverity,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalAlignment = Alignment.Top,
+    ) {
+        SeverityBadge(
+            label = severity.qualityLabel(),
+            severity = severity,
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 private fun DetailLine(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1082,6 +1142,15 @@ private fun ChromatogramReport.allWarnings(): List<ReportWarning> =
             .thenBy { it.code },
     )
 
+private fun List<ReportWarning>.countCritical(): Int =
+    count { it.severity == ReportSeverity.FAILED || it.severity == ReportSeverity.SERIOUS }
+
+private fun List<ReportWarning>.countReviewItems(): Int =
+    count { it.severity == ReportSeverity.WARNING }
+
+private fun List<ReportWarning>.maxSeverity(): ReportSeverity =
+    maxByOrNull { it.severity.rank() }?.severity ?: ReportSeverity.INFO
+
 private fun ChromatogramReport.primaryTitle(): String =
     graphs.firstOrNull()
         ?.identification
@@ -1097,6 +1166,50 @@ private fun ChromatogramReport.primaryTitle(): String =
 
 private fun ChromatogramReport.totalPeakCount(): Int =
     graphs.sumOf { graph -> graph.quality.totalDetectedPeaks ?: graph.peaks.size }
+
+private fun ChromatogramReport.userQualityItems(warnings: List<ReportWarning>): List<QualitySummaryItem> {
+    val criticalCount = warnings.countCritical()
+    val reviewCount = warnings.countReviewItems()
+    val graphReviewCount = graphs.count { it.graphPreviewSeverity().rank() >= ReportSeverity.WARNING.rank() }
+    val peakReviewCount = warnings.count { it.peakNumber != null } + graphs.sumOf { graph ->
+        graph.peaks.count { peak -> peak.confidence != null && peak.confidence < 0.50 }
+    }
+
+    return listOf(
+        QualitySummaryItem(
+            title = "Analysis integrity",
+            message = when {
+                criticalCount > 0 -> "Do not use final conclusions until the failed or serious analysis checks are resolved."
+                reviewCount > 0 -> "The report can be read, but some analytical checks need review before conclusions are trusted."
+                else -> "No blocking analysis checks are recorded."
+            },
+            severity = when {
+                warnings.any { it.severity == ReportSeverity.FAILED } -> ReportSeverity.FAILED
+                criticalCount > 0 -> ReportSeverity.SERIOUS
+                reviewCount > 0 -> ReportSeverity.WARNING
+                else -> ReportSeverity.INFO
+            },
+        ),
+        QualitySummaryItem(
+            title = "Graph preparation",
+            message = if (graphReviewCount > 0) {
+                "$graphReviewCount graph(s) need crop, axis, or preparation review before relying on exact values."
+            } else {
+                "Graph crop and axis preparation have no visible review flags."
+            },
+            severity = if (graphReviewCount > 0) ReportSeverity.WARNING else ReportSeverity.INFO,
+        ),
+        QualitySummaryItem(
+            title = "Peak integration",
+            message = if (peakReviewCount > 0) {
+                "$peakReviewCount peak-level item(s) need boundary, baseline, or confidence review."
+            } else {
+                "No peak-level review items are recorded."
+            },
+            severity = if (peakReviewCount > 0) ReportSeverity.WARNING else ReportSeverity.INFO,
+        ),
+    )
+}
 
 private fun ReportMetadata.timingWindowLabel(): String =
     when {
@@ -1290,6 +1403,14 @@ private fun ReportSeverity.label(): String =
         ReportSeverity.INFO -> "Info"
     }
 
+private fun ReportSeverity.qualityLabel(): String =
+    when (this) {
+        ReportSeverity.FAILED -> "Blocked"
+        ReportSeverity.SERIOUS -> "Review"
+        ReportSeverity.WARNING -> "Check"
+        ReportSeverity.INFO -> "Ready"
+    }
+
 @Composable
 private fun ReportSeverity.containerColor(): Color =
     when (this) {
@@ -1317,6 +1438,12 @@ private fun Double.formatReportNumber(): String =
 
 private data class QualityState(
     val label: String,
+    val message: String,
+    val severity: ReportSeverity,
+)
+
+private data class QualitySummaryItem(
+    val title: String,
     val message: String,
     val severity: ReportSeverity,
 )

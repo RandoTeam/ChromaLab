@@ -295,6 +295,13 @@ Mobile UI requirements:
 - Technical warnings and audit details remain available, but compact quality state and readable report sections come first.
 - Touch targets for report actions should stay large enough for phone use.
 
+Main report warning presentation:
+
+- The primary report surface should show user-facing quality states, not raw warning-code lists.
+- Quality states should summarize analysis integrity, graph preparation, and peak integration.
+- Exact warning codes, stages, graph/peak locations, and value provenance belong in the technical appendix.
+- A serious or failed quality state must clearly tell the user not to trust conclusions until reviewed.
+
 ### 2. Source And Graph Preparation
 
 Purpose: make the image preparation auditable.

@@ -140,7 +140,7 @@ Goal: make the user-facing report match the reference depth and read like a prof
 - [x] 8.5 Add report metadata: graph preview, analysis time, model name, executed runtime, device, and stage timings.
 - [x] 8.6 Export polished Markdown/HTML/PDF-ready output from the same structured report.
 - [x] 8.7 Apply mobile UI/UX guardrails from `docs/MOBILE_UI_UX_GUARDRAILS.md`.
-- [ ] 8.8 Convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
+- [x] 8.8 Convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
 
 Exit criteria:
 
@@ -153,6 +153,7 @@ Exit criteria:
 - The report has a compact run metadata band with model/runtime/device/time/stage summary and per-graph preview cards.
 - Markdown and HTML/PDF-ready exports are generated from the same structured `ChromatogramReport` data, not from a separate legacy report path.
 - The mobile report/export screen opens the readable report first and keeps file export/share actions behind progressive disclosure.
+- The main report shows compact quality states first; warning codes and audit details stay in the technical appendix.
 
 ## Phase 9 - Model Runtime Separation And GGUF/VLM Reliability
 
@@ -212,7 +213,8 @@ Exit criteria:
 - `02108cb` - Add report graph overlay.
 - `d974b9e` - Add compact report metadata.
 - `81b59e1` - Add structured report HTML export.
+- `f9e7f62` - Apply mobile report UX guardrails.
 
 ## Next Recommended Slice
 
-Start Phase 8.8: convert technical audit warnings into compact user-facing quality states, with details kept in the report appendix.
+Start Phase 9.3: enforce that full chromatogram photo analysis requires a vision-capable model.
