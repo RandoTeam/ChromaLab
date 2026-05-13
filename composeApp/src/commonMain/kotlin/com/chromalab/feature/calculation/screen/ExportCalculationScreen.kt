@@ -31,7 +31,7 @@ import com.chromalab.feature.reports.StructuredReportPreview
  * - peaks.csv via PeaksCsvExporter
  * - calculation.json via CalculationJsonExporter
  * - chromatogram_report.md via CalculationRunReportExporter
- * - report.html via ReportExporter
+ * - chromatogram_report.html via CalculationRunReportExporter
  * - Share via onShare callback with generated content
  */
 @Composable
@@ -113,14 +113,15 @@ fun ExportCalculationScreen(
         )
 
         ExportButton(
-            title = "Отчёт (HTML)",
-            subtitle = "report.html — профессиональный отчёт для печати",
+            title = "Final report (HTML / PDF-ready)",
+            subtitle = "chromatogram_report.html - same structured report, styled for print or PDF",
             icon = Icons.Filled.Description,
             color = Color(0xFFAB47BC),
             onClick = {
-                val html = ReportExporter.export(run)
-                onFileSave("report_${run.id}.html", html)
-                exportStatus = "✓ report.html сохранён"
+                val html = CalculationRunReportExporter.exportHtml(run, reportOptions)
+                val validation = CalculationRunReportExporter.validate(run, reportOptions)
+                onFileSave("chromatogram_report_${run.id}.html", html)
+                exportStatus = "Saved chromatogram_report.html - ${validation.errorCount} errors, ${validation.warningCount} warnings"
             },
         )
 
@@ -161,13 +162,13 @@ fun ExportCalculationScreen(
         // Share button
         ExportButton(
             title = "Поделиться отчётом",
-            subtitle = "Отправить HTML через системный диалог",
+            subtitle = "Share the same structured HTML report",
             icon = Icons.Filled.Share,
             color = MaterialTheme.colorScheme.primary,
             outlined = true,
             onClick = {
-                val html = ReportExporter.export(run)
-                onShare("chromalab_report_${run.id}.html", html)
+                val html = CalculationRunReportExporter.exportHtml(run, reportOptions)
+                onShare("chromatogram_report_${run.id}.html", html)
                 exportStatus = "✓ Отправлено"
             },
         )

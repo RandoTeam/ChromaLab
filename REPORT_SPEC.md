@@ -280,6 +280,14 @@ The in-app report should also include a compact metadata band near the top of th
 - stage timing count plus a short timing preview;
 - per-graph preview cards with graph title or ion, crop confidence, detected bounds, peak count, and overlay source.
 
+Structured export requirements:
+
+- Markdown remains the canonical text export for the report contract.
+- HTML export must be generated from the same `ChromatogramReport` content as Markdown.
+- HTML must be self-contained, printable, and PDF-ready through browser or platform print-to-PDF.
+- HTML/PDF-ready export must not use the older calculation-only `ReportExporter` path as its source of truth.
+- Missing or low-confidence values must remain explicit in every export format.
+
 ### 2. Source And Graph Preparation
 
 Purpose: make the image preparation auditable.
