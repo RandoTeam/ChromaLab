@@ -37,9 +37,14 @@ class GgufParityDiagnostics(
     suspend fun run(
         requestedModelId: String?,
         requestedImagePath: String?,
+        requestedBackend: String?,
     ) = withContext(Dispatchers.IO) {
         val runId = System.currentTimeMillis().toString()
-        parityLog("START runId=$runId requestedModelId=${requestedModelId.orEmpty()} imagePath=${requestedImagePath.orEmpty()}")
+        val backendMode = GgufParityBackendMode.from(requestedBackend)
+        parityLog(
+            "START runId=$runId requestedModelId=${requestedModelId.orEmpty()} " +
+                "imagePath=${requestedImagePath.orEmpty()} backend=${backendMode.logName}",
+        )
 
         val downloaded = manager.getDownloadedModels()
         val model = resolveModel(requestedModelId, downloaded)
@@ -55,7 +60,7 @@ class GgufParityDiagnostics(
         val config = InferenceConfig.forModelFamily(model.info.family)
         logModelSnapshot(model, config)
 
-        runTextProbe(model, config)
+        runTextProbe(model, config, backendMode)
 
         val imageFile = requestedImagePath
             ?.takeIf { it.isNotBlank() }
@@ -65,7 +70,7 @@ class GgufParityDiagnostics(
         if (imageFile == null) {
             parityLog("IMAGE probe skipped: pass --es imagePath /absolute/path/to/image.jpg")
         } else {
-            runImageProbe(model, config, imageFile)
+            runImageProbe(model, config, imageFile, backendMode)
         }
 
         parityLog("DONE runId=$runId model=${model.info.id}")
@@ -110,7 +115,11 @@ class GgufParityDiagnostics(
         )
     }
 
-    private suspend fun runTextProbe(model: DownloadedModel, config: InferenceConfig) {
+    private suspend fun runTextProbe(
+        model: DownloadedModel,
+        config: InferenceConfig,
+        backendMode: GgufParityBackendMode,
+    ) {
         val prompt = "Reply with exactly OK."
         val renderedPrompt = formatGgufTextPrompt(prompt, config.promptStyle)
         logPromptSnapshot("TEXT", prompt, renderedPrompt)
@@ -126,6 +135,7 @@ class GgufParityDiagnostics(
                 modelFamily = model.info.family,
                 contextSize = manager.llamaContextSize(model.info, forVision = false),
                 batchSize = manager.llamaBatchSize(model.info, forVision = false),
+                preferAccelerated = backendMode.preferAccelerated,
             )
             parityLog("TEXT load done backend=${engine.getBackendName()} supportsImage=${engine.supportsImageInput()}")
 
@@ -156,6 +166,7 @@ class GgufParityDiagnostics(
         model: DownloadedModel,
         config: InferenceConfig,
         imageFile: File,
+        backendMode: GgufParityBackendMode,
     ) {
         if (!ModelRegistry.hasGgufVisionFilePair(model.info)) {
             parityLog("IMAGE probe skipped: model has no GGUF base+mmproj pair")
@@ -183,6 +194,7 @@ class GgufParityDiagnostics(
                 modelFamily = model.info.family,
                 contextSize = manager.llamaContextSize(model.info, forVision = true),
                 batchSize = manager.llamaBatchSize(model.info, forVision = true),
+                preferAccelerated = backendMode.preferAccelerated,
             )
             parityLog("IMAGE load done backend=${engine.getBackendName()} supportsImage=${engine.supportsImageInput()}")
 
@@ -218,6 +230,22 @@ class GgufParityDiagnostics(
                 "mediaMarkersBeforeNative=$mediaMarkers " +
                 "preview=${renderedPrompt.preview()}",
         )
+    }
+}
+
+private enum class GgufParityBackendMode(
+    val logName: String,
+    val preferAccelerated: Boolean,
+) {
+    CPU("cpu", false),
+    ACCELERATED("accelerated", true);
+
+    companion object {
+        fun from(value: String?): GgufParityBackendMode =
+            when (value?.trim()?.lowercase()) {
+                "accelerated", "gpu", "vulkan" -> ACCELERATED
+                else -> CPU
+            }
     }
 }
 

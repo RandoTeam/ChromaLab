@@ -72,11 +72,17 @@ class MainActivity : ComponentActivity() {
 
         val modelId = intent.getStringExtra("modelId")
         val imagePath = intent.getStringExtra("imagePath")
-        Log.i(TAG, "Starting GGUF parity diagnostics modelId=${modelId.orEmpty()} imagePath=${imagePath.orEmpty()}")
+        val backend = intent.getStringExtra("backend")
+        Log.i(
+            TAG,
+            "Starting GGUF parity diagnostics modelId=${modelId.orEmpty()} " +
+                "imagePath=${imagePath.orEmpty()} backend=${backend.orEmpty()}",
+        )
         lifecycleScope.launch {
             GgufParityDiagnostics(applicationContext).run(
                 requestedModelId = modelId,
                 requestedImagePath = imagePath,
+                requestedBackend = backend,
             )
         }
     }

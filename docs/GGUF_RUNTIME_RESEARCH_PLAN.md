@@ -370,6 +370,60 @@ adb shell am start -n com.chromalab.app/.MainActivity \
   --es imagePath /sdcard/Download/chromatogram.jpg
 ```
 
+### 2026-05-13: GGUF-R1.2
+
+Status: implemented native backend diagnostics and Xiaomi Mi 8 backend gate.
+
+- The Android GGUF build now includes llama.cpp Vulkan backend support, including
+  the host shader generator setup required by the Android cross-build.
+- Vulkan build compatibility is kept in the app CMake layer; the upstream
+  `llama.cpp` submodule remains unmodified.
+- The app now logs llama.cpp/ggml warn/error messages into logcat and keeps
+  detailed backend/timing logs at the ChromaLab bridge boundary.
+- GGUF diagnostics now accept an explicit backend selector:
+  `--es backend cpu` or `--es backend accelerated`.
+- CPU sessions are now forced with `LLAMA_SPLIT_MODE_NONE` and `main_gpu=-1`.
+  This is required because, once Vulkan is registered, llama.cpp otherwise keeps
+  GPU devices in the model device list even when `n_gpu_layers=0`.
+- Production GGUF loading defaults to CPU until a validated backend selector is
+  added. This avoids a hidden switch to an unvalidated accelerator path.
+- Vulkan backend availability is now gated by a native preflight for the ggml
+  requirement `storageBuffer16BitAccess`.
+
+Xiaomi Mi 8 result with `qwen3vl-2b-q4km`:
+
+| Probe | Backend | Result |
+|---|---:|---|
+| Text sanity, `Reply with exactly OK.` | CPU | Pass: `OK`, about 31-32 s total |
+| Text sanity, same model | Vulkan/accelerated | Blocked before load: Adreno 630 reports `storageBuffer16BitAccess=0` |
+
+Conclusion:
+
+- The Qwen3-VL GGUF file on the phone is valid; the model can load and answer in
+  the ChromaLab bridge when the session is truly CPU-only.
+- The Xiaomi Mi 8 Vulkan path is not usable for llama.cpp GGUF because ggml
+  Vulkan requires 16-bit storage and the device does not expose it.
+- This is not a prompt issue and not a corrupt-model issue. It is a backend
+  compatibility issue for this device.
+- The next GGUF work must test the same diagnostics on the stronger phone, then
+  run the image/mmproj probe there. If the stronger phone passes text but stalls
+  on image, continue into GGUF-R3/GGUF-R4 prompt-template and mtmd-runtime
+  repair.
+
+Example backend-specific commands:
+
+```bash
+adb shell am start -n com.chromalab.app/.MainActivity \
+  -a com.chromalab.app.DEBUG_GGUF_PARITY \
+  --es modelId qwen3vl-2b-q4km \
+  --es backend cpu
+
+adb shell am start -n com.chromalab.app/.MainActivity \
+  -a com.chromalab.app.DEBUG_GGUF_PARITY \
+  --es modelId qwen3vl-2b-q4km \
+  --es backend accelerated
+```
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.

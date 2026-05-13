@@ -67,6 +67,7 @@ class LlamaEngine : InferenceEngine {
             batchSize: Int,
         ): Long
         @JvmStatic private external fun nativeUnloadModel(handle: Long)
+        @JvmStatic private external fun nativeGetLoadedBackendName(handle: Long): String
         @JvmStatic private external fun nativeInferWithImage(
             handle: Long,
             imagePath: String,
@@ -105,6 +106,7 @@ class LlamaEngine : InferenceEngine {
         modelFamily: String = "",
         contextSize: Int? = null,
         batchSize: Int? = null,
+        preferAccelerated: Boolean = false,
     ) = withContext(Dispatchers.IO) {
         nativeLock.withLock {
             if (!nativeLoaded) {
@@ -122,20 +124,21 @@ class LlamaEngine : InferenceEngine {
             config = InferenceConfig.forModelFamily(modelFamily)
             val ctx = contextSize ?: config.contextSize
             val batch = batchSize ?: config.batchSize
-            log("Loading model base=$basePath mmproj=$mmprojPath threads=$threads")
+            val requestedBackendCode = if (preferAccelerated) 1 else 0
+            log("Loading model base=$basePath mmproj=$mmprojPath threads=$threads backendCode=$requestedBackendCode")
             log("Config maxTokens=${config.maxTokens} repeatPenalty=${config.repeatPenalty} repeatLastN=${config.repeatLastN} ctx=$ctx batch=$batch")
 
-            modelHandle = nativeLoadModel(basePath, mmprojPath, threads, 0, ctx, batch)
+            modelHandle = nativeLoadModel(basePath, mmprojPath, threads, requestedBackendCode, ctx, batch)
             if (modelHandle == 0L) {
                 loaded = false
                 hasVisionProjector = false
                 throw RuntimeException("Failed to load model: $basePath")
             }
 
-            backendName = "llama.cpp CPU"
+            backendName = nativeGetLoadedBackendName(modelHandle).ifBlank { "llama.cpp CPU" }
             loaded = true
             hasVisionProjector = mmprojPath.isNotBlank()
-            log("Model loaded handle=$modelHandle vision=$hasVisionProjector")
+            log("Model loaded handle=$modelHandle vision=$hasVisionProjector backend=$backendName")
         }
     }
 

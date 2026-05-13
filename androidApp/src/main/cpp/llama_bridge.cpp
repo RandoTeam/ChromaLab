@@ -21,8 +21,10 @@
 #include <cctype>
 #include <thread>
 #include <android/log.h>
+#include <vulkan/vulkan.h>
 
 #include "llama.h"
+#include "ggml-backend.h"
 #include "mtmd.h"
 #include "mtmd-helper.h"
 
@@ -41,6 +43,7 @@ struct ModelContext {
     mtmd_context  *mtmd    = nullptr;   // null if no mmproj provided
     int            n_ctx   = 0;
     int            n_batch = 512;
+    std::string    backend_label = "llama.cpp CPU";
 };
 
 static llama_sampler * create_sampler(
@@ -184,6 +187,263 @@ static const char * chunk_type_name(enum mtmd_input_chunk_type type) {
         case MTMD_INPUT_CHUNK_TYPE_AUDIO: return "audio";
     }
     return "unknown";
+}
+
+static const char * backend_device_type_name(enum ggml_backend_dev_type type) {
+    switch (type) {
+        case GGML_BACKEND_DEVICE_TYPE_CPU:   return "CPU";
+        case GGML_BACKEND_DEVICE_TYPE_GPU:   return "GPU";
+        case GGML_BACKEND_DEVICE_TYPE_IGPU:  return "IGPU";
+        case GGML_BACKEND_DEVICE_TYPE_ACCEL: return "ACCEL";
+        case GGML_BACKEND_DEVICE_TYPE_META:  return "META";
+    }
+    return "UNKNOWN";
+}
+
+static bool is_accelerated_device_type(enum ggml_backend_dev_type type) {
+    return type == GGML_BACKEND_DEVICE_TYPE_GPU ||
+           type == GGML_BACKEND_DEVICE_TYPE_IGPU ||
+           type == GGML_BACKEND_DEVICE_TYPE_ACCEL;
+}
+
+static bool instance_extension_available(const char *name) {
+    uint32_t count = 0;
+    if (vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr) != VK_SUCCESS || count == 0) {
+        return false;
+    }
+
+    std::vector<VkExtensionProperties> extensions(count);
+    if (vkEnumerateInstanceExtensionProperties(nullptr, &count, extensions.data()) != VK_SUCCESS) {
+        return false;
+    }
+
+    for (const auto &extension : extensions) {
+        if (std::strcmp(extension.extensionName, name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool vulkan_has_ggml_required_features() {
+    static int cached_result = -1;
+    if (cached_result >= 0) {
+        return cached_result == 1;
+    }
+
+    std::vector<const char *> instance_extensions;
+    const bool has_get_physical_device_properties2 =
+        instance_extension_available(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    if (has_get_physical_device_properties2) {
+        instance_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    }
+
+    VkApplicationInfo app_info{};
+    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.pApplicationName = "ChromaLab GGUF Vulkan preflight";
+    app_info.applicationVersion = 1;
+    app_info.pEngineName = "llama.cpp";
+    app_info.engineVersion = 1;
+    app_info.apiVersion = VK_API_VERSION_1_1;
+
+    VkInstanceCreateInfo create_info{};
+    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    create_info.pApplicationInfo = &app_info;
+    create_info.enabledExtensionCount = static_cast<uint32_t>(instance_extensions.size());
+    create_info.ppEnabledExtensionNames = instance_extensions.empty() ? nullptr : instance_extensions.data();
+
+    VkInstance instance = VK_NULL_HANDLE;
+    VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
+    if (result != VK_SUCCESS) {
+        app_info.apiVersion = VK_API_VERSION_1_0;
+        result = vkCreateInstance(&create_info, nullptr, &instance);
+    }
+    if (result != VK_SUCCESS || instance == VK_NULL_HANDLE) {
+        LOGW("GGUF Vulkan preflight: vkCreateInstance failed result=%d", (int)result);
+        cached_result = 0;
+        return false;
+    }
+
+    auto vk_get_features2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+        vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2")
+    );
+    if (!vk_get_features2) {
+        vk_get_features2 = reinterpret_cast<PFN_vkGetPhysicalDeviceFeatures2>(
+            vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceFeatures2KHR")
+        );
+    }
+    if (!vk_get_features2) {
+        LOGW("GGUF Vulkan preflight: vkGetPhysicalDeviceFeatures2 unavailable");
+        vkDestroyInstance(instance, nullptr);
+        cached_result = 0;
+        return false;
+    }
+
+    uint32_t device_count = 0;
+    result = vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+    if (result != VK_SUCCESS || device_count == 0) {
+        LOGW("GGUF Vulkan preflight: no physical devices result=%d count=%u", (int)result, device_count);
+        vkDestroyInstance(instance, nullptr);
+        cached_result = 0;
+        return false;
+    }
+
+    std::vector<VkPhysicalDevice> devices(device_count);
+    result = vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+    if (result != VK_SUCCESS) {
+        LOGW("GGUF Vulkan preflight: enumerate devices failed result=%d", (int)result);
+        vkDestroyInstance(instance, nullptr);
+        cached_result = 0;
+        return false;
+    }
+
+    bool supported = false;
+    for (VkPhysicalDevice device : devices) {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(device, &properties);
+
+        VkPhysicalDevice16BitStorageFeatures storage_features{};
+        storage_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES;
+
+        VkPhysicalDeviceFeatures2 features2{};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features2.pNext = &storage_features;
+        vk_get_features2(device, &features2);
+
+        LOGI("GGUF Vulkan preflight: device=%s storageBuffer16BitAccess=%d",
+             properties.deviceName,
+             storage_features.storageBuffer16BitAccess ? 1 : 0);
+
+        if (storage_features.storageBuffer16BitAccess == VK_TRUE) {
+            supported = true;
+            break;
+        }
+    }
+
+    vkDestroyInstance(instance, nullptr);
+    cached_result = supported ? 1 : 0;
+    return supported;
+}
+
+static void chromalab_llama_log_callback(
+    enum ggml_log_level level,
+    const char *text,
+    void * /* user_data */) {
+
+    if (!text || text[0] == '\0') return;
+
+    if (level != GGML_LOG_LEVEL_WARN && level != GGML_LOG_LEVEL_ERROR) {
+        return;
+    }
+
+    int priority = ANDROID_LOG_DEBUG;
+    switch (level) {
+        case GGML_LOG_LEVEL_ERROR:
+            priority = ANDROID_LOG_ERROR;
+            break;
+        case GGML_LOG_LEVEL_WARN:
+            priority = ANDROID_LOG_WARN;
+            break;
+        case GGML_LOG_LEVEL_INFO:
+        case GGML_LOG_LEVEL_CONT:
+            priority = ANDROID_LOG_INFO;
+            break;
+        case GGML_LOG_LEVEL_DEBUG:
+        case GGML_LOG_LEVEL_NONE:
+        default:
+            priority = ANDROID_LOG_DEBUG;
+            break;
+    }
+
+    std::string message(text);
+    size_t start = 0;
+    while (start < message.size()) {
+        size_t end = message.find('\n', start);
+        std::string line = message.substr(
+            start,
+            end == std::string::npos ? std::string::npos : end - start
+        );
+        if (!line.empty()) {
+            __android_log_print(priority, "LlamaCpp", "%s", line.c_str());
+        }
+        if (end == std::string::npos) break;
+        start = end + 1;
+    }
+}
+
+static void ensure_llama_logging() {
+    static bool logging_inited = false;
+    if (logging_inited) return;
+    llama_log_set(chromalab_llama_log_callback, nullptr);
+    logging_inited = true;
+}
+
+static void ensure_backend_initialized() {
+    static bool backend_inited = false;
+    if (backend_inited) return;
+
+    ensure_llama_logging();
+    ggml_backend_load_all();
+    llama_backend_init();
+    backend_inited = true;
+
+    const size_t dev_count = ggml_backend_dev_count();
+    LOGI("GGUF backends initialized: device_count=%zu", dev_count);
+    for (size_t i = 0; i < dev_count; ++i) {
+        ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+        if (!dev) continue;
+
+        ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(dev);
+        size_t free_mem = 0;
+        size_t total_mem = 0;
+        ggml_backend_dev_memory(dev, &free_mem, &total_mem);
+        LOGI("GGUF backend device[%zu]: reg=%s name=%s desc=%s type=%s free=%zu total=%zu",
+             i,
+             reg ? ggml_backend_reg_name(reg) : "",
+             ggml_backend_dev_name(dev) ? ggml_backend_dev_name(dev) : "",
+             ggml_backend_dev_description(dev) ? ggml_backend_dev_description(dev) : "",
+             backend_device_type_name(ggml_backend_dev_type(dev)),
+             free_mem,
+             total_mem);
+    }
+}
+
+static bool has_accelerated_backend() {
+    ensure_backend_initialized();
+    if (!vulkan_has_ggml_required_features()) {
+        return false;
+    }
+
+    const size_t dev_count = ggml_backend_dev_count();
+    for (size_t i = 0; i < dev_count; ++i) {
+        ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+        if (!dev) continue;
+        if (is_accelerated_device_type(ggml_backend_dev_type(dev))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static std::string accelerated_backend_label() {
+    ensure_backend_initialized();
+    const size_t dev_count = ggml_backend_dev_count();
+    for (size_t i = 0; i < dev_count; ++i) {
+        ggml_backend_dev_t dev = ggml_backend_dev_get(i);
+        if (!dev || !is_accelerated_device_type(ggml_backend_dev_type(dev))) continue;
+
+        ggml_backend_reg_t reg = ggml_backend_dev_backend_reg(dev);
+        const char *reg_name = reg ? ggml_backend_reg_name(reg) : nullptr;
+        if (reg_name && std::strlen(reg_name) > 0) {
+            std::string name(reg_name);
+            if (!name.empty()) {
+                name[0] = (char)std::toupper((unsigned char)name[0]);
+            }
+            return "llama.cpp " + name;
+        }
+        return "llama.cpp accelerated";
+    }
+    return "llama.cpp CPU";
 }
 
 class NativeStageWatchdog {
@@ -387,11 +647,13 @@ JNIEXPORT jintArray JNICALL
 Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeGetAvailableBackends(
     JNIEnv *env, jclass /* clazz */) {
 
-    // For now, report CPU only. Vulkan probing can be added later.
-    jint backends[] = { 0 }; // 0=CPU
-    int count = 1;
-    jintArray result = env->NewIntArray(count);
-    env->SetIntArrayRegion(result, 0, count, backends);
+    // 0=CPU, 1=accelerated backend (Vulkan/other ggml device if available).
+    std::vector<jint> backends = { 0 };
+    if (has_accelerated_backend()) {
+        backends.push_back(1);
+    }
+    jintArray result = env->NewIntArray((jsize)backends.size());
+    env->SetIntArrayRegion(result, 0, (jsize)backends.size(), backends.data());
     return result;
 }
 
@@ -410,23 +672,53 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     LOGI("nativeLoadModel: base=%s, mmproj=%s, threads=%d, ctx=%d, batch=%d",
          base, mmproj ? mmproj : "", threads, contextSize, batchSize);
 
-    // Init backend once (idempotent)
-    static bool backend_inited = false;
-    if (!backend_inited) {
-        llama_backend_init();
-        backend_inited = true;
+    ensure_backend_initialized();
+    const bool accelerated_available = has_accelerated_backend();
+    const bool accelerated_requested = backendCode != 0;
+    if (accelerated_requested && !accelerated_available) {
+        LOGE("GGUF accelerated backend requested but no ggml-compatible accelerated device is available");
+        env->ReleaseStringUTFChars(basePath, base);
+        env->ReleaseStringUTFChars(mmprojPath, mmproj);
+        return 0;
     }
+    const bool use_accelerated = accelerated_requested && accelerated_available;
 
     auto *mc = new ModelContext();
+    mc->backend_label = use_accelerated ? accelerated_backend_label() : "llama.cpp CPU";
 
     // 1) Load model
     llama_model_params model_params = llama_model_default_params();
-    model_params.n_gpu_layers = 0; // CPU only for now
-    LOGI("GGUF load params: backendCode=%d n_gpu_layers=%d threads=%d requested_ctx=%d requested_batch=%d",
-         backendCode, model_params.n_gpu_layers, threads, contextSize, batchSize);
-    {
+    if (!use_accelerated) {
+        // With Vulkan registered, llama.cpp's default device discovery still keeps
+        // GPU devices in the model even when n_gpu_layers is 0. Force a real
+        // CPU-only session for diagnostics and stable production loading.
+        model_params.split_mode = LLAMA_SPLIT_MODE_NONE;
+        model_params.main_gpu = -1;
+    }
+    const std::vector<int> gpu_layer_attempts = use_accelerated
+        ? std::vector<int>{4}
+        : std::vector<int>{0};
+    LOGI("GGUF load params: backendCode=%d accelerated_requested=%d accelerated_available=%d gpu_layer_attempts=%zu split_mode=%d main_gpu=%d threads=%d requested_ctx=%d requested_batch=%d",
+         backendCode,
+         accelerated_requested ? 1 : 0,
+         accelerated_available ? 1 : 0,
+         gpu_layer_attempts.size(),
+         (int)model_params.split_mode,
+         (int)model_params.main_gpu,
+         threads,
+         contextSize,
+         batchSize);
+    int loaded_gpu_layers = 0;
+    for (int gpu_layers : gpu_layer_attempts) {
+        model_params.n_gpu_layers = gpu_layers;
+        LOGI("GGUF native stage start: llama_model_load gpu_layers=%d", gpu_layers);
         NativeStageWatchdog watchdog("llama_model_load", 30000, 30000);
         mc->model = llama_model_load_from_file(base, model_params);
+        if (mc->model) {
+            loaded_gpu_layers = gpu_layers;
+            break;
+        }
+        LOGE("Failed to load model attempt: %s gpu_layers=%d", base, gpu_layers);
     }
     if (!mc->model) {
         LOGE("Failed to load model: %s", base);
@@ -434,6 +726,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         env->ReleaseStringUTFChars(mmprojPath, mmproj);
         delete mc;
         return 0;
+    }
+    if (use_accelerated) {
+        mc->backend_label += " (" + std::to_string(loaded_gpu_layers) + " layers)";
     }
 
     // 2) Create context
@@ -465,7 +760,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     if (mmproj && strlen(mmproj) > 0) {
         mtmd_context_params mtmd_params = mtmd_context_params_default();
         mtmd_params.n_threads = ctx_params.n_threads;
-        mtmd_params.use_gpu = false; // CPU for now
+        mtmd_params.use_gpu = use_accelerated;
         LOGI("MTMD params: use_gpu=%d warmup=%d n_threads=%d image_min_tokens=%d image_max_tokens=%d marker=%s",
              mtmd_params.use_gpu ? 1 : 0,
              mtmd_params.warmup ? 1 : 0,
@@ -518,6 +813,19 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeUnloadModel(
 
     delete mc;
     LOGI("Model unloaded");
+}
+
+// ===== nativeGetLoadedBackendName =====
+
+JNIEXPORT jstring JNICALL
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeGetLoadedBackendName(
+    JNIEnv *env, jclass /* clazz */, jlong handle) {
+
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc) {
+        return env->NewStringUTF("");
+    }
+    return env->NewStringUTF(mc->backend_label.c_str());
 }
 
 // ===== nativeInferWithImage =====
