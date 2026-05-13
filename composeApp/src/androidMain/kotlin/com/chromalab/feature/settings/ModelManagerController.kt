@@ -62,6 +62,10 @@ class ModelManagerController(
     fun refresh() {
         val downloaded = manager.getDownloadedModels()
         val active = manager.getActiveModel()
+        val chromatogramModelId = manager.getChromatogramModelId()
+        val chromatogramModel = chromatogramModelId
+            ?.let { id -> downloaded.find { it.info.id == id } }
+            ?.info
         val builtinIds = ModelRegistry.builtinModels.map { it.id }.toSet()
 
         // Build list of custom (non-builtin) models for UI
@@ -74,6 +78,7 @@ class ModelManagerController(
                     sizeBytes = m.info.totalSizeBytes,
                     description = m.info.description,
                     supportsTextChat = ModelRegistry.isChatModel(m.info),
+                    supportsVision = m.info.supportsVision,
                 )
             }
 
@@ -90,6 +95,8 @@ class ModelManagerController(
                     val sizeGb = m.info.totalSizeBytes / 1_000_000_000f
                     "$runtime · %.1f GB".format(sizeGb)
                 },
+                chromatogramModelId = chromatogramModel?.id,
+                chromatogramModelName = chromatogramModel?.displayName,
                 deviceRamMb = manager.getDeviceRamMb(),
                 availableStorageGb = manager.getAvailableStorageBytes() / (1024f * 1024 * 1024),
                 totalModelDiskUsageGb = manager.getTotalModelDiskUsage() / (1024f * 1024 * 1024),
@@ -329,7 +336,7 @@ class ModelManagerController(
     fun delete(modelId: String) {
         cancelDownload(modelId)
         // Unload engine if this is the active model
-        if (manager.getActiveModelId() == modelId) {
+        if (manager.getActiveModelId() == modelId || manager.getChromatogramModelId() == modelId) {
             VlmEngineHolder.activeEngine = null
             VlmEngineHolder.activeConfig = null
             VlmEngineHolder.selectedModel = null
@@ -367,6 +374,22 @@ class ModelManagerController(
             scheduleAutoUnload()
         }
         println("MODEL[TIMER] Auto-unload set to $clamped min")
+    }
+
+    /** Select the downloaded model used by chromatogram photo analysis. */
+    fun setChromatogramModel(modelId: String) {
+        val model = manager.getDownloadedModels().find { it.info.id == modelId } ?: return
+        if (!manager.canLoadForChromatogramVision(model.info)) {
+            logModel("Rejected chromatogram model selection: ${model.info.displayName}")
+            return
+        }
+        manager.setChromatogramModel(modelId)
+        _state.update {
+            it.copy(
+                chromatogramModelId = model.info.id,
+                chromatogramModelName = model.info.displayName,
+            )
+        }
     }
 
     /**
@@ -452,21 +475,32 @@ class ModelManagerController(
     suspend fun activateForPipeline(
         onProgress: ((String) -> Unit)? = null,
     ): Boolean {
+        val requestedChromatogramId = manager.getChromatogramModelId()
+
         // Already loaded?
         if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
             VlmEngineHolder.activeEngine?.supportsImageInput() == true
         ) {
             if (VlmEngineHolder.activeExecutedModelIsChromatogramVision()) {
-                logModel("Chromatogram VLM already loaded: ${VlmEngineHolder.activeModelDiagnostics()}")
-                // Reset auto-unload timer (model is being used)
-                cancelAutoUnloadTimer()
-                return true
-            }
+                val loadedModelId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
+                if (requestedChromatogramId == null || loadedModelId == requestedChromatogramId) {
+                    logModel("Chromatogram VLM already loaded: ${VlmEngineHolder.activeModelDiagnostics()}")
+                    // Reset auto-unload timer (model is being used)
+                    cancelAutoUnloadTimer()
+                    return true
+                }
 
-            logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
-            VlmEngineHolder.activeEngine = null
-            VlmEngineHolder.activeConfig = null
-            VlmEngineHolder.executedModel = null
+                logModel("Unloading previous chromatogram VLM before selected model load: ${VlmEngineHolder.activeModelDiagnostics()}")
+                VlmEngineHolder.activeEngine = null
+                VlmEngineHolder.activeConfig = null
+                VlmEngineHolder.executedModel = null
+                VlmEngineHolder.selectedModel = null
+            } else {
+                logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
+                VlmEngineHolder.activeEngine = null
+                VlmEngineHolder.activeConfig = null
+                VlmEngineHolder.executedModel = null
+            }
         }
 
         if (VlmEngineHolder.activeEngine?.isLoaded() == true &&
@@ -479,36 +513,46 @@ class ModelManagerController(
 
         // Find a model to load for chromatogram vision. This path must never
         // load a GGUF model text-only: photo analysis requires image input.
-        val activeId = manager.getActiveModelId()
         val downloadedModels = manager.getDownloadedModels()
-        val selectedModel = activeId
+        val selectedDownloadedModel = requestedChromatogramId
             ?.let { id -> downloadedModels.find { it.info.id == id } }
-            ?.info
-            ?.toActiveInferenceModel()
-        val models = downloadedModels
-            .filter { manager.canLoadForChromatogramVision(it.info) }
-            .sortedWith(
-                compareByDescending<com.chromalab.feature.processing.model.DownloadedModel> {
-                    it.info.id == activeId
-                }
-                    .thenBy { ModelRegistry.chromatogramVisionPriority(it.info) }
-                    .thenBy { it.info.totalSizeBytes }
-            )
+
+        if (requestedChromatogramId != null && selectedDownloadedModel == null) {
+            logModel("Selected chromatogram model is not downloaded: $requestedChromatogramId")
+            onProgress?.invoke("Selected chromatogram VLM is not downloaded")
+            return false
+        }
+
+        if (selectedDownloadedModel != null && !manager.canLoadForChromatogramVision(selectedDownloadedModel.info)) {
+            logModel("Selected chromatogram model cannot load on this device: ${selectedDownloadedModel.info.displayName}")
+            onProgress?.invoke(manager.compatibilityMessage(selectedDownloadedModel.info, forVision = true))
+            return false
+        }
+
+        val models = if (selectedDownloadedModel != null) {
+            listOf(selectedDownloadedModel)
+        } else {
+            downloadedModels
+                .filter { manager.canLoadForChromatogramVision(it.info) }
+                .sortedWith(
+                    compareBy<com.chromalab.feature.processing.model.DownloadedModel> {
+                        ModelRegistry.chromatogramVisionPriority(it.info)
+                    }.thenBy { it.info.totalSizeBytes }
+                )
+        }
         if (models.isEmpty()) {
             logModel("No chromatogram vision model can be loaded on this device")
             onProgress?.invoke("No loaded/downloaded chromatogram VLM fits this device")
             return false
         }
 
-        // Priority: active choice > chromatography ranking > package size.
+        // Priority: selected chromatogram model > chromatography ranking > package size.
         val model = models.first()
 
         logModel("Auto-loading chromatogram VLM: ${model.info.displayName} (${model.info.family}, ${model.info.runtime})")
         onProgress?.invoke("Загрузка AI модели: ${model.info.displayName}")
 
         return try {
-            manager.setActiveModel(model.info.id)
-
             val engine: InferenceEngine? = when (model.info.runtime) {
                 ModelRuntime.LLAMA_CPP -> {
                     onProgress?.invoke("Загрузка GGUF модели...")
@@ -550,7 +594,7 @@ class ModelManagerController(
             if (engine != null) {
                 VlmEngineHolder.activeEngine = engine
                 VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
-                VlmEngineHolder.selectedModel = selectedModel ?: model.info.toActiveInferenceModel()
+                VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 onProgress?.invoke("AI модель готова")
                 logModel("Loaded chromatogram VLM: ${model.info.displayName} backend=${engine.getBackendName()} promptStyle=${VlmEngineHolder.activeConfig?.promptStyle}")
@@ -562,8 +606,7 @@ class ModelManagerController(
             }
         } catch (e: Throwable) {
             logModelError("Auto-load failed: ${e.message}", e)
-            manager.clearActiveModel()
-            VlmEngineHolder.selectedModel = selectedModel
+            VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
             VlmEngineHolder.executedModel = null
             false
         }

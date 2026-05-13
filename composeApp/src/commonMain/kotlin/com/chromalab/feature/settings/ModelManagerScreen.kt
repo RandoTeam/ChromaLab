@@ -44,6 +44,7 @@ import com.chromalab.feature.processing.model.ModelRegistry
 @Composable
 fun ModelManagerScreen(
     downloadedModelIds: Set<String>,
+    chromatogramModelId: String?,
     downloadJobs: Map<String, ModelDownloadUiState>,
     deviceRamMb: Int,
     availableStorageGb: Float,
@@ -53,6 +54,7 @@ fun ModelManagerScreen(
     huggingFaceSearch: HuggingFaceSearchState = HuggingFaceSearchState(),
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
+    onUseForChromatograms: (String) -> Unit,
     onCancelDownload: (String) -> Unit = {},
     onExport: (String) -> Unit = {},
     onImport: () -> Unit,
@@ -102,12 +104,15 @@ fun ModelManagerScreen(
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
+                    isChromatogramModel = model.id == chromatogramModelId,
+                    canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(model),
                     isDownloading = downloadJob.isRunning(),
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
+                    onUseForChromatograms = { onUseForChromatograms(model.id) },
                     onExport = { onExport(model.id) },
                     onCancelDownload = { onCancelDownload(model.id) },
                 )
@@ -145,10 +150,12 @@ fun ModelManagerScreen(
                     ExpandableModelGroup(
                         group = group,
                         downloadedModelIds = downloadedModelIds,
+                        chromatogramModelId = chromatogramModelId,
                         downloadJobs = downloadJobs,
                         deviceRamMb = deviceRamMb,
                         onDownload = onDownload,
                         onDelete = { deleteConfirmId = it },
+                        onUseForChromatograms = onUseForChromatograms,
                         onExport = onExport,
                         onCancelDownload = onCancelDownload,
                     )
@@ -162,12 +169,15 @@ fun ModelManagerScreen(
                 ModelCard(
                     model = model,
                     isDownloaded = model.id in downloadedModelIds,
+                    isChromatogramModel = model.id == chromatogramModelId,
+                    canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(model),
                     isDownloading = downloadJob.isRunning(),
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                     deviceRamMb = deviceRamMb,
                     onDownload = { onDownload(model) },
                     onDelete = { deleteConfirmId = model.id },
+                    onUseForChromatograms = { onUseForChromatograms(model.id) },
                     onExport = { onExport(model.id) },
                     onCancelDownload = { onCancelDownload(model.id) },
                 )
@@ -214,6 +224,8 @@ fun ModelManagerScreen(
             items(customModels, key = { it.id }) { custom ->
                 CustomModelCard(
                     custom = custom,
+                    isChromatogramModel = custom.id == chromatogramModelId,
+                    onUseForChromatograms = { onUseForChromatograms(custom.id) },
                     onDelete = { deleteConfirmId = custom.id },
                     onExport = { onExport(custom.id) },
                 )
@@ -575,10 +587,12 @@ private fun HuggingFaceResultRow(
 private fun ExpandableModelGroup(
     group: ModelGroup,
     downloadedModelIds: Set<String>,
+    chromatogramModelId: String?,
     downloadJobs: Map<String, ModelDownloadUiState>,
     deviceRamMb: Int,
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
+    onUseForChromatograms: (String) -> Unit,
     onExport: (String) -> Unit,
     onCancelDownload: (String) -> Unit,
 ) {
@@ -686,12 +700,15 @@ private fun ExpandableModelGroup(
                         QuantVariantCard(
                             variant = variant,
                             isDownloaded = variant.id in downloadedModelIds,
+                            isChromatogramModel = variant.id == chromatogramModelId,
+                            canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(variant),
                             isDownloading = downloadJob.isRunning(),
                             downloadProgress = downloadJob?.progress ?: 0f,
                             downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
                             deviceRamMb = deviceRamMb,
                             onDownload = { onDownload(variant) },
                             onDelete = { onDelete(variant.id) },
+                            onUseForChromatograms = { onUseForChromatograms(variant.id) },
                             onExport = { onExport(variant.id) },
                             onCancelDownload = { onCancelDownload(variant.id) },
                         )
@@ -709,12 +726,15 @@ private fun ExpandableModelGroup(
 private fun QuantVariantCard(
     variant: ModelInfo,
     isDownloaded: Boolean,
+    isChromatogramModel: Boolean,
+    canUseForChromatograms: Boolean,
     isDownloading: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
     deviceRamMb: Int,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
+    onUseForChromatograms: () -> Unit,
     onExport: () -> Unit,
     onCancelDownload: () -> Unit,
 ) {
@@ -795,6 +815,14 @@ private fun QuantVariantCard(
                 }
             }
 
+            if (isDownloaded && canUseForChromatograms && ramOk) {
+                Spacer(Modifier.height(6.dp))
+                ChromatogramRoleRow(
+                    isSelected = isChromatogramModel,
+                    onSelect = onUseForChromatograms,
+                )
+            }
+
             // Action buttons (compact row)
             Spacer(Modifier.height(4.dp))
             Row(
@@ -838,17 +866,60 @@ private fun QuantVariantCard(
     }
 }
 
+@Composable
+private fun UseCaseChip(label: String, color: Color) {
+    Surface(
+        shape = RoundedCornerShape(4.dp),
+        color = color.copy(alpha = 0.12f),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChromatogramRoleRow(
+    isSelected: Boolean,
+    onSelect: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        FilterChip(
+            selected = isSelected,
+            onClick = { if (!isSelected) onSelect() },
+            leadingIcon = {
+                Icon(
+                    Icons.Filled.Visibility,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+            },
+            label = {
+                Text(if (isSelected) "Для хроматограмм" else "Назначить для хроматограмм")
+            },
+        )
+    }
+}
 
 @Composable
 private fun ModelCard(
     model: ModelInfo,
     isDownloaded: Boolean,
+    isChromatogramModel: Boolean,
+    canUseForChromatograms: Boolean,
     isDownloading: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
     deviceRamMb: Int,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
+    onUseForChromatograms: () -> Unit,
     onExport: () -> Unit = {},
     onCancelDownload: () -> Unit = {},
 ) {
@@ -955,6 +1026,14 @@ private fun ModelCard(
                         }
                         Spacer(Modifier.width(8.dp))
                     }
+                    if (ModelRegistry.isChromatogramVisionModel(model)) {
+                        UseCaseChip(label = "Chroma", color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    if (ModelRegistry.chatModels().any { it.id == model.id }) {
+                        UseCaseChip(label = "Chat", color = MaterialTheme.colorScheme.secondary)
+                        Spacer(Modifier.width(8.dp))
+                    }
                     if (model.files.size > 1) {
                         Text(
                             model.files.joinToString(" + ") {
@@ -966,6 +1045,9 @@ private fun ModelCard(
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -1041,6 +1123,14 @@ private fun ModelCard(
                 }
             }
 
+            if (isDownloaded && canUseForChromatograms && ramOk) {
+                ChromatogramRoleRow(
+                    isSelected = isChromatogramModel,
+                    onSelect = onUseForChromatograms,
+                )
+                Spacer(Modifier.height(8.dp))
+            }
+
             // Action buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1095,6 +1185,8 @@ private fun ModelCard(
 @Composable
 private fun CustomModelCard(
     custom: CustomModelEntry,
+    isChromatogramModel: Boolean,
+    onUseForChromatograms: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
 ) {
@@ -1140,6 +1232,14 @@ private fun CustomModelCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (custom.supportsVision) {
+                Spacer(Modifier.height(6.dp))
+                ChromatogramRoleRow(
+                    isSelected = isChromatogramModel,
+                    onSelect = onUseForChromatograms,
+                )
+            }
 
             // Action buttons
             Spacer(Modifier.height(4.dp))

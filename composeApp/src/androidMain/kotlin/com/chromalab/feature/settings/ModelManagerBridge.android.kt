@@ -109,6 +109,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             setDownloadParallelism = { controller.setDownloadParallelism(it) },
             setDownloadSpeedLimit = { controller.setDownloadSpeedLimit(it) },
             setAutoUnloadMinutes = { controller.setAutoUnloadMinutes(it) },
+            setChromatogramModel = { controller.setChromatogramModel(it) },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
             onHuggingFaceQueryChange = { controller.updateHuggingFaceQuery(it) },
             onHuggingFaceSortChange = { controller.setHuggingFaceSort(it) },

@@ -12,6 +12,9 @@ data class ModelManagerState(
     val activeModelName: String? = null,
     /** Short summary for MoreScreen: e.g. "LiteRT GPU · 2.6 GB" */
     val activeModelSummary: String? = null,
+    /** Downloaded model selected for chromatogram photo analysis. */
+    val chromatogramModelId: String? = null,
+    val chromatogramModelName: String? = null,
     val downloadJobs: Map<String, ModelDownloadUiState> = emptyMap(),
     val downloadingModelId: String? = null,
     val downloadProgress: Float = 0f,
@@ -68,4 +71,5 @@ data class CustomModelEntry(
     val sizeBytes: Long,
     val description: String = "",
     val supportsTextChat: Boolean = true,
+    val supportsVision: Boolean = false,
 )

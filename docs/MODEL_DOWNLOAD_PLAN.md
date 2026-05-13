@@ -124,14 +124,14 @@ Technical rule:
 
 Goal: downloaded models are stored on disk, but not loaded into memory until the active workflow needs them.
 
-Status: in progress. Phase 5.1 completed for the shared model manager UI; chat and chromatogram runtime lifecycle still use the older activation path.
+Status: in progress. Phase 5.1 and Phase 5.2 are implemented; chat lazy loading and post-analysis unload still use the older activation path.
 
 Subpoints:
 
 - Done: remove the Activation action from the model download/settings section.
 - Done: make the model manager a download/import/storage screen, not a memory-loading screen.
-- Not done: separate chat-capable models from chromatogram/vision analysis models.
-- Not done: add dedicated "use for chromatograms" selection.
+- Done: separate chat-capable models from chromatogram/vision analysis models in the model registry/UI contract.
+- Done: add dedicated "use for chromatograms" selection.
 - Not done: load the selected chat model only when chat needs inference.
 - Not done: allow model selection inside chat without forcing a global always-loaded model.
 - Not done: unload chat model after leaving chat according to an auto-unload timer.
@@ -145,10 +145,11 @@ Technical rule:
 
 - Model lifecycle changes must not weaken chromatogram analysis quality. If a required vision model cannot load, the analysis must stop with a clear error rather than producing a deterministic-only report.
 - Phase 5.1 intentionally leaves `activate()` available for chat and pipeline code until those workflows get their own explicit loaders.
+- Phase 5.2 stores chromatogram model selection separately from the chat/global active model. If the selected chromatogram model is missing or cannot load, the pipeline stops the neural stage instead of silently choosing a weaker replacement.
 
 ## Current Next Phase
 
-The next phase to work on is Phase 5.2 - Model Role Selection.
+The next phase to work on is Phase 5.3 - Chat Lazy Loading.
 
 Before starting Phase 5, verify Phase 1, Phase 2, Phase 3, and Phase 4 on a real device:
 

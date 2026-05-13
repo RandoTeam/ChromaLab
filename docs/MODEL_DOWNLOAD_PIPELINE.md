@@ -53,10 +53,21 @@ The shared model manager is now a storage/download/import screen.
 - Existing download, cancel, delete, import, export, and compatibility displays remain available.
 - Chat and chromatogram analysis still keep their older runtime activation paths until Phase 5.2+ adds explicit workflow model selection and loaders.
 
-## Not In Phase 4
+## Phase 5.2 Status
+
+Model roles are now separated enough for chromatogram analysis to have its own model choice.
+
+- The model manager can mark a downloaded compatible vision model as the chromatogram analysis model.
+- The selection is persisted separately from `active_model_id`, so chromatogram analysis no longer changes the chat/global active model.
+- Built-in model cards expose Chat/Chroma role indicators.
+- Imported models carry separate text-chat and vision capability flags into the common UI.
+- The chromatogram pipeline first tries the selected chromatogram model, and stops the neural stage if that selected model is missing or incompatible instead of silently replacing it.
+- If no chromatogram model is selected, the pipeline still uses the existing ranked auto-pick behavior.
+
+## Still Not In Current Download/Lifecycle Scope
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Full model memory lifecycle changes, role separation, and per-workflow model loading.
+- Full chat lazy loading, post-analysis unload, and idle no-load guarantees.
 
 These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.

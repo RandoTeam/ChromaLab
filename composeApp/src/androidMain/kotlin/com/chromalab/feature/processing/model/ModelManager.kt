@@ -54,6 +54,7 @@ class ModelManager(private val context: Context) {
 
     companion object {
         private const val KEY_ACTIVE_MODEL = "active_model_id"
+        private const val KEY_CHROMATOGRAM_MODEL = "chromatogram_model_id"
         private const val KEY_THREAD_COUNT = "thread_count"
         private const val KEY_DOWNLOAD_PARALLELISM = "download_parallelism"
         private const val KEY_DOWNLOAD_SPEED_LIMIT_MBPS = "download_speed_limit_mbps"
@@ -113,6 +114,20 @@ class ModelManager(private val context: Context) {
      */
     fun getActiveModelId(): String? = prefs.getString(KEY_ACTIVE_MODEL, null)
 
+    /** Model selected specifically for chromatogram photo analysis. */
+    fun getChromatogramModelId(): String? = prefs.getString(KEY_CHROMATOGRAM_MODEL, null)
+        ?.takeIf { it.isNotBlank() }
+
+    fun setChromatogramModel(id: String) {
+        prefs.edit().putString(KEY_CHROMATOGRAM_MODEL, id).apply()
+        println("MODEL[MGR] Chromatogram model set to: $id")
+    }
+
+    fun clearChromatogramModel() {
+        prefs.edit().remove(KEY_CHROMATOGRAM_MODEL).apply()
+        println("MODEL[MGR] Chromatogram model cleared")
+    }
+
     // ===== Download / Delete =====
 
     /**
@@ -142,6 +157,9 @@ class ModelManager(private val context: Context) {
             // If this was the active model, clear selection
             if (getActiveModelId() == modelId) {
                 prefs.edit().remove(KEY_ACTIVE_MODEL).apply()
+            }
+            if (getChromatogramModelId() == modelId) {
+                prefs.edit().remove(KEY_CHROMATOGRAM_MODEL).apply()
             }
         }
         return deleted

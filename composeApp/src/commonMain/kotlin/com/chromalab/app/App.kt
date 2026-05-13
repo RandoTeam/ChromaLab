@@ -217,6 +217,7 @@ fun App() {
                 composable<Route.ModelManager> {
                     ModelManagerScreen(
                         downloadedModelIds = modelState.downloadedModelIds,
+                        chromatogramModelId = modelState.chromatogramModelId,
                         downloadJobs = modelState.downloadJobs,
                         deviceRamMb = modelState.deviceRamMb,
                         availableStorageGb = modelState.availableStorageGb,
@@ -226,6 +227,7 @@ fun App() {
                         huggingFaceSearch = modelState.huggingFaceSearch,
                         onDownload = { modelActions.download(it) },
                         onDelete = { modelActions.delete(it) },
+                        onUseForChromatograms = { modelActions.setChromatogramModel(it) },
                         onCancelDownload = { modelActions.cancelDownload(it) },
                         onExport = { modelActions.onExport(it) },
                         onImport = { modelActions.onImport() },

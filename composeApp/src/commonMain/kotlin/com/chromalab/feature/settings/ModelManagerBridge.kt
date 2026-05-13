@@ -19,6 +19,7 @@ data class ModelManagerActions(
     val setDownloadParallelism: (Int) -> Unit = {},
     val setDownloadSpeedLimit: (Int) -> Unit = {},
     val setAutoUnloadMinutes: (Int) -> Unit = {},
+    val setChromatogramModel: (String) -> Unit = {},
     val onImport: () -> Unit = {},
     /** Export model files to user-chosen location. */
     val onExport: (String) -> Unit = {},
