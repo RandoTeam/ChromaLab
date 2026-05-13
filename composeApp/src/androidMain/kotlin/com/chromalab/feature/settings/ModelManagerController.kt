@@ -265,24 +265,18 @@ class ModelManagerController(
                 val engine: InferenceEngine? = when (model.info.runtime) {
                     ModelRuntime.LLAMA_CPP -> {
                         val llama = LlamaEngine()
-                        val enableVision = manager.llamaShouldLoadVisionProjector(model.info)
-                        val visionPackage = if (enableVision) {
-                            manager.requireGgufVisionPackage(model)
-                        } else {
-                            null
-                        }
                         withContext(Dispatchers.IO) {
                             llama.loadModel(
-                                basePath = visionPackage?.basePath ?: model.primaryPath,
-                                mmprojPath = visionPackage?.mmprojPath ?: "",
+                                basePath = model.primaryPath,
+                                mmprojPath = "",
                                 threads = manager.threadCount,
                                 modelFamily = model.info.family,
-                                contextSize = manager.llamaContextSize(model.info, enableVision),
-                                batchSize = manager.llamaBatchSize(model.info, enableVision),
+                                contextSize = manager.llamaContextSize(model.info, forVision = false),
+                                batchSize = manager.llamaBatchSize(model.info, forVision = false),
                             )
                         }
-                        if (!enableVision && model.mmprojPath != null) {
-                            println("MODEL[CTRL] GGUF vision disabled for ${model.info.displayName} on this device; loaded text-only")
+                        if (model.mmprojPath != null) {
+                            println("MODEL[CTRL] GGUF activated text-only for chat: ${model.info.displayName}; chromatogram analysis loads mmproj separately")
                         }
                         llama
                     }
