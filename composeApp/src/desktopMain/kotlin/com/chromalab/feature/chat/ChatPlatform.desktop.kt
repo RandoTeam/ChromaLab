@@ -37,6 +37,7 @@ actual fun rememberChatState(
             selectChat = controller::selectChat,
             deleteChat = controller::deleteChat,
             setChatModel = controller::setChatModel,
+            setChatRuntimeAccelerator = controller::setChatRuntimeAccelerator,
             updateSettings = controller::updateSettings,
             sendMessage = controller::sendMessage,
             clearError = controller::clearError,
@@ -72,6 +73,7 @@ private class DesktopChatTextGenerator : ChatTextGenerator {
         settings: ChatSettings,
         modelId: String,
         modelName: String?,
+        runtimeAccelerator: ChatRuntimeAccelerator,
         onPartial: (String) -> Unit,
     ): String {
         val response = "Desktop chat currently stores history only. On-device generation is wired on Android through LiteRT and GGUF."

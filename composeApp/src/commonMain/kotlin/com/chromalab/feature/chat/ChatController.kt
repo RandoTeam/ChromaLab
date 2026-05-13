@@ -81,7 +81,12 @@ class ChatController(
         }
     }
 
-    fun setChatModel(chatId: String, modelId: String, modelName: String) {
+    fun setChatModel(
+        chatId: String,
+        modelId: String,
+        modelName: String,
+        runtimeAccelerator: ChatRuntimeAccelerator,
+    ) {
         scope.launch {
             val now = chatNowMillis()
             archive = archive.copy(
@@ -90,8 +95,29 @@ class ChatController(
                         it.copy(
                             modelId = modelId,
                             modelName = modelName,
+                            runtimeAccelerator = runtimeAccelerator,
                             updatedAt = now,
                         )
+                    } else {
+                        it
+                    }
+                },
+            )
+            persist()
+            publish(chatId)
+        }
+    }
+
+    fun setChatRuntimeAccelerator(
+        chatId: String,
+        runtimeAccelerator: ChatRuntimeAccelerator,
+    ) {
+        scope.launch {
+            val now = chatNowMillis()
+            archive = archive.copy(
+                sessions = archive.sessions.map {
+                    if (it.id == chatId) {
+                        it.copy(runtimeAccelerator = runtimeAccelerator, updatedAt = now)
                     } else {
                         it
                     }
@@ -112,6 +138,7 @@ class ChatController(
             val session = archive.sessions.firstOrNull { it.id == chatId }
             val selectedModelId = session?.modelId ?: state.value.activeModelId
             val selectedModelName = session?.modelName ?: state.value.activeModelName
+            val selectedRuntimeAccelerator = session?.runtimeAccelerator ?: ChatRuntimeAccelerator.AUTO
             if (selectedModelId == null) {
                 publish(chatId, error = "Выберите модель чата перед отправкой сообщения.")
                 return@launch
@@ -165,6 +192,7 @@ class ChatController(
                         settings = settings,
                         modelId = selectedModelId,
                         modelName = selectedModelName,
+                        runtimeAccelerator = selectedRuntimeAccelerator,
                         onPartial = { chunk ->
                             if (chunk.isNotEmpty()) {
                                 updateMessage(chatId, assistantId) { message ->

@@ -40,6 +40,7 @@ actual fun rememberChatState(
             selectChat = controller::selectChat,
             deleteChat = controller::deleteChat,
             setChatModel = controller::setChatModel,
+            setChatRuntimeAccelerator = controller::setChatRuntimeAccelerator,
             updateSettings = controller::updateSettings,
             sendMessage = controller::sendMessage,
             clearError = controller::clearError,
@@ -78,11 +79,15 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
         settings: ChatSettings,
         modelId: String,
         modelName: String?,
+        runtimeAccelerator: ChatRuntimeAccelerator,
         onPartial: (String) -> Unit,
     ): String {
         val controller = VlmEngineHolder.controller
             ?: error("Model controller is not ready.")
-        val loaded = controller.activateForChat(modelId)
+        val loaded = controller.activateForChat(
+            modelId = modelId,
+            runtimeAccelerator = runtimeAccelerator,
+        )
         if (!loaded) {
             error("Unable to load chat model: ${modelName ?: modelId}")
         }

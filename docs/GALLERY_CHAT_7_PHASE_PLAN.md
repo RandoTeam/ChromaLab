@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 3.1.
-- Next phase to start: Phase 3.2.
+- Current completed phase: Phase 3.2.
+- Next phase to start: Phase 3.3.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -48,7 +48,7 @@ Status: completed.
 Status: in progress.
 
 - [x] Phase 3.1: Define chat runtime UI state for backend, accelerator, thinking support, and model capability flags.
-- [ ] Phase 3.2: Add capability-gated accelerator controls for LiteRT/GGUF where runtime support is real.
+- [x] Phase 3.2: Add capability-gated accelerator controls for LiteRT/GGUF where runtime support is real.
 - [ ] Phase 3.3: Add thinking toggle only for models that actually support it.
 - [ ] Phase 3.4: Disable unsupported model/runtime choices with clear UI reasons instead of hiding them silently.
 - [ ] Phase 3.5: Keep selection separate from loading; loading still starts only on first message or explicit runtime action.

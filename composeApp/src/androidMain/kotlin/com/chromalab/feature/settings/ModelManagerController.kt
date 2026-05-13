@@ -3,6 +3,7 @@ package com.chromalab.feature.settings
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.chromalab.feature.chat.ChatRuntimeAccelerator
 import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.InferenceEngine
 import com.chromalab.feature.processing.inference.LlamaEngine
@@ -51,6 +52,7 @@ class ModelManagerController(
 
     private var hfSearchJob: Job? = null
     private var unloadTimerJob: Job? = null
+    private var activeChatAccelerator: ChatRuntimeAccelerator? = null
 
     init {
         refresh()
@@ -231,9 +233,16 @@ class ModelManagerController(
     }
 
     /** Lazily load a downloaded chat model only when chat generation needs inference. */
-    suspend fun activateForChat(modelId: String): Boolean {
+    suspend fun activateForChat(
+        modelId: String,
+        runtimeAccelerator: ChatRuntimeAccelerator = ChatRuntimeAccelerator.AUTO,
+    ): Boolean {
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
-        if (loadedId == modelId && VlmEngineHolder.activeEngine?.isLoaded() == true) {
+        if (
+            loadedId == modelId &&
+            VlmEngineHolder.activeEngine?.isLoaded() == true &&
+            activeChatAccelerator == runtimeAccelerator
+        ) {
             cancelAutoUnloadTimer()
             refresh()
             logModel("Chat model already loaded: ${VlmEngineHolder.activeModelDiagnostics()}")
@@ -273,10 +282,12 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.selectedModel = null
                 VlmEngineHolder.executedModel = null
+                activeChatAccelerator = null
             }
 
             cancelAutoUnloadTimer()
             manager.setActiveModel(modelId)
+            val preferAccelerated = model.info.preferAcceleratedForChat(runtimeAccelerator)
 
             // Create engine based on runtime. Chat loads text-only to keep memory lower than
             // chromatogram vision analysis, which loads its own model/mmproj later.
@@ -291,6 +302,7 @@ class ModelManagerController(
                             modelFamily = model.info.family,
                             contextSize = manager.llamaContextSize(model.info, forVision = false),
                             batchSize = manager.llamaBatchSize(model.info, forVision = false),
+                            preferAccelerated = preferAccelerated,
                         )
                     }
                     if (model.mmprojPath != null) {
@@ -303,7 +315,7 @@ class ModelManagerController(
                     withContext(Dispatchers.IO) {
                         liteRT.loadModel(
                             modelPath = model.primaryPath,
-                            preferGpu = manager.liteRtPreferAccelerator(model.info),
+                            preferGpu = preferAccelerated,
                             enableVision = false,
                             maxNumTokens = manager.liteRtMaxTokens(model.info),
                         )
@@ -317,6 +329,7 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = InferenceConfig.forModelFamily(model.info.family)
                 VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
+                activeChatAccelerator = runtimeAccelerator
                 logModel("Chat engine loaded: ${model.info.displayName} (family=${model.info.family}, backend=${engine.getBackendName()})")
             }
 
@@ -330,6 +343,7 @@ class ModelManagerController(
             VlmEngineHolder.activeConfig = null
             VlmEngineHolder.selectedModel = null
             VlmEngineHolder.executedModel = null
+            activeChatAccelerator = null
             _state.update {
                 it.copy(
                     activatingModelId = null,
@@ -350,6 +364,7 @@ class ModelManagerController(
             VlmEngineHolder.activeConfig = null
             VlmEngineHolder.selectedModel = null
             VlmEngineHolder.executedModel = null
+            activeChatAccelerator = null
         }
         manager.delete(modelId)
         refresh()
@@ -436,6 +451,7 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.selectedModel = null
                 VlmEngineHolder.executedModel = null
+                activeChatAccelerator = null
                 manager.clearActiveModel()
                 refresh()
             }
@@ -482,6 +498,7 @@ class ModelManagerController(
         VlmEngineHolder.activeConfig = null
         VlmEngineHolder.selectedModel = null
         VlmEngineHolder.executedModel = null
+        activeChatAccelerator = null
         manager.clearActiveModel()
         refresh()
     }
@@ -511,6 +528,7 @@ class ModelManagerController(
         VlmEngineHolder.activeConfig = null
         VlmEngineHolder.selectedModel = null
         VlmEngineHolder.executedModel = null
+        activeChatAccelerator = null
         manager.clearActiveModel()
         refresh()
     }
@@ -572,11 +590,13 @@ class ModelManagerController(
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.executedModel = null
                 VlmEngineHolder.selectedModel = null
+                activeChatAccelerator = null
             } else {
                 logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
                 VlmEngineHolder.activeEngine = null
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.executedModel = null
+                activeChatAccelerator = null
             }
         }
 
@@ -586,6 +606,7 @@ class ModelManagerController(
             VlmEngineHolder.activeEngine = null
             VlmEngineHolder.activeConfig = null
             VlmEngineHolder.executedModel = null
+            activeChatAccelerator = null
         }
 
         // Find a model to load for chromatogram vision. This path must never
@@ -697,6 +718,14 @@ private fun ModelInfo.toActiveInferenceModel(backendLabel: String? = null): Acti
         runtime = runtime,
         backendLabel = backendLabel?.takeIf { it.isNotBlank() },
     )
+
+private fun ModelInfo.preferAcceleratedForChat(
+    runtimeAccelerator: ChatRuntimeAccelerator,
+): Boolean =
+    when (runtime) {
+        ModelRuntime.LITERT_LM -> runtimeAccelerator != ChatRuntimeAccelerator.CPU
+        ModelRuntime.LLAMA_CPP -> runtimeAccelerator == ChatRuntimeAccelerator.VULKAN
+    }
 
 private fun ModelDownloadUiState.isRunningDownload(): Boolean =
     phase == ModelDownloadUiPhase.QUEUED ||

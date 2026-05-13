@@ -26,6 +26,7 @@ data class ChatSession(
     val title: String,
     val modelId: String? = null,
     val modelName: String? = null,
+    val runtimeAccelerator: ChatRuntimeAccelerator = ChatRuntimeAccelerator.AUTO,
     val settings: ChatSettings = ChatSettings(),
     val createdAt: Long,
     val updatedAt: Long,
@@ -89,6 +90,7 @@ enum class ChatRuntimeBackend(
     UNKNOWN("Unknown"),
 }
 
+@Serializable
 enum class ChatRuntimeAccelerator(
     val label: String,
 ) {
@@ -149,7 +151,8 @@ data class ChatActions(
     val createChat: () -> Unit = {},
     val selectChat: (String?) -> Unit = {},
     val deleteChat: (String) -> Unit = {},
-    val setChatModel: (String, String, String) -> Unit = { _, _, _ -> },
+    val setChatModel: (String, String, String, ChatRuntimeAccelerator) -> Unit = { _, _, _, _ -> },
+    val setChatRuntimeAccelerator: (String, ChatRuntimeAccelerator) -> Unit = { _, _ -> },
     val updateSettings: (String, ChatSettings) -> Unit = { _, _ -> },
     val sendMessage: (String) -> Unit = {},
     val clearError: () -> Unit = {},
@@ -166,6 +169,7 @@ interface ChatTextGenerator {
         settings: ChatSettings,
         modelId: String,
         modelName: String?,
+        runtimeAccelerator: ChatRuntimeAccelerator,
         onPartial: (String) -> Unit,
     ): String
 }

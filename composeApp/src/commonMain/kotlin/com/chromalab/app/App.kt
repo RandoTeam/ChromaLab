@@ -349,7 +349,7 @@ private fun ModelInfo.toChatRuntimeUiState(): ChatRuntimeUiState {
         backend = runtime.toChatRuntimeBackend(),
         backendLabel = runtime.chatBackendLabel(),
         supportedAccelerators = acceleratorOptions,
-        selectedAccelerator = ChatRuntimeAccelerator.AUTO,
+        selectedAccelerator = runtime.defaultChatAccelerator(),
         capabilities = ChatModelCapabilities(
             supportsTextChat = supportsTextChat,
             supportsVisionInput = supportsVision,
@@ -386,14 +386,18 @@ private fun ModelRuntime.chatBackendLabel(): String = when (this) {
 
 private fun ModelRuntime.chatAccelerators(): List<ChatRuntimeAccelerator> = when (this) {
     ModelRuntime.LITERT_LM -> listOf(
-        ChatRuntimeAccelerator.NPU,
-        ChatRuntimeAccelerator.GPU,
+        ChatRuntimeAccelerator.AUTO,
         ChatRuntimeAccelerator.CPU,
     )
     ModelRuntime.LLAMA_CPP -> listOf(
-        ChatRuntimeAccelerator.VULKAN,
         ChatRuntimeAccelerator.CPU,
+        ChatRuntimeAccelerator.VULKAN,
     )
+}
+
+private fun ModelRuntime.defaultChatAccelerator(): ChatRuntimeAccelerator = when (this) {
+    ModelRuntime.LITERT_LM -> ChatRuntimeAccelerator.AUTO
+    ModelRuntime.LLAMA_CPP -> ChatRuntimeAccelerator.CPU
 }
 
 private fun ModelInfo.supportsChatThinking(): Boolean {

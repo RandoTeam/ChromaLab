@@ -41,6 +41,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +85,9 @@ fun ChatScreen(
     val selectedModelId = if (selected != null) selected.modelId else state.activeModelId
     val selectedModelName = if (selected != null) selected.modelName else state.activeModelName
     val selectedModelOption = modelOptions.firstOrNull { it.id == selectedModelId }
+    val selectedAccelerator = selected?.runtimeAccelerator
+        ?: selectedModelOption?.runtime?.selectedAccelerator
+        ?: ChatRuntimeAccelerator.AUTO
 
     Scaffold(
         modifier = modifier,
@@ -165,9 +169,13 @@ fun ChatScreen(
             selectedModelId = selected.modelId,
             modelOptions = modelOptions,
             onSelectModel = { option ->
-                actions.setChatModel(selected.id, option.id, option.name)
+                actions.setChatModel(selected.id, option.id, option.name, option.runtime.selectedAccelerator)
                 onSelectModel(option)
                 showModelPicker = false
+            },
+            selectedAccelerator = selectedAccelerator,
+            onSelectAccelerator = { accelerator ->
+                actions.setChatRuntimeAccelerator(selected.id, accelerator)
             },
             onOpenModelManager = {
                 showModelPicker = false
@@ -654,6 +662,8 @@ private fun ChatModelPickerSheet(
     selectedModelId: String?,
     modelOptions: List<ChatModelOption>,
     onSelectModel: (ChatModelOption) -> Unit,
+    selectedAccelerator: ChatRuntimeAccelerator,
+    onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
     onOpenModelManager: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -662,6 +672,8 @@ private fun ChatModelPickerSheet(
             selectedModelId = selectedModelId,
             modelOptions = modelOptions,
             onSelectModel = onSelectModel,
+            selectedAccelerator = selectedAccelerator,
+            onSelectAccelerator = onSelectAccelerator,
             onOpenModelManager = onOpenModelManager,
         )
     }
@@ -672,6 +684,8 @@ private fun ChatModelPickerContent(
     selectedModelId: String?,
     modelOptions: List<ChatModelOption>,
     onSelectModel: (ChatModelOption) -> Unit,
+    selectedAccelerator: ChatRuntimeAccelerator,
+    onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
     onOpenModelManager: () -> Unit,
 ) {
     Column(
@@ -731,7 +745,48 @@ private fun ChatModelPickerContent(
                 )
             }
         }
+        modelOptions.firstOrNull { it.id == selectedModelId }?.let { selectedOption ->
+            ChatAcceleratorSelector(
+                option = selectedOption,
+                selectedAccelerator = effectiveAccelerator(selectedOption, selectedAccelerator),
+                onSelectAccelerator = onSelectAccelerator,
+            )
+        }
         Spacer(Modifier.height(Spacing.md))
+    }
+}
+
+@Composable
+private fun ChatAcceleratorSelector(
+    option: ChatModelOption,
+    selectedAccelerator: ChatRuntimeAccelerator,
+    onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
+) {
+    if (!option.runtime.capabilities.supportsRuntimeSelection) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+    ) {
+        Text(
+            text = "Ускорение",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            option.runtime.supportedAccelerators.forEach { accelerator ->
+                FilterChip(
+                    selected = accelerator == selectedAccelerator,
+                    onClick = { onSelectAccelerator(accelerator) },
+                    label = { Text(accelerator.label) },
+                )
+            }
+        }
+        Text(
+            text = acceleratorHelpText(option),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -798,6 +853,24 @@ private fun ChatModelPickerRow(
         }
     }
 }
+
+private fun effectiveAccelerator(
+    option: ChatModelOption,
+    selectedAccelerator: ChatRuntimeAccelerator,
+): ChatRuntimeAccelerator =
+    when {
+        selectedAccelerator in option.runtime.supportedAccelerators -> selectedAccelerator
+        option.runtime.selectedAccelerator in option.runtime.supportedAccelerators -> option.runtime.selectedAccelerator
+        else -> option.runtime.supportedAccelerators.firstOrNull() ?: selectedAccelerator
+    }
+
+private fun acceleratorHelpText(option: ChatModelOption): String =
+    when (option.runtime.backend) {
+        ChatRuntimeBackend.LITERT_LM -> "Auto пробует NPU/GPU и откатывается на CPU; CPU фиксирует стабильный режим."
+        ChatRuntimeBackend.LLAMA_CPP -> "Vulkan использует ускоренный llama.cpp backend, если устройство его реально поддерживает; CPU стабильнее."
+        ChatRuntimeBackend.IMPORTED,
+        ChatRuntimeBackend.UNKNOWN -> "Для этой модели доступен только объявленный runtime."
+    }
 
 @Composable
 private fun SettingSlider(
