@@ -253,6 +253,13 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("counts", yCandidate.unit)
         assertEquals(8.0, yCandidate.points.first { it.value == 10_000.0 }.pixel)
         assertEquals(300.0, yCandidate.points.first { it.value == 0.0 }.pixel)
+        val transform = assertNotNull(graph.axisCalibration?.pixelToUnitTransform)
+        assertEquals("ocr-validated-linear-axis-fit", transform.method)
+        assertEquals(0.039473684210526314, transform.xScale, 0.0000001)
+        assertEquals(9.605263157894736, transform.xOffset, 0.0000001)
+        assertEquals(-34.24657534246575, transform.yScale, 0.0000001)
+        assertEquals(10_273.972602739726, transform.yOffset, 0.0000001)
+        assertEquals(0.95625, graph.axisCalibration?.calibrationConfidence ?: -1.0, 0.0000001)
     }
 
     @Test
@@ -315,6 +322,8 @@ class ProcessingReportMetadataBuilderTest {
         assertTrue(xCandidate.rejectionReasons.any { it.contains("monotonic") })
         assertTrue(xCandidate.rejectionReasons.any { it.contains("spacing") })
         assertTrue(xCandidate.rejectionReasons.any { it.contains("visible graph range") })
+        assertEquals(null, graph?.axisCalibration?.pixelToUnitTransform)
+        assertEquals(null, graph?.axisCalibration?.calibrationConfidence)
     }
 
     @Test

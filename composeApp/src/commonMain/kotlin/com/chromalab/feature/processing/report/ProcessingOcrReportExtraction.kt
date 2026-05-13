@@ -9,6 +9,7 @@ import com.chromalab.feature.reports.AxisCalibrationCandidateStatus
 import com.chromalab.feature.reports.AxisReport
 import com.chromalab.feature.reports.ChromatogramIdentification
 import com.chromalab.feature.reports.PixelRect
+import com.chromalab.feature.reports.PixelToUnitTransform
 import com.chromalab.feature.reports.ReportAxisCalibration
 import com.chromalab.feature.reports.ReportAxisName
 import com.chromalab.feature.reports.ReportDoubleValue
@@ -103,6 +104,7 @@ internal fun AxisOcrResult?.toProcessingOcrReportExtraction(
         yTicks = yTicks,
         confidence = result.confidence.toReportConfidence(),
         calibrationCandidates = calibrationCandidates,
+        bounds = detectedGraphBounds,
     )
 
     return ProcessingOcrReportExtraction(
@@ -157,7 +159,9 @@ private fun buildAxisCalibration(
     yTicks: List<ReportDoubleValue>,
     confidence: Double?,
     calibrationCandidates: List<AxisCalibrationCandidate>,
+    bounds: PixelRect?,
 ): ReportAxisCalibration? {
+    val transformSelection = buildPixelToUnitTransform(calibrationCandidates, bounds, confidence)
     val hasX = xLabel != null ||
         xUnit != null ||
         xTicks.isNotEmpty() ||
@@ -183,8 +187,94 @@ private fun buildAxisCalibration(
             visibleMaximum = yTicks.maxByOrNull { it.value ?: -Double.MAX_VALUE } ?: ReportDoubleValue.notCalculated(),
             majorTicks = yTicks.sortedBy { it.value ?: Double.MAX_VALUE },
         ),
-        calibrationConfidence = confidence,
+        calibrationConfidence = transformSelection?.confidence,
         calibrationCandidates = calibrationCandidates,
+        pixelToUnitTransform = transformSelection?.transform,
+    )
+}
+
+private fun buildPixelToUnitTransform(
+    candidates: List<AxisCalibrationCandidate>,
+    bounds: PixelRect?,
+    fallbackConfidence: Double?,
+): AxisTransformSelection? {
+    val graphBounds = bounds ?: return null
+    val xFit = candidates.selectedAxisFit(ReportAxisName.X, graphBounds.width.toDouble()) ?: return null
+    val yFit = candidates.selectedAxisFit(ReportAxisName.Y, graphBounds.height.toDouble()) ?: return null
+
+    return AxisTransformSelection(
+        transform = PixelToUnitTransform(
+            xScale = xFit.scale,
+            xOffset = xFit.offset,
+            yScale = yFit.scale,
+            yOffset = yFit.offset,
+            method = "ocr-validated-linear-axis-fit",
+        ),
+        confidence = listOf(
+            xFit.confidence(fallbackConfidence),
+            yFit.confidence(fallbackConfidence),
+        ).average().coerceIn(0.0, 1.0),
+    )
+}
+
+private fun List<AxisCalibrationCandidate>.selectedAxisFit(
+    axis: ReportAxisName,
+    axisLength: Double,
+): AxisLinearFit? =
+    firstOrNull { candidate ->
+        candidate.axis == axis && candidate.status == AxisCalibrationCandidateStatus.VALIDATED
+    }
+        ?.toAxisLinearFit(axisLength)
+
+private fun AxisCalibrationCandidate.toAxisLinearFit(axisLength: Double): AxisLinearFit? {
+    val localizedPoints = points
+        .mapNotNull { point -> point.pixel?.let { pixel -> LocalizedAxisPoint(point.value, pixel) } }
+        .distinctBy { point -> (point.pixel * 2.0).toInt() }
+        .sortedBy { it.pixel }
+    if (localizedPoints.size < 2) return null
+
+    val meanPixel = localizedPoints.map { it.pixel }.average()
+    val meanValue = localizedPoints.map { it.value }.average()
+    val pixelVariance = localizedPoints.sumOf { point ->
+        val delta = point.pixel - meanPixel
+        delta * delta
+    }
+    if (pixelVariance <= 0.0) return null
+
+    val covariance = localizedPoints.sumOf { point ->
+        (point.pixel - meanPixel) * (point.value - meanValue)
+    }
+    val scale = covariance / pixelVariance
+    val offset = meanValue - scale * meanPixel
+    val fittedValues = localizedPoints.map { point -> scale * point.pixel + offset }
+    val residualSum = localizedPoints.zip(fittedValues).sumOf { (point, fittedValue) ->
+        val delta = point.value - fittedValue
+        delta * delta
+    }
+    val totalSum = localizedPoints.sumOf { point ->
+        val delta = point.value - meanValue
+        delta * delta
+    }
+    val rSquared = if (totalSum <= 0.0) {
+        1.0
+    } else {
+        (1.0 - residualSum / totalSum).coerceIn(0.0, 1.0)
+    }
+    val pixelSpan = localizedPoints.maxOf { it.pixel } - localizedPoints.minOf { it.pixel }
+    val pointConfidence = localizedPoints
+        .mapNotNull { localized ->
+            points.firstOrNull { point -> point.value == localized.value && point.pixel == localized.pixel }?.confidence
+        }
+        .takeIf { it.isNotEmpty() }
+        ?.average()
+        ?: confidence
+
+    return AxisLinearFit(
+        scale = scale,
+        offset = offset,
+        rSquared = rSquared,
+        pixelCoverage = if (axisLength > 0.0) pixelSpan / axisLength else 0.0,
+        pointConfidence = pointConfidence,
     )
 }
 
@@ -332,6 +422,29 @@ private data class LocalizedAxisPoint(
     val value: Double,
     val pixel: Double,
 )
+
+private data class AxisTransformSelection(
+    val transform: PixelToUnitTransform,
+    val confidence: Double,
+)
+
+private data class AxisLinearFit(
+    val scale: Double,
+    val offset: Double,
+    val rSquared: Double,
+    val pixelCoverage: Double,
+    val pointConfidence: Double?,
+) {
+    fun confidence(fallbackConfidence: Double?): Double {
+        val sourceConfidence = (pointConfidence ?: fallbackConfidence ?: 0.50).coerceIn(0.0, 1.0)
+        val coverageConfidence = pixelCoverage.coerceIn(0.0, 1.0)
+        return (
+            rSquared.coerceIn(0.0, 1.0) * 0.55 +
+                coverageConfidence * 0.30 +
+                sourceConfidence * 0.15
+            ).coerceIn(0.0, 1.0)
+    }
+}
 
 private fun AxisSide.toReportAxisName(): ReportAxisName =
     when (this) {

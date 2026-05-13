@@ -327,3 +327,16 @@ Implemented on 2026-05-13:
 Remaining later work:
 
 - Phase 5.4 should persist the selected `PixelToUnitTransform` only from validated calibration data and record calibration confidence separately from raw OCR confidence.
+
+## Phase 5.4 Implementation Notes
+
+Implemented on 2026-05-13:
+
+- Report metadata now persists `PixelToUnitTransform` from validated X and Y OCR calibration candidates only.
+- The persisted transform uses a linear axis fit in the form `value = scale * pixel + offset`, with graph-relative pixels.
+- `calibrationConfidence` is now derived from calibration fit quality, visible axis coverage, and localized tick OCR confidence instead of copying raw OCR confidence.
+- Invalid or incomplete candidates do not produce a transform and do not produce release-quality calibration confidence.
+
+Remaining later work:
+
+- Phase 5.5 should add explicit warnings for weak OCR, missing ticks, tilted image, inconsistent axis geometry, and missing validated transforms.
