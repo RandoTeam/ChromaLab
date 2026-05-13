@@ -54,10 +54,20 @@ fun App() {
             activeModelId = activeChatModelId,
             activeModelName = activeChatModelName,
         )
-        val isChatRoute = backStackEntry?.destination?.hasRoute(Route.Chats::class) == true
-        LaunchedEffect(isChatRoute) {
+        val destination = backStackEntry?.destination
+        val isChatRoute = destination?.hasRoute(Route.Chats::class) == true
+        val isChromatogramWorkflowRoute = destination?.let {
+            it.hasRoute(Route.Capture::class) ||
+                it.hasRoute(Route.Camera::class) ||
+                it.hasRoute(Route.FileImport::class) ||
+                it.hasRoute(Route.Processing::class) ||
+                it.hasRoute(Route.Analysis::class)
+        } == true
+        LaunchedEffect(isChatRoute, isChromatogramWorkflowRoute) {
             if (isChatRoute) {
                 modelActions.cancelAutoUnloadTimer()
+            } else if (isChromatogramWorkflowRoute) {
+                modelActions.prepareForChromatogramWorkflow()
             } else {
                 modelActions.scheduleAutoUnload()
             }

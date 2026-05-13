@@ -75,10 +75,20 @@ Chat model selection is now separate from immediate runtime loading.
 - Leaving the chat route schedules the existing auto-unload timer; returning to chat cancels the pending timer.
 - The model manager state reports an active model only when an engine is actually loaded.
 
+## Phase 5.4 Status
+
+Camera and chromatogram workflows now get a memory handoff before analysis.
+
+- Entering capture, camera, file import, image processing, or analysis routes cancels pending auto-unload timers and prepares model memory explicitly.
+- Loaded chat/text engines are unloaded before chromatogram work starts.
+- A compatible already-loaded chromatogram vision model is kept for reuse if it matches the selected chromatogram model.
+- The handoff never loads a neural model early; the processing pipeline still lazy-loads the selected VLM only when the neural stage starts.
+- If inference is already running, the handoff does not unload the active engine mid-generation.
+
 ## Still Not In Current Download/Lifecycle Scope
 
 - Persisted per-chunk completion maps for parallel range downloads after process death.
 - Android 13+ runtime notification permission request before long downloads.
-- Camera memory handoff, post-analysis unload, and full idle no-load guarantees.
+- Post-analysis unload and full idle no-load guarantees.
 
 These are intentionally left for later phases so download throttling stays separate from model lifecycle changes.

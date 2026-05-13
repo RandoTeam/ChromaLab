@@ -465,6 +465,44 @@ class ModelManagerController(
         unloadTimerJob = null
     }
 
+    /**
+     * Free chat/text runtime memory before camera capture or chromatogram analysis.
+     * This does not load a chromatogram model; the neural pipeline still lazy-loads
+     * the selected vision model exactly at the VLM stage.
+     */
+    fun prepareForChromatogramWorkflow() {
+        cancelAutoUnloadTimer()
+
+        val engine = VlmEngineHolder.activeEngine
+        if (engine?.isLoaded() != true) return
+
+        if (VlmEngineHolder.isInferring) {
+            logModel("Keeping active model during chromatogram handoff because inference is running")
+            return
+        }
+
+        val loadedModelId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
+        val requestedChromatogramId = manager.getChromatogramModelId()
+        val reusableChromatogramVision =
+            engine.supportsImageInput() &&
+                VlmEngineHolder.activeExecutedModelIsChromatogramVision() &&
+                (requestedChromatogramId == null || loadedModelId == requestedChromatogramId)
+
+        if (reusableChromatogramVision) {
+            logModel("Keeping reusable chromatogram VLM for analysis: ${VlmEngineHolder.activeModelDiagnostics()}")
+            refresh()
+            return
+        }
+
+        logModel("Unloading active model before chromatogram workflow: ${VlmEngineHolder.activeModelDiagnostics()}")
+        VlmEngineHolder.activeEngine = null
+        VlmEngineHolder.activeConfig = null
+        VlmEngineHolder.selectedModel = null
+        VlmEngineHolder.executedModel = null
+        manager.clearActiveModel()
+        refresh()
+    }
+
     /** Import a model file from a user-selected URI. */
     fun importFile(uri: Uri) {
         scope.launch {

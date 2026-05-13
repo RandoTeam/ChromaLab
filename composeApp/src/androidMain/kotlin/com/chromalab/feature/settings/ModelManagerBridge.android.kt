@@ -112,6 +112,7 @@ actual fun rememberModelManagerState(): Pair<ModelManagerState, ModelManagerActi
             setChromatogramModel = { controller.setChromatogramModel(it) },
             scheduleAutoUnload = { controller.scheduleAutoUnload() },
             cancelAutoUnloadTimer = { controller.cancelAutoUnloadTimer() },
+            prepareForChromatogramWorkflow = { controller.prepareForChromatogramWorkflow() },
             onImport = { importLauncher.launch(arrayOf("*/*")) },
             onHuggingFaceQueryChange = { controller.updateHuggingFaceQuery(it) },
             onHuggingFaceSortChange = { controller.setHuggingFaceSort(it) },
