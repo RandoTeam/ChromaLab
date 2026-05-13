@@ -18,6 +18,7 @@ data class ChatSettings(
     val maxTokens: Int = 1024,
     val repeatPenalty: Float = 1.05f,
     val repeatLastN: Int = 128,
+    val enableThinking: Boolean = false,
 )
 
 @Serializable

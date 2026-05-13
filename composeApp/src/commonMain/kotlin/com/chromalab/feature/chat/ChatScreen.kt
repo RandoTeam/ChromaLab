@@ -50,6 +50,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -170,12 +171,19 @@ fun ChatScreen(
             modelOptions = modelOptions,
             onSelectModel = { option ->
                 actions.setChatModel(selected.id, option.id, option.name, option.runtime.selectedAccelerator)
+                if (!option.runtime.thinking.isSupported && selected.settings.enableThinking) {
+                    actions.updateSettings(selected.id, selected.settings.copy(enableThinking = false))
+                }
                 onSelectModel(option)
                 showModelPicker = false
             },
             selectedAccelerator = selectedAccelerator,
             onSelectAccelerator = { accelerator ->
                 actions.setChatRuntimeAccelerator(selected.id, accelerator)
+            },
+            thinkingEnabled = selected.settings.enableThinking,
+            onSetThinkingEnabled = { enabled ->
+                actions.updateSettings(selected.id, selected.settings.copy(enableThinking = enabled))
             },
             onOpenModelManager = {
                 showModelPicker = false
@@ -664,6 +672,8 @@ private fun ChatModelPickerSheet(
     onSelectModel: (ChatModelOption) -> Unit,
     selectedAccelerator: ChatRuntimeAccelerator,
     onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
+    thinkingEnabled: Boolean,
+    onSetThinkingEnabled: (Boolean) -> Unit,
     onOpenModelManager: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -674,6 +684,8 @@ private fun ChatModelPickerSheet(
             onSelectModel = onSelectModel,
             selectedAccelerator = selectedAccelerator,
             onSelectAccelerator = onSelectAccelerator,
+            thinkingEnabled = thinkingEnabled,
+            onSetThinkingEnabled = onSetThinkingEnabled,
             onOpenModelManager = onOpenModelManager,
         )
     }
@@ -686,6 +698,8 @@ private fun ChatModelPickerContent(
     onSelectModel: (ChatModelOption) -> Unit,
     selectedAccelerator: ChatRuntimeAccelerator,
     onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
+    thinkingEnabled: Boolean,
+    onSetThinkingEnabled: (Boolean) -> Unit,
     onOpenModelManager: () -> Unit,
 ) {
     Column(
@@ -751,8 +765,45 @@ private fun ChatModelPickerContent(
                 selectedAccelerator = effectiveAccelerator(selectedOption, selectedAccelerator),
                 onSelectAccelerator = onSelectAccelerator,
             )
+            ChatThinkingToggle(
+                option = selectedOption,
+                thinkingEnabled = thinkingEnabled,
+                onSetThinkingEnabled = onSetThinkingEnabled,
+            )
         }
         Spacer(Modifier.height(Spacing.md))
+    }
+}
+
+@Composable
+private fun ChatThinkingToggle(
+    option: ChatModelOption,
+    thinkingEnabled: Boolean,
+    onSetThinkingEnabled: (Boolean) -> Unit,
+) {
+    if (!option.runtime.thinking.isSupported) return
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "Thinking",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Отдельный блок рассуждений будет показан только если runtime вернет thinking отдельно.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Switch(
+            checked = thinkingEnabled,
+            onCheckedChange = onSetThinkingEnabled,
+        )
     }
 }
 
