@@ -169,6 +169,8 @@ The app should not silently use a text-only GGUF model for image analysis. If im
 
 For full chromatogram analysis, GGUF models must satisfy the same VLM contract as LiteRT: graph bounds JSON, axis-label JSON, and usable image input. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr stay available as model downloads, but they are not selected automatically for the full chromatogram pipeline until they have a validated adapter for that contract.
 
+Native GGUF image inference logs watchdog warnings for bitmap load, `mtmd_tokenize`, `mtmd_helper_eval_chunks`, and decode stalls. These logs are diagnostic only: they must not trigger a deterministic-only fallback for full chromatogram analysis.
+
 ## Chat Pipeline
 
 ```text

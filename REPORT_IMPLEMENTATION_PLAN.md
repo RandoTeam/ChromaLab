@@ -166,7 +166,8 @@ Goal: keep chromatography models, chat models, OCR-only models, LiteRT, and GGUF
 - [x] 9.5 Record selected runtime and actual executed runtime in report metadata.
 - [~] 9.6 Diagnose and fix empty GGUF chat responses and stuck GGUF image-analysis stages.
   - [x] 9.6a Format GGUF text/chat prompts according to the active model prompt style and fail blank native responses explicitly.
-  - [ ] 9.6b Add native image-stage watchdog diagnostics for `mtmd_tokenize` / `mtmd_helper_eval_chunks` stalls.
+  - [x] 9.6b Add native image-stage watchdog diagnostics for `mtmd_tokenize` / `mtmd_helper_eval_chunks` stalls.
+  - [ ] 9.6c Use device logs from GGUF image watchdogs to fix the concrete stalled native stage.
 - [ ] 9.7 Prevent LiteRT from being silently used when a GGUF model was selected.
 
 Exit criteria:
@@ -177,6 +178,7 @@ Exit criteria:
 - GGUF image analysis validates a local base `.gguf` plus a separate valid `mmproj` file before llama.cpp loading.
 - Report metadata stores selected and executed runtime independently; missing executed-engine evidence remains `UNKNOWN`.
 - GGUF chat/text inference applies model prompt-style formatting instead of sending raw generic transcripts to every model.
+- Native GGUF image inference logs long-running bitmap load, tokenization, chunk evaluation, and decode stages instead of appearing silent.
 
 ## Phase 10 - Alpha Release Validation
 
@@ -224,7 +226,8 @@ Exit criteria:
 - `372c2fc` - Block skipping required vision analysis.
 - `7b194e7` - Require GGUF vision package before analysis.
 - `6066607` - Record executed runtime separately.
+- `c584dc8` - Format GGUF chat prompts.
 
 ## Next Recommended Slice
 
-Continue Phase 9.6b: add native image-stage watchdog diagnostics for `mtmd_tokenize` / `mtmd_helper_eval_chunks` stalls.
+Continue Phase 9.6c: use native watchdog logs from device testing to fix the concrete stalled GGUF image stage.

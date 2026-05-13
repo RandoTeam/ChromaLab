@@ -16,8 +16,10 @@
 #include <vector>
 #include <cstring>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cctype>
+#include <thread>
 #include <android/log.h>
 
 #include "llama.h"
@@ -26,6 +28,7 @@
 
 #define LOG_TAG "LlamaBridge"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN,  LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 /**
@@ -139,6 +142,63 @@ static long long elapsed_ms_since(
         std::chrono::steady_clock::now() - started
     ).count();
 }
+
+class NativeStageWatchdog {
+public:
+    NativeStageWatchdog(
+        const char *stageName,
+        int warnAfterMs = 15000,
+        int repeatEveryMs = 15000)
+        : stage_name(stageName ? stageName : "unknown"),
+          warn_after_ms(warnAfterMs),
+          repeat_every_ms(repeatEveryMs),
+          started(std::chrono::steady_clock::now()),
+          done(false),
+          worker(&NativeStageWatchdog::run, this) {
+        LOGI("GGUF image stage start: %s", stage_name.c_str());
+    }
+
+    ~NativeStageWatchdog() {
+        done.store(true, std::memory_order_release);
+        if (worker.joinable()) {
+            worker.join();
+        }
+        LOGI("GGUF image stage done: %s elapsed=%lld ms",
+             stage_name.c_str(), elapsed_ms_since(started));
+    }
+
+    NativeStageWatchdog(const NativeStageWatchdog &) = delete;
+    NativeStageWatchdog &operator=(const NativeStageWatchdog &) = delete;
+
+private:
+    void run() {
+        long long last_warning_ms = 0;
+        while (!done.load(std::memory_order_acquire)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if (done.load(std::memory_order_acquire)) {
+                break;
+            }
+
+            const long long elapsed_ms = elapsed_ms_since(started);
+            if (elapsed_ms < warn_after_ms) {
+                continue;
+            }
+
+            if (last_warning_ms == 0 || elapsed_ms - last_warning_ms >= repeat_every_ms) {
+                LOGW("GGUF image stage still running: %s elapsed=%lld ms",
+                     stage_name.c_str(), elapsed_ms);
+                last_warning_ms = elapsed_ms;
+            }
+        }
+    }
+
+    const std::string stage_name;
+    const int warn_after_ms;
+    const int repeat_every_ms;
+    const std::chrono::steady_clock::time_point started;
+    std::atomic<bool> done;
+    std::thread worker;
+};
 
 static std::string build_multimodal_prompt(const char *prompt, const char *marker) {
     std::string text = prompt ? std::string(prompt) : std::string();
@@ -438,7 +498,11 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
 
         // 1. Load image
         LOGI("MTMD bitmap load start");
-        mtmd_bitmap *bitmap = mtmd_helper_bitmap_init_from_file(mc->mtmd, img_path);
+        mtmd_bitmap *bitmap = nullptr;
+        {
+            NativeStageWatchdog watchdog("mtmd_bitmap_load");
+            bitmap = mtmd_helper_bitmap_init_from_file(mc->mtmd, img_path);
+        }
         if (!bitmap) {
             LOGE("Failed to load image: %s", img_path);
             env->ReleaseStringUTFChars(imagePath, img_path);
@@ -463,7 +527,11 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         mtmd_input_chunks *chunks = mtmd_input_chunks_init();
         const auto tokenize_started = std::chrono::steady_clock::now();
         LOGI("MTMD tokenize start");
-        int32_t tok_result = mtmd_tokenize(mc->mtmd, chunks, &input_text, bitmaps, 1);
+        int32_t tok_result = 0;
+        {
+            NativeStageWatchdog watchdog("mtmd_tokenize", 30000, 15000);
+            tok_result = mtmd_tokenize(mc->mtmd, chunks, &input_text, bitmaps, 1);
+        }
         mtmd_bitmap_free(bitmap);
         LOGI("MTMD tokenize done: result=%d elapsed=%lld ms",
              tok_result, elapsed_ms_since(tokenize_started));
@@ -482,10 +550,14 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
         llama_pos n_past = 0;
         const auto eval_started = std::chrono::steady_clock::now();
         LOGI("MTMD eval chunks start: n_batch=%d n_ctx=%d", mc->n_batch, mc->n_ctx);
-        int32_t eval_result = mtmd_helper_eval_chunks(
-            mc->mtmd, mc->ctx, chunks,
-            n_past, 0, mc->n_batch, true, &n_past
-        );
+        int32_t eval_result = 0;
+        {
+            NativeStageWatchdog watchdog("mtmd_helper_eval_chunks", 30000, 15000);
+            eval_result = mtmd_helper_eval_chunks(
+                mc->mtmd, mc->ctx, chunks,
+                n_past, 0, mc->n_batch, true, &n_past
+            );
+        }
         mtmd_input_chunks_free(chunks);
         LOGI("MTMD eval chunks done: result=%d n_past=%d elapsed=%lld ms",
              eval_result, (int)n_past, elapsed_ms_since(eval_started));
@@ -521,7 +593,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             rep_last_n
         );
 
-        for (int i = 0; i < n_predict; i++) {
+        {
+            NativeStageWatchdog watchdog("llama_image_decode", 30000, 30000);
+            for (int i = 0; i < n_predict; i++) {
             // Sample token using sampler chain (-1 = last logits)
             llama_token token_id = llama_sampler_sample(smpl, mc->ctx, -1);
 
@@ -551,6 +625,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferWithImage
             if (llama_decode(mc->ctx, batch) != 0) {
                 LOGE("llama_decode failed at token %d", i);
                 break;
+            }
             }
         }
 
