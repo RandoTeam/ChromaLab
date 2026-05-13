@@ -23,11 +23,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Tune
@@ -35,6 +38,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -55,7 +59,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import kotlinx.coroutines.delay
@@ -72,17 +79,24 @@ fun ChatScreen(
     modifier: Modifier = Modifier,
 ) {
     var showSettings by remember { mutableStateOf(false) }
+    var showModelPicker by remember { mutableStateOf(false) }
     val selected = state.selectedSession
+    val selectedModelId = if (selected != null) selected.modelId else state.activeModelId
+    val selectedModelName = if (selected != null) selected.modelName else state.activeModelName
+    val selectedModelOption = modelOptions.firstOrNull { it.id == selectedModelId }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             ChatTopBar(
                 selected = selected,
-                activeModelName = selected?.modelName ?: state.activeModelName,
+                selectedModelName = selectedModelName,
+                selectedModelOption = selectedModelOption,
+                isGenerating = state.isGenerating,
                 onBack = { actions.selectChat(null) },
                 onNewChat = actions.createChat,
                 onOpenModelManager = onOpenModelManager,
+                onModelPicker = { showModelPicker = true },
                 onSettings = { showSettings = true },
             )
         },
@@ -138,13 +152,6 @@ fun ChatScreen(
     if (showSettings && selected != null) {
         ChatSettingsSheet(
             settings = selected.settings,
-            selectedModelId = selected.modelId,
-            modelOptions = modelOptions,
-            onSelectModel = { option ->
-                actions.setChatModel(selected.id, option.id, option.name)
-                onSelectModel(option)
-            },
-            onOpenModelManager = onOpenModelManager,
             onDismiss = { showSettings = false },
             onApply = { settings ->
                 actions.updateSettings(selected.id, settings)
@@ -152,69 +159,135 @@ fun ChatScreen(
             },
         )
     }
+
+    if (showModelPicker && selected != null) {
+        ChatModelPickerSheet(
+            selectedModelId = selected.modelId,
+            modelOptions = modelOptions,
+            onSelectModel = { option ->
+                actions.setChatModel(selected.id, option.id, option.name)
+                onSelectModel(option)
+                showModelPicker = false
+            },
+            onOpenModelManager = {
+                showModelPicker = false
+                onOpenModelManager()
+            },
+            onDismiss = { showModelPicker = false },
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatTopBar(
     selected: ChatSession?,
-    activeModelName: String?,
+    selectedModelName: String?,
+    selectedModelOption: ChatModelOption?,
+    isGenerating: Boolean,
     onBack: () -> Unit,
     onNewChat: () -> Unit,
     onOpenModelManager: () -> Unit,
+    onModelPicker: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    Surface(tonalElevation = 3.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.md, vertical = Spacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
+    CenterAlignedTopAppBar(
+        navigationIcon = {
             if (selected != null) {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = onBack, enabled = !isGenerating) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                 }
             }
-            Column(modifier = Modifier.weight(1f)) {
+        },
+        title = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Text(
                     text = selected?.title ?: "Чаты",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (selected == null) {
+                if (selected != null) {
+                    ChatModelChip(
+                        modelName = selectedModelName,
+                        option = selectedModelOption,
+                        enabled = !isGenerating,
+                        onClick = onModelPicker,
+                    )
+                } else {
                     Text(
-                        text = activeModelName ?: "Активная модель не выбрана",
+                        text = selectedModelName ?: "Модель не выбрана",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
+        },
+        actions = {
             if (selected != null) {
-                AssistChip(
-                    onClick = onSettings,
-                    label = {
-                        Text(
-                            text = activeModelName ?: "Выбрать модель",
-                            maxLines = 1,
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Filled.SmartToy, contentDescription = null, modifier = Modifier.size(16.dp))
-                    },
-                    modifier = Modifier.widthIn(max = 180.dp),
-                )
-                IconButton(onClick = onSettings) {
+                IconButton(onClick = onSettings, enabled = !isGenerating) {
                     Icon(Icons.Filled.Tune, contentDescription = "Настройки")
                 }
+            } else {
+                IconButton(onClick = onOpenModelManager) {
+                    Icon(Icons.Filled.SmartToy, contentDescription = "Модели")
+                }
             }
-            IconButton(onClick = onOpenModelManager) {
-                Icon(Icons.Filled.SmartToy, contentDescription = "Модели")
-            }
-            IconButton(onClick = onNewChat) {
+            IconButton(onClick = onNewChat, enabled = !isGenerating) {
                 Icon(Icons.Filled.Add, contentDescription = "Новый чат")
             }
+        },
+    )
+}
+
+@Composable
+private fun ChatModelChip(
+    modelName: String?,
+    option: ChatModelOption?,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(modifier = Modifier.size(21.dp), contentAlignment = Alignment.Center) {
+            Icon(
+                Icons.Filled.SmartToy,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (option?.isActivating == true) {
+                CircularProgressIndicator(modifier = Modifier.size(21.dp), strokeWidth = 2.dp)
+            }
         }
+        Text(
+            text = modelName ?: "Выбрать модель",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 180.dp),
+        )
+        Icon(
+            Icons.Filled.ExpandMore,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -491,10 +564,6 @@ private fun ChatComposer(
 @Composable
 private fun ChatSettingsSheet(
     settings: ChatSettings,
-    selectedModelId: String?,
-    modelOptions: List<ChatModelOption>,
-    onSelectModel: (ChatModelOption) -> Unit,
-    onOpenModelManager: () -> Unit,
     onDismiss: () -> Unit,
     onApply: (ChatSettings) -> Unit,
 ) {
@@ -505,14 +574,6 @@ private fun ChatSettingsSheet(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
-            item {
-                ChatModelSelector(
-                    selectedModelId = selectedModelId,
-                    modelOptions = modelOptions,
-                    onSelectModel = onSelectModel,
-                    onOpenModelManager = onOpenModelManager,
-                )
-            }
             item {
                 Text("Настройки чата", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
@@ -587,28 +648,61 @@ private fun ChatSettingsSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ChatModelSelector(
+private fun ChatModelPickerSheet(
+    selectedModelId: String?,
+    modelOptions: List<ChatModelOption>,
+    onSelectModel: (ChatModelOption) -> Unit,
+    onOpenModelManager: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        ChatModelPickerContent(
+            selectedModelId = selectedModelId,
+            modelOptions = modelOptions,
+            onSelectModel = onSelectModel,
+            onOpenModelManager = onOpenModelManager,
+        )
+    }
+}
+
+@Composable
+private fun ChatModelPickerContent(
     selectedModelId: String?,
     modelOptions: List<ChatModelOption>,
     onSelectModel: (ChatModelOption) -> Unit,
     onOpenModelManager: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+    Column(
+        modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text("Model", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Icon(
+                Icons.Filled.SmartToy,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = "Модели чата",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f),
+            )
             TextButton(onClick = onOpenModelManager) {
-                Text("Manage")
+                Text("Управлять")
             }
         }
 
         if (modelOptions.isEmpty()) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
                 shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
             ) {
@@ -624,46 +718,76 @@ private fun ChatModelSelector(
                     )
                 }
             }
+            Spacer(Modifier.height(Spacing.md))
             return
         }
 
-        modelOptions.forEach { option ->
-            val selected = selectedModelId == option.id
-            Card(
-                modifier = Modifier.fillMaxWidth().clickable(
-                    enabled = !option.isActivating,
-                    onClick = { onSelectModel(option) },
-                ),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selected) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    },
-                ),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(Spacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    Icon(Icons.Filled.SmartToy, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(option.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(
-                            option.summary,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    when {
-                        option.isActivating -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        option.isActive -> Text("Loaded", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        selected -> Text("Selected", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            modelOptions.forEach { option ->
+                ChatModelPickerRow(
+                    option = option,
+                    selected = selectedModelId == option.id,
+                    onSelectModel = onSelectModel,
+                )
             }
+        }
+        Spacer(Modifier.height(Spacing.md))
+    }
+}
+
+@Composable
+private fun ChatModelPickerRow(
+    option: ChatModelOption,
+    selected: Boolean,
+    onSelectModel: (ChatModelOption) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = if (selected) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent,
+                shape = RoundedCornerShape(8.dp),
+            )
+            .clickable(enabled = !option.isActivating) { onSelectModel(option) }
+            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        Icon(
+            Icons.Filled.SmartToy,
+            contentDescription = null,
+            modifier = Modifier.size(22.dp),
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = option.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = option.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        when {
+            option.isActivating -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            selected -> Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription = "Выбрана",
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            option.isActive -> Text(
+                "Загружена",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

@@ -1,6 +1,6 @@
 # Gallery Chat Phase 1 Contract
 
-Status: completed contract, no UI implementation yet.
+Status: phase 1 contract completed; phase 2 top bar/model picker shell implemented.
 
 This document fixes the exact Gallery chat references that ChromaLab will use for the
 chat redesign. The goal is to avoid approximate visual copying and make later phases
@@ -370,3 +370,28 @@ Phase 2 should implement only:
 
 Do not mix phase 2 with thinking mode, runtime backend work, composer redesign, or full
 palette migration.
+
+## Phase 2 Implementation Status
+
+Status: completed.
+
+Implemented in:
+
+- `composeApp/src/commonMain/kotlin/com/chromalab/feature/chat/ChatScreen.kt`
+
+Completed scope:
+
+- Gallery-style `CenterAlignedTopAppBar` structure for chat sessions.
+- Centered chat title plus in-chat model chip.
+- Separate model picker `ModalBottomSheet` opened from the chip.
+- Model selection binds the chosen model to the current chat session only.
+- Settings sheet now contains generation settings only, not model selection.
+
+Explicitly not changed in phase 2:
+
+- Model loading/runtime behavior.
+- LiteRT/GGUF accelerator selection.
+- Thinking mode.
+- Composer redesign.
+- Message bubble redesign.
+- Full chat palette migration.
