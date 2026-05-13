@@ -218,6 +218,21 @@ The report must clearly distinguish:
 - literature lookup;
 - not calculable.
 
+### Value Provenance
+
+Every structured report value that can influence interpretation must carry status and source
+metadata. The report must distinguish:
+
+- `CALCULATED` values from deterministic algorithms or imported numeric files;
+- `DETECTED` values from OCR or vision extraction;
+- `INFERRED` values from local rules, local knowledge, or model suggestions;
+- `LOCAL_KNOWLEDGE` facts from the offline knowledge pack;
+- `MODEL_SUGGESTED` hypotheses from LLM/VLM output.
+
+Model-suggested values are never equivalent to calculated values. They must remain auditable in the
+technical appendix and must not become final compound assignments unless later validation stages
+raise their confidence with calculation, retention-index, spectrum, or user/library evidence.
+
 ### Local Domain Knowledge
 
 The report should use a local offline knowledge pack rather than rely only on model memory.
@@ -387,6 +402,7 @@ Required content:
 - clamp negative setting;
 - smoothing and baseline settings;
 - raw warnings;
+- value provenance audit: status, source, and confidence for calculated, detected, inferred, local-knowledge, and model-suggested values;
 - stage timings;
 - export schema version.
 

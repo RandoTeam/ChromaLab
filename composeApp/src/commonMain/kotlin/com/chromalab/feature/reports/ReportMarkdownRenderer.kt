@@ -284,6 +284,8 @@ object ReportMarkdownRenderer {
             appendLine("- Noise method: ${graph.signal.noiseMethod ?: notCalculated()}")
             appendLine("- Signal extraction confidence: ${graph.signal.signalExtractionConfidence.renderPercent()}")
         }
+
+        renderValueProvenance(report)
     }
 
     private fun StringBuilder.renderStageTimings(stageTimings: List<ReportStageTiming>) {
@@ -300,6 +302,134 @@ object ReportMarkdownRenderer {
             val stage = timing.stageName?.takeIf { it.isNotBlank() } ?: timing.stageId
             appendLine("| ${stage.escapeTable()} | ${timing.durationMillis} ms |")
         }
+    }
+
+    private fun StringBuilder.renderValueProvenance(report: ChromatogramReport) {
+        val rows = report.valueProvenanceRows()
+        appendLine()
+        appendLine("### Value provenance")
+        if (rows.isEmpty()) {
+            appendLine(notCalculated())
+            return
+        }
+
+        appendLine("| Graph | Field | Status | Source | Confidence |")
+        appendLine("| --- | --- | --- | --- | --- |")
+        rows.forEach { row ->
+            appendLine(
+                listOf(
+                    row.graphIndex?.toString() ?: "",
+                    row.field,
+                    row.status.name,
+                    row.source.name,
+                    row.confidence.renderPercent(),
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+    }
+
+    private fun ChromatogramReport.valueProvenanceRows(): List<ValueProvenanceRow> =
+        buildList {
+            graphs.forEach { graph ->
+                addIdentificationRows(graph)
+                addAxisRows(graph)
+                addSignalRows(graph)
+                addPeakRows(graph)
+                addQualityRows(graph)
+                addKovatsRows(graph)
+                addInterpretationRows(graph)
+            }
+        }.filter { it.shouldRender() }
+
+    private fun MutableList<ValueProvenanceRow>.addIdentificationRows(graph: GraphReport) {
+        val identification = graph.identification
+        addText(graph.graphIndex, "identification.chromatogramTitle", identification.chromatogramTitle)
+        addText(graph.graphIndex, "identification.analysisType", identification.analysisType)
+        addText(graph.graphIndex, "identification.chromatogramMode", identification.chromatogramMode)
+        addText(graph.graphIndex, "identification.ionOrChannel", identification.ionOrChannel)
+        addText(graph.graphIndex, "identification.ionRange", identification.ionRange)
+        addText(graph.graphIndex, "identification.sampleName", identification.sampleName)
+        addText(graph.graphIndex, "identification.samplePathOrInstrumentLabel", identification.samplePathOrInstrumentLabel)
+        addText(graph.graphIndex, "identification.matrix", identification.matrix)
+        addText(graph.graphIndex, "identification.targetCompoundClass", identification.targetCompoundClass)
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addAxisRows(graph: GraphReport) {
+        addAxis(graph.graphIndex, "axis.x", graph.axisCalibration.xAxis)
+        addAxis(graph.graphIndex, "axis.y", graph.axisCalibration.yAxis)
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addAxis(graphIndex: Int, prefix: String, axis: AxisReport) {
+        addText(graphIndex, "$prefix.label", axis.label)
+        addText(graphIndex, "$prefix.unit", axis.unit)
+        addDouble(graphIndex, "$prefix.visibleMinimum", axis.visibleMinimum)
+        addDouble(graphIndex, "$prefix.visibleMaximum", axis.visibleMaximum)
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addSignalRows(graph: GraphReport) {
+        addDouble(graph.graphIndex, "signal.baselineMean", graph.signal.baselineMean)
+        addDouble(graph.graphIndex, "signal.baselineDrift", graph.signal.baselineDrift)
+        addDouble(graph.graphIndex, "signal.rmsNoise", graph.signal.rmsNoise)
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addPeakRows(graph: GraphReport) {
+        graph.peaks.forEach { peak ->
+            addDouble(graph.graphIndex, "peak[${peak.number}].retentionTime", peak.retentionTime)
+            peak.compound?.let { compound ->
+                addText(graph.graphIndex, "peak[${peak.number}].compound.probableName", compound.probableName)
+                addText(graph.graphIndex, "peak[${peak.number}].compound.formula", compound.formula)
+                addText(graph.graphIndex, "peak[${peak.number}].compound.compoundClass", compound.compoundClass)
+                addText(graph.graphIndex, "peak[${peak.number}].compound.carbonNumber", compound.carbonNumber)
+                addDouble(graph.graphIndex, "peak[${peak.number}].compound.kovatsIndex", compound.kovatsIndex)
+                addDouble(graph.graphIndex, "peak[${peak.number}].compound.literatureDelta", compound.literatureDelta)
+            }
+        }
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addQualityRows(graph: GraphReport) {
+        val quality = graph.quality
+        addDouble(graph.graphIndex, "quality.meanSnr", quality.meanSnr)
+        addDouble(graph.graphIndex, "quality.medianSnr", quality.medianSnr)
+        addDouble(graph.graphIndex, "quality.maximumPeakHeight", quality.maximumPeakHeight)
+        addText(graph.graphIndex, "quality.baselineQuality", quality.baselineQuality)
+        addDouble(graph.graphIndex, "quality.averageResolution", quality.averageResolution)
+        addDouble(graph.graphIndex, "quality.minimumResolution", quality.minimumResolution)
+        addDouble(graph.graphIndex, "quality.theoreticalPlates", quality.theoreticalPlates)
+        addDouble(graph.graphIndex, "quality.hetp", quality.hetp)
+        addDouble(graph.graphIndex, "quality.globalIntegratedArea", quality.globalIntegratedArea)
+        addText(graph.graphIndex, "quality.areaNormalizationStatus", quality.areaNormalizationStatus)
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addKovatsRows(graph: GraphReport) {
+        addDouble(graph.graphIndex, "kovats.trendLinearityR2", graph.kovats.trendLinearityR2)
+        graph.kovats.results.forEach { result ->
+            addDouble(graph.graphIndex, "kovats.peak[${result.peakNumber}].calculatedIndex", result.calculatedIndex)
+            addDouble(graph.graphIndex, "kovats.peak[${result.peakNumber}].deltaFromLiterature", result.deltaFromLiterature)
+        }
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addInterpretationRows(graph: GraphReport) {
+        addText(graph.graphIndex, "interpretation.likelyCompoundClass", graph.interpretation.likelyCompoundClass)
+        graph.interpretation.distributionByCarbonNumber.forEach { bucket ->
+            addDouble(graph.graphIndex, "interpretation.distribution[${bucket.label}].area", bucket.area)
+            addDouble(graph.graphIndex, "interpretation.distribution[${bucket.label}].areaPercent", bucket.areaPercent)
+        }
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addText(
+        graphIndex: Int,
+        field: String,
+        value: ReportTextValue,
+    ) {
+        add(ValueProvenanceRow(graphIndex, field, value.status, value.source, value.confidence))
+    }
+
+    private fun MutableList<ValueProvenanceRow>.addDouble(
+        graphIndex: Int,
+        field: String,
+        value: ReportDoubleValue,
+    ) {
+        add(ValueProvenanceRow(graphIndex, field, value.status, value.source, value.confidence))
     }
 
     private fun StringBuilder.renderList(title: String, values: List<String>) {
@@ -456,4 +586,17 @@ object ReportMarkdownRenderer {
         replace("\n", " ").trim()
 
     private fun notCalculated(): String = "not calculated"
+
+    private data class ValueProvenanceRow(
+        val graphIndex: Int?,
+        val field: String,
+        val status: ReportValueStatus,
+        val source: ReportValueSource,
+        val confidence: Double?,
+    ) {
+        fun shouldRender(): Boolean =
+            status != ReportValueStatus.NOT_CALCULATED ||
+                source != ReportValueSource.UNKNOWN ||
+                confidence != null
+    }
 }

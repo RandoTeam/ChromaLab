@@ -419,6 +419,7 @@ enum class ReportValueStatus {
 enum class ReportValueSource {
     DETERMINISTIC,
     VISION_MODEL,
+    MODEL_SUGGESTED,
     OCR,
     LOCAL_KNOWLEDGE,
     USER,
