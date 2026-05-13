@@ -1,127 +1,121 @@
-# ChromaLab
+<h1 align="center">ChromaLab</h1>
 
-ChromaLab is an offline-first Android/Kotlin Multiplatform app for chromatogram digitization, chromatographic calculation, and local on-device AI workflows.
+<p align="center">
+  <b>Offline-first лабораторная рабочая среда для анализа хроматограмм и локальных AI-моделей</b>
+</p>
 
-The project is no longer only a narrow chromatography calculator. The current direction is a modular offline analysis workspace:
+<p align="center">
+  <a href="https://github.com/RandoTeam/ChromaLab/releases">
+    <img alt="Alpha" src="https://img.shields.io/badge/release-v0.0.3--alpha-2563eb?style=for-the-badge">
+  </a>
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Multiplatform-7f52ff?style=for-the-badge&logo=kotlin&logoColor=white">
+  <img alt="Compose" src="https://img.shields.io/badge/Compose-Material%203-0f9d58?style=for-the-badge">
+  <img alt="Offline" src="https://img.shields.io/badge/offline--first-on--device-111827?style=for-the-badge">
+</p>
 
-- chromatogram capture and digitization from camera, gallery, or file import;
-- deterministic chromatographic calculations with reproducible parameters;
-- local VLM/LLM model management with LiteRT-LM and GGUF support;
-- an integrated local chat workspace that uses the same downloaded model pool;
-- exportable human-readable reports and machine-readable data.
+---
 
-Current public build: **v0.0.3-alpha**.
+ChromaLab начинался как мобильное приложение для оцифровки и расчета хроматограмм. Сейчас проект развивается в более широкую офлайн-среду: лабораторный расчетный контур, общий менеджер локальных моделей, VLM/LLM-чат и модульная база для будущих анализаторов.
 
-> ChromaLab is an analysis assistant. Results must be reviewed by a qualified specialist before scientific, industrial, legal, or medical use.
+> ChromaLab является вспомогательным аналитическим инструментом. Результаты должны проверяться квалифицированным специалистом перед научным, промышленным, медицинским или юридически значимым использованием.
 
-## What Works In Alpha 2
+## Что Уже Есть
 
-### Chromatogram Input
+| Контур | Статус | Описание |
+|---|---:|---|
+| Захват хроматограммы | Alpha | Камера через ML Kit Document Scanner, галерея, desktop file bridge |
+| Оцифровка графика | Alpha | Поиск области графика, осей, кривой, OCR/VLM-подсказки, fallback-логика |
+| Расчет пиков | Alpha 2 | Baseline, noise, peak detection, boundaries, integration, S/N, area %, resolution |
+| Отчеты | Alpha | Таблицы пиков и параметры расчета уже выводятся, профессиональная интерпретация еще расширяется |
+| Менеджер моделей | Alpha 2 | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
+| Локальный чат | MVP | Чаты, история, настройки генерации, выбор модели из общего пула, streaming UI, lazy loading |
 
-- Android camera flow through ML Kit document scanner.
-- Gallery/image import path.
-- Desktop file import bridge for local development.
-- Auto-processing flow from image to saved signal and analysis screen.
+## Alpha 2
 
-### Image And Signal Processing
+### Хроматография
 
-- Document/crop preparation and perspective handling.
-- Graph region, axis, and curve extraction pipeline.
-- Curve mask preparation with sweep-based fallback logic.
-- Digital signal preview and persistence.
-- VLM-first helpers for graph region, axis structure, and axis text extraction, with classical CV/OCR fallback.
+- Обработка входа из камеры, галереи и файлового bridge.
+- Расчетное ядро учитывает реальные параметры интеграции, а не только отображает их в UI:
+  - boundary method;
+  - clamp negative;
+  - max width;
+  - integration mode.
+- Peak metrics: apex RT, centroid, height, area, width, prominence, S/N, confidence, overlap, tailing/asymmetry, resolution, area percent.
+- В отчет добавлены параметры расчета, влияющие на результат.
 
-### Calculation Engine
+### Локальные Модели
 
-- Baseline correction: none, manual linear, ALS, SNIP.
-- Noise estimation: peak-to-peak, RMS, MAD.
-- Peak detection with minimum height, prominence, distance, width, S/N, and max width filtering.
-- Boundary methods now applied by the engine:
-  - prominence bases;
-  - local minima;
-  - baseline intersection;
-  - percent of height.
-- Integration modes now applied by the engine:
-  - trapezoidal;
-  - interpolated trapezoidal boundaries.
-- Negative baseline-corrected regions can be clamped during integration.
-- Peak metrics: RT apex, centroid, height, area, width, prominence, S/N, confidence, overlap, tailing/asymmetry, resolution, area percent.
-- Reports now include the calculation settings that affect the result.
+- Единый раздел моделей для научного контура и чата.
+- Поддержка `.litertlm` через Google LiteRT-LM.
+- Поддержка `.gguf` через llama.cpp bridge.
+- Hugging Face поиск по моделям с сортировкой и compatibility metadata.
+- Локальный import/export остается частью основного model manager.
+- Модели не загружаются в память из менеджера моделей: чат и анализ хроматограмм загружают runtime только в момент работы.
+- Отдельный выбор модели для хроматограмм сохраняется независимо от модели чата.
 
-### AI Models
+### Чат
 
-- Unified model manager for LiteRT-LM and llama.cpp/GGUF runtimes.
-- Built-in model catalog and local custom model import.
-- Download, delete, activate, deactivate, export, and local-load flows.
-- Hugging Face model search for GGUF/LiteRT candidates with sort options:
-  - downloads;
-  - likes;
-  - last update.
-- Compatibility metadata in the UI: runtime, estimated RAM, vision support, local availability.
-- LiteRT-LM path remains the primary stable Android path for Gemma-style models.
-- GGUF path supports text-only chat and multimodal analysis when a valid `mmproj` is present.
+- Отдельный раздел чатов.
+- Несколько chat sessions.
+- Настройки на уровне чата: system prompt, temperature, top-p, top-k, max tokens, repeat penalty, repeat last N.
+- Выбор модели из общего downloaded model pool.
+- Streaming-ответы с плавным появлением текста.
+- Статистика под ответом: prompt tokens, answer tokens, время, скорость генерации.
+- При выходе из чата модель выгружается по lifecycle-таймеру, а перед анализом хроматограмм освобождается память.
 
-### Local LLM Chat MVP
+## Pipeline
 
-- Dedicated Chats tab.
-- Multiple chat sessions.
-- Per-chat settings:
-  - temperature;
-  - top-p;
-  - top-k;
-  - max tokens;
-  - repeat penalty;
-  - repeat last N.
-- Per-chat model selection from the shared downloaded model pool.
-- Android chat inference through the active LiteRT/GGUF engine.
-- Desktop chat persistence stub for development.
+```mermaid
+flowchart LR
+    A["Camera / Gallery / File"] --> B["Image preparation"]
+    B --> C["Graph region + axes"]
+    C --> D["Curve extraction"]
+    D --> E["Digital signal"]
+    E --> F["CalculationEngine"]
+    F --> G["Report / Export"]
 
-## Architecture
-
-```text
-Capture/File Input
-    -> Processing Pipeline
-    -> Digital Signal
-    -> CalculationEngine
-    -> Report / Export
-
-Model Manager
-    -> LiteRT-LM runtime
-    -> GGUF llama.cpp runtime
-    -> VLM helpers
-    -> Chat workspace
+    M["Model Manager"] --> L["LiteRT-LM"]
+    M --> Q["GGUF / llama.cpp"]
+    L --> V["VLM helpers"]
+    Q --> V
+    L --> H["Local chat"]
+    Q --> H
+    V --> C
 ```
 
-Main modules:
+## Архитектура
 
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/capture` - capture and import UI.
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing` - image, graph, curve, OCR/VLM, and signal processing.
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation` - deterministic calculation pipeline and reports.
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/settings` - model manager and app settings.
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/chat` - local LLM chat UI and state.
-- `androidApp/src/main/cpp` - llama.cpp JNI bridge for GGUF inference.
+| Модуль | Назначение |
+|---|---|
+| `composeApp/src/commonMain/kotlin/com/chromalab/feature/capture` | Захват и импорт входных данных |
+| `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing` | Image processing, OCR/VLM, signal extraction |
+| `composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation` | Детерминированные расчеты хроматограмм |
+| `composeApp/src/commonMain/kotlin/com/chromalab/feature/settings` | Менеджер моделей и настройки |
+| `composeApp/src/commonMain/kotlin/com/chromalab/feature/chat` | Локальный LLM-чат |
+| `androidApp/src/main/cpp` | Native llama.cpp bridge для GGUF |
 
-## Technology
+## Технологии
 
-- Kotlin Multiplatform.
-- Compose Multiplatform / Jetpack Compose Material 3.
-- Android Camera / ML Kit document scanner and OCR.
-- Room + bundled SQLite.
-- LiteRT-LM for Google AI Edge local model runtime.
-- llama.cpp native bridge for GGUF.
-- Coroutines and Kotlin serialization.
-- Android NDK/CMake for native inference.
+| Компонент | Технология |
+|---|---|
+| Язык | Kotlin Multiplatform |
+| UI | Compose Multiplatform / Jetpack Compose Material 3 |
+| Android capture | ML Kit Document Scanner |
+| OCR | ML Kit Text Recognition |
+| Local LLM/VLM | LiteRT-LM, llama.cpp |
+| Data | Room, bundled SQLite, Kotlin serialization |
+| Native | Android NDK, CMake |
 
-## Build
+## Сборка
 
-Requirements:
+Требования:
 
-- JDK 17.
-- Android SDK 35.
-- Android NDK `27.2.12479018`.
-- CMake `3.22.1`.
+- JDK 17
+- Android SDK 35
+- Android NDK `27.2.12479018`
+- CMake `3.22.1`
 
-Useful commands:
+Команды:
 
 ```bash
 ./gradlew :composeApp:compileAndroidMain :composeApp:compileKotlinDesktop --no-daemon
@@ -135,14 +129,22 @@ Debug APK:
 androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
 
-## Known Alpha Limitations
+## Roadmap
 
-- Old `commonTest` sources still target earlier calculation APIs and need migration before `desktopTest` can be used as a reliable gate.
-- CSV/TXT/PDF/mzML import is not yet complete as a production-grade parser path.
-- GGUF image analysis requires a matching `mmproj`; text-only GGUF models are for chat/text tasks.
-- The report is improving but still needs stronger professional wording, validation summaries, and domain-specific interpretation.
-- Validation against a large real chromatogram set is still pending.
+| Этап | Цель |
+|---|---|
+| Alpha 2 | Стабилизировать calculation engine, общий model manager, MVP чата, lifecycle моделей |
+| Alpha 3 | Профессиональный отчет, лучшее объяснение расчетов, больше real-world validation |
+| MVP | Полный цикл: capture/import -> digitization -> calculation -> report -> local AI explanation |
+| Next | Redesign в сторону Google AI Edge Gallery: верхний model picker, backend controls, thinking mode, richer telemetry |
 
-## License
+## Ограничения Alpha
+
+- CSV/TXT/PDF/mzML import еще не является production-grade парсером.
+- GGUF image analysis требует подходящий `mmproj`; text-only GGUF модели используются для чата и текстовых задач.
+- Токены в чате пока считаются локальной оценкой, пока runtime не отдаёт точные tokenizer metrics.
+- Большая валидация на наборе реальных хроматограмм еще впереди.
+
+## Лицензия
 
 Proprietary. Copyright 2026.

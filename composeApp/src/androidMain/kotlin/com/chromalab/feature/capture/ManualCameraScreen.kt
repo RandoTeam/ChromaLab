@@ -1,8 +1,10 @@
 package com.chromalab.feature.capture
 
 import android.content.Context
+import android.net.Uri
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.*
@@ -37,8 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -53,7 +57,7 @@ import android.view.OrientationEventListener
  * - Exposure compensation slider
  * - Flash toggle (Auto/On/Off)
  * - Tap-to-focus with animated ring
- * - Document frame overlay
+ * - Gallery import from the camera surface for non-GMS/manual workflows
  */
 @Composable
 fun ManualCameraScreen(
@@ -131,6 +135,15 @@ fun ManualCameraScreen(
     var isCapturing by remember { mutableStateOf(false) }
     var showExposureSlider by remember { mutableStateOf(false) }
     var cameraReady by remember { mutableStateOf(false) }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri: Uri? ->
+        if (uri != null) {
+            scope.launch {
+                copyGalleryImageToCapture(context, uri)?.let(onImageCaptured)
+            }
+        }
+    }
 
     // Focus indicator state
     var focusPoint by remember { mutableStateOf<Offset?>(null) }
@@ -261,9 +274,6 @@ fun ManualCameraScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Document frame overlay
-        CameraFrameOverlay()
-
         // Focus ring animation
         if (showFocusRing && focusPoint != null) {
             FocusRingIndicator(focusPoint!!)
@@ -295,6 +305,20 @@ fun ManualCameraScreen(
             }
 
             Row {
+                IconButton(
+                    onClick = {
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                        )
+                    },
+                ) {
+                    Icon(
+                        Icons.Filled.PhotoLibrary,
+                        contentDescription = "Галерея",
+                        tint = Color.White,
+                    )
+                }
+
                 // Flash toggle
                 IconButton(onClick = {
                     flashMode = when (flashMode) {
@@ -529,4 +553,21 @@ private suspend fun captureImage(
             }
         },
     )
+}
+
+private suspend fun copyGalleryImageToCapture(
+    context: Context,
+    uri: Uri,
+): String? = withContext(Dispatchers.IO) {
+    runCatching {
+        val dir = File(context.filesDir, "captures").also { it.mkdirs() }
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
+        val file = File(dir, "gallery_$timestamp.jpg")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        } ?: return@withContext null
+        file.absolutePath
+    }.getOrNull()
 }

@@ -5,7 +5,7 @@ import androidx.compose.ui.Modifier
 
 /**
  * Platform-specific camera screen.
- * Android: CameraX Preview + ImageCapture with overlay frame.
+ * Android: Smart Scan document scanner route; manual CameraX lives in ManualCameraScreen.
  * Desktop: Stub placeholder.
  */
 @Composable
