@@ -168,7 +168,10 @@ Goal: keep chromatography models, chat models, OCR-only models, LiteRT, and GGUF
   - [x] 9.6a Format GGUF text/chat prompts according to the active model prompt style and fail blank native responses explicitly.
   - [x] 9.6b Add native image-stage watchdog diagnostics for `mtmd_tokenize` / `mtmd_helper_eval_chunks` stalls.
   - [x] 9.6c Reject active OCR-only VLMs from the strict chromatogram photo pipeline and add native GGUF load-stage diagnostics.
+- [x] 9.6d Audit built-in GGUF model capabilities by family before further runtime fixes.
 - [ ] 9.7 Prevent LiteRT from being silently used when a GGUF model was selected.
+- [ ] 9.8 Replace coarse `supportsVision` routing with explicit chat, image VQA, OCR, chart-structure, strict chromatogram, and auxiliary-only capabilities.
+- [ ] 9.9 Validate each GGUF family with text-only, minimal image, graph-region JSON, and full chromatogram staged tests before exposing it as a primary analysis model.
 
 Exit criteria:
 
@@ -180,6 +183,8 @@ Exit criteria:
 - GGUF chat/text inference applies model prompt-style formatting instead of sending raw generic transcripts to every model.
 - Native GGUF image inference logs long-running bitmap load, tokenization, chunk evaluation, and decode stages instead of appearing silent.
 - Strict chromatogram photo analysis does not reuse an already-active OCR/document VLM such as PaddleOCR-VL, dots.mocr, or DeepSeek-OCR as a graph-analysis model.
+- Model visibility is controlled by explicit capabilities rather than a single `supportsVision` flag.
+- Normal chat does not load a GGUF `mmproj` unless the chat message includes image input.
 
 ## Phase 10 - Alpha Release Validation
 
