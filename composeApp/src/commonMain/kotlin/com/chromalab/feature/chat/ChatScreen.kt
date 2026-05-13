@@ -415,9 +415,11 @@ private fun ChatThreadContent(
 
     LazyColumn(
         state = listState,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.md),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         if (selected?.modelId == null) {
             item {
@@ -454,7 +456,9 @@ private fun ChatThreadContent(
 private fun MessageBubble(message: ChatMessage) {
     val isUser = message.role == ChatRole.USER
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
         Column(
@@ -462,7 +466,7 @@ private fun MessageBubble(message: ChatMessage) {
                 .fillMaxWidth(0.86f)
                 .background(
                     color = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(24.dp),
                 )
                 .padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
