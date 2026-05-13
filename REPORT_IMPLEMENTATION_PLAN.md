@@ -116,7 +116,7 @@ Exit criteria:
 
 Goal: make chemical interpretation offline, structured, and conservative.
 
-- [ ] 7.1 Define local knowledge-pack schema for chromatogram types, ion fragments, compound classes, carbon numbers, and Kovats references.
+- [x] 7.1 Define local knowledge-pack schema for chromatogram types, ion fragments, compound classes, carbon numbers, and Kovats references.
 - [ ] 7.2 Add `m/z 92` and alkylbenzene-oriented reference data.
 - [ ] 7.3 Add n-paraffin reference series support for Kovats calculations.
 - [ ] 7.4 Distinguish calculated, detected, inferred, local-knowledge, and model-suggested values.
@@ -198,4 +198,4 @@ Exit criteria:
 
 ## Next Recommended Slice
 
-Start Phase 7.1: define local knowledge-pack schema for chromatogram types, ion fragments, compound classes, carbon numbers, and Kovats references.
+Start Phase 7.2: add `m/z 92` and alkylbenzene-oriented reference data.
