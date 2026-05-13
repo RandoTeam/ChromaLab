@@ -724,12 +724,28 @@ static std::string run_text_completion(
     llama_memory_clear(llama_get_memory(mc->ctx), true);
 
     const auto prompt_eval_started = std::chrono::steady_clock::now();
-    const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
+    const int configured_batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
+    const int batch_size = std::clamp(configured_batch_size, 1, 16);
+    if (batch_size != configured_batch_size) {
+        LOGI("Text prompt eval batch capped: configured=%d effective=%d", configured_batch_size, batch_size);
+    }
     for (int offset = 0; offset < n_tokens; offset += batch_size) {
         const int n_chunk = std::min(batch_size, n_tokens - offset);
+        LOGI("Text prompt eval batch start: offset=%d count=%d", offset, n_chunk);
+        const auto batch_started = std::chrono::steady_clock::now();
         llama_batch batch = llama_batch_get_one(tokens.data() + offset, n_chunk);
-        if (llama_decode(mc->ctx, batch) != 0) {
-            LOGE("Text prompt decode failed at offset %d", offset);
+        int decode_result = 0;
+        {
+            NativeStageWatchdog watchdog("llama_text_prompt_eval", 15000, 15000);
+            decode_result = llama_decode(mc->ctx, batch);
+        }
+        LOGI("Text prompt eval batch done: offset=%d count=%d elapsed=%lld ms result=%d",
+             offset,
+             n_chunk,
+             elapsed_ms_since(batch_started),
+             decode_result);
+        if (decode_result != 0) {
+            LOGE("Text prompt decode failed at offset %d result=%d", offset, decode_result);
             return "";
         }
     }
