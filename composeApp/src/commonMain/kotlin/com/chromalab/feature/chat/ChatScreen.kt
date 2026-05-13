@@ -76,6 +76,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 private const val CHAT_STREAM_FADE_MS = 120
+private const val CHAT_STREAM_FADE_MAX_CHARS = 2400
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -533,22 +534,37 @@ private fun StreamingMessageText(message: ChatMessage) {
         message.isStreaming -> "Генерация..."
         else -> message.content
     }
-    Crossfade(
-        targetState = text,
-        animationSpec = tween(durationMillis = CHAT_STREAM_FADE_MS),
-        label = "chat_stream_text",
-    ) { target ->
-        val textStyle = if (target.looksLikeStructuredOutput()) {
-            MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-        } else {
-            MaterialTheme.typography.bodyMedium
+
+    val isStructuredOutput = text.looksLikeStructuredOutput()
+    val shouldFade = message.isStreaming &&
+        !isStructuredOutput &&
+        text.length <= CHAT_STREAM_FADE_MAX_CHARS
+
+    if (shouldFade) {
+        Crossfade(
+            targetState = text,
+            animationSpec = tween(durationMillis = CHAT_STREAM_FADE_MS),
+            label = "chat_stream_text",
+        ) { target ->
+            ChatStreamTextContent(target)
         }
-        Text(
-            text = target,
-            modifier = Modifier.fillMaxWidth(),
-            style = textStyle,
-        )
+    } else {
+        ChatStreamTextContent(text)
     }
+}
+
+@Composable
+private fun ChatStreamTextContent(text: String) {
+    val textStyle = if (text.looksLikeStructuredOutput()) {
+        MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
+    } else {
+        MaterialTheme.typography.bodyMedium
+    }
+    Text(
+        text = text,
+        modifier = Modifier.fillMaxWidth(),
+        style = textStyle,
+    )
 }
 
 @Composable
