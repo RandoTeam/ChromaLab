@@ -188,8 +188,12 @@ class LlamaEngine : InferenceEngine {
                         println("LLAMA[RAW] Image inference requested, but no mmproj is loaded")
                         ""
                     } else {
+                        val textPrompt = formatGgufTextPrompt(prompt, config.promptStyle)
+                        if (textPrompt != prompt) {
+                            println("LLAMA[RAW] Applied ${config.promptStyle} prompt formatting for text inference")
+                        }
                         nativeInferText(
-                            modelHandle, prompt,
+                            modelHandle, textPrompt,
                             maxTokens,
                             temperature,
                             topP,
@@ -199,6 +203,13 @@ class LlamaEngine : InferenceEngine {
                         )
                     }
                     println("LLAMA[RAW] Response length: ${responseText.length}")
+                    if (responseText.isBlank()) {
+                        val mode = if (hasImage) "image" else "text"
+                        throw IllegalStateException(
+                            "GGUF $mode inference returned an empty response " +
+                                "(promptStyle=${config.promptStyle}, backend=$backendName)",
+                        )
+                    }
                     responseText
                 } finally {
                     unloadIfRequestedLocked()

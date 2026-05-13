@@ -175,6 +175,7 @@ For full chromatogram analysis, GGUF models must satisfy the same VLM contract a
 Chat session
   -> selected local model
   -> per-chat generation settings
+  -> prompt-style formatting for GGUF runtimes
   -> InferenceEngine.inferRaw()
   -> saved message history
 ```
@@ -190,6 +191,7 @@ Generation settings:
 
 Chat uses the same model pool as chromatogram analysis. A model can be downloaded/imported once and reused by the analysis pipeline or chat.
 Only chat-capable models are exposed to chat. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr remain available for specialized analysis tasks but are hidden from chat selection and are not passed to the chat runtime as normal assistants.
+GGUF chat/text prompts must be formatted for the active model family before native inference. For example, Qwen-family GGUF models receive ChatML instead of a generic raw `User:` / `Assistant:` transcript. A blank native GGUF response is treated as a runtime error, not as a successful assistant message.
 
 ## Validation Gates
 
