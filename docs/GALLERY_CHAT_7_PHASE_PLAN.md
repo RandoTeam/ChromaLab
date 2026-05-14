@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 6.3.
-- Next phase to start: Phase 6.4.
+- Current completed phase: Phase 6.4.
+- Next phase to start: Phase 6.5.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -137,9 +137,19 @@ Status: in progress.
 - [x] Phase 6.1: Rework composer toward Gallery input panel spacing, radius, and button hierarchy.
 - [x] Phase 6.2: Preserve keyboard-safe behavior so the input stays visible above the keyboard.
 - [x] Phase 6.3: Add proper disabled/loading/stop states while generation is active.
-- [ ] Phase 6.4: Keep text-only composer until image chat input is implemented for real.
+- [x] Phase 6.4: Keep text-only composer until image chat input is implemented for real.
 - [ ] Phase 6.5: Validate small-screen, rotated-screen, and long-input behavior.
 - [ ] Phase 6.6: Commit Phase 6 work slices separately.
+
+### Phase 6.4 Validation Notes
+
+- Chat messages remain text-only: `ChatMessage` stores `content` and optional
+  `thinkingContent`, but no image attachment or media payload fields.
+- Composer remains text-only: `ChatComposer` exposes text send and generation stop
+  actions only, with no camera/gallery/media preview entry points.
+- The Gallery media-preview contract is intentionally deferred until chat image
+  input is supported end to end by message storage, runtime routing, and model
+  capability gating.
 
 ## Phase 7 - Chat Visual Tokens, Assets, And QA
 
