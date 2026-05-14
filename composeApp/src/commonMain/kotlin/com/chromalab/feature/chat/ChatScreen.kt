@@ -94,6 +94,52 @@ private const val CHAT_STREAM_SCROLL_INTERVAL_MS = 250
 private const val CHAT_KEYBOARD_BRING_INTO_VIEW_DELAY_MS = 180
 private val CHAT_COMPOSER_SHAPE = RoundedCornerShape(16.dp)
 
+private data class ChatColorTokens(
+    val background: Color,
+    val panel: Color,
+    val panelHigh: Color,
+    val panelHighest: Color,
+    val outline: Color,
+    val text: Color,
+    val mutedText: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val userBubble: Color,
+    val onUserBubble: Color,
+    val thinkingSurface: Color,
+    val statsSurface: Color,
+    val disabledSurface: Color,
+    val disabledContent: Color,
+    val destructiveSurface: Color,
+    val onDestructiveSurface: Color,
+    val error: Color,
+)
+
+@Composable
+private fun chatColorTokens(): ChatColorTokens {
+    val scheme = MaterialTheme.colorScheme
+    return ChatColorTokens(
+        background = scheme.surface,
+        panel = scheme.surfaceContainerLow,
+        panelHigh = scheme.surfaceContainerHigh,
+        panelHighest = scheme.surfaceContainerHighest,
+        outline = scheme.outlineVariant,
+        text = scheme.onSurface,
+        mutedText = scheme.onSurfaceVariant,
+        accent = scheme.primary,
+        onAccent = scheme.onPrimary,
+        userBubble = scheme.primaryContainer,
+        onUserBubble = scheme.onPrimaryContainer,
+        thinkingSurface = scheme.surfaceContainerHigh.copy(alpha = 0.56f),
+        statsSurface = scheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        disabledSurface = scheme.surfaceContainerHighest,
+        disabledContent = scheme.onSurfaceVariant.copy(alpha = 0.45f),
+        destructiveSurface = scheme.errorContainer,
+        onDestructiveSurface = scheme.onErrorContainer,
+        error = scheme.error,
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
@@ -103,6 +149,7 @@ fun ChatScreen(
     onOpenModelManager: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val chatColors = chatColorTokens()
     var showSettings by remember { mutableStateOf(false) }
     var showModelPicker by remember { mutableStateOf(false) }
     val selected = state.selectedSession
@@ -170,7 +217,7 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 Text("Ошибка чата", style = MaterialTheme.typography.titleMedium)
-                Text(state.error, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(state.error, color = chatColors.mutedText)
                 Button(onClick = actions.clearError, modifier = Modifier.align(Alignment.End)) {
                     Text("OK")
                 }
@@ -230,6 +277,7 @@ private fun ChatTopBar(
     onModelPicker: () -> Unit,
     onSettings: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     CenterAlignedTopAppBar(
         navigationIcon = {
             if (selected != null) {
@@ -262,7 +310,7 @@ private fun ChatTopBar(
                     Text(
                         text = selectedModelName ?: "Модель не выбрана",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = chatColors.mutedText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -293,10 +341,11 @@ private fun ChatModelChip(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     Row(
         modifier = Modifier
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .background(chatColors.panelHigh)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -307,7 +356,7 @@ private fun ChatModelChip(
                 Icons.Filled.SmartToy,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = chatColors.mutedText,
             )
             if (option?.isActivating == true) {
                 CircularProgressIndicator(modifier = Modifier.size(21.dp), strokeWidth = 2.dp)
@@ -316,7 +365,7 @@ private fun ChatModelChip(
         Text(
             text = modelName ?: "Выбрать модель",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = chatColors.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 180.dp),
@@ -325,7 +374,7 @@ private fun ChatModelChip(
             Icons.Filled.ExpandMore,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = chatColors.mutedText,
         )
     }
 }
@@ -336,6 +385,7 @@ private fun ChatListContent(
     actions: ChatActions,
     onOpenModelManager: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     if (state.sessions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
@@ -347,12 +397,12 @@ private fun ChatListContent(
                     Icons.Filled.SmartToy,
                     contentDescription = null,
                     modifier = Modifier.size(44.dp),
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = chatColors.accent,
                 )
                 Text("Нет чатов", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "Создайте чат и выберите модель из общего менеджера моделей.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = chatColors.mutedText,
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Button(onClick = actions.createChat) {
@@ -398,10 +448,11 @@ private fun ChatSessionCard(
     onOpen: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = chatColors.panelHigh.copy(alpha = 0.5f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(Spacing.md),
@@ -413,7 +464,7 @@ private fun ChatSessionCard(
                 Text(
                     session.modelName ?: "Модель не закреплена",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = chatColors.mutedText,
                 )
             }
             IconButton(onClick = onDelete) {
@@ -429,6 +480,7 @@ private fun ChatThreadContent(
     selected: ChatSession?,
     modifier: Modifier = Modifier,
 ) {
+    val chatColors = chatColorTokens()
     val listState = rememberLazyListState()
     val hasModelWarning = selected?.modelId == null
     val showGeneratingPlaceholder = state.isGenerating && state.messages.none { it.isStreaming }
@@ -453,20 +505,20 @@ private fun ChatThreadContent(
         state = listState,
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface),
+            .background(chatColors.background),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         if (selected?.modelId == null) {
             item {
                 Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
+                    color = chatColors.destructiveSurface,
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
                         "Выберите LiteRT или GGUF модель в настройках чата перед отправкой сообщения.",
                         modifier = Modifier.padding(Spacing.md),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        color = chatColors.onDestructiveSurface,
                     )
                 }
             }
@@ -481,7 +533,7 @@ private fun ChatThreadContent(
                     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Text("Модель отвечает...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Модель отвечает...", color = chatColors.mutedText)
                 }
             }
         }
@@ -493,12 +545,13 @@ private fun ChatThreadContent(
 
 @Composable
 private fun MessageBubble(message: ChatMessage) {
+    val chatColors = chatColorTokens()
     val isUser = message.role == ChatRole.USER
     val contentModifier = if (isUser) {
         Modifier
             .fillMaxWidth(0.82f)
             .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = chatColors.userBubble,
                 shape = RoundedCornerShape(24.dp),
             )
             .padding(Spacing.md)
@@ -520,13 +573,13 @@ private fun MessageBubble(message: ChatMessage) {
             Text(
                 if (isUser) "Вы" else (message.modelName ?: "Ассистент"),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = chatColors.mutedText,
             )
             if (isUser) {
                 Text(
                     text = message.content,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = chatColors.onUserBubble,
                 )
             } else {
                 if (message.thinkingContent.isNotBlank()) {
@@ -550,6 +603,7 @@ private fun ChatThinkingBlock(
     text: String,
     isStreaming: Boolean,
 ) {
+    val chatColors = chatColorTokens()
     var expanded by remember { mutableStateOf(isStreaming) }
 
     LaunchedEffect(isStreaming) {
@@ -558,7 +612,7 @@ private fun ChatThinkingBlock(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.56f),
+        color = chatColors.thinkingSurface,
         shape = RoundedCornerShape(12.dp),
     ) {
         Column(
@@ -576,19 +630,19 @@ private fun ChatThinkingBlock(
                     Icons.Filled.SmartToy,
                     contentDescription = null,
                     modifier = Modifier.size(15.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = chatColors.mutedText,
                 )
                 Text(
                     text = "Thinking",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = chatColors.mutedText,
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
                     Icons.Filled.ExpandMore,
                     contentDescription = if (expanded) "Collapse thinking" else "Expand thinking",
                     modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = chatColors.mutedText,
                 )
             }
             AnimatedVisibility(visible = expanded) {
@@ -596,7 +650,7 @@ private fun ChatThinkingBlock(
                     text = text,
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = chatColors.mutedText,
                 )
             }
         }
@@ -665,15 +719,16 @@ private fun ChatStreamTextContent(text: String) {
 
 @Composable
 private fun MessageStatsRow(stats: ChatMessageStats) {
+    val chatColors = chatColorTokens()
     Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f),
+        color = chatColors.statsSurface,
         shape = RoundedCornerShape(24.dp),
     ) {
         Text(
             text = formatStatsText(stats),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = chatColors.mutedText,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
@@ -714,6 +769,7 @@ private fun ChatComposer(
     onSend: (String) -> Unit,
     onStop: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     var text by remember { mutableStateOf("") }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
@@ -726,7 +782,7 @@ private fun ChatComposer(
 
     Surface(
         modifier = Modifier.fillMaxWidth().imePadding(),
-        color = MaterialTheme.colorScheme.surface,
+        color = chatColors.background,
         tonalElevation = 0.dp,
     ) {
         Surface(
@@ -736,8 +792,8 @@ private fun ChatComposer(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .heightIn(min = 76.dp),
             shape = CHAT_COMPOSER_SHAPE,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = chatColors.panel,
+            border = BorderStroke(1.dp, chatColors.outline),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
@@ -764,9 +820,9 @@ private fun ChatComposer(
                     maxLines = 3,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
                         color = if (enabled) {
-                            MaterialTheme.colorScheme.onSurface
+                            chatColors.text
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            chatColors.mutedText
                         },
                     ),
                     decorationBox = { innerTextField ->
@@ -775,7 +831,7 @@ private fun ChatComposer(
                                 Text(
                                     text = placeholderText,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = chatColors.mutedText,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -788,8 +844,8 @@ private fun ChatComposer(
                     FilledIconButton(
                         modifier = Modifier.size(44.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                            containerColor = chatColors.destructiveSurface,
+                            contentColor = chatColors.onDestructiveSurface,
                         ),
                         onClick = onStop,
                     ) {
@@ -800,10 +856,10 @@ private fun ChatComposer(
                         enabled = canSend,
                         modifier = Modifier.size(44.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                            containerColor = chatColors.accent,
+                            contentColor = chatColors.onAccent,
+                            disabledContainerColor = chatColors.disabledSurface,
+                            disabledContentColor = chatColors.disabledContent,
                         ),
                         onClick = {
                             val message = text
@@ -945,6 +1001,7 @@ private fun ChatModelPickerContent(
     onSetThinkingEnabled: (Boolean) -> Unit,
     onOpenModelManager: () -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     Column(
         modifier = Modifier.fillMaxWidth().navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -958,7 +1015,7 @@ private fun ChatModelPickerContent(
                 Icons.Filled.SmartToy,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = chatColors.accent,
             )
             Text(
                 text = "Модели чата",
@@ -975,7 +1032,7 @@ private fun ChatModelPickerContent(
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                colors = CardDefaults.cardColors(containerColor = chatColors.panelHigh.copy(alpha = 0.45f)),
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(Spacing.md),
@@ -985,7 +1042,7 @@ private fun ChatModelPickerContent(
                     Text(
                         "Скачайте или импортируйте модель в общем менеджере моделей.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = chatColors.mutedText,
                     )
                 }
             }
@@ -1024,6 +1081,7 @@ private fun ChatThinkingToggle(
     thinkingEnabled: Boolean,
     onSetThinkingEnabled: (Boolean) -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     if (!option.runtime.thinking.isSupported) return
 
     Row(
@@ -1035,12 +1093,12 @@ private fun ChatThinkingToggle(
             Text(
                 text = "Thinking",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = chatColors.text,
             )
             Text(
                 text = "Отдельный блок рассуждений будет показан только если runtime вернет thinking отдельно.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = chatColors.mutedText,
             )
         }
         Switch(
@@ -1056,6 +1114,7 @@ private fun ChatAcceleratorSelector(
     selectedAccelerator: ChatRuntimeAccelerator,
     onSelectAccelerator: (ChatRuntimeAccelerator) -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     if (
         !option.runtime.compatibility.isSelectableForChat ||
         !option.runtime.capabilities.supportsRuntimeSelection
@@ -1070,7 +1129,7 @@ private fun ChatAcceleratorSelector(
         Text(
             text = "Ускорение",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = chatColors.text,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             option.runtime.supportedAccelerators.forEach { accelerator ->
@@ -1084,7 +1143,7 @@ private fun ChatAcceleratorSelector(
         Text(
             text = acceleratorHelpText(option),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = chatColors.mutedText,
         )
     }
 }
@@ -1095,12 +1154,13 @@ private fun ChatModelPickerRow(
     selected: Boolean,
     onSelectModel: (ChatModelOption) -> Unit,
 ) {
+    val chatColors = chatColorTokens()
     val isSelectable = option.runtime.compatibility.isSelectableForChat
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (selected) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent,
+                color = if (selected) chatColors.panel else Color.Transparent,
                 shape = RoundedCornerShape(8.dp),
             )
             .alpha(if (isSelectable) 1f else 0.62f)
@@ -1113,7 +1173,7 @@ private fun ChatModelPickerRow(
             Icons.Filled.SmartToy,
             contentDescription = null,
             modifier = Modifier.size(22.dp),
-            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = if (selected) chatColors.accent else chatColors.mutedText,
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
@@ -1126,14 +1186,14 @@ private fun ChatModelPickerRow(
             Text(
                 text = option.summary,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = chatColors.mutedText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = option.runtime.capabilitySummary,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = chatColors.mutedText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1141,7 +1201,7 @@ private fun ChatModelPickerRow(
                 Text(
                     text = option.runtime.compatibility.reason ?: "Модель недоступна для общего чата.",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
+                    color = chatColors.error,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1152,23 +1212,23 @@ private fun ChatModelPickerRow(
             !isSelectable -> Text(
                 "Недоступна",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error,
+                color = chatColors.error,
             )
             selected && option.isActive -> Text(
                 "Загружена",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = chatColors.accent,
             )
             selected -> Icon(
                 Icons.Filled.CheckCircle,
                 contentDescription = "Выбрана",
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = chatColors.accent,
             )
             option.isActive -> Text(
                 "Загружена",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = chatColors.accent,
             )
         }
     }
