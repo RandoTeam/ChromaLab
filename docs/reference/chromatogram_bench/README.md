@@ -220,7 +220,13 @@ calibration points from the detected tick positions and draw subtle anchor marks
 axis overlay. If no reliable anchors exist, the screens still fall back to manual point
 placement without fabricating pixel-unit calibration.
 
+Phase 2.11.6.2 makes the manual calibration review focus on the selected graph panel
+instead of the full source page. The X/Y calibration screens can now zoom the displayed
+image to the graph region while preserving graph-region-relative calibration math, so
+touch points, OCR tick anchors, and preview ticks stay aligned with the curve extraction
+coordinate system.
+
 ## Next Phase
 
-Phase 2.11.6.2 should add a zoomed graph-panel review and editable tick-anchor UX while
-keeping the same confirmed-calibration gate before numeric peak integration is allowed.
+Phase 2.11.6.3 should add editable tick-anchor UX while keeping the same
+confirmed-calibration gate before numeric peak integration is allowed.
