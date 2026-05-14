@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 7.2.
-- Next phase to start: Phase 7.3.
+- Current completed phase: Phase 7.3.
+- Next phase to start: Phase 7.4.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -182,7 +182,7 @@ Status: in progress.
 
 - [x] Phase 7.1: Define chat-local colors based on Gallery neutral surfaces while preserving ChromaLab's scientific identity.
 - [x] Phase 7.2: Decide whether Nunito or any Gallery assets are needed; if copied, preserve Apache 2.0 license notes.
-- [ ] Phase 7.3: Polish spacing, typography, icon sizes, touch targets, empty states, loading states, and error states.
+- [x] Phase 7.3: Polish spacing, typography, icon sizes, touch targets, empty states, loading states, and error states.
 - [ ] Phase 7.4: Run mobile visual QA on at least one real device or emulator.
 - [ ] Phase 7.5: Update README/roadmap/pipeline docs if user-facing chat behavior changed.
 - [ ] Phase 7.6: Commit Phase 7 work slices separately.
@@ -209,6 +209,19 @@ Status: in progress.
 - If a later visual QA pass proves that a direct Gallery font or asset is necessary,
   add the copied file, its source path, and Apache 2.0 attribution in the same
   focused commit that introduces it.
+
+### Phase 7.3 Polish Notes
+
+- Empty chat state now uses a centered icon treatment, balanced spacing, centered
+  explanatory text, and explicit `48.dp` minimum action heights.
+- Chat warning/loading states are contained in padded neutral or error surfaces
+  instead of sitting flush against the screen edge.
+- Chat session rows, picker headers, thinking controls, and model picker rows have
+  stable minimum heights for touch comfort.
+- Accelerator chips now use `FlowRow`, so CPU/GPU/NPU/Vulkan options can wrap on
+  narrow screens instead of overflowing horizontally.
+- Composer disabled text color now reflects generation state as well as missing
+  model state.
 
 ## Do Not Start Yet
 

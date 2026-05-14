@@ -13,8 +13,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -81,6 +85,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
@@ -92,6 +97,7 @@ private const val CHAT_STREAM_FADE_MS = 120
 private const val CHAT_STREAM_FADE_MAX_CHARS = 2400
 private const val CHAT_STREAM_SCROLL_INTERVAL_MS = 250
 private const val CHAT_KEYBOARD_BRING_INTO_VIEW_DELAY_MS = 180
+private val CHAT_TOUCH_TARGET_SIZE = 48.dp
 private val CHAT_COMPOSER_SHAPE = RoundedCornerShape(16.dp)
 
 private data class ChatColorTokens(
@@ -214,10 +220,37 @@ fun ChatScreen(
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                Text("Ошибка чата", style = MaterialTheme.typography.titleMedium)
-                Text(state.error, color = chatColors.mutedText)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    Surface(
+                        modifier = Modifier.size(36.dp),
+                        shape = CircleShape,
+                        color = chatColors.destructiveSurface,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Filled.SmartToy,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = chatColors.onDestructiveSurface,
+                            )
+                        }
+                    }
+                    Text(
+                        "Ошибка чата",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Text(
+                    state.error,
+                    color = chatColors.mutedText,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Button(onClick = actions.clearError, modifier = Modifier.align(Alignment.End)) {
                     Text("OK")
                 }
@@ -390,27 +423,47 @@ private fun ChatListContent(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
-                modifier = Modifier.padding(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                modifier = Modifier.padding(horizontal = 28.dp, vertical = Spacing.lg),
             ) {
-                Icon(
-                    Icons.Filled.SmartToy,
-                    contentDescription = null,
-                    modifier = Modifier.size(44.dp),
-                    tint = chatColors.accent,
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = CircleShape,
+                    color = chatColors.panelHighest,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Filled.SmartToy,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = chatColors.accent,
+                        )
+                    }
+                }
+                Text(
+                    "Нет чатов",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
                 )
-                Text("Нет чатов", style = MaterialTheme.typography.titleMedium)
                 Text(
                     "Создайте чат и выберите модель из общего менеджера моделей.",
                     color = chatColors.mutedText,
                     style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
                 )
-                Button(onClick = actions.createChat) {
+                Button(
+                    onClick = actions.createChat,
+                    modifier = Modifier.defaultMinSize(minHeight = CHAT_TOUCH_TARGET_SIZE),
+                ) {
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("Новый чат")
                 }
-                TextButton(onClick = onOpenModelManager) {
+                TextButton(
+                    onClick = onOpenModelManager,
+                    modifier = Modifier.defaultMinSize(minHeight = CHAT_TOUCH_TARGET_SIZE),
+                ) {
                     Text("Менеджер моделей")
                 }
             }
@@ -420,7 +473,7 @@ private fun ChatListContent(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.md),
+        contentPadding = PaddingValues(Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         item {
@@ -455,7 +508,10 @@ private fun ChatSessionCard(
         colors = CardDefaults.cardColors(containerColor = chatColors.panelHigh.copy(alpha = 0.5f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 72.dp)
+                .padding(Spacing.md),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
@@ -506,12 +562,15 @@ private fun ChatThreadContent(
         modifier = modifier
             .fillMaxSize()
             .background(chatColors.background),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Spacing.sm),
+        contentPadding = PaddingValues(vertical = Spacing.sm),
         verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         if (selected?.modelId == null) {
             item {
                 Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     color = chatColors.destructiveSurface,
                     shape = RoundedCornerShape(8.dp),
                 ) {
@@ -528,12 +587,25 @@ private fun ChatThreadContent(
         }
         if (showGeneratingPlaceholder) {
             item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = chatColors.panelHigh,
+                    shape = RoundedCornerShape(16.dp),
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Text("Модель отвечает...", color = chatColors.mutedText)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text(
+                            "Модель отвечает...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = chatColors.mutedText,
+                        )
+                    }
                 }
             }
         }
@@ -819,7 +891,7 @@ private fun ChatComposer(
                     minLines = 1,
                     maxLines = 3,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        color = if (enabled) {
+                        color = if (enabled && !isGenerating) {
                             chatColors.text
                         } else {
                             chatColors.mutedText
@@ -886,7 +958,7 @@ private fun ChatSettingsSheet(
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
+            contentPadding = PaddingValues(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             item {
@@ -1007,7 +1079,10 @@ private fun ChatModelPickerContent(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = CHAT_TOUCH_TARGET_SIZE)
+                .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
@@ -1030,12 +1105,17 @@ private fun ChatModelPickerContent(
 
         if (modelOptions.isEmpty()) {
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.lg),
                 shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = chatColors.panelHigh.copy(alpha = 0.45f)),
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .defaultMinSize(minHeight = 80.dp)
+                        .padding(Spacing.md),
                     verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
                     Text("Нет скачанных моделей", style = MaterialTheme.typography.bodyMedium)
@@ -1085,7 +1165,10 @@ private fun ChatThinkingToggle(
     if (!option.runtime.thinking.isSupported) return
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 64.dp)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
@@ -1108,6 +1191,7 @@ private fun ChatThinkingToggle(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ChatAcceleratorSelector(
     option: ChatModelOption,
@@ -1123,7 +1207,9 @@ private fun ChatAcceleratorSelector(
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.lg, vertical = Spacing.xs),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         Text(
@@ -1131,7 +1217,11 @@ private fun ChatAcceleratorSelector(
             style = MaterialTheme.typography.labelLarge,
             color = chatColors.text,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
             option.runtime.supportedAccelerators.forEach { accelerator ->
                 FilterChip(
                     selected = accelerator == selectedAccelerator,
@@ -1159,6 +1249,7 @@ private fun ChatModelPickerRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .defaultMinSize(minHeight = 72.dp)
             .background(
                 color = if (selected) chatColors.panel else Color.Transparent,
                 shape = RoundedCornerShape(8.dp),
