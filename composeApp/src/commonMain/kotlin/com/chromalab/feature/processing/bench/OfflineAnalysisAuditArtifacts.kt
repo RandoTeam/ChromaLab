@@ -19,6 +19,8 @@ object OfflineAnalysisAuditArtifacts {
         appendLine("| --- | --- |")
         appendLine("| Source | `${audit.sourceId}` |")
         appendLine("| Image size | ${audit.imageWidth ?: "unknown"} x ${audit.imageHeight ?: "unknown"} |")
+        appendLine("| Orientation corrected | ${audit.orientationCorrection?.wasRotated ?: false} |")
+        appendLine("| Orientation rotation | ${audit.orientationCorrection?.rotationDegrees ?: 0} deg |")
         appendLine("| Expected graphs | ${audit.expectedGraphCount ?: "not specified"} |")
         appendLine("| Detected graphs | ${audit.detectedGraphCount} |")
         appendLine("| Ready for calculation | ${audit.readyForCalculation} |")

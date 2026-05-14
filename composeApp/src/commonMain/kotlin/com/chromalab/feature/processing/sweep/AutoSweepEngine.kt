@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.sweep
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.graph.GraphRegionBoundaryCorrector
 import com.chromalab.feature.processing.graph.DetectionConfidence
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
@@ -212,6 +213,7 @@ class AutoSweepEngine {
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
         val graphDetector = GraphRegionDetector()
+        val graphBoundaryCorrector = GraphRegionBoundaryCorrector()
         val ocrReader = ChartAnalysisReader()
         val axisDetector = AxisDetector()
         val curveMaskPreparer = CurveMaskPreparer()
@@ -263,7 +265,19 @@ class AutoSweepEngine {
         val graphRes = selectGraphResult(cvGraphRes, vlmGraphResult)
 
         // Region selection priority: override > CV > VLM fallback.
-        val region = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
+        val detectedRegion = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
+        val region = detectedRegion?.let { selected ->
+            val correction = graphBoundaryCorrector.correct(
+                imagePath = imagePath,
+                region = selected,
+                imageWidth = w,
+                imageHeight = h,
+            )
+            if (correction.changed) {
+                println("SWEEP[GRAPH_BOUNDARY] ${correction.warnings.joinToString()} corrected=${correction.correctedRegion}")
+            }
+            correction.correctedRegion
+        }
         println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} CV regions, VLM=${vlmRegion != null}, selected=$region")
 
         if (region == null) {

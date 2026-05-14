@@ -82,9 +82,10 @@ class ChromatogramBenchFixtureTest {
             )
             writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)
 
-            assertEquals(fixture.width, audit.imageWidth, "${fixture.id} normalized width")
-            assertEquals(fixture.height, audit.imageHeight, "${fixture.id} normalized height")
+            assertEquals(fixture.expectedAnalysisWidth, audit.imageWidth, "${fixture.id} analysis width")
+            assertEquals(fixture.expectedAnalysisHeight, audit.imageHeight, "${fixture.id} analysis height")
             assertTrue(audit.stages.any { it.stage == "normalize" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "orientation_correct" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
@@ -131,8 +132,21 @@ class ChromatogramBenchFixtureTest {
             }
             if (fixture.requiresRotationCorrection) {
                 assertTrue(
-                    audit.graphs.any { it.cropQuality.rightAngleRotationSuspected },
-                    "${fixture.id} must flag right-angle rotation before analysis",
+                    audit.orientationCorrection?.wasRotated == true,
+                    "${fixture.id} must rotate before graph detection",
+                )
+                assertTrue(
+                    audit.graphs.none { it.cropQuality.rightAngleRotationSuspected },
+                    "${fixture.id} must not carry right-angle rotation risk after orientation correction",
+                )
+                val graph = audit.graphs.single()
+                assertTrue(
+                    graph.region.x <= fixture.expectedAnalysisWidth * 0.18f,
+                    "${fixture.id} must preserve early peaks after boundary correction",
+                )
+                assertTrue(
+                    graph.region.width >= fixture.expectedAnalysisWidth * 0.70f,
+                    "${fixture.id} must keep the full chromatogram span after boundary correction",
                 )
             }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
@@ -279,9 +293,8 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 71.00",
             expectedTitle = "Ion 71.00 (70.70 to 71.70): BELIY TIGR_1.D\\data.ms",
             requiresRotationCorrection = true,
-            requiresCropQualityWarning = true,
-            requiresGraphRefinement = true,
-            requiresUnresolvedBroadContext = true,
+            expectedAnalysisWidth = 964,
+            expectedAnalysisHeight = 1280,
             tags = setOf("rotated_page", "printed_page_photo", "orientation_correction", "m_z_71"),
         ),
         ChromatogramBenchFixture(
@@ -309,6 +322,8 @@ private data class ChromatogramBenchFixture(
     val sizeBytes: Int,
     val width: Int,
     val height: Int,
+    val expectedAnalysisWidth: Int = width,
+    val expectedAnalysisHeight: Int = height,
     val expectedGraphCount: Int,
     val expectedIon: String?,
     val expectedTitle: String?,
@@ -368,7 +383,8 @@ private fun writeAuditArtifacts(
     Files.createDirectories(outputDir)
     Files.writeString(outputDir.resolve("audit.json"), OfflineAnalysisAuditArtifacts.toJson(audit))
     Files.writeString(outputDir.resolve("audit_summary.md"), OfflineAnalysisAuditArtifacts.toSummaryMarkdown(audit))
-    writeGraphCandidateOverlay(audit, imagePath, outputDir.resolve("graph_candidates.png"))
+    val overlayImagePath = audit.orientationCorrection?.imagePath?.let { Path.of(it) } ?: imagePath
+    writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
     writeSelectedPreprocessingCrops(audit, outputDir)
 }
 

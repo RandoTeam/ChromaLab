@@ -192,7 +192,8 @@ Exit criteria:
 
 Goal: make graph detection robust before calculating peaks.
 
-- [ ] Normalize orientation and remove phone UI/document background from graph search.
+- [x] Normalize right-angle orientation before graph search.
+- [ ] Remove phone UI/document background from graph search.
 - [ ] Detect page/document bounds where possible.
 - [ ] Run a filter sweep for hard images:
   - grayscale;
@@ -329,6 +330,35 @@ Next Phase 2.7 work slice:
    without cutting peak tops.
 3. Re-test `bench_01`, `bench_02`, and `bench_06` specifically for first-peak
    preservation before allowing calculations.
+
+Phase 2.7 status:
+
+- Added a shared right-angle orientation correction stage after EXIF normalization and
+  before preprocessing/graph detection.
+- Added Android and desktop rotators for the common orientation stage, so the app flow
+  and offline fixture runner use the same correction contract.
+- `bench_07_rotated_page_photo` now rotates from `1280x964` to `964x1280` before
+  graph detection and no longer carries `crop.right_angle_rotation_required_before_analysis`.
+- Added graph-boundary correction after region selection. It searches an expanded
+  window for the horizontal axis and left axis, then expands the ROI only when it
+  recovers a significant lost top/left boundary. This prevents the detector from
+  treating a tall peak as the left axis and dropping early peaks.
+- The executable bench test now locks the rotated fixture so the selected graph must
+  preserve the early chromatogram span after orientation/boundary correction.
+- Audit artifacts now record orientation correction metadata, and visual overlays are
+  drawn on the oriented image when a page was rotated.
+- Remaining limitation: this is not yet a full photographed-page plot-bound detector.
+  `bench_01` and `bench_06` still need dedicated page/plot-bound work before full
+  calculation can be allowed on hard photographed pages.
+
+Next Phase 2.8 work slice:
+
+1. Implement the photographed-page plot-bound detector for `bench_01` and `bench_06`
+   using frame, axis, and signal evidence without cutting dominant first peaks.
+2. Re-check `bench_02` and `bench_08` to ensure phone screenshot imports remain stable
+   after the photographed-page detector is added.
+3. Keep calculation blocked until the exact plot bounds and curve extraction are both
+   accepted by the audit.
 
 Exit criteria:
 
@@ -541,3 +571,10 @@ Exit criteria:
 1. Add crop-boundary risk diagnostics for top-edge clipped peaks.
 2. Add explicit right-angle rotation warnings for rotated page crops.
 3. Make calculation readiness depend on both crop quality and crop-boundary safety.
+
+- Phase 2.7:
+
+1. Add shared right-angle orientation correction before graph detection.
+2. Add Android and desktop image rotators for the orientation stage.
+3. Add axis-aligned graph-boundary correction to recover lost top/left graph content.
+4. Lock the rotated fixture against regressions that would drop early peaks.

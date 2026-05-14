@@ -112,8 +112,16 @@ may cut vertical peak tops expose `crop.signal_touches_top_edge_possible_clipped
 Calculation readiness now requires both crop-quality acceptance and crop-boundary
 safety, so plausible-looking rectangles cannot silently drop first peaks.
 
+Phase 2.7 adds the first active fix for those diagnostics. The shared pipeline now
+corrects right-angle page orientation after EXIF normalization and before graph
+detection, with Android and desktop rotators using the same common contract. The
+rotated page fixture is analyzed as `964x1280` after correction. A graph-boundary
+corrector then checks the selected ROI against horizontal-axis and left-axis evidence
+and expands the crop only when it recovers significant lost top/left content. This
+protects early peaks from being dropped when a tall peak is mistaken for the Y axis.
+
 ## Next Phase
 
-Phase 2.7 should add actual right-angle orientation correction before graph detection,
-then implement a photographed-page plot-bound detector that preserves first peaks while
-removing page/header context.
+Phase 2.8 should implement the photographed-page plot-bound detector for the remaining
+hard page photos (`bench_01` and `bench_06`) while preserving dominant first peaks and
+keeping unsafe crops blocked from calculation.

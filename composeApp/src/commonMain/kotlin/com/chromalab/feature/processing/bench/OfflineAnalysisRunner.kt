@@ -8,11 +8,15 @@ import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
 import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.graph.GraphRegionBoundaryCorrector
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionQuality
 import com.chromalab.feature.processing.graph.GraphRegionRefiner
 import com.chromalab.feature.processing.graph.GraphRegionRefinementResult
+import com.chromalab.feature.processing.normalize.ImageOrientationCorrectionResult
+import com.chromalab.feature.processing.normalize.ImageOrientationCorrector
 import com.chromalab.feature.processing.normalize.ImageNormalizer
+import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.OcrStatus
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
@@ -36,6 +40,7 @@ data class OfflineAnalysisAudit(
     val imagePath: String,
     val outputDir: String,
     val normalizedImagePath: String?,
+    val orientationCorrection: OfflineOrientationCorrectionAudit?,
     val imageWidth: Int?,
     val imageHeight: Int?,
     val expectedGraphCount: Int?,
@@ -46,6 +51,16 @@ data class OfflineAnalysisAudit(
     val warnings: List<String>,
     val blockedAtStage: String?,
     val readyForCalculation: Boolean,
+)
+
+@Serializable
+data class OfflineOrientationCorrectionAudit(
+    val imagePath: String,
+    val wasRotated: Boolean,
+    val rotationDegrees: Int,
+    val horizontalRunCount: Int,
+    val verticalRunCount: Int,
+    val warnings: List<String> = emptyList(),
 )
 
 @Serializable
@@ -137,9 +152,11 @@ enum class OfflineStageStatus {
 
 class OfflineAnalysisRunner(
     private val normalizer: ImageNormalizer = ImageNormalizer(),
+    private val orientationCorrector: ImageOrientationCorrector = ImageOrientationCorrector(),
     private val documentDetector: DocumentDetector = DocumentDetector(),
     private val preprocessor: ImagePreprocessor = ImagePreprocessor(),
     private val graphRefiner: GraphRegionRefiner = GraphRegionRefiner(),
+    private val graphBoundaryCorrector: GraphRegionBoundaryCorrector = GraphRegionBoundaryCorrector(),
     private val cropBoundaryAnalyzer: GraphCropBoundaryAnalyzer = GraphCropBoundaryAnalyzer(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
@@ -178,12 +195,28 @@ class OfflineAnalysisRunner(
             warnings += "document.detector_low_confidence"
         }
 
+        val orientation = runStage(
+            stage = "orientation_correct",
+            stages = stages,
+            successMessage = { result ->
+                "rotated=${result.wasRotated}, degrees=${result.rotationDegrees}, horizontalRuns=${result.horizontalRunCount}, verticalRuns=${result.verticalRunCount}."
+            },
+        ) {
+            orientationCorrector.correct(
+                normalized = normalized,
+                outputDir = "${input.outputDir}/orientation",
+            )
+        } ?: normalized.toOrientationCorrectionResult(
+            warnings = listOf("orientation.stage_failed"),
+        )
+        warnings += orientation.warnings
+
         val preprocessing = runStage(
             stage = "preprocess",
             stages = stages,
         ) {
             preprocessor.preprocess(
-                imagePath = normalized.normalizedPath,
+                imagePath = orientation.imagePath,
                 outputDir = "${input.outputDir}/preprocess",
             ) ?: error("Image preprocessing did not produce artifacts.")
         } ?: return input.blockedAudit(
@@ -191,8 +224,9 @@ class OfflineAnalysisRunner(
             warnings = warnings,
             blockedAtStage = "preprocess",
             normalizedImagePath = normalized.normalizedPath,
-            imageWidth = normalized.width,
-            imageHeight = normalized.height,
+            orientationCorrection = orientation.toAudit(),
+            imageWidth = orientation.width,
+            imageHeight = orientation.height,
         )
 
         val graphResult = runStage(
@@ -201,36 +235,70 @@ class OfflineAnalysisRunner(
         ) {
             graphDetector.detect(
                 imagePath = preprocessing.contrastEnhancedPath,
-                imageWidth = normalized.width,
-                imageHeight = normalized.height,
+                imageWidth = orientation.width,
+                imageHeight = orientation.height,
             )
         } ?: return input.blockedAudit(
             stages = stages,
             warnings = warnings,
             blockedAtStage = "graph_region",
             normalizedImagePath = normalized.normalizedPath,
-            imageWidth = normalized.width,
-            imageHeight = normalized.height,
+            orientationCorrection = orientation.toAudit(),
+            imageWidth = orientation.width,
+            imageHeight = orientation.height,
         )
 
         val graphCandidates = graphResult.qualityEvaluations.mapIndexed { index, quality ->
             quality.toAudit(index + 1)
         }
-        val selectedRegions = if (graphResult.filteredRegions.isNotEmpty()) {
-            graphResult.filteredRegions
+        val filteredRegions = graphResult.filteredRegions
+        val selectedRegions = if (filteredRegions.isNotEmpty()) {
+            if (orientation.wasRotated) {
+                val nonEdgeRegions = filteredRegions.filter {
+                    it.edgeContactCount(orientation.width, orientation.height) == 0
+                }
+                if (nonEdgeRegions.isNotEmpty() && nonEdgeRegions.size < filteredRegions.size) {
+                    warnings += "graph.orientation_filtered_edge_context_candidates"
+                    nonEdgeRegions
+                } else {
+                    filteredRegions
+                }
+            } else {
+                filteredRegions
+            }
         } else {
             warnings += "graph.no_accepted_candidate_using_full_image"
-            listOf(GraphRegion(0, 0, normalized.width, normalized.height, "Full image fallback"))
+            listOf(GraphRegion(0, 0, orientation.width, orientation.height, "Full image fallback"))
         }
 
-        if (graphResult.sortedRegions.size == 1 && graphResult.effectiveRegion.isFullImage(normalized.width, normalized.height)) {
+        if (graphResult.sortedRegions.size == 1 && graphResult.effectiveRegion.isFullImage(orientation.width, orientation.height)) {
             warnings += "graph.full_image_region_selected"
         }
         if (input.expectedGraphCount != null && selectedRegions.size != input.expectedGraphCount) {
             warnings += "graph.count_mismatch.expected_${input.expectedGraphCount}_actual_${selectedRegions.size}"
         }
 
-        val refinedRegions = selectedRegions.mapIndexed { index, region ->
+        val correctedRegions = selectedRegions.mapIndexed { index, region ->
+            runStage(
+                stage = "graph_boundary",
+                graphIndex = index + 1,
+                stages = stages,
+                successMessage = { result ->
+                    "changed=${result.changed}, region=${result.correctedRegion.x},${result.correctedRegion.y} ${result.correctedRegion.width}x${result.correctedRegion.height}."
+                },
+            ) {
+                graphBoundaryCorrector.correct(
+                    imagePath = orientation.imagePath,
+                    region = region,
+                    imageWidth = orientation.width,
+                    imageHeight = orientation.height,
+                )
+            }?.also { result ->
+                warnings += result.warnings.map { "graph_${index + 1}.$it" }
+            }?.correctedRegion ?: region
+        }
+
+        val refinedRegions = correctedRegions.mapIndexed { index, region ->
             runStage(
                 stage = "graph_refine",
                 graphIndex = index + 1,
@@ -242,8 +310,8 @@ class OfflineAnalysisRunner(
                 graphRefiner.refine(
                     imagePath = preprocessing.contrastEnhancedPath,
                     region = region,
-                    imageWidth = normalized.width,
-                    imageHeight = normalized.height,
+                    imageWidth = orientation.width,
+                    imageHeight = orientation.height,
                 )
             } ?: GraphRegionRefinementResult(
                 originalRegion = region,
@@ -260,8 +328,8 @@ class OfflineAnalysisRunner(
                 preprocessing = preprocessing,
                 outputDir = "${input.outputDir}/graph_${index + 1}",
                 refinement = refinement,
-                imageWidth = normalized.width,
-                imageHeight = normalized.height,
+                imageWidth = orientation.width,
+                imageHeight = orientation.height,
                 stages = stages,
             )
         }
@@ -289,8 +357,9 @@ class OfflineAnalysisRunner(
             imagePath = input.imagePath,
             outputDir = input.outputDir,
             normalizedImagePath = normalized.normalizedPath,
-            imageWidth = normalized.width,
-            imageHeight = normalized.height,
+            orientationCorrection = orientation.toAudit(),
+            imageWidth = orientation.width,
+            imageHeight = orientation.height,
             expectedGraphCount = input.expectedGraphCount,
             detectedGraphCount = selectedRegions.size,
             graphCandidates = graphCandidates,
@@ -481,6 +550,31 @@ private fun GraphCropBoundaryRisk.toAudit(): OfflineGraphCropBoundaryRiskAudit =
         warnings = warnings,
     )
 
+private fun ImageOrientationCorrectionResult.toAudit(): OfflineOrientationCorrectionAudit =
+    OfflineOrientationCorrectionAudit(
+        imagePath = imagePath,
+        wasRotated = wasRotated,
+        rotationDegrees = rotationDegrees,
+        horizontalRunCount = horizontalRunCount,
+        verticalRunCount = verticalRunCount,
+        warnings = warnings,
+    )
+
+private fun NormalizedImageResult.toOrientationCorrectionResult(
+    warnings: List<String> = emptyList(),
+): ImageOrientationCorrectionResult =
+    ImageOrientationCorrectionResult(
+        imagePath = normalizedPath,
+        originalPath = normalizedPath,
+        width = width,
+        height = height,
+        wasRotated = false,
+        rotationDegrees = 0,
+        horizontalRunCount = 0,
+        verticalRunCount = 0,
+        warnings = warnings,
+    )
+
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
     x == 0 && y == 0 && width == imageWidth && height == imageHeight
 
@@ -643,6 +737,7 @@ private fun OfflineAnalysisInput.blockedAudit(
     warnings: List<String>,
     blockedAtStage: String,
     normalizedImagePath: String? = null,
+    orientationCorrection: OfflineOrientationCorrectionAudit? = null,
     imageWidth: Int? = null,
     imageHeight: Int? = null,
 ): OfflineAnalysisAudit =
@@ -651,6 +746,7 @@ private fun OfflineAnalysisInput.blockedAudit(
         imagePath = imagePath,
         outputDir = outputDir,
         normalizedImagePath = normalizedImagePath,
+        orientationCorrection = orientationCorrection,
         imageWidth = imageWidth,
         imageHeight = imageHeight,
         expectedGraphCount = expectedGraphCount,

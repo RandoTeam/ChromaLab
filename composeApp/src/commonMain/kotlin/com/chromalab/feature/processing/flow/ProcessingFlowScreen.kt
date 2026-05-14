@@ -69,6 +69,7 @@ import com.chromalab.feature.processing.signal.SignalConverter
 import com.chromalab.feature.processing.signal.SignalSmoother
 import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.processing.normalize.ImageNormalizer
+import com.chromalab.feature.processing.normalize.ImageOrientationCorrector
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
@@ -138,6 +139,7 @@ fun ProcessingFlowScreen(
     val qualityAnalyzer = remember { ImageQualityAnalyzer() }
     val imageCropper = remember { ImageCropper() }
     val imageNormalizer = remember { ImageNormalizer() }
+    val orientationCorrector = remember { ImageOrientationCorrector() }
     val documentDetector = remember { DocumentDetector() }
     val perspectiveWarper = remember { PerspectiveWarper() }
     val preprocessor = remember { ImagePreprocessor() }
@@ -247,14 +249,24 @@ fun ProcessingFlowScreen(
                             if (norm.width <= 0 || norm.height <= 0) {
                                 error("Image normalization failed: invalid source dimensions ${norm.width}x${norm.height}.")
                             }
-                            normalizedResult = norm
-                            normalizedPath = norm.normalizedPath
-                            currentImagePath = norm.normalizedPath
-                            imageWidth = norm.width
-                            imageHeight = norm.height
-                            selectedRegion = GraphRegion(
-                                0, 0, norm.width, norm.height,
+                            val orientation = orientationCorrector.correct(norm, "$outputDir/orientation")
+                            val orientedNorm = norm.copy(
+                                normalizedPath = orientation.imagePath,
+                                width = orientation.width,
+                                height = orientation.height,
+                                wasRotated = norm.wasRotated || orientation.wasRotated,
                             )
+                            normalizedResult = orientedNorm
+                            normalizedPath = orientation.imagePath
+                            currentImagePath = orientation.imagePath
+                            imageWidth = orientation.width
+                            imageHeight = orientation.height
+                            selectedRegion = GraphRegion(
+                                0, 0, orientation.width, orientation.height,
+                            )
+                            if (orientation.wasRotated) {
+                                println("PIPELINE[ORIENTATION] rotated=${orientation.rotationDegrees}, horizontalRuns=${orientation.horizontalRunCount}, verticalRuns=${orientation.verticalRunCount}")
+                            }
                         }
                         qualityReport = qualityAnalyzer.analyze(currentImagePath)
                         println("PIPELINE[IMAGE_QUALITY] done: blur=${qualityReport?.blurScore?.score}")
