@@ -37,6 +37,21 @@ graph 3 -> report 3
 graph 4 -> report 4
 ```
 
+## Graph Boundary Contract
+
+ChromaLab must treat graph localization as two separate rectangles:
+
+- `graph panel bounds` - the full visible graph block: title/ION text, Y-axis label
+  and tick values, X-axis/time values, axis lines, signal, and visible plot frame.
+- `plot area bounds` - the inner numeric plotting rectangle used for pixel-to-unit
+  calibration, curve extraction, peak detection, and integration.
+
+The first detector target is always `graph panel bounds`. The app must not crop directly
+to the inner signal/plot area and lose tick labels, time values, abundance labels, or
+early graph context. Once the full graph panel is stable, a later stage derives and
+audits the inner `plot area bounds` from that panel. This keeps OCR/calibration and
+deterministic calculation from using different, implicit crops.
+
 ## Non-Negotiable Rules
 
 - Do not weaken analysis depth to make a hard fixture pass faster.
@@ -355,11 +370,14 @@ Phase 2.7 status:
 
 Next Phase 2.8 work slice:
 
-1. Implement the photographed-page plot-bound detector for `bench_01` and `bench_06`
-   using frame, axis, and signal evidence without cutting dominant first peaks.
+1. Implement the photographed-page graph-panel detector for `bench_01` and `bench_06`
+   using frame, axis, title/ION, tick-label, and signal evidence without cutting
+   dominant first peaks or visible time/abundance values.
 2. Re-check `bench_02` and `bench_08` to ensure phone screenshot imports remain stable
    after the photographed-page detector is added.
-3. Keep calculation blocked until the exact plot bounds and curve extraction are both
+3. Add an explicit second-stage `plot area bounds` audit inside the accepted graph
+   panel before enabling curve extraction and calculation.
+4. Keep calculation blocked until both graph-panel bounds and plot-area bounds are
    accepted by the audit.
 
 Exit criteria:

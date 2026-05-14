@@ -15,6 +15,19 @@ Do not commit user-specific absolute source paths. If a source image is replaced
 the SHA-256, dimensions, expected facts, and the fixture identity test in the same work
 slice.
 
+## Boundary Contract
+
+Fixture calibration uses a two-level boundary contract:
+
+- `graph panel bounds` include the complete visible graph block: title/ION, axis labels,
+  tick values, time/abundance numbers, signal, and the visible graph frame.
+- `plot area bounds` are derived later inside that panel for pixel-level curve
+  extraction and deterministic calculations.
+
+The fixture runner must first find the full graph panel. A crop that only captures the
+inner plot/signal area is not acceptable when it loses visible tick values, labels, or
+early graph context.
+
 ## Fixture Manifest
 
 | ID | Resource | Size | SHA-256 | Expected graph count | Core stress case |
@@ -125,6 +138,6 @@ mistaken for the Y axis.
 
 ## Next Phase
 
-Phase 2.8 should implement the photographed-page plot-bound detector for the remaining
-hard page photos (`bench_01` and `bench_06`) while preserving dominant first peaks and
-keeping unsafe crops blocked from calculation.
+Phase 2.8 should implement the photographed-page graph-panel detector for the remaining
+hard page photos (`bench_01` and `bench_06`), then add a separate audited plot-area
+detector inside the accepted panel before calculation is allowed.
