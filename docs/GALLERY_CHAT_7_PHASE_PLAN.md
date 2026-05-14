@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 5.5.
-- Next phase to start: Phase 5.6.
+- Current completed phase: Phase 5.6.
+- Next phase to start: Phase 6.1.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -102,14 +102,22 @@ Status: completed.
 
 ## Phase 5 - Streaming Text And Thinking Block
 
-Status: in progress.
+Status: completed.
 
 - [x] Phase 5.1: Replace simple character reveal with buffered/fading streaming behavior inspired by Gallery.
 - [x] Phase 5.2: Keep streaming markdown/table output readable without excessive reparse jank.
 - [x] Phase 5.3: Add thinking block UI only when runtime emits thinking separately.
 - [x] Phase 5.4: Auto-expand thinking while generation is active, then allow collapse/expand.
 - [x] Phase 5.5: Validate generation speed, scroll behavior, and long-answer stability.
-- [ ] Phase 5.6: Commit Phase 5 work slices separately.
+- [x] Phase 5.6: Commit Phase 5 work slices separately.
+
+### Phase 5 Commit Record
+
+- `a90236e` - Phase 5.1: buffered/fading chat streaming.
+- `70877e8` - Phase 5.2: structured output streaming stability.
+- `7ce34d8` - Phase 5.3: separate thinking block contract.
+- `5a3a38f` - Phase 5.4: thinking block expand/collapse behavior.
+- `c6e6df5` - Phase 5.5: throttled streaming scroll validation/fix.
 
 ### Phase 5.5 Validation Notes
 
