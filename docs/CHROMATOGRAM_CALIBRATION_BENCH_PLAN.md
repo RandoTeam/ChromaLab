@@ -74,18 +74,19 @@ identity and a later perceptual hash/feature signature for visual near-duplicate
 
 Goal: turn the eight images into reproducible, neutral project fixtures.
 
-- [ ] Copy images into a neutral fixture directory such as
+- [x] Copy images into a neutral fixture directory:
   `composeApp/src/desktopTest/resources/fixtures/chromatogram_bench/`.
-- [ ] Record filename, dimensions, byte size, SHA-256, expected graph count, rotation
+- [x] Record filename, dimensions, byte size, SHA-256, expected graph count, rotation
   requirement, and fixture tags.
-- [ ] Add a fixture manifest under `docs/reference/chromatogram_bench/`.
-- [ ] Mark duplicate or near-duplicate candidates without deleting them.
-- [ ] Add first human expected facts for each image:
+- [x] Add a fixture manifest under `docs/reference/chromatogram_bench/`.
+- [x] Mark duplicate or near-duplicate candidates without deleting them.
+- [x] Add first human expected facts for each image:
   - graph count;
   - known title or ION when visible;
   - rough X/Y axis labels and ranges;
   - special hazards such as rotated page, poor crop, multiple graphs, stacked traces,
     phone UI, page text, or perspective distortion.
+- [x] Add a lightweight desktop fixture identity test.
 
 Exit criteria:
 
