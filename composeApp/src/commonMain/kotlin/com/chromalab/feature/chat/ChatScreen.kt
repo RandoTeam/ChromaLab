@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -66,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,6 +76,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -80,11 +84,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 private const val CHAT_STREAM_FADE_MS = 120
 private const val CHAT_STREAM_FADE_MAX_CHARS = 2400
 private const val CHAT_STREAM_SCROLL_INTERVAL_MS = 250
+private const val CHAT_KEYBOARD_BRING_INTO_VIEW_DELAY_MS = 180
 private val CHAT_COMPOSER_SHAPE = RoundedCornerShape(16.dp)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -706,6 +712,8 @@ private fun ChatComposer(
     onSend: (String) -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val coroutineScope = rememberCoroutineScope()
     val canSend = enabled && text.isNotBlank() && !isGenerating
     val placeholderText = if (enabled) "Сообщение" else "Выберите активную модель"
 
@@ -732,7 +740,18 @@ private fun ChatComposer(
                 BasicTextField(
                     value = text,
                     onValueChange = { text = it },
-                    modifier = Modifier.weight(1f).padding(vertical = 10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .bringIntoViewRequester(bringIntoViewRequester)
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                coroutineScope.launch {
+                                    delay(CHAT_KEYBOARD_BRING_INTO_VIEW_DELAY_MS.toLong())
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        }
+                        .padding(vertical = 10.dp),
                     enabled = enabled,
                     minLines = 1,
                     maxLines = 3,
