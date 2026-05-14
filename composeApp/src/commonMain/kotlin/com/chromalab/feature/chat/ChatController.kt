@@ -4,6 +4,8 @@ import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.model.ModelRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +22,9 @@ class ChatController(
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
     private var archive = ChatArchive()
+    private var generationJob: Job? = null
+    private var activeGeneration: ActiveChatGeneration? = null
+    private val stoppedAssistantIds = mutableSetOf<String>()
 
     init {
         scope.launch {
@@ -135,18 +140,21 @@ class ChatController(
         val chatId = state.value.selectedChatId ?: return
         if (content.isEmpty() || state.value.isGenerating) return
 
-        scope.launch {
+        generationJob = scope.launch {
+            var currentAssistantId: String? = null
             val now = chatNowMillis()
             val session = archive.sessions.firstOrNull { it.id == chatId }
             val selectedModelId = session?.modelId ?: state.value.activeModelId
             val selectedModelName = session?.modelName ?: state.value.activeModelName
             val selectedRuntimeAccelerator = session?.runtimeAccelerator ?: ChatRuntimeAccelerator.AUTO
             if (selectedModelId == null) {
+                generationJob = null
                 publish(chatId, error = "Выберите модель чата перед отправкой сообщения.")
                 return@launch
             }
 
             val assistantId = "msg_${now}_assistant"
+            currentAssistantId = assistantId
             val userMessage = ChatMessage(
                 id = "msg_${now}_user",
                 chatId = chatId,
@@ -164,6 +172,7 @@ class ChatController(
                 isStreaming = true,
             )
 
+            activeGeneration = ActiveChatGeneration(chatId = chatId, assistantId = assistantId)
             archive = archive.copy(
                 sessions = archive.sessions.map {
                     if (it.id == chatId) {
@@ -187,6 +196,7 @@ class ChatController(
             val promptTokens = estimatePromptTokens(contextMessages, settings)
             val startedAt = chatNowMillis()
 
+            try {
             val response = runCatching {
                 withContext(Dispatchers.Default) {
                     generator.generate(
@@ -196,7 +206,10 @@ class ChatController(
                         modelName = selectedModelName,
                         runtimeAccelerator = selectedRuntimeAccelerator,
                         onPartial = { partial ->
-                            if (partial.contentDelta.isNotEmpty() || partial.thinkingDelta.isNotEmpty()) {
+                            if (
+                                assistantId !in stoppedAssistantIds &&
+                                (partial.contentDelta.isNotEmpty() || partial.thinkingDelta.isNotEmpty())
+                            ) {
                                 updateMessage(chatId, assistantId) { message ->
                                     message.copy(
                                         content = message.content + partial.contentDelta,
@@ -210,7 +223,9 @@ class ChatController(
                 }
             }
 
-            response.fold(
+            if (assistantId in stoppedAssistantIds) return@launch
+
+                response.fold(
                 onSuccess = { answer ->
                     val done = chatNowMillis()
                     val finalAnswer = answer.ifBlank {
@@ -252,6 +267,7 @@ class ChatController(
                     publish(chatId)
                 },
                 onFailure = { error ->
+                    if (assistantId in stoppedAssistantIds) return@fold
                     val message = error.message ?: "Ошибка генерации"
                     updateMessage(chatId, assistantId) {
                         it.copy(
@@ -262,7 +278,38 @@ class ChatController(
                     persist()
                     publish(chatId, error = message)
                 },
-            )
+                )
+            } finally {
+                if (activeGeneration?.assistantId == currentAssistantId) {
+                    activeGeneration = null
+                    generationJob = null
+                }
+                stoppedAssistantIds.remove(currentAssistantId)
+            }
+        }
+    }
+
+    fun stopGeneration() {
+        val generation = activeGeneration ?: return
+        stoppedAssistantIds += generation.assistantId
+        generationJob?.cancel()
+        generationJob = null
+        activeGeneration = null
+
+        scope.launch {
+            updateMessage(generation.chatId, generation.assistantId) { message ->
+                val content = message.content.trimEnd()
+                message.copy(
+                    content = if (content.isBlank()) {
+                        "Генерация остановлена."
+                    } else {
+                        "$content\n\nГенерация остановлена."
+                    },
+                    isStreaming = false,
+                )
+            }
+            persist()
+            publish(generation.chatId)
         }
     }
 
@@ -329,3 +376,8 @@ class ChatController(
         }
     }
 }
+
+private data class ActiveChatGeneration(
+    val chatId: String,
+    val assistantId: String,
+)

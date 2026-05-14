@@ -165,6 +165,7 @@ data class ChatActions(
     val setChatRuntimeAccelerator: (String, ChatRuntimeAccelerator) -> Unit = { _, _ -> },
     val updateSettings: (String, ChatSettings) -> Unit = { _, _ -> },
     val sendMessage: (String) -> Unit = {},
+    val stopGeneration: () -> Unit = {},
     val clearError: () -> Unit = {},
 )
 

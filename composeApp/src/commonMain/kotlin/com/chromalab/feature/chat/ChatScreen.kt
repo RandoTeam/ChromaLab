@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -130,9 +131,10 @@ fun ChatScreen(
         bottomBar = {
             if (selected != null) {
                 ChatComposer(
-                    enabled = !state.isGenerating && selected.modelId != null,
+                    enabled = selected.modelId != null,
                     isGenerating = state.isGenerating,
                     onSend = actions.sendMessage,
+                    onStop = actions.stopGeneration,
                 )
             }
         },
@@ -710,12 +712,17 @@ private fun ChatComposer(
     enabled: Boolean,
     isGenerating: Boolean,
     onSend: (String) -> Unit,
+    onStop: () -> Unit,
 ) {
     var text by remember { mutableStateOf("") }
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val coroutineScope = rememberCoroutineScope()
     val canSend = enabled && text.isNotBlank() && !isGenerating
-    val placeholderText = if (enabled) "Сообщение" else "Выберите активную модель"
+    val placeholderText = when {
+        isGenerating -> "Модель отвечает..."
+        enabled -> "Сообщение"
+        else -> "Выберите активную модель"
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth().imePadding(),
@@ -752,7 +759,7 @@ private fun ChatComposer(
                             }
                         }
                         .padding(vertical = 10.dp),
-                    enabled = enabled,
+                    enabled = enabled && !isGenerating,
                     minLines = 1,
                     maxLines = 3,
                     textStyle = MaterialTheme.typography.bodyLarge.copy(
@@ -777,22 +784,35 @@ private fun ChatComposer(
                         }
                     },
                 )
-                FilledIconButton(
-                    enabled = canSend,
-                    modifier = Modifier.size(44.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                    ),
-                    onClick = {
-                        val message = text
-                        text = ""
-                        onSend(message)
-                    },
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Отправить")
+                if (isGenerating) {
+                    FilledIconButton(
+                        modifier = Modifier.size(44.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                        onClick = onStop,
+                    ) {
+                        Icon(Icons.Filled.Stop, contentDescription = "Остановить")
+                    }
+                } else {
+                    FilledIconButton(
+                        enabled = canSend,
+                        modifier = Modifier.size(44.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                        ),
+                        onClick = {
+                            val message = text
+                            text = ""
+                            onSend(message)
+                        },
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Отправить")
+                    }
                 }
             }
         }

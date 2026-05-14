@@ -43,6 +43,7 @@ actual fun rememberChatState(
             setChatRuntimeAccelerator = controller::setChatRuntimeAccelerator,
             updateSettings = controller::updateSettings,
             sendMessage = controller::sendMessage,
+            stopGeneration = controller::stopGeneration,
             clearError = controller::clearError,
         )
     }
