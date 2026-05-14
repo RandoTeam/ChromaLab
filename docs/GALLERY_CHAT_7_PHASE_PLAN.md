@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 6.4.
-- Next phase to start: Phase 6.5.
+- Current completed phase: Phase 6.5.
+- Next phase to start: Phase 6.6.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -138,7 +138,7 @@ Status: in progress.
 - [x] Phase 6.2: Preserve keyboard-safe behavior so the input stays visible above the keyboard.
 - [x] Phase 6.3: Add proper disabled/loading/stop states while generation is active.
 - [x] Phase 6.4: Keep text-only composer until image chat input is implemented for real.
-- [ ] Phase 6.5: Validate small-screen, rotated-screen, and long-input behavior.
+- [x] Phase 6.5: Validate small-screen, rotated-screen, and long-input behavior.
 - [ ] Phase 6.6: Commit Phase 6 work slices separately.
 
 ### Phase 6.4 Validation Notes
@@ -150,6 +150,21 @@ Status: in progress.
 - The Gallery media-preview contract is intentionally deferred until chat image
   input is supported end to end by message storage, runtime routing, and model
   capability gating.
+
+### Phase 6.5 Validation Notes
+
+- Small-width behavior is protected by the composer row structure: the text input
+  uses `Modifier.weight(1f)`, the action button keeps a fixed `44.dp` touch target,
+  and placeholder text is constrained to one ellipsized line.
+- Rotated/keyboard behavior stays inside the native Compose inset path:
+  `imePadding()` lifts the composer above the keyboard and
+  `navigationBarsPadding()` preserves bottom safe area spacing.
+- Long input is bounded by `BasicTextField(maxLines = 3)`, so pasted prompts can
+  wrap without letting the composer consume the whole chat viewport.
+- No media or image attachment UI was added in this validation phase; that remains
+  blocked on real chat-image storage, model gating, and runtime routing.
+- Real-device visual QA is still reserved for Phase 7.4, where the full chat
+  polish pass can be checked on hardware.
 
 ## Phase 7 - Chat Visual Tokens, Assets, And QA
 
