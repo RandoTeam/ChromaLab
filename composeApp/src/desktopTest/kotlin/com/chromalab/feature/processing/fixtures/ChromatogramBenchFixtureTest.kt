@@ -227,6 +227,10 @@ class ChromatogramBenchFixtureTest {
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
                 )
+                assertTrue(
+                    Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
+                )
             }
 
             if (fixture.strictGraphCount) {
@@ -502,6 +506,7 @@ private fun writeAuditArtifacts(
     val overlayImagePath = audit.orientationCorrection?.imagePath?.let { Path.of(it) } ?: imagePath
     writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
     writeSelectedPreprocessingCrops(audit, outputDir)
+    writeManualCalibrationFocusArtifacts(audit, overlayImagePath, outputDir)
 }
 
 private fun writeGraphCandidateOverlay(
@@ -593,4 +598,80 @@ private fun writeSelectedPreprocessingCrops(
         ImageIO.write(crop, "png", outputDir.resolve("selected_preprocessing_graph_${graph.graphIndex}.png").toFile())
         crop.flush()
     }
+}
+
+private fun writeManualCalibrationFocusArtifacts(
+    audit: OfflineAnalysisAudit,
+    imagePath: Path,
+    outputDir: Path,
+) {
+    val source = assertNotNull(
+        ImageIO.read(imagePath.toFile()),
+        "${audit.sourceId} source image must be readable for manual calibration focus artifacts",
+    )
+    try {
+        audit.graphs.forEach { graph ->
+            val region = graph.region.clampedTo(source.width, source.height)
+            val focus = BufferedImage(region.width, region.height, BufferedImage.TYPE_INT_ARGB)
+            val graphics = focus.createGraphics()
+            try {
+                graphics.drawImage(
+                    source,
+                    0,
+                    0,
+                    region.width,
+                    region.height,
+                    region.x,
+                    region.y,
+                    region.x + region.width,
+                    region.y + region.height,
+                    null,
+                )
+                graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                graphics.stroke = BasicStroke((region.width.coerceAtLeast(region.height) / 160f).coerceAtLeast(2f))
+                graphics.font = Font(Font.SANS_SERIF, Font.BOLD, (region.width / 32).coerceIn(11, 22))
+
+                graph.plotArea.region?.let { plot ->
+                    val x = (plot.x - region.x).coerceIn(0, region.width - 1)
+                    val y = (plot.y - region.y).coerceIn(0, region.height - 1)
+                    val right = (plot.x + plot.width - region.x).coerceIn(0, region.width)
+                    val bottom = (plot.y + plot.height - region.y).coerceIn(0, region.height)
+                    val width = (right - x).coerceAtLeast(1)
+                    val height = (bottom - y).coerceAtLeast(1)
+
+                    graphics.color = Color(0x15, 0x65, 0xC0, 230)
+                    graphics.drawRect(x, y, width, height)
+                    graphics.color = Color(0x4C, 0xAF, 0x50, 210)
+                    graphics.drawLine(x, bottom, right, bottom)
+                    graphics.color = Color(0x21, 0x96, 0xF3, 210)
+                    graphics.drawLine(x, y, x, bottom)
+                }
+
+                graphics.color = Color(0xFF, 0x8F, 0x00, 230)
+                graphics.drawString(
+                    "manual calibration focus #${graph.graphIndex}",
+                    8,
+                    (region.height - 10).coerceAtLeast(18),
+                )
+            } finally {
+                graphics.dispose()
+            }
+            ImageIO.write(
+                focus,
+                "png",
+                outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png").toFile(),
+            )
+            focus.flush()
+        }
+    } finally {
+        source.flush()
+    }
+}
+
+private fun GraphRegion.clampedTo(imageWidth: Int, imageHeight: Int): GraphRegion {
+    val x = this.x.coerceIn(0, imageWidth - 1)
+    val y = this.y.coerceIn(0, imageHeight - 1)
+    val width = this.width.coerceIn(1, imageWidth - x)
+    val height = this.height.coerceIn(1, imageHeight - y)
+    return GraphRegion(x = x, y = y, width = width, height = height, label = label)
 }
