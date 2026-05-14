@@ -7,6 +7,8 @@ import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
 import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
+import com.chromalab.feature.processing.graph.GraphPlotAreaDetector
+import com.chromalab.feature.processing.graph.GraphPlotAreaDetectionResult
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.graph.GraphRegionBoundaryCorrector
 import com.chromalab.feature.processing.graph.GraphRegionDetector
@@ -82,6 +84,7 @@ data class OfflineGraphAudit(
     val refinement: OfflineGraphRefinementAudit,
     val cropQuality: OfflineGraphCropQualityAudit,
     val cropBoundaryRisk: OfflineGraphCropBoundaryRiskAudit,
+    val plotArea: OfflineGraphPlotAreaAudit,
     val selectedPreprocessingVariant: String?,
     val selectedPreprocessingImagePath: String?,
     val preprocessingVariantScores: List<PreprocessingVariantScore>,
@@ -135,6 +138,14 @@ data class OfflineGraphCropBoundaryRiskAudit(
 )
 
 @Serializable
+data class OfflineGraphPlotAreaAudit(
+    val region: GraphRegion?,
+    val detected: Boolean,
+    val areaRatioWithinPanel: Float,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class OfflineStageAudit(
     val stage: String,
     val graphIndex: Int? = null,
@@ -159,6 +170,7 @@ class OfflineAnalysisRunner(
     private val graphRefiner: GraphRegionRefiner = GraphRegionRefiner(),
     private val graphBoundaryCorrector: GraphRegionBoundaryCorrector = GraphRegionBoundaryCorrector(),
     private val cropBoundaryAnalyzer: GraphCropBoundaryAnalyzer = GraphCropBoundaryAnalyzer(),
+    private val plotAreaDetector: GraphPlotAreaDetector = GraphPlotAreaDetector(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
@@ -341,14 +353,15 @@ class OfflineAnalysisRunner(
 
         val cropReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }
-        val readyForCalculation = cropReady && graphAudits.all { it.curveUsable }
+        val plotAreaReady = graphAudits.isNotEmpty() && graphAudits.all { it.plotArea.detected && it.plotArea.region != null }
+        val readyForCalculation = cropReady && plotAreaReady && graphAudits.all { it.curveUsable }
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
-                message = if (cropReady) {
-                    "Calculation is blocked until every graph has usable extracted curve data."
-                } else {
-                    "Calculation is blocked until every graph has accepted crop bounds."
+                message = when {
+                    !cropReady -> "Calculation is blocked until every graph has accepted crop bounds."
+                    !plotAreaReady -> "Calculation is blocked until every graph has audited plot-area bounds."
+                    else -> "Calculation is blocked until every graph has usable extracted curve data."
                 },
             )
             stages += skippedStage(
@@ -374,6 +387,7 @@ class OfflineAnalysisRunner(
             blockedAtStage = when {
                 readyForCalculation -> null
                 !cropReady -> "crop_quality"
+                !plotAreaReady -> "plot_area"
                 else -> "curve_extract"
             },
             readyForCalculation = readyForCalculation,
@@ -430,6 +444,28 @@ class OfflineAnalysisRunner(
         )
         graphWarnings += cropBoundaryRisk.warnings
 
+        val plotAreaResult = runStage(
+            stage = "plot_area",
+            graphIndex = graphIndex,
+            stages = stages,
+            successMessage = { result ->
+                "detected=${result.detected}, region=${result.plotArea?.let { "${it.x},${it.y} ${it.width}x${it.height}" } ?: "none"}."
+            },
+        ) {
+            plotAreaDetector.detect(
+                imagePath = analysisImagePath,
+                panelRegion = region,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+            )
+        }
+        if (plotAreaResult?.detected != true) {
+            graphWarnings += "plot_area_not_detected"
+        }
+        graphWarnings += plotAreaResult?.warnings.orEmpty()
+        val plotAreaAudit = plotAreaResult.toAudit(region)
+        val calculationRegion = plotAreaResult?.plotArea ?: region
+
         val ocrResult = runStage(
             stage = "axis_ocr",
             graphIndex = graphIndex,
@@ -452,7 +488,7 @@ class OfflineAnalysisRunner(
                 "axesDetected=${result.hasAxes}, originDetected=${result.hasOrigin}."
             },
         ) {
-            axisDetector.detect(analysisImagePath, region)
+            axisDetector.detect(analysisImagePath, calculationRegion)
         }
         if (axesResult?.hasAxes != true) {
             graphWarnings += "axes_not_detected"
@@ -466,7 +502,7 @@ class OfflineAnalysisRunner(
                 "mask=${result.maskWidth}x${result.maskHeight}, cleanPixels=${result.cleanPixelCount}."
             },
         ) {
-            curveMaskPreparer.prepare(analysisImagePath, region, axesResult ?: emptyAxes(), outputDir)
+            curveMaskPreparer.prepare(analysisImagePath, calculationRegion, axesResult ?: emptyAxes(), outputDir)
         }
         val maskPath = maskResult?.cleanMaskPath ?: maskResult?.rawMaskPath
         val availableMask = maskResult?.takeIf {
@@ -512,6 +548,7 @@ class OfflineAnalysisRunner(
             refinement = refinement.toAudit(),
             cropQuality = cropQuality,
             cropBoundaryRisk = cropBoundaryRisk.toAudit(),
+            plotArea = plotAreaAudit,
             selectedPreprocessingVariant = selectedVariant?.variantId,
             selectedPreprocessingImagePath = selectedVariant?.imagePath,
             preprocessingVariantScores = variantScores,
@@ -554,6 +591,17 @@ private fun GraphCropBoundaryRisk.toAudit(): OfflineGraphCropBoundaryRiskAudit =
         acceptedForCalculation = acceptedForCalculation,
         warnings = warnings,
     )
+
+private fun GraphPlotAreaDetectionResult?.toAudit(panelRegion: GraphRegion): OfflineGraphPlotAreaAudit {
+    val plotArea = this?.plotArea
+    val panelArea = panelRegion.area.coerceAtLeast(1)
+    return OfflineGraphPlotAreaAudit(
+        region = plotArea,
+        detected = this?.detected == true && plotArea != null,
+        areaRatioWithinPanel = plotArea?.area?.toFloat()?.div(panelArea.toFloat()) ?: 0f,
+        warnings = this?.warnings ?: listOf("plot_area.failed"),
+    )
+}
 
 private fun ImageOrientationCorrectionResult.toAudit(): OfflineOrientationCorrectionAudit =
     OfflineOrientationCorrectionAudit(

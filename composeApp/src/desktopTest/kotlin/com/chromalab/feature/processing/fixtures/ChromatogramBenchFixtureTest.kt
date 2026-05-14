@@ -89,6 +89,7 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "plot_area" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
             assertTrue(
@@ -110,6 +111,14 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.graphs.all { it.cropBoundaryRisk.topDarkPixelRatio >= 0f },
                 "${fixture.id} must expose crop-boundary risk diagnostics",
+            )
+            assertTrue(
+                audit.graphs.all { it.plotArea.areaRatioWithinPanel >= 0f },
+                "${fixture.id} must expose plot-area diagnostics",
+            )
+            assertTrue(
+                audit.graphs.all { it.plotArea.detected && it.plotArea.region != null },
+                "${fixture.id} must detect audited plot-area bounds for every graph",
             )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
@@ -150,6 +159,7 @@ class ChromatogramBenchFixtureTest {
                 )
             }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
+            assertTrue(audit.blockedAtStage != "plot_area", "${fixture.id} should pass the plot-area gate")
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
@@ -423,6 +433,13 @@ private fun writeGraphCandidateOverlay(
         graphics.stroke = BasicStroke((source.width.coerceAtLeast(source.height) / 140f).coerceAtLeast(3f))
         audit.graphs.forEach { graph ->
             val region = graph.region
+            graphics.drawRect(region.x, region.y, region.width.coerceAtLeast(1), region.height.coerceAtLeast(1))
+        }
+
+        graphics.color = Color(0xFF, 0x8F, 0x00, 230)
+        graphics.stroke = BasicStroke((source.width.coerceAtLeast(source.height) / 180f).coerceAtLeast(2f))
+        audit.graphs.forEach { graph ->
+            val region = graph.plotArea.region ?: return@forEach
             graphics.drawRect(region.x, region.y, region.width.coerceAtLeast(1), region.height.coerceAtLeast(1))
         }
     } finally {

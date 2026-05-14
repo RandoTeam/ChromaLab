@@ -154,9 +154,20 @@ above their original top. `bench_01` and `bench_06` now have executable crop-bou
 contracts for every graph, and their crop-quality/crop-boundary gates pass. They remain
 blocked honestly at `curve_extract` until plot-area extraction is audited.
 
+Phase 2.9 adds a separate audited plot-area detector inside each accepted graph panel.
+The runner now records `plot_area` as its own stage, writes the detected inner bounds to
+`audit.json`, renders them in `audit_summary.md`, and overlays them in orange on
+`graph_candidates.png`. OCR still receives the full graph panel so titles, ION labels,
+axis captions, and tick values are preserved, while axis/curve stages receive the inner
+plot area. All eight bench fixtures now pass the plot-area gate; desktop calculation is
+still blocked honestly at `curve_extract` until real desktop curve masks are available.
+If a future difficult image cannot produce reliable plot-area bounds, the application
+should expose a diagnostic/manual adjustment path instead of saving a partial final
+report.
+
 ## Next Phase
 
-Phase 2.9 should add a separate audited plot-area detector inside the accepted graph
-panel. The plot area must exclude titles, tick labels, axis captions, and page context
-while preserving all visible signal peaks before deterministic curve extraction and
-calculation are allowed.
+Phase 2.10 should replace the desktop curve-mask stub with deterministic curve-pixel
+extraction against the audited plot area. The next gate must verify that the extracted
+curve preserves early/tall peaks, suppresses axes/tick text, and remains auditable before
+numeric peak integration is allowed.
