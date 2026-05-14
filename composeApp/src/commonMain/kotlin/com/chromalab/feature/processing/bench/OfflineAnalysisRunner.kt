@@ -169,9 +169,12 @@ class OfflineAnalysisRunner(
         val graphCandidates = graphResult.qualityEvaluations.mapIndexed { index, quality ->
             quality.toAudit(index + 1)
         }
-        val selectedRegions = graphResult.filteredRegions
-            .ifEmpty { graphResult.sortedRegions }
-            .ifEmpty { listOf(graphResult.effectiveRegion) }
+        val selectedRegions = if (graphResult.filteredRegions.isNotEmpty()) {
+            graphResult.filteredRegions
+        } else {
+            warnings += "graph.no_accepted_candidate_using_full_image"
+            listOf(GraphRegion(0, 0, normalized.width, normalized.height, "Full image fallback"))
+        }
 
         if (graphResult.sortedRegions.size == 1 && graphResult.effectiveRegion.isFullImage(normalized.width, normalized.height)) {
             warnings += "graph.full_image_region_selected"

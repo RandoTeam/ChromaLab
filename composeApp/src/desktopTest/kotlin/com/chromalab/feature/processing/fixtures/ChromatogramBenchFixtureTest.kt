@@ -105,6 +105,12 @@ class ChromatogramBenchFixtureTest {
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
+            audit.graphs.forEach { graph ->
+                assertTrue(
+                    Files.size(outputDir.resolve("selected_preprocessing_graph_${graph.graphIndex}.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} selected preprocessing crop must be written",
+                )
+            }
 
             if (fixture.strictGraphCount) {
                 assertEquals(fixture.expectedGraphCount, audit.detectedGraphCount, "${fixture.id} detected graph count")
@@ -268,6 +274,7 @@ private fun writeAuditArtifacts(
     Files.writeString(outputDir.resolve("audit.json"), OfflineAnalysisAuditArtifacts.toJson(audit))
     Files.writeString(outputDir.resolve("audit_summary.md"), OfflineAnalysisAuditArtifacts.toSummaryMarkdown(audit))
     writeGraphCandidateOverlay(audit, imagePath, outputDir.resolve("graph_candidates.png"))
+    writeSelectedPreprocessingCrops(audit, outputDir)
 }
 
 private fun writeGraphCandidateOverlay(
@@ -310,4 +317,46 @@ private fun writeGraphCandidateOverlay(
     }
 
     ImageIO.write(image, "png", outputPath.toFile())
+}
+
+private fun writeSelectedPreprocessingCrops(
+    audit: OfflineAnalysisAudit,
+    outputDir: Path,
+) {
+    audit.graphs.forEach { graph ->
+        val imagePath = assertNotNull(
+            graph.selectedPreprocessingImagePath,
+            "${audit.sourceId} graph ${graph.graphIndex} must record selected preprocessing image",
+        )
+        val source = assertNotNull(
+            ImageIO.read(Path.of(imagePath).toFile()),
+            "${audit.sourceId} graph ${graph.graphIndex} selected preprocessing image must be readable",
+        )
+        val region = graph.region
+        val x = region.x.coerceIn(0, source.width - 1)
+        val y = region.y.coerceIn(0, source.height - 1)
+        val width = region.width.coerceIn(1, source.width - x)
+        val height = region.height.coerceIn(1, source.height - y)
+        val crop = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        val graphics = crop.createGraphics()
+        try {
+            graphics.drawImage(
+                source,
+                0,
+                0,
+                width,
+                height,
+                x,
+                y,
+                x + width,
+                y + height,
+                null,
+            )
+        } finally {
+            graphics.dispose()
+            source.flush()
+        }
+        ImageIO.write(crop, "png", outputDir.resolve("selected_preprocessing_graph_${graph.graphIndex}.png").toFile())
+        crop.flush()
+    }
 }

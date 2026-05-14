@@ -84,7 +84,12 @@ and curve-mask stages. On desktop the variants are still generated as source cop
 until the desktop preprocessor is upgraded; on Android the ranking uses the real
 scanner/preprocessing outputs.
 
+Phase 2.2 replaces the desktop source-copy preprocessing stub with the same shared
+deterministic preprocessing math used by Android. Fixture runs also write
+`selected_preprocessing_graph_N.png` for each detected graph, showing the exact selected
+prepared crop that was routed into OCR, axis, and curve-mask stages.
+
 ## Next Phase
 
-Phase 2.2 should replace desktop preprocessing copies with real filter variants and
-add visual selected-crop/debug artifacts for the chosen preprocessing image.
+Phase 2.3 should tune crop quality and context rejection against the eight fixtures
+using the real preprocessing variants.

@@ -220,11 +220,24 @@ Phase 2.1 status:
 - Axis labels, units, tick reading, curve extraction, and calculation remain blocked
   for later phases; this slice only makes the preparation input explicit.
 
-Next Phase 2.2 work slice:
+Phase 2.2 status:
 
-1. Replace desktop preprocessing copies with real grayscale/contrast/sharpened/binary
-   image variants so fixture calibration matches Android preparation behavior.
-2. Add visual selected-crop/debug artifacts for the chosen preprocessing variant.
+- Desktop preprocessing no longer emits source copies. It now uses the same shared
+  deterministic preprocessing math as Android for grayscale, contrast-enhanced,
+  sharpened, scan-style, binary, and morphology variants.
+- The shared preprocessing path keeps desktop fixture calibration closer to Android
+  phone behavior while preserving platform-specific image loading/saving only.
+- The desktop bench test now writes `selected_preprocessing_graph_N.png` for each
+  detected graph so the exact selected variant crop can be inspected visually.
+- Full axis/tick/unit extraction and curve calculation remain blocked for later
+  phases; this slice only makes prepared input parity and visual QA auditable.
+
+Next Phase 2.3 work slice:
+
+1. Re-run crop-quality tuning against the eight fixtures using the real desktop
+   preprocessing variants.
+2. Improve rejection of non-graph context when selected crops still include toolbar,
+   article text, page margins, or document background.
 3. Keep full calculations blocked until usable axes and curves exist.
 
 Exit criteria:
@@ -402,3 +415,10 @@ Exit criteria:
 3. Record selected preprocessing input and all variant metrics in JSON and Markdown
    audit artifacts.
 4. Route OCR, axis detection, and curve mask preparation through the selected variant.
+
+- Phase 2.2:
+
+1. Move deterministic preprocessing stage math into shared common code.
+2. Make Android and desktop preprocessors use that shared math while keeping only
+   image decode/encode platform-specific.
+3. Add per-graph `selected_preprocessing_graph_N.png` bench artifacts for visual QA.
