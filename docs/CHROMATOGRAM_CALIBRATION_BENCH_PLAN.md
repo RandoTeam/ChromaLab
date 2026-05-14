@@ -240,6 +240,27 @@ Next Phase 2.3 work slice:
    article text, page margins, or document background.
 3. Keep full calculations blocked until usable axes and curves exist.
 
+Phase 2.3 status:
+
+- Offline graph audit now includes a crop-quality gate per selected graph region:
+  area ratio, edge contacts, full-image status, broad-edge crop status, and
+  calculation-readiness.
+- Large full-image fallbacks and broad edge-touching crops are recorded as
+  `not calculation-ready`, so later deterministic calculation cannot silently start
+  from a full page/screenshot crop.
+- Small clean exports may still use the full image when that image is itself the
+  graph; the gate distinguishes this from large page/screenshot fallback.
+- Fixture tests now require context-heavy printed/rotated cases to be flagged while
+  normal graph crops remain calculation-ready at the crop-quality gate.
+
+Next Phase 2.4 work slice:
+
+1. Use the crop-quality warnings to tighten the actual graph bounds for broad
+   printed-page and screenshot crops.
+2. Add orientation/page-bound diagnostics for the rotated printed-page case instead
+   of accepting full-image fallback as a final crop.
+3. Keep full calculations blocked until usable axes and curves exist.
+
 Exit criteria:
 
 - all fixtures produce the expected number of graph candidates or a precise failure;
@@ -422,3 +443,11 @@ Exit criteria:
 2. Make Android and desktop preprocessors use that shared math while keeping only
    image decode/encode platform-specific.
 3. Add per-graph `selected_preprocessing_graph_N.png` bench artifacts for visual QA.
+
+- Phase 2.3:
+
+1. Add per-graph crop-quality audit fields.
+2. Mark large full-image fallbacks and broad edge-touching crops as not
+   calculation-ready.
+3. Enforce the crop-quality gate in bench tests for context-heavy fixtures while
+   preserving clean full-image exports.

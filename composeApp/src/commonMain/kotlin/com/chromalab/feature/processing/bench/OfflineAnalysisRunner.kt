@@ -58,6 +58,7 @@ data class OfflineGraphCandidateAudit(
 data class OfflineGraphAudit(
     val graphIndex: Int,
     val region: GraphRegion,
+    val cropQuality: OfflineGraphCropQualityAudit,
     val selectedPreprocessingVariant: String?,
     val selectedPreprocessingImagePath: String?,
     val preprocessingVariantScores: List<PreprocessingVariantScore>,
@@ -71,6 +72,21 @@ data class OfflineGraphAudit(
     val curveCoverage: Float,
     val curveUsable: Boolean,
     val warnings: List<String>,
+)
+
+@Serializable
+data class OfflineGraphCropQualityAudit(
+    val areaRatio: Float,
+    val edgeContactCount: Int,
+    val touchesTop: Boolean,
+    val touchesRight: Boolean,
+    val touchesBottom: Boolean,
+    val touchesLeft: Boolean,
+    val fullImage: Boolean,
+    val largeFullImage: Boolean,
+    val broadEdgeCrop: Boolean,
+    val acceptedForCalculation: Boolean,
+    val warnings: List<String> = emptyList(),
 )
 
 @Serializable
@@ -189,11 +205,14 @@ class OfflineAnalysisRunner(
                 preprocessing = preprocessing,
                 outputDir = "${input.outputDir}/graph_${index + 1}",
                 region = region,
+                imageWidth = normalized.width,
+                imageHeight = normalized.height,
                 stages = stages,
             )
         }
 
-        val readyForCalculation = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
+        val readyForCalculation = graphAudits.isNotEmpty() &&
+            graphAudits.all { it.cropQuality.acceptedForCalculation && it.curveUsable }
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
@@ -228,9 +247,13 @@ class OfflineAnalysisRunner(
         preprocessing: PreprocessingResult,
         outputDir: String,
         region: GraphRegion,
+        imageWidth: Int,
+        imageHeight: Int,
         stages: MutableList<OfflineStageAudit>,
     ): OfflineGraphAudit {
         val graphWarnings = mutableListOf<String>()
+        val cropQuality = region.cropQualityAudit(imageWidth, imageHeight)
+        graphWarnings += cropQuality.warnings
 
         val variantScores = runStage(
             stage = "preprocess_rank",
@@ -327,6 +350,7 @@ class OfflineAnalysisRunner(
         return OfflineGraphAudit(
             graphIndex = graphIndex,
             region = region,
+            cropQuality = cropQuality,
             selectedPreprocessingVariant = selectedVariant?.variantId,
             selectedPreprocessingImagePath = selectedVariant?.imagePath,
             preprocessingVariantScores = variantScores,
@@ -356,6 +380,44 @@ private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAu
 
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
     x == 0 && y == 0 && width == imageWidth && height == imageHeight
+
+private fun GraphRegion.cropQualityAudit(
+    imageWidth: Int,
+    imageHeight: Int,
+): OfflineGraphCropQualityAudit {
+    val safeArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
+    val areaRatio = area.toFloat() / safeArea
+    val touchesLeft = x <= 0
+    val touchesTop = y <= 0
+    val touchesRight = right >= imageWidth
+    val touchesBottom = bottom >= imageHeight
+    val edgeContactCount = listOf(touchesTop, touchesRight, touchesBottom, touchesLeft).count { it }
+    val fullImage = isFullImage(imageWidth, imageHeight)
+    val largeImage = maxOf(imageWidth, imageHeight) >= 700
+    val largeFullImage = fullImage && largeImage
+    val broadEdgeCrop = !fullImage && areaRatio >= 0.45f && edgeContactCount >= 2
+    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop
+    val warnings = buildList {
+        if (fullImage) add("crop.full_image")
+        if (largeFullImage) add("crop.large_full_image_not_calculation_ready")
+        if (broadEdgeCrop) add("crop.broad_edge_context_not_calculation_ready")
+        if (edgeContactCount >= 2 && !fullImage) add("crop.touches_multiple_image_edges")
+    }
+
+    return OfflineGraphCropQualityAudit(
+        areaRatio = areaRatio,
+        edgeContactCount = edgeContactCount,
+        touchesTop = touchesTop,
+        touchesRight = touchesRight,
+        touchesBottom = touchesBottom,
+        touchesLeft = touchesLeft,
+        fullImage = fullImage,
+        largeFullImage = largeFullImage,
+        broadEdgeCrop = broadEdgeCrop,
+        acceptedForCalculation = acceptedForCalculation,
+        warnings = warnings,
+    )
+}
 
 private fun emptyAxes(): AxesResult =
     AxesResult(

@@ -89,7 +89,13 @@ deterministic preprocessing math used by Android. Fixture runs also write
 `selected_preprocessing_graph_N.png` for each detected graph, showing the exact selected
 prepared crop that was routed into OCR, axis, and curve-mask stages.
 
+Phase 2.3 adds a crop-quality gate to each per-graph audit. The gate records crop area,
+edge contacts, full-image fallback, broad edge-touching crops, and whether the crop is
+safe to use for later calculation. Large page/screenshot fallbacks and broad edge crops
+are now explicit blockers instead of silently flowing into deterministic calculation.
+
 ## Next Phase
 
-Phase 2.3 should tune crop quality and context rejection against the eight fixtures
-using the real preprocessing variants.
+Phase 2.4 should use the crop-quality blockers to tighten actual graph bounds for broad
+printed-page and screenshot crops, then add orientation/page-bound diagnostics for the
+rotated page fixture.

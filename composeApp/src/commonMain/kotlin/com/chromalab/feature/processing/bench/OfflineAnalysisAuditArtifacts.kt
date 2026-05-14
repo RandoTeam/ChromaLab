@@ -49,11 +49,22 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Prep variant | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
-        appendLine("| ---: | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Region | Crop QA | Prep variant | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
+        appendLine("| ---: | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.cropQuality.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Crop Quality")
+        appendLine()
+        appendLine("| Graph | Area | Edge contacts | Full image | Broad edge crop | Calculation-ready | Warnings |")
+        appendLine("| ---: | ---: | ---: | --- | --- | --- | --- |")
+        audit.graphs.forEach { graph ->
+            appendLine(
+                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
