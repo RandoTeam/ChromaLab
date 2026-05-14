@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 6.5.
-- Next phase to start: Phase 6.6.
+- Current completed phase: Phase 6.6.
+- Next phase to start: Phase 7.1.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -132,14 +132,24 @@ Status: completed.
 
 ## Phase 6 - Composer And Input UX
 
-Status: in progress.
+Status: completed.
 
 - [x] Phase 6.1: Rework composer toward Gallery input panel spacing, radius, and button hierarchy.
 - [x] Phase 6.2: Preserve keyboard-safe behavior so the input stays visible above the keyboard.
 - [x] Phase 6.3: Add proper disabled/loading/stop states while generation is active.
 - [x] Phase 6.4: Keep text-only composer until image chat input is implemented for real.
 - [x] Phase 6.5: Validate small-screen, rotated-screen, and long-input behavior.
-- [ ] Phase 6.6: Commit Phase 6 work slices separately.
+- [x] Phase 6.6: Commit Phase 6 work slices separately.
+
+### Phase 6 Commit Record
+
+- `02fe7a8` - Phase 6.1: Gallery-style composer panel.
+- `3c42c7f` - Phase 6.2: keyboard-safe composer behavior.
+- `9b2c848` - Phase 6.3: generation stop state.
+- `544fe79` - Phase 6.4: text-only composer boundary.
+- `7c9a18b` - Phase 6.5: responsive composer validation.
+- Current Phase 6.6 documentation commit closes the phase and keeps the work-slice
+  record separate from Phase 7 implementation.
 
 ### Phase 6.4 Validation Notes
 
