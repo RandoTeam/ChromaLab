@@ -214,8 +214,13 @@ disabled in the full-analysis path, and touch positions are converted from the d
 full image back into graph-region-relative pixels, matching the curve extractor's
 coordinate system.
 
+Phase 2.11.6.1 improves that manual gate with OCR tick anchors. When raw OCR elements
+contain usable X/Y tick labels, the manual calibration screens prefill their two
+calibration points from the detected tick positions and draw subtle anchor marks on the
+axis overlay. If no reliable anchors exist, the screens still fall back to manual point
+placement without fabricating pixel-unit calibration.
+
 ## Next Phase
 
-Phase 2.11.6 should improve the manual calibration UX and OCR candidate extraction:
-show a zoomed graph-panel review, surface detected tick candidates as editable anchors,
-and keep the same confirmed-calibration gate before numeric peak integration is allowed.
+Phase 2.11.6.2 should add a zoomed graph-panel review and editable tick-anchor UX while
+keeping the same confirmed-calibration gate before numeric peak integration is allowed.
