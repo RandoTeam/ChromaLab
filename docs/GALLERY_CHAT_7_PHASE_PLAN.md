@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 5.4.
-- Next phase to start: Phase 5.5.
+- Current completed phase: Phase 5.5.
+- Next phase to start: Phase 5.6.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -108,8 +108,19 @@ Status: in progress.
 - [x] Phase 5.2: Keep streaming markdown/table output readable without excessive reparse jank.
 - [x] Phase 5.3: Add thinking block UI only when runtime emits thinking separately.
 - [x] Phase 5.4: Auto-expand thinking while generation is active, then allow collapse/expand.
-- [ ] Phase 5.5: Validate generation speed, scroll behavior, and long-answer stability.
+- [x] Phase 5.5: Validate generation speed, scroll behavior, and long-answer stability.
 - [ ] Phase 5.6: Commit Phase 5 work slices separately.
+
+### Phase 5.5 Validation Notes
+
+- Streaming text rendering is buffered at 120 ms and crossfade is capped to short,
+  non-structured answers, so long scientific/table output does not reanimate every
+  chunk.
+- Chat scrolling no longer starts a new animated scroll on every text delta.
+  New bottom targets animate once; active generation uses a throttled bottom-anchor
+  scroll every 250 ms to keep long answers visible without per-token animation churn.
+- Thinking UI remains contract-only: it renders only when `thinkingContent` is
+  populated separately by the runtime path.
 
 ## Phase 6 - Composer And Input UX
 

@@ -79,6 +79,7 @@ import kotlin.math.roundToInt
 
 private const val CHAT_STREAM_FADE_MS = 120
 private const val CHAT_STREAM_FADE_MAX_CHARS = 2400
+private const val CHAT_STREAM_SCROLL_INTERVAL_MS = 250
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -415,10 +416,22 @@ private fun ChatThreadContent(
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-    val lastMessageContent = state.messages.lastOrNull()?.content
-    LaunchedEffect(state.messages.size, lastMessageContent, state.isGenerating) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.lastIndex)
+    val hasModelWarning = selected?.modelId == null
+    val showGeneratingPlaceholder = state.isGenerating && state.messages.none { it.isStreaming }
+    val bottomAnchorIndex = state.messages.size +
+        (if (hasModelWarning) 1 else 0) +
+        (if (showGeneratingPlaceholder) 1 else 0)
+    val latestBottomAnchorIndex by rememberUpdatedState(bottomAnchorIndex)
+
+    LaunchedEffect(bottomAnchorIndex) {
+        listState.animateScrollToItem(bottomAnchorIndex)
+    }
+    LaunchedEffect(state.isGenerating) {
+        if (!state.isGenerating) return@LaunchedEffect
+
+        while (true) {
+            listState.scrollToItem(latestBottomAnchorIndex)
+            delay(CHAT_STREAM_SCROLL_INTERVAL_MS.toLong())
         }
     }
 
@@ -447,7 +460,7 @@ private fun ChatThreadContent(
         items(state.messages, key = { it.id }) { message ->
             MessageBubble(message)
         }
-        if (state.isGenerating && state.messages.none { it.isStreaming }) {
+        if (showGeneratingPlaceholder) {
             item {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -457,6 +470,9 @@ private fun ChatThreadContent(
                     Text("Модель отвечает...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+        }
+        item(key = "chat_bottom_anchor") {
+            Spacer(Modifier.height(Spacing.sm))
         }
     }
 }
