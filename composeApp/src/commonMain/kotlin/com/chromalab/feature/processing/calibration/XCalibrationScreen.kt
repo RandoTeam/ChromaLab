@@ -61,6 +61,9 @@ fun XCalibrationScreen(
     val mappedSourceImageHeight = sourceImageHeight
         .coerceAtLeast(graphRegion.y + graphRegion.height)
         .coerceAtLeast(1)
+    val ocrAnchors = remember(ocrSuggestion, graphRegion) {
+        ocrSuggestion.xCalibrationAnchors(graphRegion)
+    }
 
     // Two calibration points (view X coordinates)
     var point1X by remember { mutableFloatStateOf(-1f) }
@@ -75,15 +78,21 @@ fun XCalibrationScreen(
         val ocr = ocrSuggestion ?: return@LaunchedEffect
         if (ocr.hasXSuggestions && value1.isEmpty() && point1X <= 0f && point2X <= 0f) {
             val sorted = ocr.suggestedXValues.sorted()
-            value1 = sorted.first().toBigDecimal().toPlainString()
-            value2 = sorted.last().toBigDecimal().toPlainString()
-            point1X = regionPixelXToView(
+            val firstAnchor = ocrAnchors.firstOrNull()
+            val lastAnchor = ocrAnchors.lastOrNull()
+            value1 = (firstAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
+            value2 = (lastAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
+            point1X = firstAnchor?.let {
+                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth)
+            } ?: regionPixelXToView(
                 graphRegion.width * 0.05f,
                 viewW,
                 mappedSourceImageWidth,
                 graphRegion,
             )
-            point2X = regionPixelXToView(
+            point2X = lastAnchor?.let {
+                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth)
+            } ?: regionPixelXToView(
                 graphRegion.width * 0.95f,
                 viewW,
                 mappedSourceImageWidth,
@@ -375,6 +384,18 @@ fun XCalibrationScreen(
                     strokeWidth = 1.5f.dp.toPx(),
                     pathEffect = dashEffect,
                 )
+
+                ocrAnchors.forEach { anchor ->
+                    val anchorX = sourceXToView(anchor.sourceX, size.width, mappedSourceImageWidth)
+                    if (anchorX in 0f..size.width) {
+                        drawLine(
+                            controlColor.copy(alpha = 0.45f),
+                            start = Offset(anchorX, xAxisY - 10.dp.toPx()),
+                            end = Offset(anchorX, xAxisY + 10.dp.toPx()),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }
+                }
 
                 // Point 1
                 if (point1X > 0) {

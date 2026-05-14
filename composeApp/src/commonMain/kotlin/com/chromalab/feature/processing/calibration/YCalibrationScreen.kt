@@ -63,6 +63,9 @@ fun YCalibrationScreen(
     val mappedSourceImageHeight = sourceImageHeight
         .coerceAtLeast(graphRegion.y + graphRegion.height)
         .coerceAtLeast(1)
+    val ocrAnchors = remember(ocrSuggestion, graphRegion) {
+        ocrSuggestion.yCalibrationAnchors(graphRegion)
+    }
 
     // Two calibration points (view Y coordinates)
     var point1Y by remember { mutableFloatStateOf(-1f) }
@@ -77,15 +80,21 @@ fun YCalibrationScreen(
         val ocr = ocrSuggestion ?: return@LaunchedEffect
         if (ocr.hasYSuggestions && value1.isEmpty() && point1Y <= 0f && point2Y <= 0f) {
             val sorted = ocr.suggestedYValues.sorted()
-            value1 = sorted.first().toBigDecimal().toPlainString()
-            value2 = sorted.last().toBigDecimal().toPlainString()
-            point1Y = regionPixelYToView(
+            val bottomAnchor = ocrAnchors.firstOrNull()
+            val topAnchor = ocrAnchors.lastOrNull()
+            value1 = (bottomAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
+            value2 = (topAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
+            point1Y = bottomAnchor?.let {
+                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight)
+            } ?: regionPixelYToView(
                 graphRegion.height * 0.90f,
                 viewH,
                 mappedSourceImageHeight,
                 graphRegion,
             )
-            point2Y = regionPixelYToView(
+            point2Y = topAnchor?.let {
+                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight)
+            } ?: regionPixelYToView(
                 graphRegion.height * 0.10f,
                 viewH,
                 mappedSourceImageHeight,
@@ -378,6 +387,18 @@ fun YCalibrationScreen(
                     strokeWidth = 1.5f.dp.toPx(),
                     pathEffect = dashEffect,
                 )
+
+                ocrAnchors.forEach { anchor ->
+                    val anchorY = sourceYToView(anchor.sourceY, size.height, mappedSourceImageHeight)
+                    if (anchorY in 0f..size.height) {
+                        drawLine(
+                            controlColor.copy(alpha = 0.45f),
+                            start = Offset(yAxisX - 10.dp.toPx(), anchorY),
+                            end = Offset(yAxisX + 10.dp.toPx(), anchorY),
+                            strokeWidth = 1.dp.toPx(),
+                        )
+                    }
+                }
 
                 // Point 1 (lower)
                 if (point1Y > 0) {
