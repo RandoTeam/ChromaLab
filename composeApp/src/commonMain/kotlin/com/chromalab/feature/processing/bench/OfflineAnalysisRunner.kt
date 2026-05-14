@@ -357,13 +357,20 @@ class OfflineAnalysisRunner(
         val cropReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }
         val plotAreaReady = graphAudits.isNotEmpty() && graphAudits.all { it.plotArea.detected && it.plotArea.region != null }
-        val readyForCalculation = cropReady && plotAreaReady && graphAudits.all { it.curveUsable }
+        val axisLabelsReady = graphAudits.isNotEmpty() &&
+            graphAudits.all { it.xSuggestionCount >= 2 && it.ySuggestionCount >= 2 }
+        val axisGeometryReady = graphAudits.isNotEmpty() &&
+            graphAudits.all { it.axesDetected && it.originDetected }
+        val curveReady = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
+        val readyForCalculation = cropReady && plotAreaReady && axisLabelsReady && axisGeometryReady && curveReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
                 message = when {
                     !cropReady -> "Calculation is blocked until every graph has accepted crop bounds."
                     !plotAreaReady -> "Calculation is blocked until every graph has audited plot-area bounds."
+                    !axisLabelsReady -> "Calculation is blocked until every graph has usable axis OCR labels."
+                    !axisGeometryReady -> "Calculation is blocked until every graph has detected axis geometry and origin."
                     else -> "Calculation is blocked until every graph has usable extracted curve data."
                 },
             )
@@ -391,6 +398,8 @@ class OfflineAnalysisRunner(
                 readyForCalculation -> null
                 !cropReady -> "crop_quality"
                 !plotAreaReady -> "plot_area"
+                !axisLabelsReady -> "axis_ocr"
+                !axisGeometryReady -> "axis_detect"
                 else -> "curve_extract"
             },
             readyForCalculation = readyForCalculation,

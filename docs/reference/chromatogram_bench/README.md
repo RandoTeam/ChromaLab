@@ -173,9 +173,16 @@ still not final curve-point extraction: some low-resolution and photographed fix
 retain text/background artifacts in the mask, so the runner remains blocked honestly at
 `curve_extract` until the point extractor and stricter mask QA are implemented.
 
+Phase 2.10.2 adds desktop curve-point extraction from `mask_clean.png`. The extractor
+keeps narrow/tall chromatogram peaks by taking the top of the strongest per-column ink
+cluster and only interpolates short gaps. Every bench graph now writes
+`graph_N/curve_overlay.png` and records non-zero point counts and coverage. Calculation
+readiness was also tightened: extracted curve points are not enough for a scientific
+result, so the runner stays blocked at `axis_ocr`/`axis_detect` until axis labels,
+axis geometry, and origin are available.
+
 ## Next Phase
 
-Phase 2.10.2 should implement desktop curve-point extraction from `mask_clean.png` and
-add stricter mask QA. The next gate must verify that extracted points preserve
-early/tall peaks, reject remaining tick/title artifacts, and stay auditable before
-numeric peak integration is allowed.
+Phase 2.11 should implement desktop axis/OCR calibration gates or a manual calibration
+contract. The next gate must verify time/intensity scale recovery before numeric peak
+integration is allowed.

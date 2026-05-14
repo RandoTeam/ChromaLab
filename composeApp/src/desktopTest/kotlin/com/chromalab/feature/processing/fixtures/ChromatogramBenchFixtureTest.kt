@@ -90,6 +90,7 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "plot_area" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "curve_extract" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
             assertTrue(
@@ -131,6 +132,14 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.graphs.all { it.curveMaskCleanPixelCount <= it.curveMaskRawPixelCount },
                 "${fixture.id} curve-mask cleanup must not increase candidate pixels",
+            )
+            assertTrue(
+                audit.graphs.all { it.curvePointCount > 0 },
+                "${fixture.id} must extract desktop curve points for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.curveCoverage > 0f },
+                "${fixture.id} must expose non-zero curve extraction coverage",
             )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
@@ -188,6 +197,10 @@ class ChromatogramBenchFixtureTest {
                 assertTrue(
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("mask_clean.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} clean curve mask must be written",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
                 )
             }
 
