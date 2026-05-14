@@ -209,6 +209,7 @@ class AutoSweepEngine {
         cachedGraphResult: com.chromalab.feature.processing.graph.GraphRegionResult? = null,
         overrideRegion: com.chromalab.feature.processing.graph.GraphRegion? = null,
         requireVlmForAnalysis: Boolean = false,
+        preservePanelLabels: Boolean = false,
         onProgress: (SweepProgress) -> Unit = {},
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
@@ -272,6 +273,7 @@ class AutoSweepEngine {
                 region = selected,
                 imageWidth = w,
                 imageHeight = h,
+                preservePanelLabels = preservePanelLabels,
             )
             if (correction.changed) {
                 println("SWEEP[GRAPH_BOUNDARY] ${correction.warnings.joinToString()} corrected=${correction.correctedRegion}")

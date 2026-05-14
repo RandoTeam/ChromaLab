@@ -292,6 +292,7 @@ class OfflineAnalysisRunner(
                     region = region,
                     imageWidth = orientation.width,
                     imageHeight = orientation.height,
+                    preservePanelLabels = orientation.wasRotated,
                 )
             }?.also { result ->
                 warnings += result.warnings.map { "graph_${index + 1}.$it" }

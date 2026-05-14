@@ -341,10 +341,12 @@ Phase 2.7 status:
   graph detection and no longer carries `crop.right_angle_rotation_required_before_analysis`.
 - Added graph-boundary correction after region selection. It searches an expanded
   window for the horizontal axis and left axis, then expands the ROI only when it
-  recovers a significant lost top/left boundary. This prevents the detector from
-  treating a tall peak as the left axis and dropping early peaks.
+  recovers a significant lost top/left boundary. For rotated photographed pages, it
+  also preserves the left panel-label band so the selected graph block includes the
+  full visible graph area, not only the inner plot area.
 - The executable bench test now locks the rotated fixture so the selected graph must
-  preserve the early chromatogram span after orientation/boundary correction.
+  preserve the full left graph panel and at least 80% of the visible chromatogram
+  panel width after orientation/boundary correction.
 - Audit artifacts now record orientation correction metadata, and visual overlays are
   drawn on the oriented image when a page was rotated.
 - Remaining limitation: this is not yet a full photographed-page plot-bound detector.
@@ -577,4 +579,7 @@ Exit criteria:
 1. Add shared right-angle orientation correction before graph detection.
 2. Add Android and desktop image rotators for the orientation stage.
 3. Add axis-aligned graph-boundary correction to recover lost top/left graph content.
-4. Lock the rotated fixture against regressions that would drop early peaks.
+4. Preserve the full graph-panel left band on rotated photographed pages instead of
+   returning only the inner plot area.
+5. Lock the rotated fixture against regressions that would drop early peaks or the
+   left graph-panel context.

@@ -141,12 +141,12 @@ class ChromatogramBenchFixtureTest {
                 )
                 val graph = audit.graphs.single()
                 assertTrue(
-                    graph.region.x <= fixture.expectedAnalysisWidth * 0.18f,
-                    "${fixture.id} must preserve early peaks after boundary correction",
+                    graph.region.x <= fixture.expectedAnalysisWidth * 0.10f,
+                    "${fixture.id} must preserve the full left graph panel after boundary correction",
                 )
                 assertTrue(
-                    graph.region.width >= fixture.expectedAnalysisWidth * 0.70f,
-                    "${fixture.id} must keep the full chromatogram span after boundary correction",
+                    graph.region.width >= fixture.expectedAnalysisWidth * 0.80f,
+                    "${fixture.id} must keep the full visible chromatogram panel after boundary correction",
                 )
             }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")

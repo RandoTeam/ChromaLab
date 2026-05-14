@@ -313,6 +313,7 @@ fun ProcessingFlowScreen(
                                 cachedGraphResult = if (isSubsequentGraph) graphResult else null,
                                 overrideRegion = if (isSubsequentGraph) selectedRegion else null,
                                 requireVlmForAnalysis = true,
+                                preservePanelLabels = normalizedResult?.wasRotated == true,
                                 onProgress = { progress ->
                                     sweepProgress = progress
                                 },

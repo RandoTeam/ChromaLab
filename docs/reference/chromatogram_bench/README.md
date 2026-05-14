@@ -117,8 +117,11 @@ corrects right-angle page orientation after EXIF normalization and before graph
 detection, with Android and desktop rotators using the same common contract. The
 rotated page fixture is analyzed as `964x1280` after correction. A graph-boundary
 corrector then checks the selected ROI against horizontal-axis and left-axis evidence
-and expands the crop only when it recovers significant lost top/left content. This
-protects early peaks from being dropped when a tall peak is mistaken for the Y axis.
+and expands the crop only when it recovers significant lost top/left content. On
+rotated photographed pages it preserves the left panel-label band as part of the graph
+block, so the output region represents the visible graph panel rather than only the
+inner plot area. This protects early peaks and graph context when a tall peak is
+mistaken for the Y axis.
 
 ## Next Phase
 

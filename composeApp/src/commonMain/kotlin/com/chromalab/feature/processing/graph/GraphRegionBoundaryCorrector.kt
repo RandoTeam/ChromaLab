@@ -17,6 +17,7 @@ class GraphRegionBoundaryCorrector {
         region: GraphRegion,
         imageWidth: Int,
         imageHeight: Int,
+        preservePanelLabels: Boolean = false,
     ): GraphRegionBoundaryCorrectionResult {
         val searchRegion = region.axisSearchRegion(imageWidth, imageHeight)
         val sampleResult = sampler.sample(imagePath, searchRegion)
@@ -27,7 +28,9 @@ class GraphRegionBoundaryCorrector {
             warnings = listOf(sampleResult.warning ?: "graph_boundary.image_not_readable"),
         )
 
-        val bounds = sample.findAxisAlignedBounds() ?: return GraphRegionBoundaryCorrectionResult(
+        val bounds = sample.findAxisAlignedBounds(
+            preservePanelLabels = preservePanelLabels,
+        ) ?: return GraphRegionBoundaryCorrectionResult(
             originalRegion = region,
             correctedRegion = region,
             changed = false,
@@ -110,7 +113,9 @@ private fun GraphRegion.axisSearchRegion(imageWidth: Int, imageHeight: Int): Gra
     ).clampToImage(imageWidth, imageHeight)
 }
 
-private fun GraphRegionRefinementSample.findAxisAlignedBounds(): AxisAlignedBounds? {
+private fun GraphRegionRefinementSample.findAxisAlignedBounds(
+    preservePanelLabels: Boolean,
+): AxisAlignedBounds? {
     if (width <= 16 || height <= 16 || gray.size != width * height) return null
 
     val threshold = estimateAxisThreshold()
@@ -122,7 +127,18 @@ private fun GraphRegionRefinementSample.findAxisAlignedBounds(): AxisAlignedBoun
 
     val padX = (width * 0.010f).roundToInt().coerceAtLeast(3)
     val padY = (height * 0.012f).roundToInt().coerceAtLeast(3)
-    val left = minOf(horizontalAxis.startX, verticalAxis.x) - padX
+    val axisLeft = minOf(horizontalAxis.startX, verticalAxis.x)
+    val panelLeft = if (preservePanelLabels) {
+        findLeftPanelBoundary(
+            threshold = threshold,
+            axisLeft = axisLeft,
+            top = verticalAxis.startY,
+            bottom = maxOf(horizontalAxis.row, verticalAxis.endY),
+        )
+    } else {
+        axisLeft
+    }
+    val left = panelLeft - padX
     val top = verticalAxis.startY - padY
     val right = horizontalAxis.endX + padX + 1
     val bottom = maxOf(horizontalAxis.row, verticalAxis.endY) + padY + 1
@@ -134,6 +150,44 @@ private fun GraphRegionRefinementSample.findAxisAlignedBounds(): AxisAlignedBoun
         right = right.coerceAtMost(width),
         bottom = bottom.coerceAtMost(height),
     )
+}
+
+private fun GraphRegionRefinementSample.findLeftPanelBoundary(
+    threshold: Int,
+    axisLeft: Int,
+    top: Int,
+    bottom: Int,
+): Int {
+    val safeAxisLeft = axisLeft.coerceIn(0, width - 1)
+    val safeTop = top.coerceIn(0, height - 1)
+    val safeBottom = bottom.coerceIn(safeTop, height - 1)
+    val minInk = (safeBottom - safeTop + 1)
+        .times(0.004f)
+        .roundToInt()
+        .coerceIn(2, 9)
+    val activeColumns = BooleanArray(safeAxisLeft + 1) { x ->
+        var count = 0
+        for (y in safeTop..safeBottom) {
+            if (gray[y * width + x] < threshold) count++
+        }
+        count >= minInk
+    }.closeSmallColumnGaps(radius = 2)
+
+    var leftMost = safeAxisLeft
+    var gap = 0
+    val maxGap = (width * 0.020f).roundToInt().coerceIn(10, 24)
+    var x = safeAxisLeft
+    while (x >= 0) {
+        if (activeColumns[x]) {
+            leftMost = x
+            gap = 0
+        } else {
+            gap++
+            if (safeAxisLeft - x > 12 && gap > maxGap) break
+        }
+        x--
+    }
+    return leftMost
 }
 
 private fun GraphRegionRefinementSample.findHorizontalAxisRun(threshold: Int): AxisHorizontalRun? {
@@ -267,6 +321,17 @@ private fun GraphRegionRefinementSample.estimateAxisThreshold(): Int {
     val percentile = sorted[(sorted.lastIndex * 0.20f).roundToInt()]
     return percentile.coerceIn(95, 185)
 }
+
+private fun BooleanArray.closeSmallColumnGaps(radius: Int): BooleanArray =
+    BooleanArray(size) { index ->
+        if (this[index]) {
+            true
+        } else {
+            val start = (index - radius).coerceAtLeast(0)
+            val end = (index + radius).coerceAtMost(lastIndex)
+            (start..end).any { this[it] }
+        }
+    }
 
 private fun GraphRegion.clampToImage(imageWidth: Int, imageHeight: Int): GraphRegion {
     val clampedX = x.coerceIn(0, (imageWidth - 1).coerceAtLeast(0))
