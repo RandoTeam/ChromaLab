@@ -2,6 +2,59 @@
 
 Status: active planning contract.
 
+## Current Tracking State
+
+This is the active phase document for the current chromatography stabilization work.
+It belongs to `ROADMAP.md` -> `Next MVP Phase` -> `1. Stabilize Chromatography Core`.
+The work has not moved away from the main product plan; the current implementation
+track is the desktop/emulator-first calibration bench that must make photo analysis
+auditable before Android/device parity and model-assisted stages are treated as stable.
+
+Current execution point:
+
+- Main roadmap item: `Stabilize Chromatography Core`.
+- Active plan: this document.
+- Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
+  audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
+  stages are required before calculation can honestly start.
+- Latest completed work slice: `Phase 2.11.5 - manual calibration gate`.
+- Next work slice: `Phase 2.11.6 - manual calibration UX and OCR tick anchors`.
+
+From this point forward, every completed bench phase/subphase must be recorded in
+this document before or together with its implementation commit. The shorter fixture
+README under `docs/reference/chromatogram_bench/` is only a fixture manifest and
+artifact summary; it is not the primary plan.
+
+## Execution Ledger
+
+| Slice | Status | Commit | Scope |
+| --- | --- | --- | --- |
+| Phase 0.1 | Done | `2e2d48f` | Import eight neutral chromatogram fixtures and identity test. |
+| Phase 1.1 | Done | `dcfcee3` | Add offline bench runner and honest blocked stage audit. |
+| Phase 1.2 | Done | `e7b5316` | Persist JSON/Markdown/PNG audit artifacts. |
+| Phase 1.3 | Done | `5159098` | Add real desktop graph-region detection. |
+| Phase 1.4 | Done | `d01d1b0` | Tighten multi-panel graph splitting. |
+| Phase 2.1 | Done | `ed76935` | Add preprocessing variant audit. |
+| Phase 2.2 | Done | `d235520` | Align deterministic preprocessing across desktop and Android. |
+| Phase 2.3 | Done | `410e145` | Add crop-quality gate. |
+| Phase 2.4 | Done | `484cab8` | Refine broad graph crops. |
+| Phase 2.5 | Done | `41bf0a3` | Lock crop quality contracts. |
+| Phase 2.6 | Done | `97a9a04` | Add crop-boundary safety diagnostics. |
+| Phase 2.7.1 | Done | `7cec0a6` | Correct right-angle page orientation. |
+| Phase 2.7.2 | Done | `7b509e2` | Preserve rotated graph-panel bounds. |
+| Phase 2.8.0 | Done | `d80e06c` | Document graph boundary contract. |
+| Phase 2.8.1 | Done | `406fd60` | Preserve broad photographed graph panels. |
+| Phase 2.8.2 | Done | `5d44df7` | Tighten photographed graph-panel bounds. |
+| Phase 2.9 | Done | `820530d` | Add audited plot-area detection. |
+| Phase 2.10.1 | Done | `183ffd7` | Add desktop curve-mask audit. |
+| Phase 2.10.2 | Done | `250a52e` | Add desktop curve-point extraction. |
+| Phase 2.11.1 | Done | `9e8598a` | Add desktop axis geometry detection. |
+| Phase 2.11.2 | Done | `60eb1fd` | Add axis-calibration readiness gate. |
+| Phase 2.11.3 | Done | `76fe69b` | Add confirmed manual calibration contract. |
+| Phase 2.11.4 | Done | `6f92d20` | Remove identity/`px` calibration fallback from user flow. |
+| Phase 2.11.5 | Done | `d4dc42a` | Add manual X/Y calibration gate to user flow. |
+| Phase 2.11.6 | Next | Pending | Improve manual calibration UX and OCR tick anchors. |
+
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
 report flow. It is separate from camera/device optimization. Camera, Android scanner,

@@ -74,6 +74,7 @@ Needs cleanup before broader alpha testing:
 ### 1. Stabilize Chromatography Core
 
 - [ ] Build the desktop/emulator-first calibration bench from `docs/CHROMATOGRAM_CALIBRATION_BENCH_PLAN.md`.
+  Active phase tracking and completed work-slice commits are recorded in that document.
 - [ ] Rewrite calculation tests for the current API:
   - boundary methods;
   - clamp negative;
