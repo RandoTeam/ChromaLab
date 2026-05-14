@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 7.1.
-- Next phase to start: Phase 7.2.
+- Current completed phase: Phase 7.2.
+- Next phase to start: Phase 7.3.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -181,7 +181,7 @@ Status: completed.
 Status: in progress.
 
 - [x] Phase 7.1: Define chat-local colors based on Gallery neutral surfaces while preserving ChromaLab's scientific identity.
-- [ ] Phase 7.2: Decide whether Nunito or any Gallery assets are needed; if copied, preserve Apache 2.0 license notes.
+- [x] Phase 7.2: Decide whether Nunito or any Gallery assets are needed; if copied, preserve Apache 2.0 license notes.
 - [ ] Phase 7.3: Polish spacing, typography, icon sizes, touch targets, empty states, loading states, and error states.
 - [ ] Phase 7.4: Run mobile visual QA on at least one real device or emulator.
 - [ ] Phase 7.5: Update README/roadmap/pipeline docs if user-facing chat behavior changed.
@@ -195,6 +195,20 @@ Status: in progress.
   badge, picker rows, disabled states, and stop/error surfaces use the local tokens.
 - Scientific identity stays tied to the existing ChromaLab primary/accent color for
   send actions, selected model states, and active model indicators.
+
+### Phase 7.2 Asset Decision
+
+- Do not import Nunito in this phase. The chat should first be polished with the
+  existing ChromaLab Material typography so the redesign does not create a
+  separate, heavier font pipeline for one screen.
+- Do not copy Gallery image/vector assets in this phase. Current chat controls use
+  Compose Material icons and local shapes/colors, so there is no asset gap that
+  justifies adding external files.
+- No Apache 2.0 asset notice is required for Phase 7.2 because no Gallery source
+  asset or font file was copied into the repository.
+- If a later visual QA pass proves that a direct Gallery font or asset is necessary,
+  add the copied file, its source path, and Apache 2.0 attribution in the same
+  focused commit that introduces it.
 
 ## Do Not Start Yet
 
