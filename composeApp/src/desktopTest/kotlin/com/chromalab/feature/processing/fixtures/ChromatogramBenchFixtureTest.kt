@@ -1,8 +1,13 @@
 package com.chromalab.feature.processing.fixtures
 
+import com.chromalab.feature.processing.bench.OfflineAnalysisInput
+import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
+import com.chromalab.feature.processing.bench.OfflineStageStatus
 import java.io.ByteArrayInputStream
+import java.nio.file.Files
 import java.security.MessageDigest
 import javax.imageio.ImageIO
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -41,6 +46,35 @@ class ChromatogramBenchFixtureTest {
         assertEquals(2, byId.getValue("bench_06_photo_two_graphs_page").expectedGraphCount)
         assertTrue(byId.getValue("bench_07_rotated_page_photo").requiresRotationCorrection)
         assertTrue("near_duplicate_candidate" in byId.getValue("bench_08_mz71_duplicate_candidate").tags)
+    }
+
+    @Test
+    fun offlineRunnerProducesStageAuditForEveryBenchFixture() = runBlocking {
+        val runner = OfflineAnalysisRunner()
+        val root = Files.createTempDirectory("chromalab-bench-runner")
+
+        ChromatogramBenchFixtures.all.forEach { fixture ->
+            val inputPath = root.resolve("${fixture.id}.${fixture.extension}")
+            Files.write(inputPath, fixture.resourceBytes())
+            val outputDir = root.resolve("${fixture.id}_out")
+
+            val audit = runner.run(
+                OfflineAnalysisInput(
+                    sourceId = fixture.id,
+                    imagePath = inputPath.toAbsolutePath().toString(),
+                    outputDir = outputDir.toAbsolutePath().toString(),
+                    expectedGraphCount = fixture.expectedGraphCount,
+                )
+            )
+
+            assertEquals(fixture.width, audit.imageWidth, "${fixture.id} normalized width")
+            assertEquals(fixture.height, audit.imageHeight, "${fixture.id} normalized height")
+            assertTrue(audit.stages.any { it.stage == "normalize" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
+            assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
+            assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
+        }
     }
 }
 
@@ -162,6 +196,9 @@ private data class ChromatogramBenchFixture(
     val numericTruthStatus: String = "not_locked",
     val tags: Set<String>,
 ) {
+    val extension: String
+        get() = resourcePath.substringAfterLast('.')
+
     fun resourceBytes(): ByteArray {
         val stream = requireNotNull(
             Thread.currentThread().contextClassLoader.getResourceAsStream(resourcePath),

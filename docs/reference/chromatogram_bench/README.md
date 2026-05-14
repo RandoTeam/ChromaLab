@@ -55,7 +55,13 @@ composeApp/src/desktopTest/kotlin/com/chromalab/feature/processing/fixtures/Chro
 
 It verifies that all eight fixture resources remain readable and match the expected
 dimensions, byte sizes, SHA-256 hashes, expected graph counts, and fixture tags. It does
-not run graph detection or calculation yet.
+not validate graph-detection accuracy or calculation yet.
+
+Phase 1.1 adds `OfflineAnalysisRunner` coverage to the same test. The runner now
+executes the platform processing entry points for every fixture and records an honest
+stage audit. On desktop, graph detection, OCR, axis detection, and curve extraction still
+depend on desktop actual implementations that are incomplete or stubbed, so the current
+runner output is a diagnostic baseline rather than a successful full analysis.
 
 ## Next Phase
 

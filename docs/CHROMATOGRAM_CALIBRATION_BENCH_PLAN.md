@@ -98,21 +98,39 @@ Exit criteria:
 
 Goal: run the image pipeline without camera or Android scanner dependency.
 
-- [ ] Add a desktop/emulator-friendly fixture runner that accepts an image path and
+- [x] Add a desktop/emulator-friendly fixture runner that accepts an image path and
   runs the same core image-processing logic used by app imports.
-- [ ] Emit structured stage audit per input and per graph:
-  - normalized image metadata;
-  - graph candidates;
-  - selected graph crops;
-  - rejected graph candidates;
-  - preprocessing/filter variant ranking;
-  - OCR/model outputs when available;
-  - axis calibration candidates;
-  - extracted signal diagnostics;
-  - calculation warnings;
-  - report validation result.
+- [ ] Emit complete structured stage audit per input and per graph:
+  - [x] normalized image metadata;
+  - [x] graph candidates;
+  - [x] selected graph crops;
+  - [x] rejected graph candidates;
+  - [ ] preprocessing/filter variant ranking;
+  - [x] OCR/model outputs when available;
+  - [x] axis calibration candidates;
+  - [x] extracted signal diagnostics or an explicit extraction block;
+  - [ ] calculation warnings from a real calculation stage;
+  - [ ] report validation result from a real report stage.
 - [ ] Save visual debug artifacts for failed stages when tests run locally.
-- [ ] Add a clear failure reason when a stage cannot proceed.
+- [x] Add a clear failure reason when a stage cannot proceed.
+
+Phase 1.1 status:
+
+- `OfflineAnalysisRunner` now executes the platform pipeline entry points without
+  camera or Android scanner dependency.
+- The runner emits structured audit records for normalization, document detection,
+  preprocessing, graph-region detection, per-graph OCR, axis detection, curve mask,
+  curve extraction, calculation, and report validation.
+- On desktop, several platform actuals are still stubs. The runner records those
+  limitations honestly as stage warnings or `SKIPPED` stages instead of treating the
+  output as a completed analysis.
+
+Next Phase 1.2 work slice:
+
+1. Persist the audit output as JSON and a compact human-readable summary artifact.
+2. Save visual debug artifacts for the current graph candidates and selected regions.
+3. Add the first regression assertions for expected graph counts so the desktop stubs
+   are visible as known failures/limitations instead of hidden behavior.
 
 Exit criteria:
 
@@ -266,11 +284,19 @@ Exit criteria:
 - phone differences are diagnosed as input/camera/runtime/device issues, not unknown
   scientific calculation changes.
 
-## Next Work Slice
+## Completed Work Slices
 
-Start with Phase 0.1:
+- Phase 0.1:
 
 1. Import the eight images into neutral fixture storage.
 2. Create a fixture manifest with hashes, dimensions, expected graph count, and tags.
 3. Add a lightweight validation test that verifies the fixture files did not change.
 4. Commit that fixture baseline before implementing analysis logic.
+
+- Phase 1.1:
+
+1. Add `OfflineAnalysisRunner`.
+2. Run normalize, document detection, preprocess, graph detection, OCR, axis detection,
+   curve mask, and curve extraction stages without camera dependency.
+3. Add desktop fixture coverage that confirms every bench image produces stage audit and
+   an honest blocked state until usable curve extraction exists.
