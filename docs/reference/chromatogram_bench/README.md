@@ -100,8 +100,15 @@ the crop changed, the area reduction, and refinement warnings. Broad printed-pag
 screenshot crops are tightened conservatively, while rotated/landscape page risk stays
 an explicit calculation blocker instead of being treated as a successful crop.
 
+Phase 2.5 adds executable crop-bound contracts for stable clean fixtures and strengthens
+the quality gate for photographed pages. If a broad printed-page crop is only improved
+by edge trimming, it remains blocked with `crop.refinement_not_precise_for_broad_context`
+instead of being allowed into calculation. This keeps the pipeline honest until a real
+page/plot-bound detector is implemented for hard photographed pages.
+
 ## Next Phase
 
-Phase 2.5 should visually inspect refined crop artifacts for all eight fixtures, then
-convert stable crop expectations into stricter per-fixture bounds without allowing
-calculation to start before axis calibration and curve extraction are usable.
+Phase 2.6 should implement a dedicated page/plot-bound detector for photographed
+printed pages, with `bench_01`, `bench_06`, and `bench_07` as the unresolved broad-context
+fixtures. The existing clean-fixture crop contracts should remain stable while that work
+is added.

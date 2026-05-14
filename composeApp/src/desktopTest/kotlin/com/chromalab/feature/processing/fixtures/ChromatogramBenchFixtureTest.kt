@@ -5,6 +5,7 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineStageStatus
+import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -104,10 +105,23 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { it.cropQuality.areaRatio > 0f },
                 "${fixture.id} must expose crop quality area",
             )
+            fixture.expectedCropBounds.forEach { expectedCrop ->
+                val graph = assertNotNull(
+                    audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
+                    "${fixture.id} graph ${expectedCrop.graphIndex} must exist for crop-bound contract",
+                )
+                expectedCrop.assertMatches(graph.region, fixture.id)
+            }
             if (fixture.requiresGraphRefinement) {
                 assertTrue(
                     audit.graphs.any { it.refinement.changed },
                     "${fixture.id} must refine at least one broad graph crop",
+                )
+            }
+            if (fixture.requiresUnresolvedBroadContext) {
+                assertTrue(
+                    audit.graphs.any { it.cropQuality.unresolvedBroadContext },
+                    "${fixture.id} must keep unresolved broad context blocked after weak refinement",
                 )
             }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
@@ -159,7 +173,9 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 217 and m/z 218",
             expectedTitle = "Ion 217.00 / Ion 218.00: 0301002.D",
             strictGraphCount = true,
+            requiresCropQualityWarning = true,
             requiresGraphRefinement = true,
+            requiresUnresolvedBroadContext = true,
             tags = setOf("printed_page_photo", "two_graphs", "m_z_217_218", "crop_required"),
         ),
         ChromatogramBenchFixture(
@@ -172,6 +188,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 1,
             expectedIon = "m/z 92.00",
             expectedTitle = "Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\\data.ms",
+            expectedCropBounds = listOf(ExpectedGraphCrop(graphIndex = 1, x = 10, y = 480, width = 558, height = 364)),
             tags = setOf("phone_screenshot", "document_context", "m_z_92", "belyi_tigr_reference"),
         ),
         ChromatogramBenchFixture(
@@ -184,6 +201,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 1,
             expectedIon = null,
             expectedTitle = "TIC Scan CK-1.D",
+            expectedCropBounds = listOf(ExpectedGraphCrop(graphIndex = 1, x = 0, y = 0, width = 381, height = 132)),
             tags = setOf("small_export", "tic", "low_resolution", "labeled_peaks"),
         ),
         ChromatogramBenchFixture(
@@ -197,6 +215,12 @@ private object ChromatogramBenchFixtures {
             expectedIon = "XIC 198.0315",
             expectedTitle = null,
             strictGraphCount = true,
+            expectedCropBounds = listOf(
+                ExpectedGraphCrop(graphIndex = 1, x = 22, y = 0, width = 512, height = 238),
+                ExpectedGraphCrop(graphIndex = 2, x = 22, y = 258, width = 512, height = 250),
+                ExpectedGraphCrop(graphIndex = 3, x = 22, y = 542, width = 512, height = 250),
+                ExpectedGraphCrop(graphIndex = 4, x = 22, y = 822, width = 512, height = 248),
+            ),
             tags = setOf("stacked_graphs", "xic", "seconds_axis", "multiple_mass_windows"),
         ),
         ChromatogramBenchFixture(
@@ -210,6 +234,12 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 326/360/394",
             expectedTitle = "TIC: NERPA1.D",
             strictGraphCount = true,
+            expectedCropBounds = listOf(
+                ExpectedGraphCrop(graphIndex = 1, x = 79, y = 20, width = 604, height = 350),
+                ExpectedGraphCrop(graphIndex = 2, x = 81, y = 354, width = 602, height = 161),
+                ExpectedGraphCrop(graphIndex = 3, x = 81, y = 499, width = 602, height = 154),
+                ExpectedGraphCrop(graphIndex = 4, x = 81, y = 637, width = 602, height = 154),
+            ),
             tags = setOf("multi_panel", "tic", "ion_traces", "russian_labels"),
         ),
         ChromatogramBenchFixture(
@@ -223,7 +253,9 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 83 and m/z 92",
             expectedTitle = null,
             strictGraphCount = true,
+            requiresCropQualityWarning = true,
             requiresGraphRefinement = true,
+            requiresUnresolvedBroadContext = true,
             tags = setOf("printed_page_photo", "two_graphs", "perspective_distortion", "crop_required"),
         ),
         ChromatogramBenchFixture(
@@ -239,6 +271,7 @@ private object ChromatogramBenchFixtures {
             requiresRotationCorrection = true,
             requiresCropQualityWarning = true,
             requiresGraphRefinement = true,
+            requiresUnresolvedBroadContext = true,
             tags = setOf("rotated_page", "printed_page_photo", "orientation_correction", "m_z_71"),
         ),
         ChromatogramBenchFixture(
@@ -251,6 +284,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 1,
             expectedIon = "m/z 71.00",
             expectedTitle = "Ion 71.00 (70.70 to 71.70): BELIY TIGR_1.D\\data.ms",
+            expectedCropBounds = listOf(ExpectedGraphCrop(graphIndex = 1, x = 14, y = 492, width = 548, height = 290)),
             tags = setOf("phone_screenshot", "document_context", "m_z_71", "near_duplicate_candidate"),
         ),
     )
@@ -272,6 +306,8 @@ private data class ChromatogramBenchFixture(
     val strictGraphCount: Boolean = expectedGraphCount == 1,
     val requiresCropQualityWarning: Boolean = false,
     val requiresGraphRefinement: Boolean = false,
+    val requiresUnresolvedBroadContext: Boolean = false,
+    val expectedCropBounds: List<ExpectedGraphCrop> = emptyList(),
     val numericTruthStatus: String = "not_locked",
     val tags: Set<String>,
 ) {
@@ -285,6 +321,27 @@ private data class ChromatogramBenchFixture(
             "Missing chromatogram bench fixture resource: $resourcePath"
         }
         return stream.use { it.readBytes() }
+    }
+}
+
+private data class ExpectedGraphCrop(
+    val graphIndex: Int,
+    val x: Int,
+    val y: Int,
+    val width: Int,
+    val height: Int,
+    val tolerancePx: Int = 8,
+) {
+    fun assertMatches(actual: GraphRegion, fixtureId: String) {
+        assertWithinTolerance(actual.x, x, "$fixtureId graph $graphIndex crop x")
+        assertWithinTolerance(actual.y, y, "$fixtureId graph $graphIndex crop y")
+        assertWithinTolerance(actual.width, width, "$fixtureId graph $graphIndex crop width")
+        assertWithinTolerance(actual.height, height, "$fixtureId graph $graphIndex crop height")
+    }
+
+    private fun assertWithinTolerance(actual: Int, expected: Int, message: String) {
+        val delta = kotlin.math.abs(actual - expected)
+        assertTrue(delta <= tolerancePx, "$message expected $expected +/- $tolerancePx, actual $actual")
     }
 }
 

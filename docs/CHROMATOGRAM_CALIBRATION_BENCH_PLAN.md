@@ -281,6 +281,28 @@ Next Phase 2.5 work slice:
    contracts where the visible graph bounds are stable enough.
 3. Keep calculations blocked until axis calibration and curve extraction are usable.
 
+Phase 2.5 status:
+
+- Visually inspected the latest graph overlays and selected preprocessing crops.
+- Stable graph crops for clean screenshot/export/multi-panel fixtures are now locked
+  in the executable bench test with per-graph crop-bound contracts.
+- Broad printed-page crops that were only improved by edge trimming are no longer
+  accepted as calculation-ready. They now expose
+  `crop.refinement_not_precise_for_broad_context` and remain blocked.
+- Rotated/landscape page risk remains blocked and is also marked as unresolved broad
+  context when only edge trimming was possible.
+- A direct plot-frame line-refinement experiment was rejected for this phase because
+  it could cut real graph signal on photographed pages; it should be revisited as a
+  dedicated page/plot-bound detector instead of being committed as a weak heuristic.
+
+Next Phase 2.6 work slice:
+
+1. Implement a dedicated plot-bound detector for photographed printed pages using
+   page/document context, axis evidence, and visual crop artifacts.
+2. Fix unresolved broad-context fixtures (`bench_01`, `bench_06`, `bench_07`) without
+   allowing edge-trim-only crops to pass as calculation-ready.
+3. Preserve the stable crop-bound contracts already locked for clean fixtures.
+
 Exit criteria:
 
 - all fixtures produce the expected number of graph candidates or a precise failure;
@@ -478,3 +500,11 @@ Exit criteria:
 2. Record original and refined crop bounds in JSON/Markdown audit artifacts.
 3. Route downstream OCR, axis, and curve-mask stages through the refined crop.
 4. Add rotated/landscape page-risk diagnostics as a calculation blocker.
+
+- Phase 2.5:
+
+1. Add stable per-graph crop-bound contracts for clean fixtures.
+2. Add crop-quality fields for original area, unresolved broad context, and
+   edge-trim-only refinement.
+3. Keep edge-trim-only broad printed-page crops blocked instead of treating them as
+   ready for calculation.

@@ -88,6 +88,7 @@ data class OfflineGraphRefinementAudit(
 @Serializable
 data class OfflineGraphCropQualityAudit(
     val areaRatio: Float,
+    val originalAreaRatio: Float,
     val edgeContactCount: Int,
     val touchesTop: Boolean,
     val touchesRight: Boolean,
@@ -97,6 +98,9 @@ data class OfflineGraphCropQualityAudit(
     val largeFullImage: Boolean,
     val broadEdgeCrop: Boolean,
     val possibleRotatedPage: Boolean,
+    val originalBroadContext: Boolean,
+    val refinementOnlyEdgeTrim: Boolean,
+    val unresolvedBroadContext: Boolean,
     val acceptedForCalculation: Boolean,
     val warnings: List<String> = emptyList(),
 )
@@ -291,7 +295,7 @@ class OfflineAnalysisRunner(
         val graphWarnings = mutableListOf<String>()
         val region = refinement.refinedRegion
         graphWarnings += refinement.warnings
-        val cropQuality = region.cropQualityAudit(imageWidth, imageHeight)
+        val cropQuality = refinement.cropQualityAudit(imageWidth, imageHeight)
         graphWarnings += cropQuality.warnings
 
         val variantScores = runStage(
@@ -429,35 +433,47 @@ private fun GraphRegionRefinementResult.toAudit(): OfflineGraphRefinementAudit =
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
     x == 0 && y == 0 && width == imageWidth && height == imageHeight
 
-private fun GraphRegion.cropQualityAudit(
+private fun GraphRegionRefinementResult.cropQualityAudit(
     imageWidth: Int,
     imageHeight: Int,
 ): OfflineGraphCropQualityAudit {
     val safeArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
-    val areaRatio = area.toFloat() / safeArea
-    val touchesLeft = x <= 0
-    val touchesTop = y <= 0
-    val touchesRight = right >= imageWidth
-    val touchesBottom = bottom >= imageHeight
-    val edgeContactCount = listOf(touchesTop, touchesRight, touchesBottom, touchesLeft).count { it }
-    val fullImage = isFullImage(imageWidth, imageHeight)
+    val region = refinedRegion
+    val originalAreaRatio = originalRegion.area.toFloat() / safeArea
+    val originalEdgeContactCount = originalRegion.edgeContactCount(imageWidth, imageHeight)
+    val originalFullImage = originalRegion.isFullImage(imageWidth, imageHeight)
+    val originalLargeFullImage = originalFullImage && maxOf(imageWidth, imageHeight) >= 700
+    val originalBroadEdgeCrop = !originalFullImage && originalAreaRatio >= 0.45f && originalEdgeContactCount >= 2
+    val originalBroadContext = originalLargeFullImage || originalBroadEdgeCrop
+    val refinementOnlyEdgeTrim = changed && warnings.any { it.startsWith("graph_refine.edge_trim") }
+    val unresolvedBroadContext = originalBroadContext && (!changed || refinementOnlyEdgeTrim)
+    val areaRatio = region.area.toFloat() / safeArea
+    val touchesLeft = region.x <= 0
+    val touchesTop = region.y <= 0
+    val touchesRight = region.right >= imageWidth
+    val touchesBottom = region.bottom >= imageHeight
+    val edgeContactCount = region.edgeContactCount(imageWidth, imageHeight)
+    val fullImage = region.isFullImage(imageWidth, imageHeight)
     val largeImage = maxOf(imageWidth, imageHeight) >= 700
     val largeFullImage = fullImage && largeImage
     val broadEdgeCrop = !fullImage && areaRatio >= 0.45f && edgeContactCount >= 2
     val possibleRotatedPage = imageWidth > imageHeight &&
         maxOf(imageWidth, imageHeight) >= 900 &&
         (fullImage || edgeContactCount >= 2 || areaRatio >= 0.45f)
-    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop && !possibleRotatedPage
+    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop && !possibleRotatedPage && !unresolvedBroadContext
     val warnings = buildList {
         if (fullImage) add("crop.full_image")
         if (largeFullImage) add("crop.large_full_image_not_calculation_ready")
         if (broadEdgeCrop) add("crop.broad_edge_context_not_calculation_ready")
         if (possibleRotatedPage) add("crop.possible_rotated_page_or_landscape_scan")
         if (edgeContactCount >= 2 && !fullImage) add("crop.touches_multiple_image_edges")
+        if (refinementOnlyEdgeTrim) add("crop.refinement_only_edge_trim")
+        if (unresolvedBroadContext) add("crop.refinement_not_precise_for_broad_context")
     }
 
     return OfflineGraphCropQualityAudit(
         areaRatio = areaRatio,
+        originalAreaRatio = originalAreaRatio,
         edgeContactCount = edgeContactCount,
         touchesTop = touchesTop,
         touchesRight = touchesRight,
@@ -467,10 +483,16 @@ private fun GraphRegion.cropQualityAudit(
         largeFullImage = largeFullImage,
         broadEdgeCrop = broadEdgeCrop,
         possibleRotatedPage = possibleRotatedPage,
+        originalBroadContext = originalBroadContext,
+        refinementOnlyEdgeTrim = refinementOnlyEdgeTrim,
+        unresolvedBroadContext = unresolvedBroadContext,
         acceptedForCalculation = acceptedForCalculation,
         warnings = warnings,
     )
 }
+
+private fun GraphRegion.edgeContactCount(imageWidth: Int, imageHeight: Int): Int =
+    listOf(y <= 0, right >= imageWidth, bottom >= imageHeight, x <= 0).count { it }
 
 private fun emptyAxes(): AxesResult =
     AxesResult(

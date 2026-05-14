@@ -71,11 +71,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Crop Quality")
         appendLine()
-        appendLine("| Graph | Area | Edge contacts | Full image | Broad edge crop | Rotated/page risk | Calculation-ready | Warnings |")
-        appendLine("| ---: | ---: | ---: | --- | --- | --- | --- | --- |")
+        appendLine("| Graph | Area | Original area | Edge contacts | Full image | Broad edge crop | Unresolved broad context | Rotated/page risk | Calculation-ready | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.possibleRotatedPage} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.originalAreaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.unresolvedBroadContext} | ${graph.cropQuality.possibleRotatedPage} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
