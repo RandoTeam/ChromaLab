@@ -303,6 +303,33 @@ Next Phase 2.6 work slice:
    allowing edge-trim-only crops to pass as calculation-ready.
 3. Preserve the stable crop-bound contracts already locked for clean fixtures.
 
+Phase 2.6 status:
+
+- Added explicit right-angle rotation diagnostics for landscape/rotated page crops.
+  `bench_07` now exposes `crop.right_angle_rotation_required_before_analysis` instead
+  of being treated as an ordinary graph crop.
+- Added crop-boundary risk analysis for clipped peak tops. If long vertical signal
+  runs touch the top edge of the selected crop, the graph is blocked with
+  `crop.signal_touches_top_edge_possible_clipped_peaks`.
+- Calculation readiness now requires both crop-quality acceptance and crop-boundary
+  acceptance. A crop can no longer pass only because its rectangle is plausible.
+- The current audit intentionally blocks suspicious cases:
+  - `bench_07`: right-angle rotation required;
+  - `bench_02`: possible top-edge clipped dominant peak;
+  - `bench_06` lower graph: possible top-edge clipped signal;
+  - `bench_01`, `bench_06`, `bench_07`: unresolved broad photographed-page context.
+- This phase adds hard diagnostics and blocks unsafe crops. It does not yet auto-rotate
+  the page or solve exact plot bounds for photographed pages.
+
+Next Phase 2.7 work slice:
+
+1. Add a right-angle orientation correction stage before graph detection and verify it
+   on `bench_07`.
+2. Add a real photographed-page plot-bound detector that uses frame/axis evidence
+   without cutting peak tops.
+3. Re-test `bench_01`, `bench_02`, and `bench_06` specifically for first-peak
+   preservation before allowing calculations.
+
 Exit criteria:
 
 - all fixtures produce the expected number of graph candidates or a precise failure;
@@ -508,3 +535,9 @@ Exit criteria:
    edge-trim-only refinement.
 3. Keep edge-trim-only broad printed-page crops blocked instead of treating them as
    ready for calculation.
+
+- Phase 2.6:
+
+1. Add crop-boundary risk diagnostics for top-edge clipped peaks.
+2. Add explicit right-angle rotation warnings for rotated page crops.
+3. Make calculation readiness depend on both crop quality and crop-boundary safety.

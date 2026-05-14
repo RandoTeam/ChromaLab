@@ -106,9 +106,14 @@ by edge trimming, it remains blocked with `crop.refinement_not_precise_for_broad
 instead of being allowed into calculation. This keeps the pipeline honest until a real
 page/plot-bound detector is implemented for hard photographed pages.
 
+Phase 2.6 adds two hard safety diagnostics. Rotated landscape page crops now expose
+`crop.right_angle_rotation_required_before_analysis`, and crops whose upper boundary
+may cut vertical peak tops expose `crop.signal_touches_top_edge_possible_clipped_peaks`.
+Calculation readiness now requires both crop-quality acceptance and crop-boundary
+safety, so plausible-looking rectangles cannot silently drop first peaks.
+
 ## Next Phase
 
-Phase 2.6 should implement a dedicated page/plot-bound detector for photographed
-printed pages, with `bench_01`, `bench_06`, and `bench_07` as the unresolved broad-context
-fixtures. The existing clean-fixture crop contracts should remain stable while that work
-is added.
+Phase 2.7 should add actual right-angle orientation correction before graph detection,
+then implement a photographed-page plot-bound detector that preserves first peaks while
+removing page/header context.

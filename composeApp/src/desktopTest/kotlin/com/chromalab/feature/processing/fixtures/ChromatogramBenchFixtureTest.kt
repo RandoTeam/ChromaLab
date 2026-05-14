@@ -80,6 +80,7 @@ class ChromatogramBenchFixtureTest {
                     expectedGraphCount = fixture.expectedGraphCount,
                 )
             )
+            writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)
 
             assertEquals(fixture.width, audit.imageWidth, "${fixture.id} normalized width")
             assertEquals(fixture.height, audit.imageHeight, "${fixture.id} normalized height")
@@ -105,6 +106,10 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { it.cropQuality.areaRatio > 0f },
                 "${fixture.id} must expose crop quality area",
             )
+            assertTrue(
+                audit.graphs.all { it.cropBoundaryRisk.topDarkPixelRatio >= 0f },
+                "${fixture.id} must expose crop-boundary risk diagnostics",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -124,9 +129,14 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} must keep unresolved broad context blocked after weak refinement",
                 )
             }
+            if (fixture.requiresRotationCorrection) {
+                assertTrue(
+                    audit.graphs.any { it.cropQuality.rightAngleRotationSuspected },
+                    "${fixture.id} must flag right-angle rotation before analysis",
+                )
+            }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
 
-            writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")

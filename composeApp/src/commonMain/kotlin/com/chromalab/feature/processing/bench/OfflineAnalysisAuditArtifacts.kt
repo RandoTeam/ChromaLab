@@ -49,11 +49,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Crop QA | Prep variant | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
-        appendLine("| ---: | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Region | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.cropQuality.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
             )
         }
         appendLine()
@@ -71,11 +71,22 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Crop Quality")
         appendLine()
-        appendLine("| Graph | Area | Original area | Edge contacts | Full image | Broad edge crop | Unresolved broad context | Rotated/page risk | Calculation-ready | Warnings |")
-        appendLine("| ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |")
+        appendLine("| Graph | Area | Original area | Edge contacts | Full image | Broad edge crop | Unresolved broad context | Rotated/page risk | 90-degree risk | Calculation-ready | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.originalAreaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.unresolvedBroadContext} | ${graph.cropQuality.possibleRotatedPage} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.originalAreaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.unresolvedBroadContext} | ${graph.cropQuality.possibleRotatedPage} | ${graph.cropQuality.rightAngleRotationSuspected} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Crop Boundary Risk")
+        appendLine()
+        appendLine("| Graph | Top clipping risk | Top dark runs | Top dark pixels | Calculation-ready | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            appendLine(
+                "| ${graph.graphIndex} | ${graph.cropBoundaryRisk.topSignalClippingRisk} | ${graph.cropBoundaryRisk.topTouchingDarkRunCount} | ${graph.cropBoundaryRisk.topDarkPixelRatio.renderPercent()} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.cropBoundaryRisk.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()

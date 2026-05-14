@@ -5,6 +5,8 @@ import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.document.DocumentDetector
+import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
+import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionQuality
@@ -63,6 +65,7 @@ data class OfflineGraphAudit(
     val region: GraphRegion,
     val refinement: OfflineGraphRefinementAudit,
     val cropQuality: OfflineGraphCropQualityAudit,
+    val cropBoundaryRisk: OfflineGraphCropBoundaryRiskAudit,
     val selectedPreprocessingVariant: String?,
     val selectedPreprocessingImagePath: String?,
     val preprocessingVariantScores: List<PreprocessingVariantScore>,
@@ -101,6 +104,16 @@ data class OfflineGraphCropQualityAudit(
     val originalBroadContext: Boolean,
     val refinementOnlyEdgeTrim: Boolean,
     val unresolvedBroadContext: Boolean,
+    val rightAngleRotationSuspected: Boolean,
+    val acceptedForCalculation: Boolean,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineGraphCropBoundaryRiskAudit(
+    val topSignalClippingRisk: Boolean,
+    val topTouchingDarkRunCount: Int,
+    val topDarkPixelRatio: Float,
     val acceptedForCalculation: Boolean,
     val warnings: List<String> = emptyList(),
 )
@@ -127,6 +140,7 @@ class OfflineAnalysisRunner(
     private val documentDetector: DocumentDetector = DocumentDetector(),
     private val preprocessor: ImagePreprocessor = ImagePreprocessor(),
     private val graphRefiner: GraphRegionRefiner = GraphRegionRefiner(),
+    private val cropBoundaryAnalyzer: GraphCropBoundaryAnalyzer = GraphCropBoundaryAnalyzer(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
@@ -252,12 +266,17 @@ class OfflineAnalysisRunner(
             )
         }
 
-        val readyForCalculation = graphAudits.isNotEmpty() &&
-            graphAudits.all { it.cropQuality.acceptedForCalculation && it.curveUsable }
+        val cropReady = graphAudits.isNotEmpty() &&
+            graphAudits.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }
+        val readyForCalculation = cropReady && graphAudits.all { it.curveUsable }
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
-                message = "Calculation is blocked until every graph has usable extracted curve data.",
+                message = if (cropReady) {
+                    "Calculation is blocked until every graph has usable extracted curve data."
+                } else {
+                    "Calculation is blocked until every graph has accepted crop bounds."
+                },
             )
             stages += skippedStage(
                 stage = "report_validation",
@@ -278,7 +297,11 @@ class OfflineAnalysisRunner(
             graphs = graphAudits,
             stages = stages,
             warnings = warnings + graphAudits.flatMap { graph -> graph.warnings.map { "graph_${graph.graphIndex}.$it" } },
-            blockedAtStage = if (readyForCalculation) null else "curve_extract",
+            blockedAtStage = when {
+                readyForCalculation -> null
+                !cropReady -> "crop_quality"
+                else -> "curve_extract"
+            },
             readyForCalculation = readyForCalculation,
         )
     }
@@ -314,6 +337,24 @@ class OfflineAnalysisRunner(
         if (variantScores.isEmpty()) {
             graphWarnings += "preprocess_variant_ranking_not_available"
         }
+
+        val cropBoundaryRisk = runStage(
+            stage = "crop_boundary_risk",
+            graphIndex = graphIndex,
+            stages = stages,
+            successMessage = { risk ->
+                "topClipping=${risk.topSignalClippingRisk}, topRuns=${risk.topTouchingDarkRunCount}."
+            },
+        ) {
+            cropBoundaryAnalyzer.analyze(analysisImagePath, region)
+        } ?: GraphCropBoundaryRisk(
+            topSignalClippingRisk = false,
+            topTouchingDarkRunCount = 0,
+            topDarkPixelRatio = 0f,
+            acceptedForCalculation = false,
+            warnings = listOf("crop_boundary.failed"),
+        )
+        graphWarnings += cropBoundaryRisk.warnings
 
         val ocrResult = runStage(
             stage = "axis_ocr",
@@ -396,6 +437,7 @@ class OfflineAnalysisRunner(
             region = region,
             refinement = refinement.toAudit(),
             cropQuality = cropQuality,
+            cropBoundaryRisk = cropBoundaryRisk.toAudit(),
             selectedPreprocessingVariant = selectedVariant?.variantId,
             selectedPreprocessingImagePath = selectedVariant?.imagePath,
             preprocessingVariantScores = variantScores,
@@ -430,6 +472,15 @@ private fun GraphRegionRefinementResult.toAudit(): OfflineGraphRefinementAudit =
         warnings = warnings,
     )
 
+private fun GraphCropBoundaryRisk.toAudit(): OfflineGraphCropBoundaryRiskAudit =
+    OfflineGraphCropBoundaryRiskAudit(
+        topSignalClippingRisk = topSignalClippingRisk,
+        topTouchingDarkRunCount = topTouchingDarkRunCount,
+        topDarkPixelRatio = topDarkPixelRatio,
+        acceptedForCalculation = acceptedForCalculation,
+        warnings = warnings,
+    )
+
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
     x == 0 && y == 0 && width == imageWidth && height == imageHeight
 
@@ -460,12 +511,19 @@ private fun GraphRegionRefinementResult.cropQualityAudit(
     val possibleRotatedPage = imageWidth > imageHeight &&
         maxOf(imageWidth, imageHeight) >= 900 &&
         (fullImage || edgeContactCount >= 2 || areaRatio >= 0.45f)
-    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop && !possibleRotatedPage && !unresolvedBroadContext
+    val rightAngleRotationSuspected = possibleRotatedPage &&
+        imageWidth.toFloat() / imageHeight.coerceAtLeast(1).toFloat() >= 1.12f
+    val acceptedForCalculation = !largeFullImage &&
+        !broadEdgeCrop &&
+        !possibleRotatedPage &&
+        !rightAngleRotationSuspected &&
+        !unresolvedBroadContext
     val warnings = buildList {
         if (fullImage) add("crop.full_image")
         if (largeFullImage) add("crop.large_full_image_not_calculation_ready")
         if (broadEdgeCrop) add("crop.broad_edge_context_not_calculation_ready")
         if (possibleRotatedPage) add("crop.possible_rotated_page_or_landscape_scan")
+        if (rightAngleRotationSuspected) add("crop.right_angle_rotation_required_before_analysis")
         if (edgeContactCount >= 2 && !fullImage) add("crop.touches_multiple_image_edges")
         if (refinementOnlyEdgeTrim) add("crop.refinement_only_edge_trim")
         if (unresolvedBroadContext) add("crop.refinement_not_precise_for_broad_context")
@@ -486,6 +544,7 @@ private fun GraphRegionRefinementResult.cropQualityAudit(
         originalBroadContext = originalBroadContext,
         refinementOnlyEdgeTrim = refinementOnlyEdgeTrim,
         unresolvedBroadContext = unresolvedBroadContext,
+        rightAngleRotationSuspected = rightAngleRotationSuspected,
         acceptedForCalculation = acceptedForCalculation,
         warnings = warnings,
     )
