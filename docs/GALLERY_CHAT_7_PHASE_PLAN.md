@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 7.4.
-- Next phase to start: Phase 7.5.
+- Current completed phase: Phase 7.6.
+- Next phase to start: Post-phase UX settings.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -178,14 +178,23 @@ Status: completed.
 
 ## Phase 7 - Chat Visual Tokens, Assets, And QA
 
-Status: in progress.
+Status: completed.
 
 - [x] Phase 7.1: Define chat-local colors based on Gallery neutral surfaces while preserving ChromaLab's scientific identity.
 - [x] Phase 7.2: Decide whether Nunito or any Gallery assets are needed; if copied, preserve Apache 2.0 license notes.
 - [x] Phase 7.3: Polish spacing, typography, icon sizes, touch targets, empty states, loading states, and error states.
 - [x] Phase 7.4: Run mobile visual QA on at least one real device or emulator.
-- [ ] Phase 7.5: Update README/roadmap/pipeline docs if user-facing chat behavior changed.
-- [ ] Phase 7.6: Commit Phase 7 work slices separately.
+- [x] Phase 7.5: Update README/roadmap/pipeline docs if user-facing chat behavior changed.
+- [x] Phase 7.6: Commit Phase 7 work slices separately.
+
+### Phase 7 Commit Record
+
+- `dcb8e96` - Phase 7.1: chat-local Gallery color tokens.
+- `2b659d8` - Phase 7.2: Nunito/Gallery asset decision.
+- `741a67a` - Phase 7.3: chat visual state polish.
+- `925e628` - Phase 7.4: mobile visual QA record.
+- Current Phase 7.5-7.6 documentation commit closes the Gallery chat redesign
+  and updates user-facing project docs.
 
 ### Phase 7.1 Implementation Notes
 
@@ -239,6 +248,25 @@ Status: in progress.
   size compatibility dialog for native libraries such as `libllama_bridge.so` and
   LiteRT/ML Kit/SQLite libraries. This is a packaging/runtime compatibility issue,
   not a chat UI regression, and should be handled outside the Gallery chat UI phase.
+
+### Phase 7.5 Documentation Notes
+
+- `README.md` now describes the completed Gallery-style chat UI: model chip,
+  model picker, runtime controls, thinking toggle, stop state, and richer telemetry.
+- `ROADMAP.md` marks streaming chat output and Gallery-style chat controls as done.
+- `PIPELINE.md` records the chat UI/runtime separation and keeps image/file chat
+  context deferred until storage, capability gating, and runtime routing support it.
+- `docs/MOBILE_UI_UX_GUARDRAILS.md` records the next UX setting requirement for
+  system/light/dark theme mode and portrait-only Android orientation.
+
+## Post-Phase UX Settings
+
+These items are intentionally separate from the Gallery chat redesign and should be
+implemented in their own focused work slice:
+
+- Add a settings control for theme mode: follow Android system, force light, force dark.
+- Lock the Android app to portrait orientation until landscape layouts are explicitly
+  designed and validated.
 
 ## Do Not Start Yet
 

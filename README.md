@@ -28,7 +28,7 @@ ChromaLab начинался как мобильное приложение дл
 | Расчет пиков | Alpha 2 | Baseline, noise, peak detection, boundaries, integration, S/N, area %, resolution |
 | Отчеты | Alpha | Таблицы пиков и параметры расчета уже выводятся, профессиональная интерпретация еще расширяется |
 | Менеджер моделей | Alpha 2 | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
-| Локальный чат | MVP | Чаты, история, настройки генерации, выбор модели из общего пула, streaming UI, lazy loading |
+| Локальный чат | MVP | Чаты, история, Gallery-style UI, выбор модели из общего пула, runtime controls, streaming UI, lazy loading |
 
 ## Alpha 2
 
@@ -58,9 +58,13 @@ ChromaLab начинался как мобильное приложение дл
 - Отдельный раздел чатов.
 - Несколько chat sessions.
 - Настройки на уровне чата: system prompt, temperature, top-p, top-k, max tokens, repeat penalty, repeat last N.
-- Выбор модели из общего downloaded model pool.
-- Streaming-ответы с плавным появлением текста.
-- Статистика под ответом: prompt tokens, answer tokens, время, скорость генерации.
+- Gallery-style верхняя панель: название чата, model chip, отдельный model picker.
+- Выбор модели из общего downloaded model pool без загрузки модели из менеджера.
+- Capability-gated runtime controls: backend/accelerator выбираются только там, где это реально поддержано.
+- Thinking toggle показывается только для моделей/runtime, которые могут вернуть thinking отдельно.
+- Streaming-ответы с плавным буферизованным появлением текста и stop state во время генерации.
+- Статистика под ответом: модель, backend, accelerator, prompt tokens, answer tokens, время, скорость генерации.
+- Composer пока text-only: image/file context для чата отложен до полноценной поддержки storage, capability gating и runtime routing.
 - При выходе из чата модель выгружается по lifecycle-таймеру, а перед анализом хроматограмм освобождается память.
 
 ## Pipeline
@@ -136,7 +140,7 @@ androidApp/build/outputs/apk/debug/androidApp-debug.apk
 | Alpha 2 | Стабилизировать calculation engine, общий model manager, MVP чата, lifecycle моделей |
 | Alpha 3 | Профессиональный отчет, лучшее объяснение расчетов, больше real-world validation |
 | MVP | Полный цикл: capture/import -> digitization -> calculation -> report -> local AI explanation |
-| Next | Redesign в сторону Google AI Edge Gallery: верхний model picker, backend controls, thinking mode, richer telemetry |
+| Next | Настройки темы system/light/dark, портретный режим Android, chat attachments, real-world report validation |
 
 ## Ограничения Alpha
 

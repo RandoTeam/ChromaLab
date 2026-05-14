@@ -13,6 +13,7 @@ Completed or mostly working:
 - Model manager for LiteRT-LM and GGUF.
 - Hugging Face model search MVP.
 - Local LLM chat MVP.
+- Gallery-style local chat UI with model chip, picker, runtime controls, streaming, stop state, and assistant telemetry.
 - Debug APK release workflow.
 
 Needs cleanup before broader alpha testing:
@@ -60,7 +61,10 @@ Needs cleanup before broader alpha testing:
 - [x] Model selection per chat from the shared downloaded model pool.
 - [x] Android inference through the active local model engine.
 - [x] Desktop persistence stub.
-- [ ] Streaming token output.
+- [x] Gallery-style top app bar, model chip, and separate model picker.
+- [x] Capability-gated accelerator controls and thinking toggle.
+- [x] Streaming text output with stop state.
+- [x] Assistant telemetry with model, backend, accelerator, duration, and token stats.
 - [ ] Chat title auto-generation.
 - [ ] Attach image/file context to chat.
 - [ ] Search across chat history.
@@ -99,7 +103,12 @@ Needs cleanup before broader alpha testing:
 - [ ] Add cancel/retry UI for downloads and activation.
 - [ ] Add memory-pressure handling for chat sessions.
 
-### 4. Release Quality
+### 4. App UX Settings
+
+- [ ] Add theme mode setting: follow Android system, force light, force dark.
+- [ ] Lock Android UI to portrait until landscape layouts are intentionally designed and validated.
+
+### 5. Release Quality
 
 - [ ] Clean outdated tests.
 - [ ] Add release checklist.

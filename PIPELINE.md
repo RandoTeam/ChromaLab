@@ -179,6 +179,7 @@ Native GGUF inference logs watchdog warnings for model load, context init, mmpro
 Chat session
   -> selected local model
   -> per-chat generation settings
+  -> Gallery-style chat UI controls
   -> prompt-style formatting for GGUF runtimes
   -> InferenceEngine.inferRaw()
   -> saved message history
@@ -196,6 +197,8 @@ Generation settings:
 Chat uses the same model pool as chromatogram analysis. A model can be downloaded/imported once and reused by the analysis pipeline or chat.
 Only chat-capable models are exposed to chat. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr remain available for specialized analysis tasks but are hidden from chat selection and are not passed to the chat runtime as normal assistants.
 GGUF chat/text prompts must be formatted for the active model family before native inference. For example, Qwen-family GGUF models receive ChatML instead of a generic raw `User:` / `Assistant:` transcript. A blank native GGUF response is treated as a runtime error, not as a successful assistant message.
+
+Chat UI state is intentionally separated from model loading. The chat screen exposes a Gallery-style model chip, model picker, runtime accelerator controls, thinking toggle, streaming/stop state, and assistant telemetry. Selection does not load the model by itself; runtime loading starts when a chat request actually needs inference. Image/file context remains disabled until chat message storage, model capability gating, and runtime routing support it end to end.
 
 ## Validation Gates
 
@@ -217,4 +220,5 @@ Known test debt:
 - Report language needs more professional domain interpretation.
 - CSV/TXT/PDF/mzML import is not yet production complete.
 - GGUF model compatibility depends on correct model family and `mmproj` pairing.
-- Chat MVP is functional but not yet a full assistant with attachments, streaming, or search.
+- Chat MVP has streaming text and telemetry, but is not yet a full assistant with attachments or search.
+- Theme mode selection and portrait-only Android orientation are planned UI settings, not yet implemented.

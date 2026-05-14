@@ -80,6 +80,18 @@ Required direction:
 - technical appendix available but visually secondary;
 - no wall of raw JSON, debug logs, or unformatted Markdown as the default mobile report view.
 
+## Theme And Orientation
+
+ChromaLab should expose theme mode as a normal user setting:
+
+- follow Android system;
+- force light theme;
+- force dark theme.
+
+Until landscape layouts are intentionally designed and validated, the Android app should
+run in portrait orientation. Landscape QA can still be used diagnostically, but it should
+not imply that the production phone UI is ready to rotate freely.
+
 ## Implementation Rule
 
 When a future phase adds or changes UI:
