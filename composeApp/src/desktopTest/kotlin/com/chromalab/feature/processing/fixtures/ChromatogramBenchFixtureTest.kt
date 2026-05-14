@@ -4,6 +4,9 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAudit
 import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
+import com.chromalab.feature.processing.bench.OfflineAxisCalibrationSource
+import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
+import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationPointInput
 import com.chromalab.feature.processing.bench.OfflineStageStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
@@ -246,6 +249,52 @@ class ChromatogramBenchFixtureTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun offlineRunnerAcceptsConfirmedManualAxisCalibration() = runBlocking {
+        val runner = OfflineAnalysisRunner()
+        val fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_03_small_tic_export" }
+        val root = Files.createTempDirectory("chromalab-manual-calibration")
+        val inputPath = root.resolve("${fixture.id}.${fixture.extension}")
+        Files.write(inputPath, fixture.resourceBytes())
+
+        val audit = runner.run(
+            OfflineAnalysisInput(
+                sourceId = fixture.id,
+                imagePath = inputPath.toAbsolutePath().toString(),
+                outputDir = root.resolve("${fixture.id}_out").toAbsolutePath().toString(),
+                expectedGraphCount = fixture.expectedGraphCount,
+                manualAxisCalibrations = listOf(
+                    OfflineManualAxisCalibrationInput(
+                        graphIndex = 1,
+                        xPoints = listOf(
+                            OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 0f, label = "0.00"),
+                            OfflineManualAxisCalibrationPointInput(pixel = 220f, value = 10f, label = "10.00"),
+                        ),
+                        yPoints = listOf(
+                            OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 0f, label = "0"),
+                            OfflineManualAxisCalibrationPointInput(pixel = 120f, value = 1f, label = "1.0"),
+                        ),
+                        xUnit = "min",
+                        yUnit = "abundance",
+                    ),
+                ),
+            ),
+        )
+
+        val graph = audit.graphs.single()
+        assertTrue(graph.axisCalibration.ready, "manual calibration must satisfy the calibration gate")
+        assertEquals(OfflineAxisCalibrationSource.MANUAL_CONFIRMED, graph.axisCalibration.source)
+        assertEquals(2, graph.axisCalibration.xCandidateCount)
+        assertEquals(2, graph.axisCalibration.yCandidateCount)
+        assertEquals("min", graph.axisCalibration.xUnit)
+        assertEquals("abundance", graph.axisCalibration.yUnit)
+        assertTrue(
+            "axis_calibration.manual_required" !in graph.axisCalibration.warnings,
+            "confirmed manual points must not keep the manual-required warning",
+        )
+        assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
     }
 }
 

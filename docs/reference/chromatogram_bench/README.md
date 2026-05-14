@@ -195,8 +195,16 @@ pixel-to-value points, value spans, units, source state, and warnings, and block
 implemented, so the bench currently records `MANUAL_REQUIRED` instead of pretending
 that pixel coordinates can be converted into time/intensity units.
 
+Phase 2.11.3 adds confirmed manual calibration input to the same contract. Bench runs
+can now pass per-graph X/Y pixel-to-value points through `OfflineAnalysisInput`, and
+the runner records them as `MANUAL_CONFIRMED` only when both axes have sufficient
+non-zero spans. Without those points the bench stays blocked at `axis_calibration`;
+with confirmed points the scale gate passes and later calculation stages can be tested
+without relying on unavailable desktop OCR.
+
 ## Next Phase
 
-Phase 2.11.3 should implement desktop OCR/manual point entry for the calibration
-contract. The next gate must produce confirmed X/Y calibration points before numeric
-peak integration is allowed.
+Phase 2.11.4 should wire the manual calibration contract into user-facing review UI or
+implement desktop OCR candidate extraction. The next gate must turn visible tick labels
+or user-selected calibration points into confirmed X/Y calibration before numeric peak
+integration is allowed.
