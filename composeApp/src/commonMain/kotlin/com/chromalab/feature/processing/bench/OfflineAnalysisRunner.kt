@@ -21,6 +21,8 @@ import com.chromalab.feature.processing.normalize.ImageOrientationCorrector
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.ocr.AxisOcrReader
+import com.chromalab.feature.processing.ocr.AxisOcrResult
+import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.ocr.OcrStatus
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
@@ -28,6 +30,7 @@ import com.chromalab.feature.processing.preprocess.PreprocessingVariantRanker
 import com.chromalab.feature.processing.preprocess.PreprocessingVariantScore
 import com.chromalab.feature.processing.preprocess.variants
 import kotlinx.serialization.Serializable
+import kotlin.math.roundToInt
 
 @Serializable
 data class OfflineAnalysisInput(
@@ -94,6 +97,7 @@ data class OfflineGraphAudit(
     val axesDetected: Boolean,
     val originDetected: Boolean,
     val axisConfidence: Float,
+    val axisCalibration: OfflineAxisCalibrationAudit,
     val curveMaskAvailable: Boolean,
     val curveMaskRawPixelCount: Int,
     val curveMaskCleanPixelCount: Int,
@@ -102,6 +106,40 @@ data class OfflineGraphAudit(
     val curveCoverage: Float,
     val curveUsable: Boolean,
     val warnings: List<String>,
+)
+
+@Serializable
+data class OfflineAxisCalibrationAudit(
+    val ready: Boolean,
+    val xReady: Boolean,
+    val yReady: Boolean,
+    val source: OfflineAxisCalibrationSource,
+    val xCandidateCount: Int,
+    val yCandidateCount: Int,
+    val xPixelSpan: Float,
+    val yPixelSpan: Float,
+    val xValueSpan: Float,
+    val yValueSpan: Float,
+    val xUnit: String?,
+    val yUnit: String?,
+    val xCandidates: List<OfflineAxisCalibrationPointAudit>,
+    val yCandidates: List<OfflineAxisCalibrationPointAudit>,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineAxisCalibrationSource {
+    CONFIRMED,
+    OCR_CANDIDATE_REQUIRES_REVIEW,
+    MANUAL_REQUIRED,
+}
+
+@Serializable
+data class OfflineAxisCalibrationPointAudit(
+    val pixel: Float,
+    val value: Float,
+    val text: String,
+    val confidence: Float,
 )
 
 @Serializable
@@ -358,20 +396,20 @@ class OfflineAnalysisRunner(
         val cropReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }
         val plotAreaReady = graphAudits.isNotEmpty() && graphAudits.all { it.plotArea.detected && it.plotArea.region != null }
-        val axisLabelsReady = graphAudits.isNotEmpty() &&
-            graphAudits.all { it.xSuggestionCount >= 2 && it.ySuggestionCount >= 2 }
         val axisGeometryReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.axesDetected && it.originDetected }
+        val axisCalibrationReady = graphAudits.isNotEmpty() &&
+            graphAudits.all { it.axisCalibration.ready }
         val curveReady = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
-        val readyForCalculation = cropReady && plotAreaReady && axisLabelsReady && axisGeometryReady && curveReady
+        val readyForCalculation = cropReady && plotAreaReady && axisGeometryReady && axisCalibrationReady && curveReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
                 message = when {
                     !cropReady -> "Calculation is blocked until every graph has accepted crop bounds."
                     !plotAreaReady -> "Calculation is blocked until every graph has audited plot-area bounds."
-                    !axisLabelsReady -> "Calculation is blocked until every graph has usable axis OCR labels."
                     !axisGeometryReady -> "Calculation is blocked until every graph has detected axis geometry and origin."
+                    !axisCalibrationReady -> "Calculation is blocked until every graph has confirmed pixel-to-axis calibration."
                     else -> "Calculation is blocked until every graph has usable extracted curve data."
                 },
             )
@@ -399,8 +437,8 @@ class OfflineAnalysisRunner(
                 readyForCalculation -> null
                 !cropReady -> "crop_quality"
                 !plotAreaReady -> "plot_area"
-                !axisLabelsReady -> "axis_ocr"
                 !axisGeometryReady -> "axis_detect"
+                !axisCalibrationReady -> "axis_calibration"
                 else -> "curve_extract"
             },
             readyForCalculation = readyForCalculation,
@@ -508,6 +546,23 @@ class OfflineAnalysisRunner(
         }
         graphWarnings += axesResult?.warnings.orEmpty()
 
+        val axisCalibration = runStage(
+            stage = "axis_calibration",
+            graphIndex = graphIndex,
+            stages = stages,
+            successMessage = { result ->
+                "ready=${result.ready}, source=${result.source}, x=${result.xCandidateCount}, y=${result.yCandidateCount}."
+            },
+        ) {
+            buildAxisCalibrationAudit(
+                ocrResult = ocrResult,
+                axesResult = axesResult,
+                panelRegion = region,
+                plotRegion = calculationRegion,
+            )
+        } ?: missingAxisCalibration()
+        graphWarnings += axisCalibration.warnings
+
         val maskResult = runStage(
             stage = "curve_mask",
             graphIndex = graphIndex,
@@ -572,6 +627,7 @@ class OfflineAnalysisRunner(
             axesDetected = axesResult?.hasAxes == true,
             originDetected = axesResult?.hasOrigin == true,
             axisConfidence = axesResult?.confidence ?: 0f,
+            axisCalibration = axisCalibration,
             curveMaskAvailable = maskAvailable,
             curveMaskRawPixelCount = maskResult?.rawPixelCount ?: 0,
             curveMaskCleanPixelCount = maskResult?.cleanPixelCount ?: 0,
@@ -583,6 +639,175 @@ class OfflineAnalysisRunner(
         )
     }
 }
+
+private enum class CalibrationAxis {
+    X,
+    Y,
+}
+
+private fun buildAxisCalibrationAudit(
+    ocrResult: AxisOcrResult?,
+    axesResult: AxesResult?,
+    panelRegion: GraphRegion,
+    plotRegion: GraphRegion,
+): OfflineAxisCalibrationAudit {
+    val warnings = mutableListOf<String>()
+    if (ocrResult == null || ocrResult.status == OcrStatus.NOT_AVAILABLE) {
+        warnings += "axis_calibration.ocr_not_available"
+    }
+    if (axesResult?.hasAxes != true || axesResult.origin == null) {
+        warnings += "axis_calibration.axis_geometry_missing"
+    }
+
+    val xCandidates = if (ocrResult != null && axesResult?.hasAxes == true && axesResult.origin != null) {
+        ocrResult.rawElements.toCalibrationCandidates(
+            axis = CalibrationAxis.X,
+            axesResult = axesResult,
+            panelRegion = panelRegion,
+            plotRegion = plotRegion,
+        )
+    } else {
+        emptyList()
+    }
+    val yCandidates = if (ocrResult != null && axesResult?.hasAxes == true && axesResult.origin != null) {
+        ocrResult.rawElements.toCalibrationCandidates(
+            axis = CalibrationAxis.Y,
+            axesResult = axesResult,
+            panelRegion = panelRegion,
+            plotRegion = plotRegion,
+        )
+    } else {
+        emptyList()
+    }
+
+    val xStats = xCandidates.axisStats()
+    val yStats = yCandidates.axisStats()
+    val xReady = xStats.ready
+    val yReady = yStats.ready
+    val userConfirmed = ocrResult?.status == OcrStatus.ACCEPTED || ocrResult?.status == OcrStatus.CORRECTED
+    val ready = xReady && yReady && userConfirmed
+
+    if (!xReady) warnings += "axis_calibration.x_requires_two_pixel_value_points"
+    if (!yReady) warnings += "axis_calibration.y_requires_two_pixel_value_points"
+    if (xReady && yReady && !userConfirmed) warnings += "axis_calibration.user_confirmation_required"
+    if (!ready) warnings += "axis_calibration.manual_required"
+
+    val source = when {
+        ready -> OfflineAxisCalibrationSource.CONFIRMED
+        xReady || yReady -> OfflineAxisCalibrationSource.OCR_CANDIDATE_REQUIRES_REVIEW
+        else -> OfflineAxisCalibrationSource.MANUAL_REQUIRED
+    }
+
+    return OfflineAxisCalibrationAudit(
+        ready = ready,
+        xReady = xReady,
+        yReady = yReady,
+        source = source,
+        xCandidateCount = xCandidates.size,
+        yCandidateCount = yCandidates.size,
+        xPixelSpan = xStats.pixelSpan,
+        yPixelSpan = yStats.pixelSpan,
+        xValueSpan = xStats.valueSpan,
+        yValueSpan = yStats.valueSpan,
+        xUnit = ocrResult?.xUnit,
+        yUnit = ocrResult?.yUnit,
+        xCandidates = xCandidates,
+        yCandidates = yCandidates,
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun List<OcrTextElement>.toCalibrationCandidates(
+    axis: CalibrationAxis,
+    axesResult: AxesResult,
+    panelRegion: GraphRegion,
+    plotRegion: GraphRegion,
+): List<OfflineAxisCalibrationPointAudit> {
+    val origin = axesResult.origin ?: return emptyList()
+    val xAxis = axesResult.xAxis ?: return emptyList()
+    val yAxis = axesResult.yAxis ?: return emptyList()
+    val xAxisY = xAxis.y1
+    val yAxisX = yAxis.x1
+    val xLeft = minOf(xAxis.x1, xAxis.x2) - plotRegion.width * 0.06f
+    val xRight = maxOf(xAxis.x1, xAxis.x2) + plotRegion.width * 0.06f
+    val xTop = xAxisY - plotRegion.height * 0.10f
+    val xBottom = panelRegion.bottom + panelRegion.height * 0.08f
+    val yLeft = panelRegion.x - panelRegion.width * 0.08f
+    val yRight = yAxisX + plotRegion.width * 0.12f
+    val yTop = minOf(yAxis.y1, yAxis.y2) - plotRegion.height * 0.06f
+    val yBottom = origin.y + plotRegion.height * 0.08f
+
+    return mapNotNull { element ->
+        val value = element.numericValue ?: return@mapNotNull null
+        val centerX = element.x + element.width / 2f
+        val centerY = element.y + element.height / 2f
+        val accepted = when (axis) {
+            CalibrationAxis.X -> centerX in xLeft..xRight && centerY in xTop..xBottom
+            CalibrationAxis.Y -> centerX in yLeft..yRight && centerY in yTop..yBottom
+        }
+        if (!accepted) return@mapNotNull null
+
+        val pixel = when (axis) {
+            CalibrationAxis.X -> centerX - origin.x
+            CalibrationAxis.Y -> origin.y - centerY
+        }
+        if (pixel < 0f) return@mapNotNull null
+
+        OfflineAxisCalibrationPointAudit(
+            pixel = pixel,
+            value = value,
+            text = element.text,
+            confidence = element.confidence,
+        )
+    }
+        .groupBy { candidate ->
+            "${candidate.value.roundToBucket()}:${candidate.pixel.roundToInt()}"
+        }
+        .values
+        .map { group -> group.maxBy { it.confidence } }
+        .sortedBy { it.pixel }
+}
+
+private data class AxisCalibrationStats(
+    val ready: Boolean,
+    val pixelSpan: Float,
+    val valueSpan: Float,
+)
+
+private fun List<OfflineAxisCalibrationPointAudit>.axisStats(): AxisCalibrationStats {
+    if (size < 2) return AxisCalibrationStats(ready = false, pixelSpan = 0f, valueSpan = 0f)
+    val sorted = sortedBy { it.pixel }
+    val pixelSpan = sorted.last().pixel - sorted.first().pixel
+    val valueSpan = sorted.last().value - sorted.first().value
+    val minPixelSpan = maxOf(24f, pixelSpan * 0.05f)
+    return AxisCalibrationStats(
+        ready = pixelSpan >= minPixelSpan && valueSpan > 0f,
+        pixelSpan = pixelSpan.coerceAtLeast(0f),
+        valueSpan = valueSpan,
+    )
+}
+
+private fun Float.roundToBucket(): Int =
+    (this * 100f).toInt()
+
+private fun missingAxisCalibration(): OfflineAxisCalibrationAudit =
+    OfflineAxisCalibrationAudit(
+        ready = false,
+        xReady = false,
+        yReady = false,
+        source = OfflineAxisCalibrationSource.MANUAL_REQUIRED,
+        xCandidateCount = 0,
+        yCandidateCount = 0,
+        xPixelSpan = 0f,
+        yPixelSpan = 0f,
+        xValueSpan = 0f,
+        yValueSpan = 0f,
+        xUnit = null,
+        yUnit = null,
+        xCandidates = emptyList(),
+        yCandidates = emptyList(),
+        warnings = listOf("axis_calibration.stage_failed", "axis_calibration.manual_required"),
+    )
 
 private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAudit =
     OfflineGraphCandidateAudit(

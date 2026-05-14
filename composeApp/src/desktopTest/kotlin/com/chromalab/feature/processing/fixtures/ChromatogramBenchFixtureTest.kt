@@ -91,6 +91,7 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "plot_area" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "axis_detect" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "axis_calibration" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "curve_extract" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
@@ -129,6 +130,14 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.graphs.all { it.axisConfidence > 0f },
                 "${fixture.id} must expose non-zero axis detection confidence",
+            )
+            assertTrue(
+                audit.graphs.all { !it.axisCalibration.ready },
+                "${fixture.id} must keep desktop calculation blocked until scale calibration is confirmed",
+            )
+            assertTrue(
+                audit.graphs.all { "axis_calibration.manual_required" in it.axisCalibration.warnings },
+                "${fixture.id} must expose the manual calibration contract while desktop OCR is unavailable",
             )
             assertTrue(
                 audit.graphs.all { it.curveMaskAvailable },
@@ -191,6 +200,9 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until axis OCR/calibration exists")
             assertTrue(audit.blockedAtStage != "plot_area", "${fixture.id} should pass the plot-area gate")
             assertTrue(audit.blockedAtStage != "axis_detect", "${fixture.id} should pass the axis-geometry gate")
+            if (audit.graphs.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }) {
+                assertEquals("axis_calibration", audit.blockedAtStage, "${fixture.id} should stop at the scale-calibration gate")
+            }
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")

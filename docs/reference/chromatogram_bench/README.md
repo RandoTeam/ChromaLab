@@ -188,8 +188,15 @@ origin at their intersection, exposes axis confidence in `audit.json` and
 does not unlock numeric calculation: OCR/manual scale calibration is still required
 before time and intensity values can be trusted.
 
+Phase 2.11.2 adds an explicit scale-calibration contract to the offline runner. The
+runner now emits an `axis_calibration` stage per graph, records candidate
+pixel-to-value points, value spans, units, source state, and warnings, and blocks at
+`axis_calibration` until both axes have confirmed calibration. Desktop OCR is still not
+implemented, so the bench currently records `MANUAL_REQUIRED` instead of pretending
+that pixel coordinates can be converted into time/intensity units.
+
 ## Next Phase
 
-Phase 2.11.2 should implement desktop axis OCR or a manual calibration contract. The
-next gate must verify time/intensity scale recovery before numeric peak integration is
-allowed.
+Phase 2.11.3 should implement desktop OCR/manual point entry for the calibration
+contract. The next gate must produce confirmed X/Y calibration points before numeric
+peak integration is allowed.
