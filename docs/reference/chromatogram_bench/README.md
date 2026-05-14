@@ -19,7 +19,7 @@ slice.
 
 | ID | Resource | Size | SHA-256 | Expected graph count | Core stress case |
 | --- | --- | ---: | --- | ---: | --- |
-| `bench_01_mz71_screenshot_page` | `bench_01_mz71_screenshot_page.jpg` | 964x1280, 128010 bytes | `8EB64774D29F93C1CCB3D4F9035C96F9075121551600B2814BA7966021ECFD01` | 1 | Phone screenshot/document page context with one `m/z 71` chromatogram. |
+| `bench_01_mz71_screenshot_page` | `bench_01_mz71_screenshot_page.jpg` | 964x1280, 128010 bytes | `8EB64774D29F93C1CCB3D4F9035C96F9075121551600B2814BA7966021ECFD01` | 2 | Printed page photo with two Ion 217/218 chromatograms and page metadata. |
 | `bench_02_mz92_belyi_tigr` | `bench_02_mz92_belyi_tigr.jpg` | 576x1280, 57090 bytes | `D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE` | 1 | Existing Belyi Tigr `m/z 92` reference case and report-depth target. |
 | `bench_03_small_tic_export` | `bench_03_small_tic_export.jpg` | 381x132, 6682 bytes | `C36A405C937741C6DE834AD9FD3196E658CE42ECBA03AFBBF1D2B47D00437DF4` | 1 | Small low-resolution clean TIC export with visible labeled peaks. |
 | `bench_04_stacked_xic_resolution` | `bench_04_stacked_xic_resolution.png` | 534x1110, 165615 bytes | `27D998C2ACA33B12DC3700BFCC88FC3EFB15FAF2A3FE51317AFD220F0E2C3C25` | 4 | Four stacked XIC traces with shared retention-time axis and different mass windows. |
@@ -36,7 +36,7 @@ validated extraction and calculation stages.
 
 | ID | Expected visible metadata | Required preparation/audit behavior |
 | --- | --- | --- |
-| `bench_01_mz71_screenshot_page` | `Ion 71.00 (70.70 to 71.70): BELIY TIGR_1.D\data.ms`; X axis is time, Y axis is abundance. | Crop away phone UI, document text, and dark background before graph analysis. |
+| `bench_01_mz71_screenshot_page` | Top graph is visible as `Ion 217.00: 0301002.D`; lower graph is visible as `Ion 218.00: 0301002.D`; X axis is time, Y axis is abundance. | Split the two graph panels in top-to-bottom order and reject surrounding page metadata. |
 | `bench_02_mz92_belyi_tigr` | `Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\data.ms`; X axis is time, Y axis is abundance. | Preserve the existing dominant-peak discrepancy warning contract from the Belyi Tigr fixture. |
 | `bench_03_small_tic_export` | `TIC Scan CK-1.D`; acquisition time in minutes; labeled peaks around 3.244, 3.890, 4.647, 5.610, and 8.560. | Handle low-resolution graph export without treating labels as signal peaks. |
 | `bench_04_stacked_xic_resolution` | Four XIC traces for `198,0315` with mass windows `0,2`, `0,02`, `0,002`, and `0,0002 Da`; time is in seconds. | Split all four panels and keep each trace's intensity scale separate. |
@@ -55,13 +55,13 @@ composeApp/src/desktopTest/kotlin/com/chromalab/feature/processing/fixtures/Chro
 
 It verifies that all eight fixture resources remain readable and match the expected
 dimensions, byte sizes, SHA-256 hashes, expected graph counts, and fixture tags. It does
-not validate graph-detection accuracy or calculation yet.
+not validate calculation yet.
 
-Phase 1.1 adds `OfflineAnalysisRunner` coverage to the same test. The runner now
+Phase 1.1 added `OfflineAnalysisRunner` coverage to the same test. The runner now
 executes the platform processing entry points for every fixture and records an honest
-stage audit. On desktop, graph detection, OCR, axis detection, and curve extraction still
-depend on desktop actual implementations that are incomplete or stubbed, so the current
-runner output is a diagnostic baseline rather than a successful full analysis.
+stage audit. On desktop, OCR, axis detection, and curve extraction still depend on actual
+implementations that are incomplete or stubbed, so the current runner output is a
+diagnostic baseline rather than a successful full analysis.
 
 Phase 1.2 adds local debug artifacts for every bench run:
 
@@ -72,7 +72,14 @@ Phase 1.2 adds local debug artifacts for every bench run:
 These artifacts are generated in the test run's temporary output directory. They are not
 committed as static golden files yet because graph detection is still being calibrated.
 
+Phase 1.3 adds real desktop graph-region detection. Current graph-count calibration:
+
+- passing and strict: `bench_01`, `bench_02`, `bench_03`, `bench_07`, `bench_08`;
+- known mismatch with explicit audit warning: `bench_04` expected 4 / detected 3,
+  `bench_05` expected 4 / detected 3, `bench_06` expected 2 / detected 3.
+
 ## Next Phase
 
-Phase 1 should add an offline runner that can process these fixture images without the
-camera or Android document scanner and emit per-stage audit data for each graph.
+Phase 1.4 should tune the remaining stacked/multi-panel split failures for `bench_04`,
+`bench_05`, and `bench_06` while preserving strict graph-count checks for the fixtures
+that already pass.

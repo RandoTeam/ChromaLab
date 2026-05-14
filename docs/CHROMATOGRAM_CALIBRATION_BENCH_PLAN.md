@@ -58,7 +58,7 @@ store user-specific absolute source paths in committed fixture metadata.
 
 | ID | Source filename | Size | SHA-256 | Fixture role |
 | --- | --- | ---: | --- | --- |
-| `bench_01_mz71_screenshot_page` | `photo_2026-05-06_20-14-23.jpg` | 964x1280, 128010 bytes | `8EB64774D29F93C1CCB3D4F9035C96F9075121551600B2814BA7966021ECFD01` | Phone screenshot/document context with `m/z 71` chromatogram and surrounding text; tests crop and UI/background rejection. |
+| `bench_01_mz71_screenshot_page` | `photo_2026-05-06_20-14-23.jpg` | 964x1280, 128010 bytes | `8EB64774D29F93C1CCB3D4F9035C96F9075121551600B2814BA7966021ECFD01` | Printed page photo with two Ion 217/218 chromatograms and surrounding page metadata; tests crop, graph splitting, and page/background rejection. |
 | `bench_02_mz92_belyi_tigr` | `photo_2026-05-10_06-16-01.jpg` | 576x1280, 57090 bytes | `D1F0A55F6491E6FA7E3857086FDCCE97CDD3723A4F786D40000480F9A4B8BDFE` | Existing Belyi Tigr `m/z 92` reference screenshot; tests report-depth target and dominant-peak tension. |
 | `bench_03_small_tic_export` | `images.jpg` | 381x132, 6682 bytes | `C36A405C937741C6DE834AD9FD3196E658CE42ECBA03AFBBF1D2B47D00437DF4` | Small clean TIC export; tests low-resolution axis/tick reading and labeled peaks. |
 | `bench_04_stacked_xic_resolution` | `632.png` | 534x1110, 165615 bytes | `27D998C2ACA33B12DC3700BFCC88FC3EFB15FAF2A3FE51317AFD220F0E2C3C25` | Four stacked XIC graphs with different mass windows; tests multi-graph splitting and shared X-axis handling. |
@@ -147,6 +147,27 @@ Next Phase 1.3 work slice:
 1. Replace or supplement desktop graph-region stubs with real candidate detection.
 2. Keep the JSON/summary/PNG artifacts as the primary diagnostic output.
 3. Start enforcing expected graph counts once candidate detection is implemented.
+
+Phase 1.3 status:
+
+- The desktop graph detector now uses ImageIO-based bright-panel, line, contour, and
+  density passes instead of returning the full image.
+- `bench_01` expected facts were corrected from the old `m/z 71` one-graph note to
+  the visible two-graph Ion 217/218 printed-page fixture.
+- The bench now strictly enforces graph counts for the corrected `bench_01` and the
+  single-graph fixtures that currently pass.
+- Current graph-count status:
+  - pass: `bench_01`, `bench_02`, `bench_03`, `bench_07`, `bench_08`;
+  - known mismatch with explicit warning: `bench_04` expected 4 / detected 3,
+    `bench_05` expected 4 / detected 3, `bench_06` expected 2 / detected 3.
+
+Next Phase 1.4 work slice:
+
+1. Improve stacked/multi-panel split precision for `bench_04`, `bench_05`, and
+   `bench_06`.
+2. Preserve the strict graph-count contract for fixtures that already pass.
+3. Use generated `graph_candidates.png` overlays as the primary diagnostic artifact
+   when tuning each remaining split.
 
 Exit criteria:
 
@@ -322,3 +343,11 @@ Exit criteria:
 1. Add JSON and Markdown audit artifact rendering.
 2. Add local PNG graph-candidate overlays for desktop bench runs.
 3. Make multi-graph mismatch warnings part of the executable bench contract.
+
+- Phase 1.3:
+
+1. Replace desktop full-image graph-region fallback with real ImageIO-based candidate
+   detection.
+2. Add bright-panel detection for phone screenshot imports with dark UI/background.
+3. Correct `bench_01` expected facts to two Ion 217/218 graph panels.
+4. Start strict graph-count assertions for fixtures that now pass.

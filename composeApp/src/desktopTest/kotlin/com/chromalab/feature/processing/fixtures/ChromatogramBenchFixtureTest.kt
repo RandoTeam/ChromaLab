@@ -49,6 +49,8 @@ class ChromatogramBenchFixtureTest {
         }
 
         val byId = ChromatogramBenchFixtures.all.associateBy { it.id }
+        assertEquals(2, byId.getValue("bench_01_mz71_screenshot_page").expectedGraphCount)
+        assertTrue(byId.getValue("bench_01_mz71_screenshot_page").strictGraphCount)
         assertEquals(4, byId.getValue("bench_04_stacked_xic_resolution").expectedGraphCount)
         assertEquals(4, byId.getValue("bench_05_tic_plus_ions").expectedGraphCount)
         assertEquals(2, byId.getValue("bench_06_photo_two_graphs_page").expectedGraphCount)
@@ -88,13 +90,13 @@ class ChromatogramBenchFixtureTest {
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
 
-            if (fixture.expectedGraphCount > 1) {
+            if (fixture.strictGraphCount) {
+                assertEquals(fixture.expectedGraphCount, audit.detectedGraphCount, "${fixture.id} detected graph count")
+            } else if (audit.detectedGraphCount != fixture.expectedGraphCount) {
                 assertTrue(
                     audit.warnings.any { it.startsWith("graph.count_mismatch.") },
                     "${fixture.id} must expose current desktop graph split limitation",
                 )
-            } else {
-                assertEquals(fixture.expectedGraphCount, audit.detectedGraphCount, "${fixture.id} detected graph count")
             }
         }
     }
@@ -109,10 +111,11 @@ private object ChromatogramBenchFixtures {
             sizeBytes = 128_010,
             width = 964,
             height = 1280,
-            expectedGraphCount = 1,
-            expectedIon = "m/z 71.00",
-            expectedTitle = "Ion 71.00 (70.70 to 71.70): BELIY TIGR_1.D\\data.ms",
-            tags = setOf("phone_screenshot", "document_context", "m_z_71", "crop_required"),
+            expectedGraphCount = 2,
+            expectedIon = "m/z 217 and m/z 218",
+            expectedTitle = "Ion 217.00 / Ion 218.00: 0301002.D",
+            strictGraphCount = true,
+            tags = setOf("printed_page_photo", "two_graphs", "m_z_217_218", "crop_required"),
         ),
         ChromatogramBenchFixture(
             id = "bench_02_mz92_belyi_tigr",
@@ -215,6 +218,7 @@ private data class ChromatogramBenchFixture(
     val expectedIon: String?,
     val expectedTitle: String?,
     val requiresRotationCorrection: Boolean = false,
+    val strictGraphCount: Boolean = expectedGraphCount == 1,
     val numericTruthStatus: String = "not_locked",
     val tags: Set<String>,
 ) {
