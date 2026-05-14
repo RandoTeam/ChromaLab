@@ -1,6 +1,7 @@
 package com.chromalab.feature.chat
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -66,6 +67,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -498,7 +500,10 @@ private fun MessageBubble(message: ChatMessage) {
                 )
             } else {
                 if (message.thinkingContent.isNotBlank()) {
-                    ChatThinkingBlock(message.thinkingContent)
+                    ChatThinkingBlock(
+                        text = message.thinkingContent,
+                        isStreaming = message.isStreaming,
+                    )
                 }
                 StreamingMessageText(message)
             }
@@ -511,7 +516,16 @@ private fun MessageBubble(message: ChatMessage) {
 }
 
 @Composable
-private fun ChatThinkingBlock(text: String) {
+private fun ChatThinkingBlock(
+    text: String,
+    isStreaming: Boolean,
+) {
+    var expanded by remember { mutableStateOf(isStreaming) }
+
+    LaunchedEffect(isStreaming) {
+        if (isStreaming) expanded = true
+    }
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.56f),
@@ -522,6 +536,9 @@ private fun ChatThinkingBlock(text: String) {
             verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         ) {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = !isStreaming) { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -535,14 +552,23 @@ private fun ChatThinkingBlock(text: String) {
                     text = "Thinking",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    Icons.Filled.ExpandMore,
+                    contentDescription = if (expanded) "Collapse thinking" else "Expand thinking",
+                    modifier = Modifier.size(18.dp).rotate(if (expanded) 180f else 0f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                text = text,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            AnimatedVisibility(visible = expanded) {
+                Text(
+                    text = text,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
