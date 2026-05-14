@@ -16,4 +16,7 @@ private val BlockingVisionErrorMarkers = listOf(
     "vision projector is missing",
     "vision support",
     "image input",
+    "axis calibration requires",
+    "axis calibration is required",
+    "axis calibration is incomplete",
 )

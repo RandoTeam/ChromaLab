@@ -429,27 +429,11 @@ fun ProcessingFlowScreen(
                                         timestamp = System.currentTimeMillis(),
                                     )
                                 } else {
-                                    // Not enough valid OCR points → pixel-based fallback
-                                    println("PIPELINE[X_CAL] fallback: not enough valid OCR points (${validPoints.size})")
-                                    xCalibration = XAxisCalibration(
-                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, minVal),
-                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(regionWidth, maxVal),
-                                        ),
-                                        unit = ocr?.xUnit ?: "мин",
-                                        timestamp = System.currentTimeMillis(),
-                                    )
+                                    println("PIPELINE[X_CAL] blocked: not enough valid OCR points (${validPoints.size})")
+                                    error("Axis calibration requires at least two X tick labels with distinct pixel positions.")
                                 }
                             } else {
-                                // No OCR → identity calibration (pixels)
-                                xCalibration = XAxisCalibration(
-                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, 0f),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(regionWidth, regionWidth),
-                                    ),
-                                    unit = "px",
-                                    timestamp = System.currentTimeMillis(),
-                                )
+                                error("Axis calibration requires at least two X tick labels before signal conversion.")
                             }
                         }
                     }
@@ -504,28 +488,11 @@ fun ProcessingFlowScreen(
                                 yCalibration = if (candidateCalibration.calibration.isValid) {
                                     candidateCalibration
                                 } else {
-                                    val fh = selectedRegion.height.toFloat()
-                                    println("PIPELINE[Y_CAL] fallback: invalid OCR pixels py1=$py1 py2=$py2")
-                                    YAxisCalibration(
-                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, maxVal),
-                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
-                                        ),
-                                        unit = ocr?.yUnit ?: "mAU",
-                                        timestamp = System.currentTimeMillis(),
-                                    )
+                                    println("PIPELINE[Y_CAL] blocked: invalid OCR pixels py1=$py1 py2=$py2")
+                                    error("Axis calibration requires valid Y tick pixel positions before signal conversion.")
                                 }
                             } else {
-                                // No OCR → identity (pixels, inverted)
-                                val fh = selectedRegion.height.toFloat()
-                                yCalibration = YAxisCalibration(
-                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, fh),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
-                                    ),
-                                    unit = "px",
-                                    timestamp = System.currentTimeMillis(),
-                                )
+                                error("Axis calibration requires at least two Y tick labels before signal conversion.")
                             }
 
                             // Build unified PixelCalibration
@@ -540,8 +507,7 @@ fun ProcessingFlowScreen(
                                     originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) - selectedRegion.y.toFloat(),
                                 )
                             } else {
-                                println("PIPELINE[CAL] fallback: invalid axis calibration")
-                                pixelCalibration = fallbackCalibration(selectedRegion.width, selectedRegion.height)
+                                error("Axis calibration is incomplete; signal conversion is blocked until X and Y calibration are confirmed.")
                             }
                         }
                     }
@@ -579,9 +545,8 @@ fun ProcessingFlowScreen(
                         if (smoothedSignal == null) {
                             println("PIPELINE[SIGNAL] curvePoints=${curvePoints.size}, pixelCal=${pixelCalibration != null}")
                             if (curvePoints.isNotEmpty()) {
-                                val cal = pixelCalibration ?: fallbackCalibration(
-                                    selectedRegion.width, selectedRegion.height,
-                                )
+                                val cal = pixelCalibration
+                                    ?: error("Axis calibration is required before building a signal preview.")
                                 val signal = SignalConverter.convert(
                                     curvePoints, cal, currentImagePath,
                                 )
@@ -1002,7 +967,7 @@ fun ProcessingFlowScreen(
                                 )
                                 if (blocksSkip) {
                                     Text(
-                                        "Full photo analysis requires a working vision model. This stage cannot be skipped.",
+                                        "Этот этап обязателен для полного анализа и не может быть пропущен.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
@@ -1042,10 +1007,9 @@ fun ProcessingFlowScreen(
                     processedGraphs.sortedBy { it.graphIndex }.map { it.signal.smoothed }
                 }
                 val displaySignal = allSignals.lastOrNull() ?: smoothedSignal?.smoothed
-                if (displaySignal != null) {
-                    val cal = pixelCalibration ?: fallbackCalibration(
-                        imageWidth, imageHeight,
-                    )
+                val exportCalibration = pixelCalibration
+                if (displaySignal != null && exportCalibration != null) {
+                    val cal = exportCalibration
                     val bundle = ExportBundle(
                         signal = displaySignal,
                         calibration = cal,
@@ -1075,12 +1039,20 @@ fun ProcessingFlowScreen(
                             verticalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
                             Text(
-                                "Не удалось извлечь сигнал",
+                                if (displaySignal == null) {
+                                    "Не удалось извлечь сигнал"
+                                } else {
+                                    "Не подтверждена калибровка осей"
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.error,
                             )
                             Text(
-                                "Попробуйте сделать более чёткое фото",
+                                if (displaySignal == null) {
+                                    "Попробуйте сделать более четкое фото"
+                                } else {
+                                    "Расчет и экспорт заблокированы, пока шкалы X/Y не подтверждены."
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1380,27 +1352,3 @@ private fun fallbackAxesResult() = AxesResult(
     confidence = 0.5f,
     timestamp = System.currentTimeMillis(),
 )
-
-/**
- * Identity calibration: 1 pixel = 1 unit (px).
- * Used when user skips X/Y calibration steps.
- */
-private fun fallbackCalibration(w: Int, h: Int): PixelCalibration {
-    val fw = w.coerceAtLeast(1).toFloat()
-    val fh = h.coerceAtLeast(1).toFloat()
-    return PixelCalibration(
-        xCalibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, 0f),
-            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fw, fw),
-        ),
-        yCalibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(0f, fh),
-            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(fh, 0f),
-        ),
-        xUnit = "px",
-        yUnit = "px",
-        originPixelX = 0f,
-        originPixelY = fh,
-        timestamp = System.currentTimeMillis(),
-    )
-}

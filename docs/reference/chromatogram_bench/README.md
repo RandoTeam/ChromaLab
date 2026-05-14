@@ -202,9 +202,14 @@ non-zero spans. Without those points the bench stays blocked at `axis_calibratio
 with confirmed points the scale gate passes and later calculation stages can be tested
 without relying on unavailable desktop OCR.
 
+Phase 2.11.4 removes the user-flow identity calibration fallback. The processing screen
+now blocks signal conversion, preview, and export when X/Y calibration is missing or
+invalid instead of fabricating `px` units. Calibration errors are treated as
+non-skippable full-analysis blockers, matching the offline `axis_calibration` gate.
+
 ## Next Phase
 
-Phase 2.11.4 should wire the manual calibration contract into user-facing review UI or
+Phase 2.11.5 should wire the manual calibration contract into user-facing review UI or
 implement desktop OCR candidate extraction. The next gate must turn visible tick labels
 or user-selected calibration points into confirmed X/Y calibration before numeric peak
 integration is allowed.

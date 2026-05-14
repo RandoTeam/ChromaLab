@@ -14,6 +14,8 @@ class VisionAnalysisGuardTest {
         )
         assertTrue(blocksFullAnalysisSkip("Vision projector is missing for GGUF image input."))
         assertTrue(blocksFullAnalysisSkip("AI graph detection failed: no usable region."))
+        assertTrue(blocksFullAnalysisSkip("Axis calibration requires at least two X tick labels before signal conversion."))
+        assertTrue(blocksFullAnalysisSkip("Axis calibration is required before building a signal preview."))
     }
 
     @Test
