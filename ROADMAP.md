@@ -105,8 +105,8 @@ Needs cleanup before broader alpha testing:
 
 ### 4. App UX Settings
 
-- [ ] Add theme mode setting: follow Android system, force light, force dark.
-- [ ] Lock Android UI to portrait until landscape layouts are intentionally designed and validated.
+- [x] Add theme mode setting: follow Android system, force light, force dark.
+- [x] Lock Android UI to portrait until landscape layouts are intentionally designed and validated.
 
 ### 5. Release Quality
 

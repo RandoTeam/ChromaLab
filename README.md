@@ -29,6 +29,7 @@ ChromaLab начинался как мобильное приложение дл
 | Отчеты | Alpha | Таблицы пиков и параметры расчета уже выводятся, профессиональная интерпретация еще расширяется |
 | Менеджер моделей | Alpha 2 | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
 | Локальный чат | MVP | Чаты, история, Gallery-style UI, выбор модели из общего пула, runtime controls, streaming UI, lazy loading |
+| Интерфейс | Alpha 2 | Настройка темы system/light/dark и портретный режим Android до отдельной landscape-проработки |
 
 ## Alpha 2
 
@@ -140,7 +141,7 @@ androidApp/build/outputs/apk/debug/androidApp-debug.apk
 | Alpha 2 | Стабилизировать calculation engine, общий model manager, MVP чата, lifecycle моделей |
 | Alpha 3 | Профессиональный отчет, лучшее объяснение расчетов, больше real-world validation |
 | MVP | Полный цикл: capture/import -> digitization -> calculation -> report -> local AI explanation |
-| Next | Настройки темы system/light/dark, портретный режим Android, chat attachments, real-world report validation |
+| Next | Chat attachments, real-world report validation, landscape UI only after dedicated design and QA |
 
 ## Ограничения Alpha
 

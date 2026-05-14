@@ -16,7 +16,8 @@ Project rules for this plan:
 ## Current Position
 
 - Current completed phase: Phase 7.6.
-- Next phase to start: Post-phase UX settings.
+- Current completed post-phase slice: UX settings.
+- Next phase to start: outside this Gallery chat plan.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -264,8 +265,8 @@ Status: completed.
 These items are intentionally separate from the Gallery chat redesign and should be
 implemented in their own focused work slice:
 
-- Add a settings control for theme mode: follow Android system, force light, force dark.
-- Lock the Android app to portrait orientation until landscape layouts are explicitly
+- [x] Add a settings control for theme mode: follow Android system, force light, force dark.
+- [x] Lock the Android app to portrait orientation until landscape layouts are explicitly
   designed and validated.
 
 ## Do Not Start Yet

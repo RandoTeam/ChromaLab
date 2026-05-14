@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chromalab.core.ui.theme.AppThemeMode
 import kotlin.math.roundToInt
 
 /**
@@ -28,6 +29,7 @@ fun MoreScreen(
     downloadParallelism: Int,
     downloadSpeedLimitMbps: Int,
     autoUnloadMinutes: Int,
+    themeMode: AppThemeMode,
     onOpenModelManager: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenAbout: () -> Unit,
@@ -35,6 +37,7 @@ fun MoreScreen(
     onDownloadParallelismChange: (Int) -> Unit,
     onDownloadSpeedLimitChange: (Int) -> Unit,
     onAutoUnloadChange: (Int) -> Unit,
+    onThemeModeChange: (AppThemeMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -108,6 +111,13 @@ fun MoreScreen(
         }
 
         item {
+            ThemeModeCard(
+                themeMode = themeMode,
+                onThemeModeChange = onThemeModeChange,
+            )
+        }
+
+        item {
             SettingsCard(
                 icon = Icons.Filled.Language,
                 title = "Язык",
@@ -125,6 +135,68 @@ fun MoreScreen(
             )
         }
     }
+}
+
+@Composable
+private fun ThemeModeCard(
+    themeMode: AppThemeMode,
+    onThemeModeChange: (AppThemeMode) -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.Palette,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp),
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Тема",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        themeModeSubtitle(themeMode),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(AppThemeMode.entries.toList()) { option ->
+                    FilterChip(
+                        selected = option == themeMode,
+                        onClick = { onThemeModeChange(option) },
+                        label = { Text(themeModeLabel(option)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun themeModeLabel(mode: AppThemeMode): String = when (mode) {
+    AppThemeMode.SYSTEM -> "Система"
+    AppThemeMode.LIGHT -> "Светлая"
+    AppThemeMode.DARK -> "Темная"
+}
+
+private fun themeModeSubtitle(mode: AppThemeMode): String = when (mode) {
+    AppThemeMode.SYSTEM -> "Следовать настройкам Android"
+    AppThemeMode.LIGHT -> "Всегда светлая тема"
+    AppThemeMode.DARK -> "Всегда темная тема"
 }
 
 @Composable

@@ -24,6 +24,7 @@ import com.chromalab.feature.calculation.flow.AnalysisFlowScreen
 import com.chromalab.feature.calculation.screen.CalculationsListScreen
 import com.chromalab.core.common.Strings
 import com.chromalab.core.ui.theme.ChromaLabTheme
+import com.chromalab.core.ui.theme.rememberAppThemePreference
 import com.chromalab.feature.capture.CameraScreen
 import com.chromalab.feature.capture.CaptureHubScreen
 import com.chromalab.feature.capture.FileImportScreenWithPicker
@@ -49,7 +50,9 @@ import com.chromalab.feature.settings.rememberModelManagerState
 
 @Composable
 fun App() {
-    ChromaLabTheme {
+    val themePreference = rememberAppThemePreference()
+
+    ChromaLabTheme(themeMode = themePreference.mode) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
 
@@ -162,6 +165,7 @@ fun App() {
                         downloadParallelism = modelState.downloadParallelism,
                         downloadSpeedLimitMbps = modelState.downloadSpeedLimitMbps,
                         autoUnloadMinutes = modelState.autoUnloadMinutes,
+                        themeMode = themePreference.mode,
                         onOpenModelManager = { navController.navigate(Route.ModelManager) },
                         onOpenLanguage = { navController.navigate(Route.Language) },
                         onOpenAbout = { navController.navigate(Route.About) },
@@ -169,6 +173,7 @@ fun App() {
                         onDownloadParallelismChange = { modelActions.setDownloadParallelism(it) },
                         onDownloadSpeedLimitChange = { modelActions.setDownloadSpeedLimit(it) },
                         onAutoUnloadChange = { modelActions.setAutoUnloadMinutes(it) },
+                        onThemeModeChange = themePreference.setMode,
                     )
                 }
 

@@ -221,4 +221,4 @@ Known test debt:
 - CSV/TXT/PDF/mzML import is not yet production complete.
 - GGUF model compatibility depends on correct model family and `mmproj` pairing.
 - Chat MVP has streaming text and telemetry, but is not yet a full assistant with attachments or search.
-- Theme mode selection and portrait-only Android orientation are planned UI settings, not yet implemented.
+- Theme mode selection is implemented in settings, and the Android phone UI is locked to portrait until landscape layouts are intentionally designed and validated.

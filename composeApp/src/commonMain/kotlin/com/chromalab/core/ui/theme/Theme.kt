@@ -100,6 +100,24 @@ private val LightColorScheme = lightColorScheme(
 // ============================================================
 @Composable
 fun ChromaLabTheme(
+    themeMode: AppThemeMode,
+    content: @Composable () -> Unit
+) {
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (themeMode) {
+        AppThemeMode.SYSTEM -> systemDark
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
+
+    ChromaLabTheme(
+        darkTheme = darkTheme,
+        content = content,
+    )
+}
+
+@Composable
+fun ChromaLabTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
