@@ -111,7 +111,7 @@ Goal: run the image pipeline without camera or Android scanner dependency.
   - [x] extracted signal diagnostics or an explicit extraction block;
   - [ ] calculation warnings from a real calculation stage;
   - [ ] report validation result from a real report stage.
-- [ ] Save visual debug artifacts for failed stages when tests run locally.
+- [x] Save visual debug artifacts for failed stages when tests run locally.
 - [x] Add a clear failure reason when a stage cannot proceed.
 
 Phase 1.1 status:
@@ -131,6 +131,22 @@ Next Phase 1.2 work slice:
 2. Save visual debug artifacts for the current graph candidates and selected regions.
 3. Add the first regression assertions for expected graph counts so the desktop stubs
    are visible as known failures/limitations instead of hidden behavior.
+
+Phase 1.2 status:
+
+- `OfflineAnalysisAuditArtifacts` serializes every runner result to pretty JSON and a
+  compact Markdown summary.
+- The desktop fixture test writes `audit.json`, `audit_summary.md`, and
+  `graph_candidates.png` into each local fixture run directory.
+- Multi-graph fixtures now assert that current desktop graph splitting limitations are
+  visible through `graph.count_mismatch.*` warnings instead of hidden behind a false
+  pass.
+
+Next Phase 1.3 work slice:
+
+1. Replace or supplement desktop graph-region stubs with real candidate detection.
+2. Keep the JSON/summary/PNG artifacts as the primary diagnostic output.
+3. Start enforcing expected graph counts once candidate detection is implemented.
 
 Exit criteria:
 
@@ -300,3 +316,9 @@ Exit criteria:
    curve mask, and curve extraction stages without camera dependency.
 3. Add desktop fixture coverage that confirms every bench image produces stage audit and
    an honest blocked state until usable curve extraction exists.
+
+- Phase 1.2:
+
+1. Add JSON and Markdown audit artifact rendering.
+2. Add local PNG graph-candidate overlays for desktop bench runs.
+3. Make multi-graph mismatch warnings part of the executable bench contract.

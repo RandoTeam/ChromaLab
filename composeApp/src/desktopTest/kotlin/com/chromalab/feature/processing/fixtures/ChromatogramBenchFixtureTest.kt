@@ -1,10 +1,18 @@
 package com.chromalab.feature.processing.fixtures
 
+import com.chromalab.feature.processing.bench.OfflineAnalysisAudit
+import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineStageStatus
+import java.awt.BasicStroke
+import java.awt.Color
+import java.awt.Font
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.nio.file.Files
+import java.nio.file.Path
 import java.security.MessageDigest
 import javax.imageio.ImageIO
 import kotlinx.coroutines.runBlocking
@@ -74,6 +82,20 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
+
+            writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)
+            assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
+            assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
+            assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
+
+            if (fixture.expectedGraphCount > 1) {
+                assertTrue(
+                    audit.warnings.any { it.startsWith("graph.count_mismatch.") },
+                    "${fixture.id} must expose current desktop graph split limitation",
+                )
+            } else {
+                assertEquals(fixture.expectedGraphCount, audit.detectedGraphCount, "${fixture.id} detected graph count")
+            }
         }
     }
 }
@@ -213,3 +235,56 @@ private fun ByteArray.sha256(): String =
     MessageDigest.getInstance("SHA-256")
         .digest(this)
         .joinToString(separator = "") { byte -> "%02X".format(byte) }
+
+private fun writeAuditArtifacts(
+    audit: OfflineAnalysisAudit,
+    imagePath: Path,
+    outputDir: Path,
+) {
+    Files.createDirectories(outputDir)
+    Files.writeString(outputDir.resolve("audit.json"), OfflineAnalysisAuditArtifacts.toJson(audit))
+    Files.writeString(outputDir.resolve("audit_summary.md"), OfflineAnalysisAuditArtifacts.toSummaryMarkdown(audit))
+    writeGraphCandidateOverlay(audit, imagePath, outputDir.resolve("graph_candidates.png"))
+}
+
+private fun writeGraphCandidateOverlay(
+    audit: OfflineAnalysisAudit,
+    imagePath: Path,
+    outputPath: Path,
+) {
+    val source = assertNotNull(
+        ImageIO.read(imagePath.toFile()),
+        "${audit.sourceId} source image must be readable for overlay",
+    )
+    val image = BufferedImage(source.width, source.height, BufferedImage.TYPE_INT_ARGB)
+    val graphics = image.createGraphics()
+    try {
+        graphics.drawImage(source, 0, 0, null)
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        graphics.stroke = BasicStroke((source.width.coerceAtLeast(source.height) / 240f).coerceAtLeast(2f))
+        graphics.font = Font(Font.SANS_SERIF, Font.BOLD, (source.width / 34).coerceIn(12, 28))
+
+        audit.graphCandidates.forEach { candidate ->
+            val color = if (candidate.accepted) Color(0x1B, 0x8A, 0x3A, 220) else Color(0xD3, 0x2F, 0x2F, 220)
+            graphics.color = color
+            val region = candidate.region
+            graphics.drawRect(region.x, region.y, region.width.coerceAtLeast(1), region.height.coerceAtLeast(1))
+            graphics.drawString(
+                "#${candidate.graphIndex} ${if (candidate.accepted) "accepted" else "rejected"}",
+                (region.x + 8).coerceAtMost(source.width - 1),
+                (region.y + 24).coerceIn(24, source.height - 1),
+            )
+        }
+
+        graphics.color = Color(0x15, 0x65, 0xC0, 230)
+        graphics.stroke = BasicStroke((source.width.coerceAtLeast(source.height) / 140f).coerceAtLeast(3f))
+        audit.graphs.forEach { graph ->
+            val region = graph.region
+            graphics.drawRect(region.x, region.y, region.width.coerceAtLeast(1), region.height.coerceAtLeast(1))
+        }
+    } finally {
+        graphics.dispose()
+    }
+
+    ImageIO.write(image, "png", outputPath.toFile())
+}

@@ -63,6 +63,15 @@ stage audit. On desktop, graph detection, OCR, axis detection, and curve extract
 depend on desktop actual implementations that are incomplete or stubbed, so the current
 runner output is a diagnostic baseline rather than a successful full analysis.
 
+Phase 1.2 adds local debug artifacts for every bench run:
+
+- `audit.json` - full structured stage audit;
+- `audit_summary.md` - compact human-readable stage summary;
+- `graph_candidates.png` - source image with candidate and selected graph rectangles.
+
+These artifacts are generated in the test run's temporary output directory. They are not
+committed as static golden files yet because graph detection is still being calibrated.
+
 ## Next Phase
 
 Phase 1 should add an offline runner that can process these fixture images without the
