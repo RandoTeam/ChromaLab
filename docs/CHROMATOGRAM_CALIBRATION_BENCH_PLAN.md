@@ -105,7 +105,7 @@ Goal: run the image pipeline without camera or Android scanner dependency.
   - [x] graph candidates;
   - [x] selected graph crops;
   - [x] rejected graph candidates;
-  - [ ] preprocessing/filter variant ranking;
+  - [x] preprocessing/filter variant ranking;
   - [x] OCR/model outputs when available;
   - [x] axis calibration candidates;
   - [x] extracted signal diagnostics or an explicit extraction block;
@@ -204,6 +204,28 @@ Goal: make graph detection robust before calculating peaks.
   density, tick/label evidence, and confidence scoring.
 - [ ] Reject surrounding article text, toolbar/status bars, page margins, hands,
   binder rings, and notebook backgrounds.
+
+Phase 2.1 status:
+
+- Offline runner now ranks preprocessing variants per detected graph and records the
+  selected variant in `audit.json` and `audit_summary.md`.
+- The selected variant path is used by downstream OCR, axis detection, and curve mask
+  stages instead of blindly reusing the default contrast image.
+- Ranking is deterministic and auditable: dark pixel ratio, edge density, contrast,
+  horizontal line strength, vertical line strength, score, rank, and warnings are
+  recorded per variant.
+- Android uses the real preprocessing variants already produced by the app scanner
+  pipeline. Desktop currently ranks the available variant files, but those desktop
+  variants are still source copies until the desktop preprocessor is upgraded.
+- Axis labels, units, tick reading, curve extraction, and calculation remain blocked
+  for later phases; this slice only makes the preparation input explicit.
+
+Next Phase 2.2 work slice:
+
+1. Replace desktop preprocessing copies with real grayscale/contrast/sharpened/binary
+   image variants so fixture calibration matches Android preparation behavior.
+2. Add visual selected-crop/debug artifacts for the chosen preprocessing variant.
+3. Keep full calculations blocked until usable axes and curves exist.
 
 Exit criteria:
 
@@ -371,3 +393,12 @@ Exit criteria:
 1. Add axis-panel detection for stacked and multi-panel chromatograms.
 2. Expand compact stacked-panel crops to include the full panel context when needed.
 3. Promote `bench_04`, `bench_05`, and `bench_06` to strict graph-count assertions.
+
+- Phase 2.1:
+
+1. Add preprocessing variant models and platform rankers.
+2. Rank source/grayscale/contrast/sharpened/scan-style/binary/morphology variants per
+   selected graph region.
+3. Record selected preprocessing input and all variant metrics in JSON and Markdown
+   audit artifacts.
+4. Route OCR, axis detection, and curve mask preparation through the selected variant.

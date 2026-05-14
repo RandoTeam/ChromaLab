@@ -49,12 +49,28 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
-        appendLine("| ---: | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Region | Prep variant | OCR | X ticks | Y ticks | Axes | Curve points | Curve coverage | Curve usable |")
+        appendLine("| ---: | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
             )
+        }
+        appendLine()
+
+        appendLine("## Preprocessing Variant Ranking")
+        appendLine()
+        appendLine("| Graph | Rank | Selected | Variant | Score | Dark pixels | Edges | Contrast | H-lines | V-lines | Warnings |")
+        appendLine("| ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            graph.preprocessingVariantScores.forEach { variant ->
+                appendLine(
+                    "| ${graph.graphIndex} | ${variant.rank} | ${variant.selected} | ${variant.variantId} | ${variant.score.renderNumber()} | ${variant.darkPixelRatio.renderPercent()} | ${variant.edgeDensity.renderPercent()} | ${variant.contrast.renderPercent()} | ${variant.horizontalLineStrength.renderPercent()} | ${variant.verticalLineStrength.renderPercent()} | ${variant.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                )
+            }
+        }
+        if (audit.graphs.all { it.preprocessingVariantScores.isEmpty() }) {
+            appendLine("|  |  |  | none |  |  |  |  |  |  | no preprocessing variant scores |")
         }
         appendLine()
 

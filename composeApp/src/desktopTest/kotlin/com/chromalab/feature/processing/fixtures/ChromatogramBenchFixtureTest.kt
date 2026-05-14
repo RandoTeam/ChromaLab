@@ -84,8 +84,21 @@ class ChromatogramBenchFixtureTest {
             assertEquals(fixture.height, audit.imageHeight, "${fixture.id} normalized height")
             assertTrue(audit.stages.any { it.stage == "normalize" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
+            assertTrue(
+                audit.graphs.all { it.preprocessingVariantScores.isNotEmpty() },
+                "${fixture.id} must rank preprocessing variants",
+            )
+            assertTrue(
+                audit.graphs.all { it.selectedPreprocessingVariant != null },
+                "${fixture.id} must select preprocessing variant",
+            )
+            assertTrue(
+                audit.graphs.all { it.selectedPreprocessingImagePath != null },
+                "${fixture.id} must record selected preprocessing image path",
+            )
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
 
             writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)

@@ -77,8 +77,14 @@ axis-panel detection. Current graph-count calibration:
 
 - passing and strict: all eight bench fixtures.
 
+Phase 2.1 adds per-graph preprocessing variant ranking. The audit now records the
+ranked source/grayscale/contrast/sharpened/scan-style/binary/morphology candidates,
+their image metrics, the selected variant, and the image path passed into OCR, axis,
+and curve-mask stages. On desktop the variants are still generated as source copies
+until the desktop preprocessor is upgraded; on Android the ranking uses the real
+scanner/preprocessing outputs.
+
 ## Next Phase
 
-Phase 2.1 should move from graph-count calibration into crop quality and preprocessing
-variant audit so OCR, axis extraction, and curve extraction can run from the best
-prepared graph image instead of an unranked source copy.
+Phase 2.2 should replace desktop preprocessing copies with real filter variants and
+add visual selected-crop/debug artifacts for the chosen preprocessing image.

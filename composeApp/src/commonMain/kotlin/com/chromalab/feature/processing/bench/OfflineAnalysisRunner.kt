@@ -12,6 +12,10 @@ import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.OcrStatus
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
+import com.chromalab.feature.processing.preprocess.PreprocessingResult
+import com.chromalab.feature.processing.preprocess.PreprocessingVariantRanker
+import com.chromalab.feature.processing.preprocess.PreprocessingVariantScore
+import com.chromalab.feature.processing.preprocess.variants
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -54,6 +58,9 @@ data class OfflineGraphCandidateAudit(
 data class OfflineGraphAudit(
     val graphIndex: Int,
     val region: GraphRegion,
+    val selectedPreprocessingVariant: String?,
+    val selectedPreprocessingImagePath: String?,
+    val preprocessingVariantScores: List<PreprocessingVariantScore>,
     val ocrStatus: OcrStatus,
     val xSuggestionCount: Int,
     val ySuggestionCount: Int,
@@ -87,6 +94,7 @@ class OfflineAnalysisRunner(
     private val normalizer: ImageNormalizer = ImageNormalizer(),
     private val documentDetector: DocumentDetector = DocumentDetector(),
     private val preprocessor: ImagePreprocessor = ImagePreprocessor(),
+    private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
     private val axisDetector: AxisDetector = AxisDetector(),
@@ -175,7 +183,7 @@ class OfflineAnalysisRunner(
         val graphAudits = selectedRegions.mapIndexed { index, region ->
             auditGraph(
                 graphIndex = index + 1,
-                imagePath = preprocessing.contrastEnhancedPath,
+                preprocessing = preprocessing,
                 outputDir = "${input.outputDir}/graph_${index + 1}",
                 region = region,
                 stages = stages,
@@ -214,12 +222,29 @@ class OfflineAnalysisRunner(
 
     private suspend fun auditGraph(
         graphIndex: Int,
-        imagePath: String,
+        preprocessing: PreprocessingResult,
         outputDir: String,
         region: GraphRegion,
         stages: MutableList<OfflineStageAudit>,
     ): OfflineGraphAudit {
         val graphWarnings = mutableListOf<String>()
+
+        val variantScores = runStage(
+            stage = "preprocess_rank",
+            graphIndex = graphIndex,
+            stages = stages,
+            successMessage = { scores ->
+                val selected = scores.firstOrNull { it.selected }
+                "selected=${selected?.variantId ?: "none"}, variants=${scores.size}."
+            },
+        ) {
+            variantRanker.rank(preprocessing.variants(), region)
+        }.orEmpty()
+        val selectedVariant = variantScores.firstOrNull { it.selected } ?: variantScores.firstOrNull()
+        val analysisImagePath = selectedVariant?.imagePath ?: preprocessing.contrastEnhancedPath
+        if (variantScores.isEmpty()) {
+            graphWarnings += "preprocess_variant_ranking_not_available"
+        }
 
         val ocrResult = runStage(
             stage = "axis_ocr",
@@ -229,7 +254,7 @@ class OfflineAnalysisRunner(
                 "OCR status=${result.status}, x=${result.suggestedXValues.size}, y=${result.suggestedYValues.size}."
             },
         ) {
-            ocrReader.readAxisLabels(imagePath, region)
+            ocrReader.readAxisLabels(analysisImagePath, region)
         }
         if (ocrResult == null || ocrResult.status == OcrStatus.NOT_AVAILABLE) {
             graphWarnings += "axis_ocr_not_available"
@@ -243,7 +268,7 @@ class OfflineAnalysisRunner(
                 "axesDetected=${result.hasAxes}, originDetected=${result.hasOrigin}."
             },
         ) {
-            axisDetector.detect(imagePath, region)
+            axisDetector.detect(analysisImagePath, region)
         }
         if (axesResult?.hasAxes != true) {
             graphWarnings += "axes_not_detected"
@@ -257,7 +282,7 @@ class OfflineAnalysisRunner(
                 "mask=${result.maskWidth}x${result.maskHeight}, cleanPixels=${result.cleanPixelCount}."
             },
         ) {
-            curveMaskPreparer.prepare(imagePath, region, axesResult ?: emptyAxes(), outputDir)
+            curveMaskPreparer.prepare(analysisImagePath, region, axesResult ?: emptyAxes(), outputDir)
         }
         val maskPath = maskResult?.cleanMaskPath ?: maskResult?.rawMaskPath
         val availableMask = maskResult?.takeIf {
@@ -299,6 +324,9 @@ class OfflineAnalysisRunner(
         return OfflineGraphAudit(
             graphIndex = graphIndex,
             region = region,
+            selectedPreprocessingVariant = selectedVariant?.variantId,
+            selectedPreprocessingImagePath = selectedVariant?.imagePath,
+            preprocessingVariantScores = variantScores,
             ocrStatus = ocrResult?.status ?: OcrStatus.NOT_AVAILABLE,
             xSuggestionCount = ocrResult?.suggestedXValues?.size ?: 0,
             ySuggestionCount = ocrResult?.suggestedYValues?.size ?: 0,
