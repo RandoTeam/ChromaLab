@@ -70,6 +70,10 @@ Examples:
 
 The final report must be professional and readable, not terminal-like.
 
+The Belyi Tigr Ion 92 reference fixture is the visual and structural target for
+future report work. The existing interim report/export UI is not a completed
+implementation of that target.
+
 Required direction:
 
 - structured sections with clear hierarchy;

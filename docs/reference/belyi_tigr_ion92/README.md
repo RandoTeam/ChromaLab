@@ -4,6 +4,28 @@ This fixture records the report-depth target for the Belyi Tigr chromatogram cas
 
 The fixture is a report-format reference, not a locked numeric answer. Future calculations must be derived from the detected graph, calibrated axes, extracted signal, and deterministic peak integration.
 
+## Visual Product Contract
+
+This fixture also locks the future visual direction for final chromatogram results.
+The current old report UI/export path is not considered an implementation of this
+target yet.
+
+When this fixture is used for report work, the expected product result is:
+
+- a professional mobile report screen, not a terminal-style text dump;
+- graph preview or overlay near the related data, with crop/source context visible;
+- compact top metadata for model, executed runtime, analysis time, device, and graph count;
+- readable section cards or bands for overview, preparation, axis calibration, peaks,
+  chromatographic quality, Kovats analysis, interpretation, warnings, and appendix;
+- peak tables that remain usable on phone screens through horizontal handling or a
+  designed compact layout;
+- warnings summarized in human language on the main report surface, with raw codes
+  kept in the technical appendix;
+- graph/report ordering preserved for multi-graph pages: graph 1/report 1,
+  graph 2/report 2, graph 3/report 3;
+- no claim that the report phase is done while the result is only raw Markdown,
+  raw JSON, debug text, or free-form LLM prose.
+
 ## Source Materials
 
 The chromatogram screenshot is now committed as a neutral desktop-test resource. The human reference analysis remains outside the repository and is tracked only by hash.

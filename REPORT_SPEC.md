@@ -4,6 +4,26 @@ This document defines the target report contract for ChromaLab chromatogram anal
 
 The reference analysis document supplied for the Belyi Tigr chromatogram is treated as a format and depth reference, not as guaranteed numeric truth. Numeric values must come from the current image/file analysis pipeline or from user-provided digital data.
 
+## Current Implementation Status
+
+This specification is a future product contract, not a description of the current
+in-app report UI. The current calculation/report surface is still an interim
+implementation and must not be treated as complete just because it can render or
+export structured Markdown.
+
+Future report work must preserve the visual and logical target:
+
+- the default user-facing report is a polished mobile document, not terminal-like text;
+- the report is sectioned visually with clear hierarchy, spacing, compact metadata,
+  readable tables, graph/overlay previews, and secondary technical details;
+- Markdown remains an export format and regression reference, not the primary phone UI;
+- raw JSON, raw warning-code dumps, debug logs, or unformatted model prose must not be
+  the default result screen;
+- every graph on a page must render as `graph -> report`, repeated in order for
+  multi-graph inputs;
+- a future phase is not complete until the screen is visually checked on mobile and the
+  output still matches this report-depth contract.
+
 ## Scope
 
 This specification covers the report that is produced after one or more chromatogram graphs are detected, calibrated, calculated, and interpreted.
