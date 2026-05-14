@@ -91,8 +91,8 @@ fun XCalibrationScreen(
             val sorted = ocr.suggestedXValues.sorted()
             val firstAnchor = ocrAnchors.firstOrNull()
             val lastAnchor = ocrAnchors.lastOrNull()
-            value1 = (firstAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
-            value2 = (lastAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
+            value1 = formatCalibrationAnchorValue(firstAnchor?.value ?: sorted.first())
+            value2 = formatCalibrationAnchorValue(lastAnchor?.value ?: sorted.last())
             point1X = firstAnchor?.let {
                 sourceXToView(it.sourceX, viewW, mappedSourceImageWidth, graphRegion, focusGraphRegion)
             } ?: regionPixelXToView(
@@ -161,6 +161,28 @@ fun XCalibrationScreen(
 
     val result = calibration?.let {
         XAxisCalibration(it, unit, System.currentTimeMillis())
+    }
+
+    fun applyOcrAnchor(anchor: AxisCalibrationAnchor) {
+        if (viewW <= 1f) return
+        val anchorX = sourceXToView(
+            anchor.sourceX,
+            viewW,
+            mappedSourceImageWidth,
+            graphRegion,
+            focusGraphRegion,
+        ).coerceIn(0f, viewW)
+        val anchorValue = formatCalibrationAnchorValue(anchor.value)
+
+        if (settingPoint == 1 || point1X <= 0f) {
+            point1X = anchorX
+            value1 = anchorValue
+            settingPoint = 2
+        } else {
+            point2X = anchorX
+            value2 = anchorValue
+            settingPoint = 1
+        }
     }
 
     Scaffold(
@@ -283,6 +305,16 @@ fun XCalibrationScreen(
                             )
                         }
                     }
+
+                    ManualCalibrationAnchorControls(
+                        anchors = ocrAnchors,
+                        selectedPoint = settingPoint,
+                        usedValues = listOf(value1, value2)
+                            .filter { it.isNotBlank() }
+                            .toSet(),
+                        onSelectedPointChange = { settingPoint = it },
+                        onAnchorSelected = ::applyOcrAnchor,
+                    )
 
                     // Instruction
                     Text(

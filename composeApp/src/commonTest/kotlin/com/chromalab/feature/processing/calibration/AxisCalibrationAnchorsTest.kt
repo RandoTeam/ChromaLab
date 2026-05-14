@@ -48,6 +48,13 @@ class AxisCalibrationAnchorsTest {
         assertEquals(listOf(325f, 95f), anchors.map { it.sourceY })
     }
 
+    @Test
+    fun anchorValueFormattingRemovesTrailingZeros() {
+        assertEquals("10", formatCalibrationAnchorValue(10f))
+        assertEquals("10.5", formatCalibrationAnchorValue(10.5f))
+        assertEquals("0", formatCalibrationAnchorValue(0f))
+    }
+
     private fun ocrResult(
         xValues: List<Float>,
         yValues: List<Float>,

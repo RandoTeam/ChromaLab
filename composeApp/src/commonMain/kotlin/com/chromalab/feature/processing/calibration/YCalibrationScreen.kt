@@ -93,8 +93,8 @@ fun YCalibrationScreen(
             val sorted = ocr.suggestedYValues.sorted()
             val bottomAnchor = ocrAnchors.firstOrNull()
             val topAnchor = ocrAnchors.lastOrNull()
-            value1 = (bottomAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
-            value2 = (topAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
+            value1 = formatCalibrationAnchorValue(bottomAnchor?.value ?: sorted.first())
+            value2 = formatCalibrationAnchorValue(topAnchor?.value ?: sorted.last())
             point1Y = bottomAnchor?.let {
                 sourceYToView(it.sourceY, viewH, mappedSourceImageHeight, graphRegion, focusGraphRegion)
             } ?: regionPixelYToView(
@@ -162,6 +162,28 @@ fun YCalibrationScreen(
 
     val result = calibration?.let {
         YAxisCalibration(it, unit, System.currentTimeMillis())
+    }
+
+    fun applyOcrAnchor(anchor: AxisCalibrationAnchor) {
+        if (viewH <= 1f) return
+        val anchorY = sourceYToView(
+            anchor.sourceY,
+            viewH,
+            mappedSourceImageHeight,
+            graphRegion,
+            focusGraphRegion,
+        ).coerceIn(0f, viewH)
+        val anchorValue = formatCalibrationAnchorValue(anchor.value)
+
+        if (settingPoint == 1 || point1Y <= 0f) {
+            point1Y = anchorY
+            value1 = anchorValue
+            settingPoint = 2
+        } else {
+            point2Y = anchorY
+            value2 = anchorValue
+            settingPoint = 1
+        }
     }
 
     Scaffold(
@@ -284,6 +306,16 @@ fun YCalibrationScreen(
                             )
                         }
                     }
+
+                    ManualCalibrationAnchorControls(
+                        anchors = ocrAnchors,
+                        selectedPoint = settingPoint,
+                        usedValues = listOf(value1, value2)
+                            .filter { it.isNotBlank() }
+                            .toSet(),
+                        onSelectedPointChange = { settingPoint = it },
+                        onAnchorSelected = ::applyOcrAnchor,
+                    )
 
                     // Hint about inverted Y
                     Text(
