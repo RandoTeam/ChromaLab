@@ -51,11 +51,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Mask pixels | Curve points | Curve coverage | Curve usable |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Mask pixels | Curve points | Curve coverage | Curve usable |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
             )
         }
         appendLine()

@@ -93,6 +93,7 @@ data class OfflineGraphAudit(
     val ySuggestionCount: Int,
     val axesDetected: Boolean,
     val originDetected: Boolean,
+    val axisConfidence: Float,
     val curveMaskAvailable: Boolean,
     val curveMaskRawPixelCount: Int,
     val curveMaskCleanPixelCount: Int,
@@ -505,6 +506,7 @@ class OfflineAnalysisRunner(
         if (axesResult?.hasAxes != true) {
             graphWarnings += "axes_not_detected"
         }
+        graphWarnings += axesResult?.warnings.orEmpty()
 
         val maskResult = runStage(
             stage = "curve_mask",
@@ -569,6 +571,7 @@ class OfflineAnalysisRunner(
             ySuggestionCount = ocrResult?.suggestedYValues?.size ?: 0,
             axesDetected = axesResult?.hasAxes == true,
             originDetected = axesResult?.hasOrigin == true,
+            axisConfidence = axesResult?.confidence ?: 0f,
             curveMaskAvailable = maskAvailable,
             curveMaskRawPixelCount = maskResult?.rawPixelCount ?: 0,
             curveMaskCleanPixelCount = maskResult?.cleanPixelCount ?: 0,

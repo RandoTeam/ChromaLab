@@ -90,6 +90,7 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "plot_area" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "axis_detect" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "curve_extract" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
@@ -120,6 +121,14 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.graphs.all { it.plotArea.detected && it.plotArea.region != null },
                 "${fixture.id} must detect audited plot-area bounds for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.axesDetected && it.originDetected },
+                "${fixture.id} must detect desktop axis geometry and origin for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.axisConfidence > 0f },
+                "${fixture.id} must expose non-zero axis detection confidence",
             )
             assertTrue(
                 audit.graphs.all { it.curveMaskAvailable },
@@ -179,8 +188,9 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} must keep the full visible chromatogram panel after boundary correction",
                 )
             }
-            assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve-point extraction exists")
+            assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until axis OCR/calibration exists")
             assertTrue(audit.blockedAtStage != "plot_area", "${fixture.id} should pass the plot-area gate")
+            assertTrue(audit.blockedAtStage != "axis_detect", "${fixture.id} should pass the axis-geometry gate")
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")

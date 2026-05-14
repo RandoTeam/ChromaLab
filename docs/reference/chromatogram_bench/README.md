@@ -181,8 +181,15 @@ readiness was also tightened: extracted curve points are not enough for a scient
 result, so the runner stays blocked at `axis_ocr`/`axis_detect` until axis labels,
 axis geometry, and origin are available.
 
+Phase 2.11.1 replaces the desktop axis detector stub with real geometry detection
+inside each audited plot area. The detector finds long dark X/Y-axis runs, records an
+origin at their intersection, exposes axis confidence in `audit.json` and
+`audit_summary.md`, and requires every bench graph to pass the axis-geometry gate. This
+does not unlock numeric calculation: OCR/manual scale calibration is still required
+before time and intensity values can be trusted.
+
 ## Next Phase
 
-Phase 2.11 should implement desktop axis/OCR calibration gates or a manual calibration
-contract. The next gate must verify time/intensity scale recovery before numeric peak
-integration is allowed.
+Phase 2.11.2 should implement desktop axis OCR or a manual calibration contract. The
+next gate must verify time/intensity scale recovery before numeric peak integration is
+allowed.
