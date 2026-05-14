@@ -2,6 +2,15 @@ package com.chromalab.feature.processing.graph
 
 import kotlin.math.roundToInt
 
+fun GraphRegion.requiresGraphPanelBoundaryMode(imageWidth: Int, imageHeight: Int): Boolean {
+    if (maxOf(imageWidth, imageHeight) < 700) return false
+    val safeArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
+    val areaRatio = area.toFloat() / safeArea
+    val widthRatio = width.toFloat() / imageWidth.coerceAtLeast(1)
+    val heightRatio = height.toFloat() / imageHeight.coerceAtLeast(1)
+    return areaRatio >= 0.42f && widthRatio >= 0.70f && heightRatio >= 0.25f
+}
+
 data class GraphRegionBoundaryCorrectionResult(
     val originalRegion: GraphRegion,
     val correctedRegion: GraphRegion,
@@ -19,7 +28,11 @@ class GraphRegionBoundaryCorrector {
         imageHeight: Int,
         preservePanelLabels: Boolean = false,
     ): GraphRegionBoundaryCorrectionResult {
-        val searchRegion = region.axisSearchRegion(imageWidth, imageHeight)
+        val searchRegion = region.axisSearchRegion(
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+            preservePanelLabels = preservePanelLabels,
+        )
         val sampleResult = sampler.sample(imagePath, searchRegion)
         val sample = sampleResult.sample ?: return GraphRegionBoundaryCorrectionResult(
             originalRegion = region,
@@ -45,12 +58,16 @@ class GraphRegionBoundaryCorrector {
             label = region.label.ifBlank { "Axis corrected graph" },
         ).clampToImage(imageWidth, imageHeight)
 
-        val corrected = region.union(axisRegion).clampToImage(imageWidth, imageHeight)
+        val corrected = if (preservePanelLabels) {
+            axisRegion
+        } else {
+            region.union(axisRegion).clampToImage(imageWidth, imageHeight)
+        }
         val leftRecovery = region.x - corrected.x
         val topRecovery = region.y - corrected.y
         val significantRecovery = leftRecovery >= (region.width * 0.08f).roundToInt().coerceAtLeast(12) ||
             topRecovery >= (region.height * 0.04f).roundToInt().coerceAtLeast(12)
-        if (!significantRecovery) {
+        if (!preservePanelLabels && !significantRecovery) {
             return GraphRegionBoundaryCorrectionResult(
                 originalRegion = region,
                 correctedRegion = region,
@@ -60,11 +77,16 @@ class GraphRegionBoundaryCorrector {
 
         val changed = corrected != region
         val warnings = buildList {
+            if (preservePanelLabels && changed) add("graph_boundary.panel_bounds_applied")
             if (changed) add("graph_boundary.axis_aligned_expansion_applied")
             if (corrected.x < region.x) add("graph_boundary.expanded_left_to_axis")
             if (corrected.y < region.y) add("graph_boundary.expanded_top_to_axis")
             if (corrected.right > region.right) add("graph_boundary.expanded_right_to_axis")
             if (corrected.bottom > region.bottom) add("graph_boundary.expanded_bottom_to_axis")
+            if (corrected.x > region.x) add("graph_boundary.trimmed_left_to_panel")
+            if (corrected.y > region.y) add("graph_boundary.trimmed_top_to_panel")
+            if (corrected.right < region.right) add("graph_boundary.trimmed_right_to_panel")
+            if (corrected.bottom < region.bottom) add("graph_boundary.trimmed_bottom_to_panel")
         }
 
         return GraphRegionBoundaryCorrectionResult(
@@ -99,11 +121,19 @@ private data class AxisVerticalRun(
     val length: Int get() = endY - startY + 1
 }
 
-private fun GraphRegion.axisSearchRegion(imageWidth: Int, imageHeight: Int): GraphRegion {
-    val leftPad = (width * 0.55f).roundToInt().coerceAtLeast((imageWidth * 0.08f).roundToInt())
-    val rightPad = (width * 0.20f).roundToInt().coerceAtLeast((imageWidth * 0.04f).roundToInt())
-    val topPad = (height * 0.22f).roundToInt().coerceAtLeast((imageHeight * 0.04f).roundToInt())
-    val bottomPad = (height * 0.12f).roundToInt().coerceAtLeast((imageHeight * 0.025f).roundToInt())
+private fun GraphRegion.axisSearchRegion(
+    imageWidth: Int,
+    imageHeight: Int,
+    preservePanelLabels: Boolean,
+): GraphRegion {
+    val leftPadRatio = if (preservePanelLabels) 0.65f else 0.55f
+    val rightPadRatio = if (preservePanelLabels) 0.24f else 0.20f
+    val topPadRatio = if (preservePanelLabels) 0.48f else 0.22f
+    val bottomPadRatio = if (preservePanelLabels) 0.18f else 0.12f
+    val leftPad = (width * leftPadRatio).roundToInt().coerceAtLeast((imageWidth * 0.08f).roundToInt())
+    val rightPad = (width * rightPadRatio).roundToInt().coerceAtLeast((imageWidth * 0.04f).roundToInt())
+    val topPad = (height * topPadRatio).roundToInt().coerceAtLeast((imageHeight * 0.04f).roundToInt())
+    val bottomPad = (height * bottomPadRatio).roundToInt().coerceAtLeast((imageHeight * 0.025f).roundToInt())
     return GraphRegion(
         x = x - leftPad,
         y = y - topPad,
@@ -119,29 +149,54 @@ private fun GraphRegionRefinementSample.findAxisAlignedBounds(
     if (width <= 16 || height <= 16 || gray.size != width * height) return null
 
     val threshold = estimateAxisThreshold()
-    val horizontalAxis = findHorizontalAxisRun(threshold) ?: return null
+    val horizontalAxis = findHorizontalAxisRun(
+        threshold = threshold,
+        preservePanelLabels = preservePanelLabels,
+    ) ?: return null
     val verticalAxis = findVerticalAxisRun(
         threshold = threshold,
         horizontalAxis = horizontalAxis,
+        preservePanelLabels = preservePanelLabels,
     ) ?: return null
 
     val padX = (width * 0.010f).roundToInt().coerceAtLeast(3)
     val padY = (height * 0.012f).roundToInt().coerceAtLeast(3)
+    val panelTopPad = if (preservePanelLabels) {
+        (height * 0.050f).roundToInt().coerceAtLeast(14)
+    } else {
+        padY
+    }
+    val panelBottomPad = if (preservePanelLabels) {
+        (height * 0.070f).roundToInt().coerceAtLeast(18)
+    } else {
+        padY
+    }
     val axisLeft = minOf(horizontalAxis.startX, verticalAxis.x)
+    val signalTop = if (preservePanelLabels) {
+        findSignalTopBoundary(
+            threshold = threshold,
+            left = axisLeft,
+            right = horizontalAxis.endX,
+            axisRow = horizontalAxis.row,
+        )
+    } else {
+        null
+    }
+    val contentTop = minOf(verticalAxis.startY, signalTop ?: verticalAxis.startY)
     val panelLeft = if (preservePanelLabels) {
         findLeftPanelBoundary(
             threshold = threshold,
             axisLeft = axisLeft,
-            top = verticalAxis.startY,
+            top = contentTop,
             bottom = maxOf(horizontalAxis.row, verticalAxis.endY),
         )
     } else {
         axisLeft
     }
     val left = panelLeft - padX
-    val top = verticalAxis.startY - padY
+    val top = contentTop - panelTopPad
     val right = horizontalAxis.endX + padX + 1
-    val bottom = maxOf(horizontalAxis.row, verticalAxis.endY) + padY + 1
+    val bottom = maxOf(horizontalAxis.row, verticalAxis.endY) + panelBottomPad + 1
 
     if (right - left < width * 0.30f || bottom - top < height * 0.22f) return null
     return AxisAlignedBounds(
@@ -190,15 +245,73 @@ private fun GraphRegionRefinementSample.findLeftPanelBoundary(
     return leftMost
 }
 
-private fun GraphRegionRefinementSample.findHorizontalAxisRun(threshold: Int): AxisHorizontalRun? {
+private fun GraphRegionRefinementSample.findSignalTopBoundary(
+    threshold: Int,
+    left: Int,
+    right: Int,
+    axisRow: Int,
+): Int? {
+    val safeLeft = left.coerceIn(0, width - 1)
+    val safeRight = right.coerceIn(safeLeft, width - 1)
+    val upperLimit = (axisRow - height * 0.035f).roundToInt().coerceIn(0, height - 1)
+    if (upperLimit <= 0) return null
+
+    val minRun = (height * 0.025f).roundToInt().coerceIn(14, 44)
+    val maxGap = (height * 0.008f).roundToInt().coerceIn(2, 8)
+    var bestTop: Int? = null
+
+    for (x in safeLeft..safeRight) {
+        var y = 0
+        while (y <= upperLimit) {
+            while (y <= upperLimit && gray[y * width + x] >= threshold) y++
+            if (y > upperLimit) break
+
+            val start = y
+            var lastDark = y
+            var gap = 0
+            while (y <= upperLimit && gap <= maxGap) {
+                if (gray[y * width + x] < threshold) {
+                    lastDark = y
+                    gap = 0
+                } else {
+                    gap++
+                }
+                y++
+            }
+            val length = lastDark - start + 1
+            if (length >= minRun) {
+                bestTop = minOf(bestTop ?: start, start)
+            }
+        }
+    }
+
+    return bestTop
+}
+
+private fun GraphRegionRefinementSample.findHorizontalAxisRun(
+    threshold: Int,
+    preservePanelLabels: Boolean,
+): AxisHorizontalRun? {
     val yStart = (height * 0.42f).roundToInt().coerceIn(0, height - 1)
-    val yEnd = (height * 0.97f).roundToInt().coerceIn(yStart, height - 1)
-    val minRun = (width * 0.45f).roundToInt().coerceAtLeast(80).coerceAtMost(width)
-    val maxGap = (width * 0.006f).roundToInt().coerceIn(2, 8)
+    val yEndRatio = if (preservePanelLabels) 0.91f else 0.97f
+    val yEnd = (height * yEndRatio).roundToInt().coerceIn(yStart, height - 1)
+    val minRunRatio = if (preservePanelLabels) 0.34f else 0.45f
+    val minRun = (width * minRunRatio).roundToInt().coerceAtLeast(80).coerceAtMost(width)
+    val maxGap = if (preservePanelLabels) {
+        (width * 0.030f).roundToInt().coerceIn(16, 42)
+    } else {
+        (width * 0.006f).roundToInt().coerceIn(2, 8)
+    }
     var best: AxisHorizontalRun? = null
+    val scanStartX = if (preservePanelLabels) {
+        (width * 0.050f).roundToInt().coerceAtLeast(10)
+    } else {
+        0
+    }
 
     for (y in yStart..yEnd) {
-        val run = longestDarkRunInRow(y, threshold, maxGap)
+        val run = longestDarkRunInRow(y, threshold, maxGap, scanStartX)
+        if (preservePanelLabels && run.isLikelyPageEdgeRun(width, y, height)) continue
         if (run.length >= minRun && run.length > (best?.length ?: 0)) {
             best = AxisHorizontalRun(row = y, startX = run.startX, endX = run.endX)
         }
@@ -210,14 +323,27 @@ private fun GraphRegionRefinementSample.findHorizontalAxisRun(threshold: Int): A
 private fun GraphRegionRefinementSample.findVerticalAxisRun(
     threshold: Int,
     horizontalAxis: AxisHorizontalRun,
+    preservePanelLabels: Boolean,
 ): AxisVerticalRun? {
-    val searchStart = (horizontalAxis.startX - width * 0.03f).roundToInt().coerceAtLeast(0)
-    val searchEnd = (horizontalAxis.startX + horizontalAxis.length * 0.30f)
+    val leftGuard = if (preservePanelLabels) (width * 0.035f).roundToInt().coerceAtLeast(8) else 0
+    val searchStart = if (preservePanelLabels) {
+        (horizontalAxis.startX - horizontalAxis.length * 0.34f).roundToInt().coerceAtLeast(leftGuard)
+    } else {
+        (horizontalAxis.startX - width * 0.03f).roundToInt().coerceAtLeast(0)
+    }
+    val searchEndRatio = if (preservePanelLabels) 0.22f else 0.30f
+    val searchEnd = (horizontalAxis.startX + horizontalAxis.length * searchEndRatio)
         .roundToInt()
         .coerceIn(searchStart, width - 1)
     val endTolerance = (height * 0.045f).roundToInt().coerceAtLeast(6)
-    val minRun = (height * 0.24f).roundToInt().coerceAtLeast(48)
-    val maxGap = (height * 0.010f).roundToInt().coerceIn(2, 8)
+    val minRunRatio = if (preservePanelLabels) 0.18f else 0.24f
+    val minRun = (height * minRunRatio).roundToInt().coerceAtLeast(48)
+    val maxRun = if (preservePanelLabels) (height * 0.86f).roundToInt() else height
+    val maxGap = if (preservePanelLabels) {
+        (height * 0.025f).roundToInt().coerceIn(12, 32)
+    } else {
+        (height * 0.010f).roundToInt().coerceIn(2, 8)
+    }
     val candidates = mutableListOf<AxisVerticalRun>()
 
     for (x in searchStart..searchEnd) {
@@ -228,26 +354,52 @@ private fun GraphRegionRefinementSample.findVerticalAxisRun(
             endTolerance = endTolerance,
             maxGap = maxGap,
         )
-        if (run != null && run.length >= minRun) {
+        if (run != null && preservePanelLabels && run.isLikelyPageVerticalEdge(height)) continue
+        if (run != null && run.length >= minRun && run.length <= maxRun) {
             candidates += run
         }
     }
     if (candidates.isEmpty()) return null
 
     val maxLength = candidates.maxOf { it.length }
-    return candidates
-        .filter { it.length >= (maxLength * 0.60f).roundToInt().coerceAtLeast(minRun) }
-        .minWithOrNull(compareBy<AxisVerticalRun> { it.x }.thenByDescending { it.length })
+    val minComparableLengthRatio = if (preservePanelLabels) 0.40f else 0.60f
+    val axisBand = if (preservePanelLabels) {
+        val rightTolerance = (width * 0.015f).roundToInt().coerceAtLeast(12)
+        candidates.filter { it.x <= horizontalAxis.startX + rightTolerance }.ifEmpty { candidates }
+    } else {
+        candidates
+    }
+    return axisBand
+        .filter { it.length >= (maxLength * minComparableLengthRatio).roundToInt().coerceAtLeast(minRun) }
+        .minWithOrNull(
+            compareBy<AxisVerticalRun> { kotlin.math.abs(it.x - horizontalAxis.startX) }
+                .thenBy { it.x }
+                .thenByDescending { it.length },
+        )
 }
 
 private data class RowRun(val startX: Int, val endX: Int) {
     val length: Int get() = endX - startX + 1
 }
 
+private fun AxisVerticalRun.isLikelyPageVerticalEdge(height: Int): Boolean {
+    val startsAtSearchTop = startY <= (height * 0.035f).roundToInt().coerceAtLeast(8)
+    val extendsLikePageEdge = length >= (height * 0.50f).roundToInt()
+    return startsAtSearchTop && extendsLikePageEdge
+}
+
+private fun RowRun.isLikelyPageEdgeRun(width: Int, y: Int, height: Int): Boolean {
+    val startsAtPageEdge = startX <= (width * 0.020f).roundToInt().coerceAtLeast(6)
+    val veryWide = length >= (width * 0.92f).roundToInt()
+    val inLowerSearchBand = y >= (height * 0.74f).roundToInt()
+    return startsAtPageEdge && veryWide && inLowerSearchBand
+}
+
 private fun GraphRegionRefinementSample.longestDarkRunInRow(
     y: Int,
     threshold: Int,
     maxGap: Int,
+    scanStartX: Int = 0,
 ): RowRun {
     var bestStart = 0
     var bestEnd = -1
@@ -255,7 +407,7 @@ private fun GraphRegionRefinementSample.longestDarkRunInRow(
     var lastDark = -1
     var gap = 0
 
-    for (x in 0 until width) {
+    for (x in scanStartX until width) {
         if (gray[y * width + x] < threshold) {
             if (start < 0) start = x
             lastDark = x

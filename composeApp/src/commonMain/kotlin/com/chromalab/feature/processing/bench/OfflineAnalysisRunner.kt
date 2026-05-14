@@ -13,6 +13,7 @@ import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionQuality
 import com.chromalab.feature.processing.graph.GraphRegionRefiner
 import com.chromalab.feature.processing.graph.GraphRegionRefinementResult
+import com.chromalab.feature.processing.graph.requiresGraphPanelBoundaryMode
 import com.chromalab.feature.processing.normalize.ImageOrientationCorrectionResult
 import com.chromalab.feature.processing.normalize.ImageOrientationCorrector
 import com.chromalab.feature.processing.normalize.ImageNormalizer
@@ -278,6 +279,9 @@ class OfflineAnalysisRunner(
             warnings += "graph.count_mismatch.expected_${input.expectedGraphCount}_actual_${selectedRegions.size}"
         }
 
+        val preservePanelLabelsForRun = orientation.wasRotated ||
+            selectedRegions.any { it.requiresGraphPanelBoundaryMode(orientation.width, orientation.height) }
+
         val correctedRegions = selectedRegions.mapIndexed { index, region ->
             runStage(
                 stage = "graph_boundary",
@@ -292,7 +296,7 @@ class OfflineAnalysisRunner(
                     region = region,
                     imageWidth = orientation.width,
                     imageHeight = orientation.height,
-                    preservePanelLabels = orientation.wasRotated,
+                    preservePanelLabels = preservePanelLabelsForRun,
                 )
             }?.also { result ->
                 warnings += result.warnings.map { "graph_${index + 1}.$it" }

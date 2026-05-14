@@ -5,6 +5,7 @@ import com.chromalab.feature.processing.graph.GraphRegionBoundaryCorrector
 import com.chromalab.feature.processing.graph.DetectionConfidence
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
+import com.chromalab.feature.processing.graph.requiresGraphPanelBoundaryMode
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
@@ -267,13 +268,16 @@ class AutoSweepEngine {
 
         // Region selection priority: override > CV > VLM fallback.
         val detectedRegion = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
+        val preservePanelLabelsForRun = preservePanelLabels ||
+            graphRes?.filteredRegions.orEmpty().any { it.requiresGraphPanelBoundaryMode(w, h) } ||
+            detectedRegion?.requiresGraphPanelBoundaryMode(w, h) == true
         val region = detectedRegion?.let { selected ->
             val correction = graphBoundaryCorrector.correct(
                 imagePath = imagePath,
                 region = selected,
                 imageWidth = w,
                 imageHeight = h,
-                preservePanelLabels = preservePanelLabels,
+                preservePanelLabels = preservePanelLabelsForRun,
             )
             if (correction.changed) {
                 println("SWEEP[GRAPH_BOUNDARY] ${correction.warnings.joinToString()} corrected=${correction.correctedRegion}")

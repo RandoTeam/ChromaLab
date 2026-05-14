@@ -136,8 +136,18 @@ block, so the output region represents the visible graph panel rather than only 
 inner plot area. This protects early peaks and graph context when a tall peak is
 mistaken for the Y axis.
 
+Phase 2.8.1 extends the same graph-panel boundary mode to broad photographed page
+fixtures. When any selected graph candidate looks like a large page/photo crop, the
+whole run preserves panel labels and uses wider axis-search margins, larger gap
+closing for faint photographed axes, and vertical signal-top recovery. This prevents
+the current hard fixtures from silently clipping early/tall peaks. The remaining
+`bench_01` and `bench_06` broad-context panels are still blocked before calculation
+because the next detector must separate page metadata from the final graph panel and
+then derive audited plot-area bounds inside that panel.
+
 ## Next Phase
 
-Phase 2.8 should implement the photographed-page graph-panel detector for the remaining
-hard page photos (`bench_01` and `bench_06`), then add a separate audited plot-area
-detector inside the accepted panel before calculation is allowed.
+Phase 2.8.2 should tighten photographed-page graph-panel bounds for the remaining hard
+page photos (`bench_01` and `bench_06`) without reintroducing top-signal clipping.
+After that, add a separate audited plot-area detector inside the accepted panel before
+calculation is allowed.
