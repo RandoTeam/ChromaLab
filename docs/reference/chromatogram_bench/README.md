@@ -231,7 +231,13 @@ screens now expose compact P1/P2 selectors and detected tick chips; choosing a c
 fills the active calibration point while keeping drag/tap manual correction available.
 This keeps OCR assistance auditable instead of automatically accepting weak tick reads.
 
+Phase 2.12.1 adds fixture artifacts for manual calibration focus review. Each bench run
+now writes `manual_calibration_graph_N.png` beside the existing graph overlay and curve
+artifacts, showing the focused graph-panel crop with plot-area and axis guide overlays.
+The fixture test requires this artifact for every detected graph, so manual calibration
+visual QA cannot disappear silently.
+
 ## Next Phase
 
-Phase 2.12 should visually validate the manual calibration screens against bench
-fixtures before numeric peak integration work starts.
+Phase 2.12.2 should review the generated manual calibration focus artifacts and lock
+visual acceptance thresholds before numeric peak integration work starts.
