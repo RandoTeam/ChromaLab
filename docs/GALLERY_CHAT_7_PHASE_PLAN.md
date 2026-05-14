@@ -15,8 +15,8 @@ Project rules for this plan:
 
 ## Current Position
 
-- Current completed phase: Phase 7.3.
-- Next phase to start: Phase 7.4.
+- Current completed phase: Phase 7.4.
+- Next phase to start: Phase 7.5.
 - Phase 1 technical contract: `docs/GALLERY_CHAT_PHASE_1_CONTRACT.md`.
 
 ## Phase 1 - Gallery Audit And Pixel Contract
@@ -183,7 +183,7 @@ Status: in progress.
 - [x] Phase 7.1: Define chat-local colors based on Gallery neutral surfaces while preserving ChromaLab's scientific identity.
 - [x] Phase 7.2: Decide whether Nunito or any Gallery assets are needed; if copied, preserve Apache 2.0 license notes.
 - [x] Phase 7.3: Polish spacing, typography, icon sizes, touch targets, empty states, loading states, and error states.
-- [ ] Phase 7.4: Run mobile visual QA on at least one real device or emulator.
+- [x] Phase 7.4: Run mobile visual QA on at least one real device or emulator.
 - [ ] Phase 7.5: Update README/roadmap/pipeline docs if user-facing chat behavior changed.
 - [ ] Phase 7.6: Commit Phase 7 work slices separately.
 
@@ -222,6 +222,23 @@ Status: in progress.
   narrow screens instead of overflowing horizontally.
 - Composer disabled text color now reflects generation state as well as missing
   model state.
+
+### Phase 7.4 Mobile Visual QA Notes
+
+- QA target: Android emulator `Pixel_10_Pro_XL`, `1344x2992`, density `480`,
+  installed `androidApp-debug.apk`.
+- Portrait chat list empty state passed: centered empty state, balanced text wrapping,
+  visible primary action, and bottom navigation did not overlap content.
+- Portrait new-chat thread passed: model chip, no-model warning, disabled composer,
+  send button, and bottom navigation remained visible without text overlap.
+- Landscape new-chat thread passed: top bar, warning surface, disabled composer,
+  and bottom navigation remained readable and inside screen bounds.
+- Landscape model picker passed: bottom sheet, header, manage action, and empty model
+  card rendered without overlap.
+- Residual QA note: first launch on this Android image showed the system 16 KB page
+  size compatibility dialog for native libraries such as `libllama_bridge.so` and
+  LiteRT/ML Kit/SQLite libraries. This is a packaging/runtime compatibility issue,
+  not a chat UI regression, and should be handled outside the Gallery chat UI phase.
 
 ## Do Not Start Yet
 
