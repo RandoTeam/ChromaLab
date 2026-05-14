@@ -72,14 +72,13 @@ Phase 1.2 adds local debug artifacts for every bench run:
 These artifacts are generated in the test run's temporary output directory. They are not
 committed as static golden files yet because graph detection is still being calibrated.
 
-Phase 1.3 adds real desktop graph-region detection. Current graph-count calibration:
+Phase 1.3 adds real desktop graph-region detection. Phase 1.4 adds stacked/multi-panel
+axis-panel detection. Current graph-count calibration:
 
-- passing and strict: `bench_01`, `bench_02`, `bench_03`, `bench_07`, `bench_08`;
-- known mismatch with explicit audit warning: `bench_04` expected 4 / detected 3,
-  `bench_05` expected 4 / detected 3, `bench_06` expected 2 / detected 3.
+- passing and strict: all eight bench fixtures.
 
 ## Next Phase
 
-Phase 1.4 should tune the remaining stacked/multi-panel split failures for `bench_04`,
-`bench_05`, and `bench_06` while preserving strict graph-count checks for the fixtures
-that already pass.
+Phase 2.1 should move from graph-count calibration into crop quality and preprocessing
+variant audit so OCR, axis extraction, and curve extraction can run from the best
+prepared graph image instead of an unranked source copy.

@@ -169,6 +169,20 @@ Next Phase 1.4 work slice:
 3. Use generated `graph_candidates.png` overlays as the primary diagnostic artifact
    when tuning each remaining split.
 
+Phase 1.4 status:
+
+- Added an axis-panel detector pass for stacked and multi-panel chromatograms.
+- `bench_04`, `bench_05`, and `bench_06` now produce the expected graph count.
+- All eight bench fixtures now have strict graph-count assertions in the executable
+  desktop test.
+
+Next Phase 2.1 work slice:
+
+1. Move from graph-count calibration into crop quality and preparation quality.
+2. Add preprocessing/filter variant audit so every graph records which prepared image
+   variant should drive OCR/axis/curve extraction.
+3. Keep calculation blocked until usable axis and curve extraction are available.
+
 Exit criteria:
 
 - each fixture can be run to either a structured report or a structured stage failure;
@@ -351,3 +365,9 @@ Exit criteria:
 2. Add bright-panel detection for phone screenshot imports with dark UI/background.
 3. Correct `bench_01` expected facts to two Ion 217/218 graph panels.
 4. Start strict graph-count assertions for fixtures that now pass.
+
+- Phase 1.4:
+
+1. Add axis-panel detection for stacked and multi-panel chromatograms.
+2. Expand compact stacked-panel crops to include the full panel context when needed.
+3. Promote `bench_04`, `bench_05`, and `bench_06` to strict graph-count assertions.

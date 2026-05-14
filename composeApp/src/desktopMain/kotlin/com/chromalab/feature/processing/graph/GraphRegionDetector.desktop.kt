@@ -41,6 +41,15 @@ actual class GraphRegionDetector actual constructor() {
             imageHeight = imageHeight,
         )?.let { return it }
 
+        tryAxisPanelDetection(
+            gray = gray,
+            sampledWidth = sampledWidth,
+            sampledHeight = sampledHeight,
+            scale = sampleStep.toFloat(),
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+        )?.let { return it }
+
         tryLineDetection(
             gray = gray,
             sampledWidth = sampledWidth,
@@ -152,6 +161,86 @@ actual class GraphRegionDetector actual constructor() {
             imageWidth = imageWidth,
             imageHeight = imageHeight,
             warnings = listOf("graph.region_from_bright_panel"),
+            timestamp = System.currentTimeMillis(),
+        )
+    }
+
+    private fun tryAxisPanelDetection(
+        gray: IntArray,
+        sampledWidth: Int,
+        sampledHeight: Int,
+        scale: Float,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphRegionResult? {
+        val darkThreshold = estimateDarkThreshold(gray).coerceAtMost(175)
+        val horizontalAxisRows = findHorizontalAxisRows(
+            gray = gray,
+            sampledWidth = sampledWidth,
+            sampledHeight = sampledHeight,
+            darkThreshold = darkThreshold,
+        )
+        if (horizontalAxisRows.size < 2) return null
+
+        val panels = mutableListOf<GraphRegion>()
+        horizontalAxisRows.forEachIndexed { index, bottomRow ->
+            val topLimit = if (index == 0) 0 else horizontalAxisRows[index - 1]
+            val axisRun = findBestVerticalRunEndingNear(
+                gray = gray,
+                sampledWidth = sampledWidth,
+                left = 0,
+                right = (sampledWidth * 0.40f).roundToInt().coerceAtLeast(1),
+                top = topLimit,
+                bottomRow = bottomRow,
+                darkThreshold = darkThreshold,
+            ) ?: return@forEachIndexed
+
+            val panelHeight = bottomRow - axisRun.startY
+            if (panelHeight < (sampledHeight * 0.06f).roundToInt().coerceAtLeast(18)) return@forEachIndexed
+
+            val span = findHorizontalSpanAtRow(
+                gray = gray,
+                sampledWidth = sampledWidth,
+                row = bottomRow,
+                startX = axisRun.x,
+                darkThreshold = darkThreshold,
+            ) ?: return@forEachIndexed
+            if (span.last - span.first < (sampledWidth * 0.35f).roundToInt()) return@forEachIndexed
+
+            val padX = (sampledWidth * 0.025f).roundToInt().coerceAtLeast(3)
+            val padY = (sampledHeight * 0.010f).roundToInt().coerceAtLeast(2)
+            val panelTop = if (panelHeight < (sampledHeight * 0.12f).roundToInt() && index > 0) {
+                topLimit
+            } else {
+                axisRun.startY
+            }
+            panels += GraphRegion(
+                x = (max(0, min(axisRun.x, span.first) - padX) * scale).roundToInt(),
+                y = (max(0, panelTop - padY) * scale).roundToInt(),
+                width = ((min(sampledWidth, span.last + padX) - max(0, min(axisRun.x, span.first) - padX)) * scale)
+                    .roundToInt()
+                    .coerceAtLeast(1),
+                height = ((min(sampledHeight, bottomRow + padY) - max(0, panelTop - padY)) * scale)
+                    .roundToInt()
+                    .coerceAtLeast(1),
+                label = "Axis panel ${panels.size + 1}",
+            ).clampToImage(imageWidth, imageHeight)
+        }
+
+        val mergedPanels = mergeOverlappingRegions(panels)
+            .filter { region ->
+                region.area.toFloat() / (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f) >= 0.035f &&
+                    region.height >= imageHeight * 0.09f
+            }
+        if (mergedPanels.size < 2) return null
+
+        return GraphRegionResult(
+            regions = mergedPanels,
+            detectionMethod = DetectionMethod.AUTO,
+            confidence = DetectionConfidence.HIGH,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+            warnings = listOf("graph.region_from_axis_panels"),
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -409,6 +498,44 @@ actual class GraphRegionDetector actual constructor() {
         return peaks
     }
 
+    private fun findHorizontalAxisRows(
+        gray: IntArray,
+        sampledWidth: Int,
+        sampledHeight: Int,
+        darkThreshold: Int,
+    ): List<Int> {
+        val rowDensity = IntArray(sampledHeight) { y ->
+            (0 until sampledWidth).count { x -> gray[y * sampledWidth + x] < darkThreshold }
+        }
+        val threshold = (sampledWidth * 0.35f).roundToInt().coerceAtLeast(8)
+        val minSpacing = (sampledHeight * 0.055f).roundToInt().coerceAtLeast(8)
+        val rows = mutableListOf<Int>()
+
+        var y = 0
+        while (y < rowDensity.size) {
+            if (rowDensity[y] >= threshold) {
+                var scan = y
+                var bestRow = y
+                var bestDensity = rowDensity[y]
+                while (scan < rowDensity.size && rowDensity[scan] >= threshold / 2) {
+                    if (rowDensity[scan] > bestDensity) {
+                        bestDensity = rowDensity[scan]
+                        bestRow = scan
+                    }
+                    scan++
+                }
+                if (rows.none { abs(it - bestRow) < minSpacing }) {
+                    rows += bestRow
+                }
+                y = scan + minSpacing / 2
+            } else {
+                y++
+            }
+        }
+
+        return rows.sorted()
+    }
+
     private fun findBestVerticalRun(
         gray: IntArray,
         sampledWidth: Int,
@@ -454,6 +581,78 @@ actual class GraphRegionDetector actual constructor() {
         }
 
         return best
+    }
+
+    private fun findBestVerticalRunEndingNear(
+        gray: IntArray,
+        sampledWidth: Int,
+        left: Int,
+        right: Int,
+        top: Int,
+        bottomRow: Int,
+        darkThreshold: Int,
+    ): VerticalRun? {
+        val maxGap = ((bottomRow - top) * 0.030f).roundToInt().coerceAtLeast(2)
+        val endTolerance = ((bottomRow - top) * 0.035f).roundToInt().coerceAtLeast(4)
+        var best: VerticalRun? = null
+        val bottomLimit = (bottomRow + endTolerance).coerceAtMost(gray.size / sampledWidth - 1)
+
+        for (x in left.coerceAtLeast(0)..right.coerceAtMost(sampledWidth - 1)) {
+            var y = top.coerceAtLeast(0)
+            while (y <= bottomLimit) {
+                while (y <= bottomLimit && gray[y * sampledWidth + x] >= darkThreshold) y++
+                if (y > bottomLimit) break
+
+                val start = y
+                var lastDark = y
+                var gap = 0
+                while (y <= bottomLimit && gap <= maxGap) {
+                    if (gray[y * sampledWidth + x] < darkThreshold) {
+                        lastDark = y
+                        gap = 0
+                    } else {
+                        gap++
+                    }
+                    y++
+                }
+
+                if (lastDark >= bottomRow - endTolerance) {
+                    val candidate = VerticalRun(
+                        x = x,
+                        startY = start,
+                        endY = min(lastDark, bottomRow),
+                    )
+                    if (candidate.length > (best?.length ?: 0)) {
+                        best = candidate
+                    }
+                }
+            }
+        }
+
+        return best
+    }
+
+    private fun findHorizontalSpanAtRow(
+        gray: IntArray,
+        sampledWidth: Int,
+        row: Int,
+        startX: Int,
+        darkThreshold: Int,
+    ): IntRange? {
+        val y = row.coerceIn(0, gray.size / sampledWidth - 1)
+        var first = -1
+        var last = -1
+        val rowWindow = max(0, y - 1)..min(gray.size / sampledWidth - 1, y + 1)
+
+        for (x in startX.coerceAtLeast(0) until sampledWidth) {
+            val darkNearby = rowWindow.any { scanY -> gray[scanY * sampledWidth + x] < darkThreshold }
+            if (darkNearby) {
+                if (first < 0) first = x
+                last = x
+            }
+        }
+
+        return if (first >= 0 && last > first) first..last else null
     }
 
     private fun splitByValleys(

@@ -52,8 +52,11 @@ class ChromatogramBenchFixtureTest {
         assertEquals(2, byId.getValue("bench_01_mz71_screenshot_page").expectedGraphCount)
         assertTrue(byId.getValue("bench_01_mz71_screenshot_page").strictGraphCount)
         assertEquals(4, byId.getValue("bench_04_stacked_xic_resolution").expectedGraphCount)
+        assertTrue(byId.getValue("bench_04_stacked_xic_resolution").strictGraphCount)
         assertEquals(4, byId.getValue("bench_05_tic_plus_ions").expectedGraphCount)
+        assertTrue(byId.getValue("bench_05_tic_plus_ions").strictGraphCount)
         assertEquals(2, byId.getValue("bench_06_photo_two_graphs_page").expectedGraphCount)
+        assertTrue(byId.getValue("bench_06_photo_two_graphs_page").strictGraphCount)
         assertTrue(byId.getValue("bench_07_rotated_page_photo").requiresRotationCorrection)
         assertTrue("near_duplicate_candidate" in byId.getValue("bench_08_mz71_duplicate_candidate").tags)
     }
@@ -151,6 +154,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 4,
             expectedIon = "XIC 198.0315",
             expectedTitle = null,
+            strictGraphCount = true,
             tags = setOf("stacked_graphs", "xic", "seconds_axis", "multiple_mass_windows"),
         ),
         ChromatogramBenchFixture(
@@ -163,6 +167,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 4,
             expectedIon = "m/z 326/360/394",
             expectedTitle = "TIC: NERPA1.D",
+            strictGraphCount = true,
             tags = setOf("multi_panel", "tic", "ion_traces", "russian_labels"),
         ),
         ChromatogramBenchFixture(
@@ -175,6 +180,7 @@ private object ChromatogramBenchFixtures {
             expectedGraphCount = 2,
             expectedIon = "m/z 83 and m/z 92",
             expectedTitle = null,
+            strictGraphCount = true,
             tags = setOf("printed_page_photo", "two_graphs", "perspective_distortion", "crop_required"),
         ),
         ChromatogramBenchFixture(
