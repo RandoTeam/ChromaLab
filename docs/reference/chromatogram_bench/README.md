@@ -226,7 +226,12 @@ image to the graph region while preserving graph-region-relative calibration mat
 touch points, OCR tick anchors, and preview ticks stay aligned with the curve extraction
 coordinate system.
 
+Phase 2.11.6.3 makes OCR tick anchors editable in the manual calibration screens. The
+screens now expose compact P1/P2 selectors and detected tick chips; choosing a chip
+fills the active calibration point while keeping drag/tap manual correction available.
+This keeps OCR assistance auditable instead of automatically accepting weak tick reads.
+
 ## Next Phase
 
-Phase 2.11.6.3 should add editable tick-anchor UX while keeping the same
-confirmed-calibration gate before numeric peak integration is allowed.
+Phase 2.12 should visually validate the manual calibration screens against bench
+fixtures before numeric peak integration work starts.

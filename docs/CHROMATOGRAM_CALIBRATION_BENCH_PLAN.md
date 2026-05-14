@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 2.11.6.2 - zoomed manual calibration review`.
-- Next work slice: `Phase 2.11.6.3 - editable tick-anchor UX`.
+- Latest completed work slice: `Phase 2.11.6.3 - editable tick-anchor UX`.
+- Next work slice: `Phase 2.12 - manual calibration visual validation on fixtures`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -55,7 +55,8 @@ artifact summary; it is not the primary plan.
 | Phase 2.11.5 | Done | `d4dc42a` | Add manual X/Y calibration gate to user flow. |
 | Phase 2.11.6.1 | Done | `92dcc53` | Use OCR tick anchors for manual calibration prefill and overlay hints. |
 | Phase 2.11.6.2 | Done | `4c98d4d` | Add focused graph-panel view for manual calibration review. |
-| Phase 2.11.6.3 | Next | Pending | Add editable tick-anchor UX for manual calibration. |
+| Phase 2.11.6.3 | Done | `6925b75` | Add editable tick-anchor UX for manual calibration. |
+| Phase 2.12 | Next | Pending | Validate manual calibration screens visually against bench fixtures before numeric integration work. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
