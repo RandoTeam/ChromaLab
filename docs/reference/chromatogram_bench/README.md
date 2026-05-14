@@ -145,9 +145,18 @@ the current hard fixtures from silently clipping early/tall peaks. The remaining
 because the next detector must separate page metadata from the final graph panel and
 then derive audited plot-area bounds inside that panel.
 
+Phase 2.8.2 tightens those photographed-page graph-panel bounds. The boundary corrector
+now ignores short page-metadata strokes when recovering the signal top, avoids selecting
+the physical paper edge as the X axis, searches farther left when the visible X-axis
+segment starts mid-graph, expands the right panel edge through connected graph evidence
+instead of jumping to the page edge, and prevents broad page candidates from expanding
+above their original top. `bench_01` and `bench_06` now have executable crop-bound
+contracts for every graph, and their crop-quality/crop-boundary gates pass. They remain
+blocked honestly at `curve_extract` until plot-area extraction is audited.
+
 ## Next Phase
 
-Phase 2.8.2 should tighten photographed-page graph-panel bounds for the remaining hard
-page photos (`bench_01` and `bench_06`) without reintroducing top-signal clipping.
-After that, add a separate audited plot-area detector inside the accepted panel before
-calculation is allowed.
+Phase 2.9 should add a separate audited plot-area detector inside the accepted graph
+panel. The plot area must exclude titles, tick labels, axis captions, and page context
+while preserving all visible signal peaks before deterministic curve extraction and
+calculation are allowed.

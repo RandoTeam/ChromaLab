@@ -197,9 +197,10 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 217 and m/z 218",
             expectedTitle = "Ion 217.00 / Ion 218.00: 0301002.D",
             strictGraphCount = true,
-            requiresCropQualityWarning = true,
-            requiresGraphRefinement = true,
-            requiresUnresolvedBroadContext = true,
+            expectedCropBounds = listOf(
+                ExpectedGraphCrop(graphIndex = 1, x = 91, y = 278, width = 815, height = 475, tolerancePx = 12),
+                ExpectedGraphCrop(graphIndex = 2, x = 24, y = 704, width = 885, height = 473, tolerancePx = 12),
+            ),
             tags = setOf("printed_page_photo", "two_graphs", "m_z_217_218", "crop_required"),
         ),
         ChromatogramBenchFixture(
@@ -277,9 +278,10 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 83 and m/z 92",
             expectedTitle = null,
             strictGraphCount = true,
-            requiresCropQualityWarning = true,
-            requiresGraphRefinement = true,
-            requiresUnresolvedBroadContext = true,
+            expectedCropBounds = listOf(
+                ExpectedGraphCrop(graphIndex = 1, x = 137, y = 242, width = 736, height = 414, tolerancePx = 12),
+                ExpectedGraphCrop(graphIndex = 2, x = 131, y = 649, width = 785, height = 511, tolerancePx = 12),
+            ),
             tags = setOf("printed_page_photo", "two_graphs", "perspective_distortion", "crop_required"),
         ),
         ChromatogramBenchFixture(
