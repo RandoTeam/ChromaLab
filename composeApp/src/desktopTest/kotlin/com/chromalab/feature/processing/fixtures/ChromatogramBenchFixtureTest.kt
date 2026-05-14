@@ -120,6 +120,18 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { it.plotArea.detected && it.plotArea.region != null },
                 "${fixture.id} must detect audited plot-area bounds for every graph",
             )
+            assertTrue(
+                audit.graphs.all { it.curveMaskAvailable },
+                "${fixture.id} must write desktop curve masks for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.curveMaskRawPixelCount > 0 && it.curveMaskCleanPixelCount > 0 },
+                "${fixture.id} must expose non-empty curve-mask pixel counts",
+            )
+            assertTrue(
+                audit.graphs.all { it.curveMaskCleanPixelCount <= it.curveMaskRawPixelCount },
+                "${fixture.id} curve-mask cleanup must not increase candidate pixels",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -158,7 +170,7 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} must keep the full visible chromatogram panel after boundary correction",
                 )
             }
-            assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
+            assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve-point extraction exists")
             assertTrue(audit.blockedAtStage != "plot_area", "${fixture.id} should pass the plot-area gate")
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
@@ -168,6 +180,14 @@ class ChromatogramBenchFixtureTest {
                 assertTrue(
                     Files.size(outputDir.resolve("selected_preprocessing_graph_${graph.graphIndex}.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} selected preprocessing crop must be written",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("mask_raw.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} raw curve mask must be written",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("mask_clean.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} clean curve mask must be written",
                 )
             }
 

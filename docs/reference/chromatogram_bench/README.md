@@ -165,9 +165,17 @@ If a future difficult image cannot produce reliable plot-area bounds, the applic
 should expose a diagnostic/manual adjustment path instead of saving a partial final
 report.
 
+Phase 2.10.1 replaces the desktop curve-mask stub with deterministic mask generation
+against the audited plot area. Every bench graph now writes `graph_N/mask_raw.png` and
+`graph_N/mask_clean.png`, records raw/clean pixel counts and suppression passes in the
+audit, and must keep a non-empty cleaned mask before the pipeline can continue. This is
+still not final curve-point extraction: some low-resolution and photographed fixtures
+retain text/background artifacts in the mask, so the runner remains blocked honestly at
+`curve_extract` until the point extractor and stricter mask QA are implemented.
+
 ## Next Phase
 
-Phase 2.10 should replace the desktop curve-mask stub with deterministic curve-pixel
-extraction against the audited plot area. The next gate must verify that the extracted
-curve preserves early/tall peaks, suppresses axes/tick text, and remains auditable before
+Phase 2.10.2 should implement desktop curve-point extraction from `mask_clean.png` and
+add stricter mask QA. The next gate must verify that extracted points preserve
+early/tall peaks, reject remaining tick/title artifacts, and stay auditable before
 numeric peak integration is allowed.
