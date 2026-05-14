@@ -207,9 +207,15 @@ now blocks signal conversion, preview, and export when X/Y calibration is missin
 invalid instead of fabricating `px` units. Calibration errors are treated as
 non-skippable full-analysis blockers, matching the offline `axis_calibration` gate.
 
+Phase 2.11.5 wires that contract into the user-facing flow. If OCR cannot produce
+confirmed X/Y scale points, the pipeline pauses on manual X/Y calibration screens
+instead of saving a partial result or fabricating `px` units. Manual calibration skip is
+disabled in the full-analysis path, and touch positions are converted from the displayed
+full image back into graph-region-relative pixels, matching the curve extractor's
+coordinate system.
+
 ## Next Phase
 
-Phase 2.11.5 should wire the manual calibration contract into user-facing review UI or
-implement desktop OCR candidate extraction. The next gate must turn visible tick labels
-or user-selected calibration points into confirmed X/Y calibration before numeric peak
-integration is allowed.
+Phase 2.11.6 should improve the manual calibration UX and OCR candidate extraction:
+show a zoomed graph-panel review, surface detected tick candidates as editable anchors,
+and keep the same confirmed-calibration gate before numeric peak integration is allowed.

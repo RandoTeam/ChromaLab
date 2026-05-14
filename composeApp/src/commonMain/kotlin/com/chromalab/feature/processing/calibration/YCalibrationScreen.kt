@@ -49,13 +49,20 @@ fun YCalibrationScreen(
     onSkip: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    sourceImageWidth: Int = graphRegion.x + graphRegion.width,
+    sourceImageHeight: Int = graphRegion.y + graphRegion.height,
+    allowSkip: Boolean = true,
+    allowWarningAccept: Boolean = true,
 ) {
     var viewW by remember { mutableFloatStateOf(1f) }
     var viewH by remember { mutableFloatStateOf(1f) }
 
-    val sy by remember(viewH, graphRegion.height) {
-        mutableFloatStateOf(if (graphRegion.height > 0) viewH / graphRegion.height else 1f)
-    }
+    val mappedSourceImageWidth = sourceImageWidth
+        .coerceAtLeast(graphRegion.x + graphRegion.width)
+        .coerceAtLeast(1)
+    val mappedSourceImageHeight = sourceImageHeight
+        .coerceAtLeast(graphRegion.y + graphRegion.height)
+        .coerceAtLeast(1)
 
     // Two calibration points (view Y coordinates)
     var point1Y by remember { mutableFloatStateOf(-1f) }
@@ -65,15 +72,25 @@ fun YCalibrationScreen(
     var unit by remember { mutableStateOf("mAU") }
 
     // Pre-fill from OCR on first composition
-    LaunchedEffect(ocrSuggestion) {
+    LaunchedEffect(ocrSuggestion, viewW, viewH, mappedSourceImageWidth, mappedSourceImageHeight) {
+        if (viewW <= 1f || viewH <= 1f) return@LaunchedEffect
         val ocr = ocrSuggestion ?: return@LaunchedEffect
-        if (ocr.hasYSuggestions && value1.isEmpty()) {
+        if (ocr.hasYSuggestions && value1.isEmpty() && point1Y <= 0f && point2Y <= 0f) {
             val sorted = ocr.suggestedYValues.sorted()
             value1 = sorted.first().toBigDecimal().toPlainString()
             value2 = sorted.last().toBigDecimal().toPlainString()
-            // Auto-place points: bottom and top of graph
-            point1Y = viewH * 0.90f  // near bottom (low intensity)
-            point2Y = viewH * 0.10f  // near top (high intensity)
+            point1Y = regionPixelYToView(
+                graphRegion.height * 0.90f,
+                viewH,
+                mappedSourceImageHeight,
+                graphRegion,
+            )
+            point2Y = regionPixelYToView(
+                graphRegion.height * 0.10f,
+                viewH,
+                mappedSourceImageHeight,
+                graphRegion,
+            )
         }
         if (ocr.yUnit != null && unit == "mAU") {
             unit = ocr.yUnit
@@ -83,8 +100,14 @@ fun YCalibrationScreen(
     var settingPoint by remember { mutableIntStateOf(1) }
     var draggingPoint by remember { mutableIntStateOf(0) }
 
-    val yAxisX = axes.yAxis?.let { (it.x1 - graphRegion.x) * (viewW / graphRegion.width) }
-        ?: (viewW * 0.10f)
+    val yAxisX = axes.yAxis?.let {
+        sourceXToView(it.x1, viewW, mappedSourceImageWidth)
+    } ?: regionPixelXToView(
+        graphRegion.width * 0.10f,
+        viewW,
+        mappedSourceImageWidth,
+        graphRegion,
+    )
 
     val p1Color = Color(0xFFFF5722) // Orange
     val p2Color = Color(0xFF2196F3) // Blue
@@ -94,8 +117,8 @@ fun YCalibrationScreen(
     val v1 = value1.toFloatOrNull()
     val v2 = value2.toFloatOrNull()
     val calibration = if (point1Y > 0 && point2Y > 0 && v1 != null && v2 != null) {
-        val pixelY1 = graphRegion.y + point1Y / sy
-        val pixelY2 = graphRegion.y + point2Y / sy
+        val pixelY1 = viewYToRegionPixel(point1Y, viewH, mappedSourceImageHeight, graphRegion)
+        val pixelY2 = viewYToRegionPixel(point2Y, viewH, mappedSourceImageHeight, graphRegion)
         LinearCalibration(
             CalibrationPoint(pixelY1, v1),
             CalibrationPoint(pixelY2, v2),
@@ -248,7 +271,7 @@ fun YCalibrationScreen(
                     )
 
                     // Accept with warnings
-                    if (result != null && result.hasWarnings) {
+                    if (allowWarningAccept && result != null && result.hasWarnings) {
                         OutlinedButton(
                             onClick = { onAccept(result) },
                             modifier = Modifier.fillMaxWidth(),
@@ -258,11 +281,13 @@ fun YCalibrationScreen(
                     }
 
                     // Skip button
-                    TextButton(
-                        onClick = onSkip,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Пропустить калибровку Y")
+                    if (allowSkip) {
+                        TextButton(
+                            onClick = onSkip,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Пропустить калибровку Y")
+                        }
                     }
                 }
             }
@@ -394,7 +419,12 @@ fun YCalibrationScreen(
                         var tick = (minVal / step).toInt() * step
                         while (tick <= maxVal + step) {
                             val pixelY = calibration.realToPixel(tick)
-                            val viewY = (pixelY - graphRegion.y) * sy
+                            val viewY = regionPixelYToView(
+                                pixelY,
+                                size.height,
+                                mappedSourceImageHeight,
+                                graphRegion,
+                            )
                             if (viewY in 0f..size.height) {
                                 drawLine(
                                     controlColor,

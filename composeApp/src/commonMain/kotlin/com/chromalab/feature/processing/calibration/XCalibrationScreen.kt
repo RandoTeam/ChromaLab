@@ -47,13 +47,20 @@ fun XCalibrationScreen(
     onSkip: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    sourceImageWidth: Int = graphRegion.x + graphRegion.width,
+    sourceImageHeight: Int = graphRegion.y + graphRegion.height,
+    allowSkip: Boolean = true,
+    allowWarningAccept: Boolean = true,
 ) {
     var viewW by remember { mutableFloatStateOf(1f) }
     var viewH by remember { mutableFloatStateOf(1f) }
 
-    val sx by remember(viewW, graphRegion.width) {
-        mutableFloatStateOf(if (graphRegion.width > 0) viewW / graphRegion.width else 1f)
-    }
+    val mappedSourceImageWidth = sourceImageWidth
+        .coerceAtLeast(graphRegion.x + graphRegion.width)
+        .coerceAtLeast(1)
+    val mappedSourceImageHeight = sourceImageHeight
+        .coerceAtLeast(graphRegion.y + graphRegion.height)
+        .coerceAtLeast(1)
 
     // Two calibration points (view X coordinates)
     var point1X by remember { mutableFloatStateOf(-1f) }
@@ -63,15 +70,25 @@ fun XCalibrationScreen(
     var unit by remember { mutableStateOf("мин") }
 
     // Pre-fill from OCR on first composition
-    LaunchedEffect(ocrSuggestion) {
+    LaunchedEffect(ocrSuggestion, viewW, viewH, mappedSourceImageWidth, mappedSourceImageHeight) {
+        if (viewW <= 1f || viewH <= 1f) return@LaunchedEffect
         val ocr = ocrSuggestion ?: return@LaunchedEffect
-        if (ocr.hasXSuggestions && value1.isEmpty()) {
+        if (ocr.hasXSuggestions && value1.isEmpty() && point1X <= 0f && point2X <= 0f) {
             val sorted = ocr.suggestedXValues.sorted()
             value1 = sorted.first().toBigDecimal().toPlainString()
             value2 = sorted.last().toBigDecimal().toPlainString()
-            // Auto-place points at axis extremes
-            point1X = 0f + viewW * 0.05f  // near left edge
-            point2X = viewW * 0.95f        // near right edge
+            point1X = regionPixelXToView(
+                graphRegion.width * 0.05f,
+                viewW,
+                mappedSourceImageWidth,
+                graphRegion,
+            )
+            point2X = regionPixelXToView(
+                graphRegion.width * 0.95f,
+                viewW,
+                mappedSourceImageWidth,
+                graphRegion,
+            )
         }
         if (ocr.xUnit != null && unit == "мин") {
             unit = ocr.xUnit
@@ -82,8 +99,14 @@ fun XCalibrationScreen(
     var settingPoint by remember { mutableIntStateOf(1) }
     var draggingPoint by remember { mutableIntStateOf(0) }
 
-    val xAxisY = axes.xAxis?.let { (it.y1 - graphRegion.y) * (viewH / graphRegion.height) }
-        ?: (viewH * 0.85f)
+    val xAxisY = axes.xAxis?.let {
+        sourceYToView(it.y1, viewH, mappedSourceImageHeight)
+    } ?: regionPixelYToView(
+        graphRegion.height * 0.85f,
+        viewH,
+        mappedSourceImageHeight,
+        graphRegion,
+    )
 
     val p1Color = Color(0xFFFF5722) // Orange
     val p2Color = Color(0xFF2196F3) // Blue
@@ -93,8 +116,8 @@ fun XCalibrationScreen(
     val v1 = value1.toFloatOrNull()
     val v2 = value2.toFloatOrNull()
     val calibration = if (point1X > 0 && point2X > 0 && v1 != null && v2 != null) {
-        val pixelX1 = graphRegion.x + point1X / sx
-        val pixelX2 = graphRegion.x + point2X / sx
+        val pixelX1 = viewXToRegionPixel(point1X, viewW, mappedSourceImageWidth, graphRegion)
+        val pixelX2 = viewXToRegionPixel(point2X, viewW, mappedSourceImageWidth, graphRegion)
         LinearCalibration(
             CalibrationPoint(pixelX1, v1),
             CalibrationPoint(pixelX2, v2),
@@ -240,7 +263,7 @@ fun XCalibrationScreen(
                     )
 
                     // Accept button (when warnings present)
-                    if (result != null && result.hasWarnings) {
+                    if (allowWarningAccept && result != null && result.hasWarnings) {
                         OutlinedButton(
                             onClick = { onAccept(result) },
                             modifier = Modifier.fillMaxWidth(),
@@ -250,11 +273,13 @@ fun XCalibrationScreen(
                     }
 
                     // Skip button
-                    TextButton(
-                        onClick = onSkip,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("Пропустить калибровку X")
+                    if (allowSkip) {
+                        TextButton(
+                            onClick = onSkip,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Пропустить калибровку X")
+                        }
                     }
                 }
             }
@@ -391,7 +416,12 @@ fun XCalibrationScreen(
                         var tick = (minVal / step).toInt() * step
                         while (tick <= maxVal + step) {
                             val pixelX = calibration.realToPixel(tick)
-                            val viewX = (pixelX - graphRegion.x) * sx
+                            val viewX = regionPixelXToView(
+                                pixelX,
+                                size.width,
+                                mappedSourceImageWidth,
+                                graphRegion,
+                            )
                             if (viewX in 0f..size.width) {
                                 drawLine(
                                     controlColor,
