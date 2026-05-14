@@ -8,6 +8,8 @@ import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionQuality
+import com.chromalab.feature.processing.graph.GraphRegionRefiner
+import com.chromalab.feature.processing.graph.GraphRegionRefinementResult
 import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.OcrStatus
@@ -57,7 +59,9 @@ data class OfflineGraphCandidateAudit(
 @Serializable
 data class OfflineGraphAudit(
     val graphIndex: Int,
+    val originalRegion: GraphRegion,
     val region: GraphRegion,
+    val refinement: OfflineGraphRefinementAudit,
     val cropQuality: OfflineGraphCropQualityAudit,
     val selectedPreprocessingVariant: String?,
     val selectedPreprocessingImagePath: String?,
@@ -75,6 +79,13 @@ data class OfflineGraphAudit(
 )
 
 @Serializable
+data class OfflineGraphRefinementAudit(
+    val changed: Boolean,
+    val areaReductionRatio: Float,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class OfflineGraphCropQualityAudit(
     val areaRatio: Float,
     val edgeContactCount: Int,
@@ -85,6 +96,7 @@ data class OfflineGraphCropQualityAudit(
     val fullImage: Boolean,
     val largeFullImage: Boolean,
     val broadEdgeCrop: Boolean,
+    val possibleRotatedPage: Boolean,
     val acceptedForCalculation: Boolean,
     val warnings: List<String> = emptyList(),
 )
@@ -110,6 +122,7 @@ class OfflineAnalysisRunner(
     private val normalizer: ImageNormalizer = ImageNormalizer(),
     private val documentDetector: DocumentDetector = DocumentDetector(),
     private val preprocessor: ImagePreprocessor = ImagePreprocessor(),
+    private val graphRefiner: GraphRegionRefiner = GraphRegionRefiner(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
@@ -199,12 +212,36 @@ class OfflineAnalysisRunner(
             warnings += "graph.count_mismatch.expected_${input.expectedGraphCount}_actual_${selectedRegions.size}"
         }
 
-        val graphAudits = selectedRegions.mapIndexed { index, region ->
+        val refinedRegions = selectedRegions.mapIndexed { index, region ->
+            runStage(
+                stage = "graph_refine",
+                graphIndex = index + 1,
+                stages = stages,
+                successMessage = { result ->
+                    "changed=${result.changed}, reduction=${result.areaReductionRatio}."
+                },
+            ) {
+                graphRefiner.refine(
+                    imagePath = preprocessing.contrastEnhancedPath,
+                    region = region,
+                    imageWidth = normalized.width,
+                    imageHeight = normalized.height,
+                )
+            } ?: GraphRegionRefinementResult(
+                originalRegion = region,
+                refinedRegion = region,
+                changed = false,
+                areaReductionRatio = 0f,
+                warnings = listOf("graph_refine.failed"),
+            )
+        }
+
+        val graphAudits = refinedRegions.mapIndexed { index, refinement ->
             auditGraph(
                 graphIndex = index + 1,
                 preprocessing = preprocessing,
                 outputDir = "${input.outputDir}/graph_${index + 1}",
-                region = region,
+                refinement = refinement,
                 imageWidth = normalized.width,
                 imageHeight = normalized.height,
                 stages = stages,
@@ -246,12 +283,14 @@ class OfflineAnalysisRunner(
         graphIndex: Int,
         preprocessing: PreprocessingResult,
         outputDir: String,
-        region: GraphRegion,
+        refinement: GraphRegionRefinementResult,
         imageWidth: Int,
         imageHeight: Int,
         stages: MutableList<OfflineStageAudit>,
     ): OfflineGraphAudit {
         val graphWarnings = mutableListOf<String>()
+        val region = refinement.refinedRegion
+        graphWarnings += refinement.warnings
         val cropQuality = region.cropQualityAudit(imageWidth, imageHeight)
         graphWarnings += cropQuality.warnings
 
@@ -349,7 +388,9 @@ class OfflineAnalysisRunner(
 
         return OfflineGraphAudit(
             graphIndex = graphIndex,
+            originalRegion = refinement.originalRegion,
             region = region,
+            refinement = refinement.toAudit(),
             cropQuality = cropQuality,
             selectedPreprocessingVariant = selectedVariant?.variantId,
             selectedPreprocessingImagePath = selectedVariant?.imagePath,
@@ -378,6 +419,13 @@ private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAu
         rejectionReasons = rejectionReasons,
     )
 
+private fun GraphRegionRefinementResult.toAudit(): OfflineGraphRefinementAudit =
+    OfflineGraphRefinementAudit(
+        changed = changed,
+        areaReductionRatio = areaReductionRatio,
+        warnings = warnings,
+    )
+
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
     x == 0 && y == 0 && width == imageWidth && height == imageHeight
 
@@ -396,11 +444,15 @@ private fun GraphRegion.cropQualityAudit(
     val largeImage = maxOf(imageWidth, imageHeight) >= 700
     val largeFullImage = fullImage && largeImage
     val broadEdgeCrop = !fullImage && areaRatio >= 0.45f && edgeContactCount >= 2
-    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop
+    val possibleRotatedPage = imageWidth > imageHeight &&
+        maxOf(imageWidth, imageHeight) >= 900 &&
+        (fullImage || edgeContactCount >= 2 || areaRatio >= 0.45f)
+    val acceptedForCalculation = !largeFullImage && !broadEdgeCrop && !possibleRotatedPage
     val warnings = buildList {
         if (fullImage) add("crop.full_image")
         if (largeFullImage) add("crop.large_full_image_not_calculation_ready")
         if (broadEdgeCrop) add("crop.broad_edge_context_not_calculation_ready")
+        if (possibleRotatedPage) add("crop.possible_rotated_page_or_landscape_scan")
         if (edgeContactCount >= 2 && !fullImage) add("crop.touches_multiple_image_edges")
     }
 
@@ -414,6 +466,7 @@ private fun GraphRegion.cropQualityAudit(
         fullImage = fullImage,
         largeFullImage = largeFullImage,
         broadEdgeCrop = broadEdgeCrop,
+        possibleRotatedPage = possibleRotatedPage,
         acceptedForCalculation = acceptedForCalculation,
         warnings = warnings,
     )

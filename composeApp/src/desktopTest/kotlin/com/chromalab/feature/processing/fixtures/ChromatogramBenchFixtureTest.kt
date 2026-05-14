@@ -84,6 +84,7 @@ class ChromatogramBenchFixtureTest {
             assertEquals(fixture.height, audit.imageHeight, "${fixture.id} normalized height")
             assertTrue(audit.stages.any { it.stage == "normalize" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
@@ -103,6 +104,12 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { it.cropQuality.areaRatio > 0f },
                 "${fixture.id} must expose crop quality area",
             )
+            if (fixture.requiresGraphRefinement) {
+                assertTrue(
+                    audit.graphs.any { it.refinement.changed },
+                    "${fixture.id} must refine at least one broad graph crop",
+                )
+            }
             assertTrue(audit.blockedAtStage != null, "${fixture.id} should be blocked honestly until desktop curve extraction exists")
 
             writeAuditArtifacts(audit, imagePath = inputPath, outputDir = outputDir)
@@ -152,7 +159,7 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 217 and m/z 218",
             expectedTitle = "Ion 217.00 / Ion 218.00: 0301002.D",
             strictGraphCount = true,
-            requiresCropQualityWarning = true,
+            requiresGraphRefinement = true,
             tags = setOf("printed_page_photo", "two_graphs", "m_z_217_218", "crop_required"),
         ),
         ChromatogramBenchFixture(
@@ -216,7 +223,7 @@ private object ChromatogramBenchFixtures {
             expectedIon = "m/z 83 and m/z 92",
             expectedTitle = null,
             strictGraphCount = true,
-            requiresCropQualityWarning = true,
+            requiresGraphRefinement = true,
             tags = setOf("printed_page_photo", "two_graphs", "perspective_distortion", "crop_required"),
         ),
         ChromatogramBenchFixture(
@@ -231,6 +238,7 @@ private object ChromatogramBenchFixtures {
             expectedTitle = "Ion 71.00 (70.70 to 71.70): BELIY TIGR_1.D\\data.ms",
             requiresRotationCorrection = true,
             requiresCropQualityWarning = true,
+            requiresGraphRefinement = true,
             tags = setOf("rotated_page", "printed_page_photo", "orientation_correction", "m_z_71"),
         ),
         ChromatogramBenchFixture(
@@ -263,6 +271,7 @@ private data class ChromatogramBenchFixture(
     val requiresRotationCorrection: Boolean = false,
     val strictGraphCount: Boolean = expectedGraphCount == 1,
     val requiresCropQualityWarning: Boolean = false,
+    val requiresGraphRefinement: Boolean = false,
     val numericTruthStatus: String = "not_locked",
     val tags: Set<String>,
 ) {

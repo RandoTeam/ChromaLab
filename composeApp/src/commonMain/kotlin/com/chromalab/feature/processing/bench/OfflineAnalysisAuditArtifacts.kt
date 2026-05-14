@@ -58,13 +58,24 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
-        appendLine("## Crop Quality")
+        appendLine("## Graph Refinement")
         appendLine()
-        appendLine("| Graph | Area | Edge contacts | Full image | Broad edge crop | Calculation-ready | Warnings |")
-        appendLine("| ---: | ---: | ---: | --- | --- | --- | --- |")
+        appendLine("| Graph | Original region | Refined region | Changed | Area reduction | Warnings |")
+        appendLine("| ---: | --- | --- | --- | ---: | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${graph.originalRegion.renderRegion()} | ${graph.region.renderRegion()} | ${graph.refinement.changed} | ${graph.refinement.areaReductionRatio.renderPercent()} | ${graph.refinement.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Crop Quality")
+        appendLine()
+        appendLine("| Graph | Area | Edge contacts | Full image | Broad edge crop | Rotated/page risk | Calculation-ready | Warnings |")
+        appendLine("| ---: | ---: | ---: | --- | --- | --- | --- | --- |")
+        audit.graphs.forEach { graph ->
+            appendLine(
+                "| ${graph.graphIndex} | ${graph.cropQuality.areaRatio.renderPercent()} | ${graph.cropQuality.edgeContactCount} | ${graph.cropQuality.fullImage} | ${graph.cropQuality.broadEdgeCrop} | ${graph.cropQuality.possibleRotatedPage} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropQuality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()

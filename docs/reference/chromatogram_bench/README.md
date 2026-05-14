@@ -94,8 +94,14 @@ edge contacts, full-image fallback, broad edge-touching crops, and whether the c
 safe to use for later calculation. Large page/screenshot fallbacks and broad edge crops
 are now explicit blockers instead of silently flowing into deterministic calculation.
 
+Phase 2.4 adds graph-region refinement before OCR, axis detection, curve masking, and
+curve extraction. The audit now records original versus refined crop bounds, whether
+the crop changed, the area reduction, and refinement warnings. Broad printed-page or
+screenshot crops are tightened conservatively, while rotated/landscape page risk stays
+an explicit calculation blocker instead of being treated as a successful crop.
+
 ## Next Phase
 
-Phase 2.4 should use the crop-quality blockers to tighten actual graph bounds for broad
-printed-page and screenshot crops, then add orientation/page-bound diagnostics for the
-rotated page fixture.
+Phase 2.5 should visually inspect refined crop artifacts for all eight fixtures, then
+convert stable crop expectations into stricter per-fixture bounds without allowing
+calculation to start before axis calibration and curve extraction are usable.

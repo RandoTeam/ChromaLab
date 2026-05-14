@@ -261,6 +261,26 @@ Next Phase 2.4 work slice:
    of accepting full-image fallback as a final crop.
 3. Keep full calculations blocked until usable axes and curves exist.
 
+Phase 2.4 status:
+
+- Added a shared graph-region refinement stage with Android and desktop pixel samplers.
+- The offline runner now records original versus refined crop bounds and routes OCR,
+  axis detection, curve masking, and curve extraction through the refined crop.
+- Broad edge-touching page/screenshot crops are tightened conservatively before crop
+  quality is evaluated.
+- Landscape/rotated full-page risk is now an explicit crop-quality blocker through
+  `crop.possible_rotated_page_or_landscape_scan`.
+- This phase improves preparation bounds only. Axis/tick reading, curve extraction,
+  and real calculation remain blocked until later phases provide usable data.
+
+Next Phase 2.5 work slice:
+
+1. Inspect refined crop artifacts visually for all eight fixtures and tighten any
+   graph bounds that still include document/page context.
+2. Promote refined-crop quality expectations from broad warnings to per-fixture crop
+   contracts where the visible graph bounds are stable enough.
+3. Keep calculations blocked until axis calibration and curve extraction are usable.
+
 Exit criteria:
 
 - all fixtures produce the expected number of graph candidates or a precise failure;
@@ -451,3 +471,10 @@ Exit criteria:
    calculation-ready.
 3. Enforce the crop-quality gate in bench tests for context-heavy fixtures while
    preserving clean full-image exports.
+
+- Phase 2.4:
+
+1. Add shared graph-region refinement with Android and desktop pixel samplers.
+2. Record original and refined crop bounds in JSON/Markdown audit artifacts.
+3. Route downstream OCR, axis, and curve-mask stages through the refined crop.
+4. Add rotated/landscape page-risk diagnostics as a calculation blocker.
