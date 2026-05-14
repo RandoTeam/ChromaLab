@@ -14,9 +14,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -51,6 +54,7 @@ fun XCalibrationScreen(
     sourceImageHeight: Int = graphRegion.y + graphRegion.height,
     allowSkip: Boolean = true,
     allowWarningAccept: Boolean = true,
+    focusGraphRegion: Boolean = false,
 ) {
     var viewW by remember { mutableFloatStateOf(1f) }
     var viewH by remember { mutableFloatStateOf(1f) }
@@ -73,7 +77,14 @@ fun XCalibrationScreen(
     var unit by remember { mutableStateOf("мин") }
 
     // Pre-fill from OCR on first composition
-    LaunchedEffect(ocrSuggestion, viewW, viewH, mappedSourceImageWidth, mappedSourceImageHeight) {
+    LaunchedEffect(
+        ocrSuggestion,
+        viewW,
+        viewH,
+        mappedSourceImageWidth,
+        mappedSourceImageHeight,
+        focusGraphRegion,
+    ) {
         if (viewW <= 1f || viewH <= 1f) return@LaunchedEffect
         val ocr = ocrSuggestion ?: return@LaunchedEffect
         if (ocr.hasXSuggestions && value1.isEmpty() && point1X <= 0f && point2X <= 0f) {
@@ -83,20 +94,22 @@ fun XCalibrationScreen(
             value1 = (firstAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
             value2 = (lastAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
             point1X = firstAnchor?.let {
-                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth)
+                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth, graphRegion, focusGraphRegion)
             } ?: regionPixelXToView(
                 graphRegion.width * 0.05f,
                 viewW,
                 mappedSourceImageWidth,
                 graphRegion,
+                focusGraphRegion,
             )
             point2X = lastAnchor?.let {
-                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth)
+                sourceXToView(it.sourceX, viewW, mappedSourceImageWidth, graphRegion, focusGraphRegion)
             } ?: regionPixelXToView(
                 graphRegion.width * 0.95f,
                 viewW,
                 mappedSourceImageWidth,
                 graphRegion,
+                focusGraphRegion,
             )
         }
         if (ocr.xUnit != null && unit == "мин") {
@@ -109,12 +122,13 @@ fun XCalibrationScreen(
     var draggingPoint by remember { mutableIntStateOf(0) }
 
     val xAxisY = axes.xAxis?.let {
-        sourceYToView(it.y1, viewH, mappedSourceImageHeight)
+        sourceYToView(it.y1, viewH, mappedSourceImageHeight, graphRegion, focusGraphRegion)
     } ?: regionPixelYToView(
         graphRegion.height * 0.85f,
         viewH,
         mappedSourceImageHeight,
         graphRegion,
+        focusGraphRegion,
     )
 
     val p1Color = Color(0xFFFF5722) // Orange
@@ -125,8 +139,20 @@ fun XCalibrationScreen(
     val v1 = value1.toFloatOrNull()
     val v2 = value2.toFloatOrNull()
     val calibration = if (point1X > 0 && point2X > 0 && v1 != null && v2 != null) {
-        val pixelX1 = viewXToRegionPixel(point1X, viewW, mappedSourceImageWidth, graphRegion)
-        val pixelX2 = viewXToRegionPixel(point2X, viewW, mappedSourceImageWidth, graphRegion)
+        val pixelX1 = viewXToRegionPixel(
+            point1X,
+            viewW,
+            mappedSourceImageWidth,
+            graphRegion,
+            focusGraphRegion,
+        )
+        val pixelX2 = viewXToRegionPixel(
+            point2X,
+            viewW,
+            mappedSourceImageWidth,
+            graphRegion,
+            focusGraphRegion,
+        )
         LinearCalibration(
             CalibrationPoint(pixelX1, v1),
             CalibrationPoint(pixelX2, v2),
@@ -299,17 +325,33 @@ fun XCalibrationScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
+                .clipToBounds()
                 .background(Color.Black)
                 .onSizeChanged { size ->
                     viewW = size.width.toFloat()
                     viewH = size.height.toFloat()
                 },
         ) {
+            val imageModifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (focusGraphRegion) {
+                        Modifier.graphicsLayer {
+                            transformOrigin = TransformOrigin(0f, 0f)
+                            scaleX = focusedImageScaleX(mappedSourceImageWidth, graphRegion)
+                            scaleY = focusedImageScaleY(mappedSourceImageHeight, graphRegion)
+                            translationX = focusedImageTranslationX(viewW, graphRegion)
+                            translationY = focusedImageTranslationY(viewH, graphRegion)
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
             AsyncImage(
                 model = imagePath,
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize(),
+                modifier = imageModifier,
             )
 
             // Overlay — supports both tap-to-place and drag-to-adjust
@@ -386,7 +428,13 @@ fun XCalibrationScreen(
                 )
 
                 ocrAnchors.forEach { anchor ->
-                    val anchorX = sourceXToView(anchor.sourceX, size.width, mappedSourceImageWidth)
+                    val anchorX = sourceXToView(
+                        anchor.sourceX,
+                        size.width,
+                        mappedSourceImageWidth,
+                        graphRegion,
+                        focusGraphRegion,
+                    )
                     if (anchorX in 0f..size.width) {
                         drawLine(
                             controlColor.copy(alpha = 0.45f),
@@ -442,6 +490,7 @@ fun XCalibrationScreen(
                                 size.width,
                                 mappedSourceImageWidth,
                                 graphRegion,
+                                focusGraphRegion,
                             )
                             if (viewX in 0f..size.width) {
                                 drawLine(

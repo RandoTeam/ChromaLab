@@ -14,9 +14,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
@@ -53,6 +56,7 @@ fun YCalibrationScreen(
     sourceImageHeight: Int = graphRegion.y + graphRegion.height,
     allowSkip: Boolean = true,
     allowWarningAccept: Boolean = true,
+    focusGraphRegion: Boolean = false,
 ) {
     var viewW by remember { mutableFloatStateOf(1f) }
     var viewH by remember { mutableFloatStateOf(1f) }
@@ -75,7 +79,14 @@ fun YCalibrationScreen(
     var unit by remember { mutableStateOf("mAU") }
 
     // Pre-fill from OCR on first composition
-    LaunchedEffect(ocrSuggestion, viewW, viewH, mappedSourceImageWidth, mappedSourceImageHeight) {
+    LaunchedEffect(
+        ocrSuggestion,
+        viewW,
+        viewH,
+        mappedSourceImageWidth,
+        mappedSourceImageHeight,
+        focusGraphRegion,
+    ) {
         if (viewW <= 1f || viewH <= 1f) return@LaunchedEffect
         val ocr = ocrSuggestion ?: return@LaunchedEffect
         if (ocr.hasYSuggestions && value1.isEmpty() && point1Y <= 0f && point2Y <= 0f) {
@@ -85,20 +96,22 @@ fun YCalibrationScreen(
             value1 = (bottomAnchor?.value ?: sorted.first()).toBigDecimal().toPlainString()
             value2 = (topAnchor?.value ?: sorted.last()).toBigDecimal().toPlainString()
             point1Y = bottomAnchor?.let {
-                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight)
+                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight, graphRegion, focusGraphRegion)
             } ?: regionPixelYToView(
                 graphRegion.height * 0.90f,
                 viewH,
                 mappedSourceImageHeight,
                 graphRegion,
+                focusGraphRegion,
             )
             point2Y = topAnchor?.let {
-                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight)
+                sourceYToView(it.sourceY, viewH, mappedSourceImageHeight, graphRegion, focusGraphRegion)
             } ?: regionPixelYToView(
                 graphRegion.height * 0.10f,
                 viewH,
                 mappedSourceImageHeight,
                 graphRegion,
+                focusGraphRegion,
             )
         }
         if (ocr.yUnit != null && unit == "mAU") {
@@ -110,12 +123,13 @@ fun YCalibrationScreen(
     var draggingPoint by remember { mutableIntStateOf(0) }
 
     val yAxisX = axes.yAxis?.let {
-        sourceXToView(it.x1, viewW, mappedSourceImageWidth)
+        sourceXToView(it.x1, viewW, mappedSourceImageWidth, graphRegion, focusGraphRegion)
     } ?: regionPixelXToView(
         graphRegion.width * 0.10f,
         viewW,
         mappedSourceImageWidth,
         graphRegion,
+        focusGraphRegion,
     )
 
     val p1Color = Color(0xFFFF5722) // Orange
@@ -126,8 +140,20 @@ fun YCalibrationScreen(
     val v1 = value1.toFloatOrNull()
     val v2 = value2.toFloatOrNull()
     val calibration = if (point1Y > 0 && point2Y > 0 && v1 != null && v2 != null) {
-        val pixelY1 = viewYToRegionPixel(point1Y, viewH, mappedSourceImageHeight, graphRegion)
-        val pixelY2 = viewYToRegionPixel(point2Y, viewH, mappedSourceImageHeight, graphRegion)
+        val pixelY1 = viewYToRegionPixel(
+            point1Y,
+            viewH,
+            mappedSourceImageHeight,
+            graphRegion,
+            focusGraphRegion,
+        )
+        val pixelY2 = viewYToRegionPixel(
+            point2Y,
+            viewH,
+            mappedSourceImageHeight,
+            graphRegion,
+            focusGraphRegion,
+        )
         LinearCalibration(
             CalibrationPoint(pixelY1, v1),
             CalibrationPoint(pixelY2, v2),
@@ -307,17 +333,33 @@ fun YCalibrationScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(padding)
+                .clipToBounds()
                 .background(Color.Black)
                 .onSizeChanged { size ->
                     viewW = size.width.toFloat()
                     viewH = size.height.toFloat()
                 },
         ) {
+            val imageModifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (focusGraphRegion) {
+                        Modifier.graphicsLayer {
+                            transformOrigin = TransformOrigin(0f, 0f)
+                            scaleX = focusedImageScaleX(mappedSourceImageWidth, graphRegion)
+                            scaleY = focusedImageScaleY(mappedSourceImageHeight, graphRegion)
+                            translationX = focusedImageTranslationX(viewW, graphRegion)
+                            translationY = focusedImageTranslationY(viewH, graphRegion)
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
             AsyncImage(
                 model = imagePath,
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize(),
+                modifier = imageModifier,
             )
 
             // Overlay — supports tap-to-place and drag-to-adjust
@@ -389,7 +431,13 @@ fun YCalibrationScreen(
                 )
 
                 ocrAnchors.forEach { anchor ->
-                    val anchorY = sourceYToView(anchor.sourceY, size.height, mappedSourceImageHeight)
+                    val anchorY = sourceYToView(
+                        anchor.sourceY,
+                        size.height,
+                        mappedSourceImageHeight,
+                        graphRegion,
+                        focusGraphRegion,
+                    )
                     if (anchorY in 0f..size.height) {
                         drawLine(
                             controlColor.copy(alpha = 0.45f),
@@ -445,6 +493,7 @@ fun YCalibrationScreen(
                                 size.height,
                                 mappedSourceImageHeight,
                                 graphRegion,
+                                focusGraphRegion,
                             )
                             if (viewY in 0f..size.height) {
                                 drawLine(

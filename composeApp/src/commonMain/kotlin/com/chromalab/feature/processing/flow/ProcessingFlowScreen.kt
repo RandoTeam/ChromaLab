@@ -961,6 +961,7 @@ fun ProcessingFlowScreen(
                             sourceImageHeight = manualImageHeight,
                             allowSkip = false,
                             allowWarningAccept = false,
+                            focusGraphRegion = true,
                         )
                     }
 
@@ -992,6 +993,7 @@ fun ProcessingFlowScreen(
                             sourceImageHeight = manualImageHeight,
                             allowSkip = false,
                             allowWarningAccept = false,
+                            focusGraphRegion = true,
                         )
                     }
 
