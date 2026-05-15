@@ -237,7 +237,13 @@ artifacts, showing the focused graph-panel crop with plot-area and axis guide ov
 The fixture test requires this artifact for every detected graph, so manual calibration
 visual QA cannot disappear silently.
 
+Phase 2.12.2 locks acceptance checks for those focus artifacts. The fixture test now
+verifies that each artifact is readable, matches the graph-panel crop dimensions, does
+not show the full source page when a graph crop exists, keeps the plot area inside the
+focused panel, preserves graph-panel context outside the plot area, and keeps the
+plot-area ratio within a sane range.
+
 ## Next Phase
 
-Phase 2.12.2 should review the generated manual calibration focus artifacts and lock
-visual acceptance thresholds before numeric peak integration work starts.
+Phase 5.1 should start calibrated curve-to-signal conversion from confirmed axis
+calibration before numeric peak integration work starts.

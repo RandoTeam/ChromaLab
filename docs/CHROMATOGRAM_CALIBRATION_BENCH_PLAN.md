@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 2.12.1 - manual calibration focus artifacts`.
-- Next work slice: `Phase 2.12.2 - manual calibration visual acceptance review`.
+- Latest completed work slice: `Phase 2.12.2 - manual calibration visual acceptance review`.
+- Next work slice: `Phase 5.1 - calibrated curve-to-signal conversion gate`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -57,7 +57,8 @@ artifact summary; it is not the primary plan.
 | Phase 2.11.6.2 | Done | `4c98d4d` | Add focused graph-panel view for manual calibration review. |
 | Phase 2.11.6.3 | Done | `6925b75` | Add editable tick-anchor UX for manual calibration. |
 | Phase 2.12.1 | Done | `52b9183` | Add manual calibration focus artifacts for bench fixture review. |
-| Phase 2.12.2 | Next | Pending | Review generated focus artifacts and lock visual acceptance thresholds before numeric integration work. |
+| Phase 2.12.2 | Done | `f62f92b` | Review generated focus artifacts and lock visual acceptance thresholds before numeric integration work. |
+| Phase 5.1 | Next | Pending | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
