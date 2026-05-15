@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.6 - broaden guarded completeness review to additional hard fixtures only after quality gates pass`.
-- Next work slice: `Phase 5.8b.7 - restore curve/signal readiness for weak stacked ion panels before report validation`.
+- Latest completed work slice: `Phase 5.8b.7 - restore curve/signal readiness for weak stacked ion panels before report validation`.
+- Next work slice: `Phase 5.8b.8 - review sparse stacked ion peak quality before report validation`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -71,8 +71,9 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.3 | Done | `5e13ac3` | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
 | Phase 5.8b.4 | Done | `4f0acd4` | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
 | Phase 5.8b.5 | Done | `77b88d7` | Review tuned peak quality and false-positive controls before broadening fixture scope. |
-| Phase 5.8b.6 | Done | Pending | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
-| Phase 5.8b.7 | Next | Pending | Restore curve/signal readiness for weak stacked ion panels before report validation. |
+| Phase 5.8b.6 | Done | `e26cffc` | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
+| Phase 5.8b.7 | Done | Pending | Restore curve/signal readiness for weak stacked ion panels before report validation. |
+| Phase 5.8b.8 | Next | Pending | Review sparse stacked ion peak quality before report validation. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -697,16 +698,32 @@ Completed Phase 5.8b.6 work slice:
    earlier at `curve_extract`/`signal_convert`, so the next work must repair extraction
    before peak-completeness logic can honestly evaluate them.
 
-Next Phase 5.8b.7 work slice:
+Completed Phase 5.8b.7 work slice:
 
-1. Inspect weak stacked ion panels in `bench_04` graphs 3-4 and `bench_05` graphs 2-4
-   where curve extraction currently produces no usable calibrated signal.
-2. Add or refine non-destructive curve extraction diagnostics for those panels before
-   changing peak thresholds.
-3. Recover usable curve/signal data for the weak stacked panels without weakening the
-   artifact guard that protects `bench_06` graph 2 and the default-profile fixtures.
-4. Keep Phase 6 report validation blocked until every fixture graph can either produce
-   an auditable signal or an explicit earlier-stage failure reason.
+1. `CurveExtractionResult` now separates dense curve coverage from sparse trace
+   readiness. A sparse XIC/ion trace can be considered usable when there are at least
+   `24` extracted points and at least `5%` column coverage, even if the continuous
+   baseline is not visible.
+2. Sparse trace acceptance is auditable: low-coverage accepted traces receive
+   `curve_extract.sparse_trace_low_column_coverage_accepted`; localized sparse evidence
+   receives `curve_extract.sparse_trace_localized_review_required`.
+3. `bench_04_stacked_xic_resolution` now converts all four panels to signal:
+   graph 3 has `80` curve points / `15.9%` coverage / `4` detected peaks, and graph 4
+   has `34` curve points / `6.7%` coverage / `1` detected peak with localized sparse
+   review required.
+4. `bench_05_tic_plus_ions` now converts all four panels to signal: graphs 2-4 remain
+   sparse at `86`, `91`, and `35` curve points, with `4`, `9`, and `4` detected peaks.
+5. No peak thresholds were loosened in this slice; the new behavior only prevents
+   sparse but real ion traces from being blocked at `signal_convert.curve_points_required`.
+
+Next Phase 5.8b.8 work slice:
+
+1. Review the newly recovered sparse stacked-ion peak tables and overlays for
+   false-positive risk before any broader report validation.
+2. Decide whether sparse/localized traces need separate confidence text or stricter
+   peak-quality gates.
+3. Keep guarded completeness independent from sparse trace readiness: sparse signal
+   conversion must not automatically imply threshold relaxation.
 
 Exit criteria:
 

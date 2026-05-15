@@ -89,25 +89,26 @@ actual class CurveExtractor actual constructor() {
             .let { File(it, "curve_overlay.png").absolutePath }
         saveCurveOverlay(mask, allPoints, w, h, overlayPath)
 
-        val warnings = mutableListOf<String>()
-        val coverage = if (w > 0) allPoints.size.toFloat() / w else 0f
-        if (coverage < 0.5f) {
-            warnings.add("Покрытие кривой менее 50% — проверьте результат")
-        }
-        if (outlierCount > allPoints.size * 0.1f) {
-            warnings.add("Обнаружено много выбросов ($outlierCount) — возможны артефакты")
-        }
-
-        return CurveExtractionResult(
+        val result = CurveExtractionResult(
             points = allPoints.sortedBy { it.pixelX },
             maskImagePath = overlayPath,
             totalColumns = w,
             extractedColumns = rawPoints.size,
             interpolatedColumns = interpolatedCount,
             outlierCount = outlierCount,
-            warnings = warnings,
+            warnings = emptyList(),
             timestamp = System.currentTimeMillis(),
         )
+        val auditWarnings = buildList {
+            if (result.coverage < 0.35f && !result.isSparseTraceUsable) add("curve_extract.low_column_coverage")
+            if (result.isSparseTraceUsable && result.coverage <= 0.3f) {
+                add("curve_extract.sparse_trace_low_column_coverage_accepted")
+            }
+            if (result.isLocalizedSparseTrace) add("curve_extract.sparse_trace_localized_review_required")
+            if (outlierCount > result.points.size * 0.1f) add("curve_extract.many_outliers")
+        }
+
+        return result.copy(warnings = auditWarnings)
     }
 
     /**

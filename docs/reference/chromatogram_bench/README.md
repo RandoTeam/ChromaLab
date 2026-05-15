@@ -340,7 +340,13 @@ base table is already above the under-detection gate. `bench_04` and `bench_05` 
 yet eligible for guarded peak tuning because weak stacked panels still block earlier at
 curve/signal extraction.
 
+Phase 5.8b.7 restores signal conversion for sparse stacked ion panels without changing
+peak thresholds. Sparse XIC/ion traces can now pass the curve-usability gate when they
+contain enough extracted points, while the audit records low-column-coverage acceptance
+and localized sparse evidence. `bench_04` graphs 3-4 and `bench_05` graphs 2-4 now reach
+signal conversion and peak detection instead of stopping at `signal_convert.curve_points_required`.
+
 ## Next Phase
 
-Phase 5.8b.7 should restore curve/signal readiness for weak stacked ion panels before
-report validation or broader peak-completeness tuning.
+Phase 5.8b.8 should review the newly recovered sparse stacked-ion peak tables and
+overlays before report validation or broader peak-completeness tuning.

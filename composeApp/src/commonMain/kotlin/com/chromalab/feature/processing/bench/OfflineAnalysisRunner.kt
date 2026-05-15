@@ -811,6 +811,9 @@ class OfflineAnalysisRunner(
         if (curveResult?.isUsable != true) {
             graphWarnings += "curve_not_usable"
         }
+        curveResult?.warnings.orEmpty().forEach { warning ->
+            if (warning !in graphWarnings) graphWarnings += warning
+        }
 
         val signalConversion = when {
             !axisCalibration.ready -> {

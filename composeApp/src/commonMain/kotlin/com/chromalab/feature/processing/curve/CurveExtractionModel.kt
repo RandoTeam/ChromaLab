@@ -37,8 +37,25 @@ data class CurveExtractionResult(
     val coverage: Float
         get() = if (totalColumns > 0) extractedColumns.toFloat() / totalColumns else 0f
 
+    /** Horizontal span covered by the detected trace evidence. */
+    val xSpanCoverage: Float
+        get() {
+            if (totalColumns <= 0 || points.isEmpty()) return 0f
+            val minX = points.minOf { it.pixelX }
+            val maxX = points.maxOf { it.pixelX }
+            return (maxX - minX + 1).toFloat() / totalColumns.toFloat()
+        }
+
+    /** Sparse XIC/ion traces can be valid even when the baseline is not continuously visible. */
+    val isSparseTraceUsable: Boolean
+        get() = points.size >= 24 && coverage >= 0.05f
+
+    /** Sparse trace evidence concentrated in a narrow time span needs later confidence review. */
+    val isLocalizedSparseTrace: Boolean
+        get() = isSparseTraceUsable && xSpanCoverage < 0.25f
+
     /** Whether extraction produced usable data */
-    val isUsable: Boolean get() = points.size >= 10 && coverage > 0.3f
+    val isUsable: Boolean get() = points.size >= 10 && (coverage > 0.3f || isSparseTraceUsable)
 }
 
 fun CurveExtractionResult.scaledCoordinates(scale: Float): CurveExtractionResult {

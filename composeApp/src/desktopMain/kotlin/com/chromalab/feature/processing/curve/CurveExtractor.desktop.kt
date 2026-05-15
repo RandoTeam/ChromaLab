@@ -58,23 +58,27 @@ actual class CurveExtractor actual constructor() {
             .absolutePath
         saveOverlay(mask, points, width, height, overlayPath)
 
-        val warnings = buildList {
-            val coverage = if (width > 0) rawPoints.size.toFloat() / width.toFloat() else 0f
-            if (coverage < 0.35f) add("curve_extract.low_column_coverage")
-            if (interpolatedPoints.size > rawPoints.size * 0.35f) add("curve_extract.many_short_gap_interpolations")
-            if (rawPoints.isEmpty()) add("curve_extract.no_curve_points")
-        }
-
-        return CurveExtractionResult(
+        val result = CurveExtractionResult(
             points = points,
             maskImagePath = overlayPath,
             totalColumns = width,
             extractedColumns = rawPoints.size,
             interpolatedColumns = interpolatedPoints.size,
             outlierCount = 0,
-            warnings = warnings,
+            warnings = emptyList(),
             timestamp = System.currentTimeMillis(),
         )
+        val warnings = buildList {
+            if (result.coverage < 0.35f && !result.isSparseTraceUsable) add("curve_extract.low_column_coverage")
+            if (result.isSparseTraceUsable && result.coverage <= 0.3f) {
+                add("curve_extract.sparse_trace_low_column_coverage_accepted")
+            }
+            if (result.isLocalizedSparseTrace) add("curve_extract.sparse_trace_localized_review_required")
+            if (interpolatedPoints.size > rawPoints.size * 0.35f) add("curve_extract.many_short_gap_interpolations")
+            if (rawPoints.isEmpty()) add("curve_extract.no_curve_points")
+        }
+
+        return result.copy(warnings = warnings)
     }
 
     private fun List<Int>.bestSignalCluster(height: Int): List<Int>? {

@@ -445,6 +445,41 @@ class ChromatogramBenchFixtureTest {
         assertAdditionalGuardedCompletenessScope(auditsById)
     }
 
+    @Test
+    fun sparseStackedIonPanelsConvertToSignalsBeforePeakReview() = runBlocking {
+        val runner = OfflineAnalysisRunner()
+        val root = Files.createTempDirectory("chromalab-sparse-stacked-ion-fixtures")
+        val fixturesById = ChromatogramBenchFixtures.all.associateBy { it.id }
+        val stackedIonFixtures = listOf(
+            "bench_04_stacked_xic_resolution",
+            "bench_05_tic_plus_ions",
+        ).map { fixturesById.getValue(it) }
+
+        val auditsById = stackedIonFixtures.associate { fixture ->
+            val audit = runWithPlotManualCalibration(
+                runner = runner,
+                root = root,
+                fixture = fixture,
+            )
+            assertEquals(fixture.expectedGraphCount, audit.graphs.size, "${fixture.id} calibrated graph count")
+            assertTrue(
+                audit.graphs.all { it.curveUsable },
+                "${fixture.id} must treat sparse but spatially supported ion traces as usable curves",
+            )
+            assertTrue(
+                audit.graphs.all { it.signal.ready },
+                "${fixture.id} must convert every stacked ion panel to calibrated signal before peak review",
+            )
+            assertTrue(
+                audit.graphs.none { "signal_convert.curve_points_required" in it.signal.warnings },
+                "${fixture.id} must not block sparse stacked ion panels at signal conversion",
+            )
+            fixture.id to audit
+        }
+
+        assertSparseStackedIonSignalScope(auditsById)
+    }
+
     private suspend fun runWithPlotManualCalibration(
         runner: OfflineAnalysisRunner,
         root: Path,
@@ -845,6 +880,44 @@ class ChromatogramBenchFixtureTest {
             quality.narrowBoundaryCount,
             "bench_08 guarded tuning must not accept narrow-boundary peaks",
         )
+    }
+
+    private fun assertSparseStackedIonSignalScope(auditsById: Map<String, OfflineAnalysisAudit>) {
+        val expectedSparseGraphs = mapOf(
+            "bench_04_stacked_xic_resolution" to setOf(3, 4),
+            "bench_05_tic_plus_ions" to setOf(2, 3, 4),
+        )
+        auditsById.forEach { (fixtureId, audit) ->
+            val sparseGraphs = expectedSparseGraphs.getValue(fixtureId)
+            audit.graphs.forEach { graph ->
+                val isExpectedSparseGraph = graph.graphIndex in sparseGraphs
+                if (isExpectedSparseGraph) {
+                    assertTrue(
+                        graph.curveCoverage <= 0.3f,
+                        "$fixtureId graph ${graph.graphIndex} must exercise the sparse trace path",
+                    )
+                    assertTrue(
+                        "curve_extract.sparse_trace_low_column_coverage_accepted" in graph.warnings,
+                        "$fixtureId graph ${graph.graphIndex} must audit sparse trace acceptance",
+                    )
+                    if (fixtureId == "bench_04_stacked_xic_resolution" && graph.graphIndex == 4) {
+                        assertTrue(
+                            "curve_extract.sparse_trace_localized_review_required" in graph.warnings,
+                            "$fixtureId graph ${graph.graphIndex} must flag localized sparse evidence for review",
+                        )
+                    }
+                    assertTrue(
+                        graph.peakDetection.ready,
+                        "$fixtureId graph ${graph.graphIndex} must reach peak detection after sparse signal conversion",
+                    )
+                } else {
+                    assertTrue(
+                        "curve_extract.sparse_trace_low_column_coverage_accepted" !in graph.warnings,
+                        "$fixtureId graph ${graph.graphIndex} must not mark dense traces as sparse",
+                    )
+                }
+            }
+        }
     }
 
     private fun peakSanityExpectationsFor(fixture: ChromatogramBenchFixture): List<OfflinePeakSanityExpectationInput> =

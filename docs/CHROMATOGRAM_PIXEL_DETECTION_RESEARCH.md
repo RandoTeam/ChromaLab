@@ -133,8 +133,19 @@ Phase 5.8b.6 is implemented:
 4. `bench_04` and `bench_05` stay out of peak-completeness tuning until weak stacked
    panels can produce usable curve/signal data.
 
-Phase 5.8b.7 should focus on weak stacked ion panel curve extraction before broader
-peak tuning or report validation.
+Phase 5.8b.7 is implemented:
+
+1. Sparse XIC/ion traces are no longer treated as unusable only because continuous
+   baseline coverage is low. The curve gate now accepts sparse traces with at least
+   24 extracted points and 5% column coverage.
+2. Accepted sparse traces carry explicit audit warnings:
+   `curve_extract.sparse_trace_low_column_coverage_accepted` and, for narrow evidence,
+   `curve_extract.sparse_trace_localized_review_required`.
+3. `bench_04` graphs 3-4 and `bench_05` graphs 2-4 now reach signal conversion and
+   peak detection without changing peak thresholds.
+
+Phase 5.8b.8 should review sparse stacked-ion peak quality and overlay evidence before
+report validation.
 
 ## Sources
 
