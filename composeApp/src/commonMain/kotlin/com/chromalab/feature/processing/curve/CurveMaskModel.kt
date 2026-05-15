@@ -27,9 +27,26 @@ data class CurveMaskResult(
     val cleanPixelCount: Int,
     /** Which suppression passes were applied */
     val suppressionApplied: List<String>,
+    /** Non-destructive audit of internal artifact risk in the cleaned mask */
+    val traceArtifactAudit: CurveTraceArtifactAudit = CurveTraceArtifactAudit(),
     val timestamp: Long,
 ) {
     /** Ratio of cleaned to raw — lower means more was suppressed */
     val suppressionRatio: Float
         get() = if (rawPixelCount > 0) cleanPixelCount.toFloat() / rawPixelCount else 1f
 }
+
+@Serializable
+data class CurveTraceArtifactAudit(
+    val available: Boolean = false,
+    val artifactMaskPath: String? = null,
+    val baselineRow: Int? = null,
+    val artifactPixelCount: Int = 0,
+    val artifactPixelRatio: Float = 0f,
+    val floatingComponentCount: Int = 0,
+    val floatingPixelCount: Int = 0,
+    val verticalLineComponentCount: Int = 0,
+    val horizontalLineComponentCount: Int = 0,
+    val topBandComponentCount: Int = 0,
+    val warnings: List<String> = emptyList(),
+)

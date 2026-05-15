@@ -17,6 +17,7 @@ import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
+import com.chromalab.feature.processing.curve.CurveTraceArtifactAudit
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
 import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
@@ -145,6 +146,7 @@ data class OfflineGraphAudit(
     val curveMaskRawPixelCount: Int,
     val curveMaskCleanPixelCount: Int,
     val curveMaskSuppressionApplied: List<String>,
+    val traceArtifacts: CurveTraceArtifactAudit,
     val curvePointCount: Int,
     val curveCoverage: Float,
     val curveUsable: Boolean,
@@ -758,6 +760,9 @@ class OfflineAnalysisRunner(
                 message = "Curve extraction skipped because curve mask is unavailable.",
             )
         }
+        maskResult?.traceArtifactAudit?.warnings.orEmpty().forEach { warning ->
+            if (warning !in graphWarnings) graphWarnings += warning
+        }
 
         val curveResult = if (availableMask != null) {
             runStage(
@@ -940,6 +945,7 @@ class OfflineAnalysisRunner(
             curveMaskRawPixelCount = maskResult?.rawPixelCount ?: 0,
             curveMaskCleanPixelCount = maskResult?.cleanPixelCount ?: 0,
             curveMaskSuppressionApplied = maskResult?.suppressionApplied.orEmpty(),
+            traceArtifacts = maskResult?.traceArtifactAudit ?: CurveTraceArtifactAudit(),
             curvePointCount = curveResult?.points?.size ?: 0,
             curveCoverage = curveResult?.coverage ?: 0f,
             curveUsable = curveResult?.isUsable == true,

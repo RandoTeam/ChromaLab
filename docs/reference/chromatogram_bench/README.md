@@ -304,9 +304,15 @@ architecture from plot digitizers and chromatogram feature detectors, but implem
 core locally: trace evidence first, artifact masks second, and peak-threshold tuning
 only after artifact-heavy graphs are protected.
 
+Phase 5.8b.2 adds the first non-destructive artifact audit. Each desktop curve-mask
+run now writes `graph_N/trace_artifacts.png` and records `traceArtifactAudit` in JSON.
+Gray pixels show the current cleaned mask; red pixels mark internal artifact-risk
+components. On calibrated `bench_06`, graph 1 is mainly a top-band/text risk while graph
+2 is flagged as high internal artifact risk, which matches the observed false-positive
+risk when thresholds are loosened.
+
 ## Next Phase
 
-Phase 5.8b.2 should classify or suppress remaining non-edge false peaks, especially
-bleed-through/text/grid artifacts inside photographed plot areas. `bench_06` graph 1
-still needs a deeper trace/peak-detection pass, but the next implementation must not
-loosen noise/prominence gates until artifact-heavy graph 2 is protected.
+Phase 5.8b.3 should use `traceArtifactAudit` as a guard before any noise/prominence
+tuning. The next code slice should build an artifact-suppressed trace hypothesis and
+review it against `bench_06` graph 1 and graph 2 before changing accepted peaks.

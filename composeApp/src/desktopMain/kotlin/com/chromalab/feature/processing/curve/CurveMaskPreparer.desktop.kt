@@ -57,6 +57,15 @@ actual class CurveMaskPreparer actual constructor() {
         val dir = File(outputDir).also { it.mkdirs() }
         val rawPath = File(dir, "mask_raw.png").absolutePath
         val cleanPath = File(dir, "mask_clean.png").absolutePath
+        val traceArtifactPath = File(dir, "trace_artifacts.png").absolutePath
+        val traceArtifactAudit = buildTraceArtifactAudit(
+            mask = cleanMask,
+            width = width,
+            height = height,
+            axes = axes,
+            region = region,
+            artifactPath = traceArtifactPath,
+        )
         saveMask(rawMask, width, height, rawPath)
         saveMask(cleanMask, width, height, cleanPath)
 
@@ -70,6 +79,7 @@ actual class CurveMaskPreparer actual constructor() {
             rawPixelCount = rawCount,
             cleanPixelCount = cleanCount,
             suppressionApplied = suppressions,
+            traceArtifactAudit = traceArtifactAudit,
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -362,6 +372,108 @@ actual class CurveMaskPreparer actual constructor() {
     private fun isCompactLowResolutionPlot(width: Int, height: Int): Boolean =
         width <= MAX_COMPACT_PLOT_WIDTH && height <= MAX_COMPACT_PLOT_HEIGHT
 
+    private fun buildTraceArtifactAudit(
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+        axes: AxesResult,
+        region: GraphRegion,
+        artifactPath: String,
+    ): CurveTraceArtifactAudit {
+        if (width <= 0 || height <= 0 || mask.isEmpty()) return CurveTraceArtifactAudit()
+        val baselineY = axes.origin
+            ?.let { (it.y - region.y).roundToInt() }
+            ?.takeIf { it in 0 until height }
+            ?: findLikelyXAxisRow(mask, width, height)
+
+        val labels = IntArray(width * height)
+        val components = mutableListOf<ComponentBounds>()
+        var nextLabel = 1
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                if (mask[index] && labels[index] == 0) {
+                    components += floodFillBounds(mask, labels, width, height, x, y, nextLabel)
+                    nextLabel++
+                }
+            }
+        }
+
+        val baseline = baselineY ?: (height - 1)
+        val baselineTolerance = (height * 0.10f).roundToInt().coerceIn(6, 36)
+        val topBandLimit = (height * 0.20f).roundToInt().coerceIn(0, height - 1)
+        val minFloatingPixels = (width * height * 0.00025f).roundToInt().coerceAtLeast(3)
+        val minVerticalHeight = (height * 0.09f).roundToInt().coerceAtLeast(18)
+        val maxVerticalWidth = (width * 0.045f).roundToInt().coerceIn(4, 36)
+        val minHorizontalWidth = (width * 0.12f).roundToInt().coerceAtLeast(24)
+        val maxHorizontalHeight = (height * 0.035f).roundToInt().coerceIn(2, 18)
+
+        val artifactLabels = mutableSetOf<Int>()
+        val floatingLabels = mutableSetOf<Int>()
+        val verticalLabels = mutableSetOf<Int>()
+        val horizontalLabels = mutableSetOf<Int>()
+        val topBandLabels = mutableSetOf<Int>()
+        for (component in components) {
+            val reachesBaseline = component.maxY >= baseline - baselineTolerance
+            val floating = !reachesBaseline &&
+                component.size >= minFloatingPixels &&
+                component.maxY < baseline - baselineTolerance
+            val verticalRisk = floating &&
+                component.height >= minVerticalHeight &&
+                component.width <= maxVerticalWidth
+            val horizontalRisk = floating &&
+                component.width >= minHorizontalWidth &&
+                component.height <= maxHorizontalHeight
+            val topBandRisk = floating && component.minY <= topBandLimit
+
+            if (floating) floatingLabels += component.label
+            if (verticalRisk) verticalLabels += component.label
+            if (horizontalRisk) horizontalLabels += component.label
+            if (topBandRisk) topBandLabels += component.label
+            if (verticalRisk || horizontalRisk || topBandRisk) {
+                artifactLabels += component.label
+            }
+        }
+
+        val artifactMask = BooleanArray(width * height)
+        var artifactPixels = 0
+        var floatingPixels = 0
+        for (index in labels.indices) {
+            val label = labels[index]
+            if (label in floatingLabels) {
+                floatingPixels++
+            }
+            if (label in artifactLabels) {
+                artifactMask[index] = true
+                artifactPixels++
+            }
+        }
+        saveTraceArtifactMask(mask, artifactMask, width, height, artifactPath)
+
+        val cleanPixels = mask.count { it }.coerceAtLeast(1)
+        val artifactRatio = artifactPixels.toFloat() / cleanPixels.toFloat()
+        val warnings = buildList {
+            if (artifactRatio >= 0.18f) add("trace_artifact.high_internal_artifact_ratio")
+            if (verticalLabels.size >= 12) add("trace_artifact.vertical_bleed_through_risk")
+            if (topBandLabels.size >= 10) add("trace_artifact.top_band_text_risk")
+            if (floatingLabels.size >= 40) add("trace_artifact.many_floating_components")
+        }
+
+        return CurveTraceArtifactAudit(
+            available = true,
+            artifactMaskPath = artifactPath,
+            baselineRow = baselineY,
+            artifactPixelCount = artifactPixels,
+            artifactPixelRatio = artifactRatio,
+            floatingComponentCount = floatingLabels.size,
+            floatingPixelCount = floatingPixels,
+            verticalLineComponentCount = verticalLabels.size,
+            horizontalLineComponentCount = horizontalLabels.size,
+            topBandComponentCount = topBandLabels.size,
+            warnings = warnings,
+        )
+    }
+
     private fun floodFillBounds(
         mask: BooleanArray,
         labels: IntArray,
@@ -378,8 +490,10 @@ actual class CurveMaskPreparer actual constructor() {
         var maxX = startX
         var minY = startY
         var maxY = startY
+        var count = 0
         while (stack.isNotEmpty()) {
             val index = stack.removeLast()
+            count++
             val x = index % width
             val y = index / width
             minX = minOf(minX, x)
@@ -403,6 +517,7 @@ actual class CurveMaskPreparer actual constructor() {
             maxX = maxX,
             minY = minY,
             maxY = maxY,
+            size = count,
         )
     }
 
@@ -482,6 +597,29 @@ actual class CurveMaskPreparer actual constructor() {
         image.flush()
     }
 
+    private fun saveTraceArtifactMask(
+        mask: BooleanArray,
+        artifactMask: BooleanArray,
+        width: Int,
+        height: Int,
+        path: String,
+    ) {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                val color = when {
+                    artifactMask[index] -> ARTIFACT_RED
+                    mask[index] -> MASK_GRAY
+                    else -> BLACK
+                }
+                image.setRGB(x, y, color)
+            }
+        }
+        ImageIO.write(image, "png", File(path))
+        image.flush()
+    }
+
     private fun emptyResult(graphRegion: GraphRegion): CurveMaskResult =
         CurveMaskResult(
             rawMaskPath = null,
@@ -492,12 +630,15 @@ actual class CurveMaskPreparer actual constructor() {
             rawPixelCount = 0,
             cleanPixelCount = 0,
             suppressionApplied = emptyList(),
+            traceArtifactAudit = CurveTraceArtifactAudit(),
             timestamp = System.currentTimeMillis(),
         )
 
     private companion object {
         private const val WHITE = -0x1
         private const val BLACK = -0x1000000
+        private const val MASK_GRAY = -0x777778
+        private const val ARTIFACT_RED = -0x10000
         private const val MIN_USABLE_COLUMN_COVERAGE = 0.30f
         private const val MAX_COMPACT_PLOT_WIDTH = 480
         private const val MAX_COMPACT_PLOT_HEIGHT = 180
@@ -535,6 +676,7 @@ private data class ComponentBounds(
     val maxX: Int,
     val minY: Int,
     val maxY: Int,
+    val size: Int,
 ) {
     val width: Int get() = maxX - minX + 1
     val height: Int get() = maxY - minY + 1

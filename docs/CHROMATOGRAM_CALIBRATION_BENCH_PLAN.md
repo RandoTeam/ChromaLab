@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.1 - pixel detection research and artifact-first decision`.
-- Next work slice: `Phase 5.8b.2 - internal artifact diagnostics before threshold tuning`.
+- Latest completed work slice: `Phase 5.8b.2 - internal trace-artifact diagnostics before threshold tuning`.
+- Next work slice: `Phase 5.8b.3 - use artifact diagnostics to protect trace cleanup and completeness tuning`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -67,7 +67,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.7 | Done | `3a25850` | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
 | Phase 5.8a | Done | `e7b0bb0` | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
 | Phase 5.8b.1 | Done | Pending | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
-| Phase 5.8b.2 | Next | Pending | Add internal artifact diagnostics before any noise-threshold or completeness tuning. |
+| Phase 5.8b.2 | Done | Pending | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
+| Phase 5.8b.3 | Next | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -619,14 +620,26 @@ Completed Phase 5.8b.1 work slice:
    skeleton/centerline, straight-line/text/bleed-through artifact score, and then
    dynamic peak constraints.
 
-Next Phase 5.8b.2 work slice:
+Completed Phase 5.8b.2 work slice:
 
-1. Add diagnostics for non-edge bleed-through/text/grid artifacts inside photographed
-   plot areas, especially `bench_06` graph 2.
-2. Block or flag low-confidence artifact-heavy peak tables instead of silently producing
-   a final report from contaminated candidates.
-3. Only after artifact review is stable, revisit noise/prominence behavior for graph 1
-   trace completeness.
+1. `CurveMaskResult` now carries a non-destructive `traceArtifactAudit` with artifact
+   mask path, baseline row, artifact pixels/ratio, floating component count, vertical
+   and horizontal straight-line component counts, top-band component count, and warning
+   tags.
+2. Desktop bench runs now write `graph_N/trace_artifacts.png`. The PNG keeps clean-mask
+   evidence in gray and marks internal artifact-risk pixels in red.
+3. `bench_06` calibrated audit now distinguishes the two hard panels: graph 1 is about
+   `4.8%` artifact-risk pixels with top-band text risk, while graph 2 is about `23%`
+   artifact-risk pixels and is flagged as high internal artifact risk.
+4. Accepted peak behavior is unchanged in this slice.
+
+Next Phase 5.8b.3 work slice:
+
+1. Use `traceArtifactAudit` to prevent threshold/noise loosening on artifact-heavy graphs.
+2. Build an artifact-suppressed trace hypothesis beside the current mask, but keep the
+   current accepted peak table unchanged until the hypothesis passes fixture review.
+3. Re-run `bench_06` graph 1 completeness only after graph 2's internal artifact risk is
+   protected.
 
 Exit criteria:
 

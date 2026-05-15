@@ -135,6 +135,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Trace Artifact Diagnostics")
+        appendLine()
+        appendLine("| Graph | Available | Artifact pixels | Artifact ratio | Floating components | Floating pixels | Vertical lines | Horizontal lines | Top-band components | Baseline row | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val artifacts = graph.traceArtifacts
+            appendLine(
+                "| ${graph.graphIndex} | ${artifacts.available} | ${artifacts.artifactPixelCount} | ${artifacts.artifactPixelRatio.renderPercent()} | ${artifacts.floatingComponentCount} | ${artifacts.floatingPixelCount} | ${artifacts.verticalLineComponentCount} | ${artifacts.horizontalLineComponentCount} | ${artifacts.topBandComponentCount} | ${artifacts.baselineRow ?: "n/a"} | ${artifacts.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Signal Conversion")
         appendLine()
         appendLine("| Graph | Ready | Points | Time start | Time end | Time range | Intensity min | Intensity max | Intensity range | Duplicates | Gaps | Sort valid | Warnings |")

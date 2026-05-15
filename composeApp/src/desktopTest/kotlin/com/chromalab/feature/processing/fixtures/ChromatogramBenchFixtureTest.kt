@@ -260,6 +260,14 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} graph ${graph.graphIndex} clean curve mask must be written",
                 )
                 assertTrue(
+                    graph.traceArtifacts.available,
+                    "${fixture.id} graph ${graph.graphIndex} must expose trace-artifact diagnostics",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("trace_artifacts.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} trace artifact mask must be written",
+                )
+                assertTrue(
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
                 )
@@ -389,6 +397,7 @@ class ChromatogramBenchFixtureTest {
         )
         assertPeakDetectionFixture(twoGraphs, expectedGraphs = 2, minTotalPeaks = 4)
         assertRightFrameSuppression(twoGraphs)
+        assertTraceArtifactDiagnostics(twoGraphs)
 
         val rotated = runWithPlotManualCalibration(
             runner = runner,
@@ -398,6 +407,7 @@ class ChromatogramBenchFixtureTest {
         assertTrue(rotated.orientationCorrection?.wasRotated == true, "rotated fixture must still use orientation correction")
         assertPeakDetectionFixture(rotated, expectedGraphs = 1, minTotalPeaks = 4)
         assertRightFrameSuppression(rotated)
+        assertTraceArtifactDiagnostics(rotated)
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -578,6 +588,28 @@ class ChromatogramBenchFixtureTest {
                     "${audit.sourceId} graph ${graph.graphIndex} must not accept peaks on the right plot frame",
                 )
             }
+        }
+    }
+
+    private fun assertTraceArtifactDiagnostics(audit: OfflineAnalysisAudit) {
+        audit.graphs.forEach { graph ->
+            val artifacts = graph.traceArtifacts
+            assertTrue(
+                artifacts.available,
+                "${audit.sourceId} graph ${graph.graphIndex} must expose trace-artifact audit",
+            )
+            assertNotNull(
+                artifacts.artifactMaskPath,
+                "${audit.sourceId} graph ${graph.graphIndex} must write a trace-artifact mask path",
+            )
+            assertTrue(
+                Files.size(Path.of(artifacts.artifactMaskPath)) > 0L,
+                "${audit.sourceId} graph ${graph.graphIndex} trace-artifact mask must be non-empty",
+            )
+            assertTrue(
+                artifacts.artifactPixelRatio >= 0f,
+                "${audit.sourceId} graph ${graph.graphIndex} artifact ratio must be non-negative",
+            )
         }
     }
 

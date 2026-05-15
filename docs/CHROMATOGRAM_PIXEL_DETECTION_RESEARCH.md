@@ -85,11 +85,17 @@ Only after artifact-heavy graphs are protected:
 
 ## Next Implementation Slice
 
-Phase 5.8b.2 should be code, not more research:
+Phase 5.8b.2 is now implemented:
 
-1. Add `trace_artifact` audit fields for internal straight-line/text/bleed-through risk.
-2. Render those artifact masks into bench artifacts for `bench_06` graph 1 and graph 2.
-3. Keep accepted peak behavior unchanged until the artifact score is trustworthy.
+1. `traceArtifactAudit` records internal straight-line/text/bleed-through risk.
+2. `trace_artifacts.png` renders gray clean-mask pixels and red artifact-risk pixels.
+3. Accepted peak behavior remains unchanged.
+
+Phase 5.8b.3 should use this audit as a guard before any threshold tuning:
+
+1. Build an artifact-suppressed trace hypothesis beside the current mask.
+2. Compare hypothesis quality against current extraction on `bench_06` graph 1 and graph 2.
+3. Keep accepted peaks unchanged until graph 2 remains protected from internal artifacts.
 
 ## Sources
 
