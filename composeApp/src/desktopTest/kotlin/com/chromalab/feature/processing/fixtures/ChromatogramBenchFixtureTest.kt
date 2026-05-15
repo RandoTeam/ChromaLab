@@ -388,6 +388,7 @@ class ChromatogramBenchFixtureTest {
             fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_06_photo_two_graphs_page" },
         )
         assertPeakDetectionFixture(twoGraphs, expectedGraphs = 2, minTotalPeaks = 4)
+        assertRightFrameSuppression(twoGraphs)
 
         val rotated = runWithPlotManualCalibration(
             runner = runner,
@@ -396,6 +397,7 @@ class ChromatogramBenchFixtureTest {
         )
         assertTrue(rotated.orientationCorrection?.wasRotated == true, "rotated fixture must still use orientation correction")
         assertPeakDetectionFixture(rotated, expectedGraphs = 1, minTotalPeaks = 4)
+        assertRightFrameSuppression(rotated)
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -529,6 +531,26 @@ class ChromatogramBenchFixtureTest {
             "seconds_axis" in fixture.tags -> 150f
             else -> 60f
         }
+
+    private fun assertRightFrameSuppression(
+        audit: OfflineAnalysisAudit,
+        cutoffFraction: Double = 0.92,
+    ) {
+        audit.graphs.forEach { graph ->
+            assertTrue(
+                "right_frame_lines" in graph.curveMaskSuppressionApplied,
+                "${audit.sourceId} graph ${graph.graphIndex} must suppress right-frame line artifacts",
+            )
+            val start = graph.signal.timeStart?.toDouble()
+            val cutoff = start?.plus(graph.signal.timeRange.toDouble() * cutoffFraction)
+            if (cutoff != null) {
+                assertTrue(
+                    graph.peakDetection.peaks.all { it.rtApex < cutoff },
+                    "${audit.sourceId} graph ${graph.graphIndex} must not accept peaks on the right plot frame",
+                )
+            }
+        }
+    }
 
     private fun peakSanityExpectationsFor(fixture: ChromatogramBenchFixture): List<OfflinePeakSanityExpectationInput> =
         when (fixture.id) {

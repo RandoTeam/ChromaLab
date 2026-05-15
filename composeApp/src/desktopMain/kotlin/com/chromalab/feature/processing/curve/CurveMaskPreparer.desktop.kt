@@ -46,6 +46,8 @@ actual class CurveMaskPreparer actual constructor() {
         suppressions += "left_axis"
         suppressImageBorder(cleanMask, width, height)
         suppressions += "border"
+        val removedRightFrame = suppressRightFrameLineComponents(cleanMask, width, height)
+        if (removedRightFrame) suppressions += "right_frame_lines"
         val removedFloating = suppressFloatingComponents(cleanMask, width, height, axes, region)
         if (removedFloating) suppressions += "floating_text_components"
         val removedSmall = suppressSmallComponents(cleanMask, width, height, maxSize = 5)
@@ -280,6 +282,49 @@ actual class CurveMaskPreparer actual constructor() {
         return true
     }
 
+    private fun suppressRightFrameLineComponents(
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+    ): Boolean {
+        val labels = IntArray(width * height)
+        val components = mutableListOf<ComponentBounds>()
+        var nextLabel = 1
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                if (mask[index] && labels[index] == 0) {
+                    components += floodFillBounds(mask, labels, width, height, x, y, nextLabel)
+                    nextLabel++
+                }
+            }
+        }
+
+        val edgeBand = (width * 0.08f).roundToInt().coerceIn(18, 72)
+        val minHeight = (height * 0.34f).roundToInt().coerceAtLeast(32)
+        val maxWidth = (width * 0.050f).roundToInt().coerceIn(10, 42)
+        val topTouch = (height * 0.12f).roundToInt().coerceAtLeast(8)
+        val bottomTouch = (height * 0.14f).roundToInt().coerceAtLeast(8)
+        val removableLabels = components
+            .filter { component ->
+                val nearRightEdge = component.maxX >= width - edgeBand
+                val frameShaped = component.height >= minHeight && component.width <= maxWidth
+                val touchesFrameExtent = component.minY <= topTouch || component.maxY >= height - bottomTouch
+                nearRightEdge && frameShaped && touchesFrameExtent
+            }
+            .map { it.label }
+            .toSet()
+        if (removableLabels.isEmpty()) return false
+        if (wouldDropBelowUsableCoverage(labels, mask, width, height, removableLabels)) return false
+
+        for (index in labels.indices) {
+            if (labels[index] in removableLabels) {
+                mask[index] = false
+            }
+        }
+        return true
+    }
+
     private fun findLikelyXAxisRow(mask: BooleanArray, width: Int, height: Int): Int? {
         val startY = (height * 0.55f).roundToInt().coerceIn(0, height - 1)
         var bestY: Int? = null
@@ -329,12 +374,16 @@ actual class CurveMaskPreparer actual constructor() {
         val stack = ArrayDeque<Int>()
         stack.add(startY * width + startX)
         labels[startY * width + startX] = label
+        var minX = startX
+        var maxX = startX
         var minY = startY
         var maxY = startY
         while (stack.isNotEmpty()) {
             val index = stack.removeLast()
             val x = index % width
             val y = index / width
+            minX = minOf(minX, x)
+            maxX = maxOf(maxX, x)
             minY = minOf(minY, y)
             maxY = maxOf(maxY, y)
             for ((dx, dy) in NEIGHBORS_4) {
@@ -350,6 +399,8 @@ actual class CurveMaskPreparer actual constructor() {
         }
         return ComponentBounds(
             label = label,
+            minX = minX,
+            maxX = maxX,
             minY = minY,
             maxY = maxY,
         )
@@ -480,8 +531,11 @@ private fun GraphRegion.clampTo(imageWidth: Int, imageHeight: Int): GraphRegion?
 
 private data class ComponentBounds(
     val label: Int,
+    val minX: Int,
+    val maxX: Int,
     val minY: Int,
     val maxY: Int,
 ) {
+    val width: Int get() = maxX - minX + 1
     val height: Int get() = maxY - minY + 1
 }

@@ -285,8 +285,13 @@ sanity gate. Phase 5.6 then recovers the `bench_03` labeled apexes at 3.244, 3.8
 low-resolution plot masks while preserving usable coverage on the photographed
 two-graph and rotated fixtures.
 
+Phase 5.7 suppresses right-frame line artifacts on photographed plots. The curve-mask
+preparer now removes narrow, tall components at the right plot edge only when retained
+column coverage stays usable. The fixture test verifies this on `bench_06` and
+`bench_07` so right-border lines cannot re-enter the peak table as late false peaks.
+
 ## Next Phase
 
-Phase 5.7 should review large photographed plots for remaining false peaks from
-text/grid/axis/page artifacts and only broaden trace cleanup when weak-channel coverage
-on `bench_06` and rotated-page coverage on `bench_07` remain stable.
+Phase 5.8 should review photographed trace completeness and remaining non-edge false
+peaks. `bench_06` graph 1 still needs a deeper trace/peak-detection pass because it
+visually contains more peaks than the current accepted peak table exposes.

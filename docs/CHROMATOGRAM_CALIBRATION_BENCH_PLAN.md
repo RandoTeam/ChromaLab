@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.6 - compact annotated plot peak recovery`.
-- Next work slice: `Phase 5.7 - large-photo false peak and trace classifier review`.
+- Latest completed work slice: `Phase 5.7 - large-photo right-frame false peak suppression`.
+- Next work slice: `Phase 5.8 - photographed trace completeness and non-edge false peak review`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -64,7 +64,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 | Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
-| Phase 5.7 | Next | Pending | Review large photographed plots for false peaks and add a less size-limited trace classifier. |
+| Phase 5.7 | Done | Pending | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
+| Phase 5.8 | Next | Pending | Review photographed trace completeness and non-edge false peaks after frame-line cleanup. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -579,13 +580,25 @@ Phase 5.6 status:
 - The full `ChromatogramBenchFixtureTest` still passes for the clean compact export,
   two-graph photographed page, and rotated photographed page.
 
-Next Phase 5.7 work slice:
+Phase 5.7 status:
 
-1. Review large photographed plots for remaining false peaks from text, grid lines,
-   axis labels, page borders, and very tall non-signal artifacts.
-2. Replace the compact-only text cleanup with a broader trace classifier only after it
-   preserves weak-channel coverage on `bench_06` and rotated-page coverage on
-   `bench_07`.
+- The desktop curve-mask preparer now suppresses narrow, tall right-frame line
+  components before curve extraction. The cleanup is guarded by retained column
+  coverage so it cannot remove enough signal to make a weak channel unusable.
+- The fixture contract now verifies that `bench_06_photo_two_graphs_page` and
+  `bench_07_rotated_page_photo` apply `right_frame_lines` suppression and do not accept
+  detected peaks on the right plot frame.
+- `bench_06` keeps both photographed graphs signal-ready after cleanup, and `bench_07`
+  keeps the rotated-page peak train while dropping the right-edge frame artifact.
+- The full `ChromatogramBenchFixtureTest` passes after the frame-line cleanup.
+
+Next Phase 5.8 work slice:
+
+1. Review photographed trace completeness after the right-frame cleanup. In particular,
+   `bench_06` graph 1 still under-detects visible n-alkane peaks compared with the
+   visual trace.
+2. Add non-edge false-positive diagnostics for grid/text/axis artifacts that remain
+   inside the plot, without weakening real weak-channel extraction.
 3. Keep final report rendering blocked until expected-apex sanity and false-positive
    review are stable on the fixture set.
 
