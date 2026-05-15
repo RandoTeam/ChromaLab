@@ -170,7 +170,23 @@ data class OfflinePeakDetectionAudit(
     val clampNegative: Boolean?,
     val maxPeakWidth: Int?,
     val minSnr: Double?,
+    val peaks: List<OfflinePeakAudit> = emptyList(),
     val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakAudit(
+    val peakNumber: Int,
+    val rtApex: Double,
+    val leftBoundaryTime: Double,
+    val rightBoundaryTime: Double,
+    val height: Double,
+    val area: Double,
+    val areaPercent: Double,
+    val snr: Double,
+    val confidence: String,
+    val overlapStatus: String,
+    val warningCount: Int,
 )
 
 @Serializable
@@ -1254,6 +1270,21 @@ private fun buildPeakDetectionAudit(
         clampNegative = params.clampNegative,
         maxPeakWidth = params.maxPeakWidth,
         minSnr = params.minSnr,
+        peaks = run.peaks.mapIndexed { index, peak ->
+            OfflinePeakAudit(
+                peakNumber = index + 1,
+                rtApex = peak.rtApex,
+                leftBoundaryTime = peak.leftBoundaryTime,
+                rightBoundaryTime = peak.rightBoundaryTime,
+                height = peak.height,
+                area = peak.area,
+                areaPercent = peak.areaPercent,
+                snr = peak.snr,
+                confidence = peak.confidence.name,
+                overlapStatus = peak.overlapStatus.name,
+                warningCount = peak.warnings.size,
+            )
+        },
         warnings = warnings.distinct(),
     )
 
@@ -1278,6 +1309,7 @@ private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAu
         clampNegative = null,
         maxPeakWidth = null,
         minSnr = null,
+        peaks = emptyList(),
         warnings = warnings,
     )
 

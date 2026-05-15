@@ -4,6 +4,7 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAudit
 import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
+import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationSource
 import com.chromalab.feature.processing.bench.OfflineGraphAudit
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
@@ -21,6 +22,7 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import javax.imageio.ImageIO
 import kotlinx.coroutines.runBlocking
+import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -433,7 +435,13 @@ class ChromatogramBenchFixtureTest {
                 expectedGraphCount = fixture.expectedGraphCount,
                 manualAxisCalibrations = calibrations,
             )
-        )
+        ).also { audit ->
+            writeAuditArtifacts(
+                audit = audit,
+                imagePath = inputPath,
+                outputDir = Path.of(audit.outputDir),
+            )
+        }
     }
 
     private fun assertPeakDetectionFixture(
@@ -457,6 +465,17 @@ class ChromatogramBenchFixtureTest {
             audit.graphs.all { it.peakMetrics.totalAbsArea > 0.0 },
             "${audit.sourceId} must produce positive integrated peak area",
         )
+        audit.graphs.forEach { graph ->
+            assertTrue(
+                graph.peakDetection.peaks.isNotEmpty(),
+                "${audit.sourceId} graph ${graph.graphIndex} must expose per-peak audit rows",
+            )
+            assertTrue(
+                graph.peakDetection.peaks.all { it.leftBoundaryTime < it.rtApex && it.rtApex < it.rightBoundaryTime },
+                "${audit.sourceId} graph ${graph.graphIndex} must expose sane per-peak boundaries",
+            )
+            assertPeakOverlayArtifact(audit, graph)
+        }
         assertTrue(
             audit.stages.any { it.stage == "peak_detection" && it.status == OfflineStageStatus.SUCCESS },
             "${audit.sourceId} must record peak_detection success stages",
@@ -675,6 +694,7 @@ private fun writeAuditArtifacts(
     writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
     writeSelectedPreprocessingCrops(audit, outputDir)
     writeManualCalibrationFocusArtifacts(audit, overlayImagePath, outputDir)
+    writePeakOverlayArtifacts(audit, outputDir)
 }
 
 private fun writeGraphCandidateOverlay(
@@ -836,12 +856,86 @@ private fun writeManualCalibrationFocusArtifacts(
     }
 }
 
+private fun writePeakOverlayArtifacts(
+    audit: OfflineAnalysisAudit,
+    outputDir: Path,
+) {
+    audit.graphs
+        .filter { it.peakMetrics.ready && it.peakDetection.peaks.isNotEmpty() }
+        .forEach { graph ->
+            val focusPath = outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")
+            if (!Files.exists(focusPath)) return@forEach
+            val focus = assertNotNull(
+                ImageIO.read(focusPath.toFile()),
+                "${audit.sourceId} graph ${graph.graphIndex} manual focus artifact must be readable for peak overlay",
+            )
+            val overlay = BufferedImage(focus.width, focus.height, BufferedImage.TYPE_INT_ARGB)
+            val graphics = overlay.createGraphics()
+            try {
+                graphics.drawImage(focus, 0, 0, null)
+                graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                graphics.stroke = BasicStroke((focus.width.coerceAtLeast(focus.height) / 260f).coerceAtLeast(2f))
+                graphics.font = Font(Font.SANS_SERIF, Font.BOLD, (focus.width / 44).coerceIn(10, 18))
+
+                val plot = graph.plotArea.region ?: return@forEach
+                val plotLocalX = (plot.x - graph.region.x).coerceIn(0, focus.width - 1)
+                val plotLocalY = (plot.y - graph.region.y).coerceIn(0, focus.height - 1)
+                val plotRight = (plotLocalX + plot.width).coerceIn(0, focus.width)
+                val plotBottom = (plotLocalY + plot.height).coerceIn(0, focus.height)
+                val xPair = graph.axisCalibration.xCandidates.maxPixelSpanPair() ?: return@forEach
+                val yPair = graph.axisCalibration.yCandidates.maxPixelSpanPair() ?: return@forEach
+
+                graph.peakDetection.peaks.forEach { peak ->
+                    val left = (plotLocalX + xPair.valueToPixel(peak.leftBoundaryTime)).roundToInt()
+                        .coerceIn(plotLocalX, plotRight)
+                    val apex = (plotLocalX + xPair.valueToPixel(peak.rtApex)).roundToInt()
+                        .coerceIn(plotLocalX, plotRight)
+                    val right = (plotLocalX + xPair.valueToPixel(peak.rightBoundaryTime)).roundToInt()
+                        .coerceIn(plotLocalX, plotRight)
+                    val apexY = (plotLocalY + yPair.valueToPixel(peak.height)).roundToInt()
+                        .coerceIn(plotLocalY, plotBottom)
+
+                    graphics.color = Color(0x15, 0x65, 0xC0, 170)
+                    graphics.drawLine(left, plotLocalY, left, plotBottom)
+                    graphics.drawLine(right, plotLocalY, right, plotBottom)
+                    graphics.color = Color(0xD3, 0x2F, 0x2F, 210)
+                    graphics.drawLine(apex, plotLocalY, apex, plotBottom)
+                    graphics.fillOval(apex - 4, apexY - 4, 8, 8)
+                    graphics.drawString(
+                        peak.peakNumber.toString(),
+                        (apex + 4).coerceAtMost(focus.width - 18),
+                        (apexY - 6).coerceAtLeast(12),
+                    )
+                }
+            } finally {
+                graphics.dispose()
+                focus.flush()
+            }
+            ImageIO.write(overlay, "png", outputDir.resolve("peak_overlay_graph_${graph.graphIndex}.png").toFile())
+            overlay.flush()
+        }
+}
+
 private fun GraphRegion.clampedTo(imageWidth: Int, imageHeight: Int): GraphRegion {
     val x = this.x.coerceIn(0, imageWidth - 1)
     val y = this.y.coerceIn(0, imageHeight - 1)
     val width = this.width.coerceIn(1, imageWidth - x)
     val height = this.height.coerceIn(1, imageHeight - y)
     return GraphRegion(x = x, y = y, width = width, height = height, label = label)
+}
+
+private fun List<OfflineAxisCalibrationPointAudit>.maxPixelSpanPair():
+    Pair<OfflineAxisCalibrationPointAudit, OfflineAxisCalibrationPointAudit>? {
+    if (size < 2) return null
+    val sorted = sortedBy { it.pixel }
+    return sorted.first() to sorted.last()
+}
+
+private fun Pair<OfflineAxisCalibrationPointAudit, OfflineAxisCalibrationPointAudit>.valueToPixel(value: Double): Double {
+    val pixelSpan = second.pixel - first.pixel
+    val valueSpan = second.value - first.value
+    if (pixelSpan == 0f || valueSpan == 0f) return first.pixel.toDouble()
+    return first.pixel + ((value - first.value) / valueSpan) * pixelSpan
 }
 
 private fun assertManualCalibrationFocusArtifact(
@@ -905,6 +999,57 @@ private fun assertManualCalibrationFocusArtifact(
     } finally {
         artifact.flush()
     }
+}
+
+private fun assertPeakOverlayArtifact(
+    audit: OfflineAnalysisAudit,
+    graph: OfflineGraphAudit,
+) {
+    val outputDir = Path.of(audit.outputDir)
+    val overlayPath = outputDir.resolve("peak_overlay_graph_${graph.graphIndex}.png")
+    val focusPath = outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")
+    assertTrue(Files.size(overlayPath) > 0L, "${audit.sourceId} graph ${graph.graphIndex} peak overlay must be written")
+    val overlay = assertNotNull(
+        ImageIO.read(overlayPath.toFile()),
+        "${audit.sourceId} graph ${graph.graphIndex} peak overlay must be readable",
+    )
+    val focus = assertNotNull(
+        ImageIO.read(focusPath.toFile()),
+        "${audit.sourceId} graph ${graph.graphIndex} manual focus artifact must be readable for overlay comparison",
+    )
+    try {
+        assertEquals(focus.width, overlay.width, "${audit.sourceId} graph ${graph.graphIndex} overlay width")
+        assertEquals(focus.height, overlay.height, "${audit.sourceId} graph ${graph.graphIndex} overlay height")
+        assertTrue(
+            overlay.hasPeakOverlayColor(),
+            "${audit.sourceId} graph ${graph.graphIndex} overlay must contain drawn peak markers",
+        )
+    } finally {
+        overlay.flush()
+        focus.flush()
+    }
+}
+
+private fun BufferedImage.hasPeakOverlayColor(): Boolean {
+    var markerPixels = 0
+    var y = 0
+    while (y < height) {
+        var x = 0
+        while (x < width) {
+            val argb = getRGB(x, y)
+            val alpha = argb ushr 24 and 0xFF
+            val red = argb ushr 16 and 0xFF
+            val green = argb ushr 8 and 0xFF
+            val blue = argb and 0xFF
+            if (alpha > 150 && red > 150 && green < 110 && blue < 110) {
+                markerPixels++
+                if (markerPixels >= 4) return true
+            }
+            x++
+        }
+        y++
+    }
+    return false
 }
 
 private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =

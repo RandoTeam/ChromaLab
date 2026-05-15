@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.3 - audited peak metrics and integration review gate`.
-- Next work slice: `Phase 5.4 - fixture peak sanity and overlay review gate`.
+- Latest completed work slice: `Phase 5.4 - peak overlay artifact and per-peak audit gate`.
+- Next work slice: `Phase 5.5 - fixture-specific dominant and false peak sanity gate`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -61,7 +61,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.1 | Done | `8a37951` | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
 | Phase 5.2 | Done | `547573c` | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
 | Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
-| Phase 5.4 | Next | Pending | Add fixture-specific peak sanity checks and visual overlay review for missed/false dominant peaks. |
+| Phase 5.4 | Done | Current slice | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
+| Phase 5.5 | Next | Pending | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -535,13 +536,26 @@ Phase 5.3 status:
   two-graph `bench_06_photo_two_graphs_page`, and rotated
   `bench_07_rotated_page_photo` examples.
 
-Next Phase 5.4 work slice:
+Phase 5.4 status:
 
-1. Add visual peak overlay artifacts or equivalent fixture diagnostics for the detected
-   peak positions and integration boundaries.
-2. Add fixture-specific sanity checks for missed dominant peaks, false peaks from
-   text/grid/axis artifacts, and blank/near-empty graph false positives.
-3. Keep final report rendering blocked until those visual/numeric checks are stable.
+- The offline audit now stores a per-peak snapshot with peak number, apex RT, left/right
+  boundaries, height, area, area percent, S/N, confidence, overlap state, and warning
+  count.
+- The Markdown summary renders this per-peak snapshot so individual peak rows can be
+  reviewed without parsing the full JSON.
+- Desktop fixture runs with manual calibration now write `peak_overlay_graph_N.png`
+  beside the existing focus artifacts. The overlay draws left/right integration
+  boundaries and apex markers in the same graph-panel coordinate system used by
+  calibration.
+- The executable fixture test validates those overlays on `bench_03_small_tic_export`,
+  `bench_06_photo_two_graphs_page`, and `bench_07_rotated_page_photo`.
+
+Next Phase 5.5 work slice:
+
+1. Use the new per-peak rows and overlays to add fixture-specific sanity contracts for
+   missed dominant peaks, false peaks from text/grid/axis artifacts, and blank/near-empty
+   graph false positives.
+2. Keep final report rendering blocked until those visual/numeric checks are stable.
 
 Exit criteria:
 
@@ -731,3 +745,11 @@ Exit criteria:
    Markdown audit artifacts.
 4. Validate the gate on the same clean, two-graph photographed, and rotated real bench
    examples.
+
+- Phase 5.4:
+
+1. Add per-peak audit rows to the offline peak detection audit.
+2. Render the per-peak snapshot in Markdown audit artifacts.
+3. Write peak overlay PNG artifacts for calibrated fixture runs.
+4. Validate overlay generation and per-peak boundary sanity on the clean, two-graph
+   photographed, and rotated real bench examples.

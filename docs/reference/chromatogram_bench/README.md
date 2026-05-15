@@ -269,8 +269,16 @@ warnings. Structural metric failures block calculation readiness at `peak_metric
 The fixture test validates this on the same clean, two-graph, and rotated real
 examples before those values can feed report validation.
 
+Phase 5.4 adds per-peak audit rows and visual peak overlay artifacts. The JSON and
+Markdown audit now expose each detected peak's apex time, boundaries, height, area,
+area percent, S/N, confidence, overlap state, and warning count. Calibrated fixture
+runs also write `peak_overlay_graph_N.png`, drawn on the manual calibration focus
+image with apex and left/right integration boundary markers. The fixture test validates
+these overlays on the clean `bench_03`, two-graph `bench_06`, and rotated `bench_07`
+examples.
+
 ## Next Phase
 
-Phase 5.4 should add fixture-specific peak sanity checks and visual overlay review for
-missed dominant peaks, false peaks from text/grid/axis artifacts, and blank graph false
-positives before final report rendering consumes the peak table.
+Phase 5.5 should use the per-peak rows and overlays to add fixture-specific sanity
+contracts for missed dominant peaks, false peaks from text/grid/axis artifacts, and
+blank graph false positives before final report rendering consumes the peak table.

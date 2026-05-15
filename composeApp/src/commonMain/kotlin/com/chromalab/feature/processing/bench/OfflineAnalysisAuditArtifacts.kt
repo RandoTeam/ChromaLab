@@ -159,6 +159,22 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Peak Table Snapshot")
+        appendLine()
+        appendLine("| Graph | Peak | RT apex | Left | Right | Height | Area | Area % | S/N | Confidence | Overlap | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: |")
+        audit.graphs.forEach { graph ->
+            graph.peakDetection.peaks.forEach { peak ->
+                appendLine(
+                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rtApex.renderNumber()} | ${peak.leftBoundaryTime.renderNumber()} | ${peak.rightBoundaryTime.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.areaPercent.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.confidence} | ${peak.overlapStatus} | ${peak.warningCount} |",
+                )
+            }
+        }
+        if (audit.graphs.all { it.peakDetection.peaks.isEmpty() }) {
+            appendLine("|  |  |  |  |  |  |  |  |  | none | none |  |")
+        }
+        appendLine()
+
         appendLine("## Peak Metrics Review")
         appendLine()
         appendLine("| Graph | Ready | RT order | Total area | Area % sum | Max height | First RT | Last RT | Min width | Max width | Invalid nums | Invalid bounds | Non-positive area | Non-positive height | Missing width | Low S/N | Low confidence | Overlap review | Peak warnings | Warnings |")
