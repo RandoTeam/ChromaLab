@@ -1,5 +1,7 @@
 package com.chromalab.feature.processing.bench
 
+import com.chromalab.feature.calculation.core.CalculationEngine
+import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.calibration.CalibrationPoint
@@ -33,6 +35,7 @@ import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.preprocess.PreprocessingVariantRanker
 import com.chromalab.feature.processing.preprocess.PreprocessingVariantScore
 import com.chromalab.feature.processing.preprocess.variants
+import com.chromalab.feature.processing.signal.DigitalSignal
 import com.chromalab.feature.processing.signal.SignalConverter
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
@@ -129,6 +132,7 @@ data class OfflineGraphAudit(
     val curveCoverage: Float,
     val curveUsable: Boolean,
     val signal: OfflineSignalAudit,
+    val peakDetection: OfflinePeakDetectionAudit,
     val warnings: List<String>,
 )
 
@@ -145,6 +149,23 @@ data class OfflineSignalAudit(
     val duplicateCount: Int,
     val gapCount: Int,
     val sortValid: Boolean,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakDetectionAudit(
+    val ready: Boolean,
+    val peakCount: Int,
+    val significantPeakCount: Int,
+    val dominantPeakTime: Double?,
+    val dominantPeakHeight: Double?,
+    val dominantPeakAreaPercent: Double?,
+    val baselineMethod: String?,
+    val boundaryMethod: String?,
+    val integrationMethod: String?,
+    val clampNegative: Boolean?,
+    val maxPeakWidth: Int?,
+    val minSnr: Double?,
     val warnings: List<String> = emptyList(),
 )
 
@@ -445,12 +466,14 @@ class OfflineAnalysisRunner(
             graphAudits.all { it.axisCalibration.ready }
         val curveReady = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
         val signalReady = graphAudits.isNotEmpty() && graphAudits.all { it.signal.ready }
+        val peakDetectionReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakDetection.ready }
         val readyForCalculation = cropReady &&
             plotAreaReady &&
             axisGeometryReady &&
             axisCalibrationReady &&
             curveReady &&
-            signalReady
+            signalReady &&
+            peakDetectionReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
@@ -460,7 +483,8 @@ class OfflineAnalysisRunner(
                     !axisGeometryReady -> "Calculation is blocked until every graph has detected axis geometry and origin."
                     !axisCalibrationReady -> "Calculation is blocked until every graph has confirmed pixel-to-axis calibration."
                     !curveReady -> "Calculation is blocked until every graph has usable extracted curve data."
-                    else -> "Calculation is blocked until every graph has calibrated signal data."
+                    !signalReady -> "Calculation is blocked until every graph has calibrated signal data."
+                    else -> "Calculation is blocked until every graph has detected peaks from calibrated signal data."
                 },
             )
             stages += skippedStage(
@@ -490,7 +514,8 @@ class OfflineAnalysisRunner(
                 !axisGeometryReady -> "axis_detect"
                 !axisCalibrationReady -> "axis_calibration"
                 !curveReady -> "curve_extract"
-                else -> "signal_convert"
+                !signalReady -> "signal_convert"
+                else -> "peak_detection"
             },
             readyForCalculation = readyForCalculation,
         )
@@ -663,7 +688,7 @@ class OfflineAnalysisRunner(
             graphWarnings += "curve_not_usable"
         }
 
-        val signalAudit = when {
+        val signalConversion = when {
             !axisCalibration.ready -> {
                 val warnings = listOf("signal_convert.axis_calibration_required")
                 graphWarnings += warnings
@@ -673,7 +698,7 @@ class OfflineAnalysisRunner(
                     message = "Signal conversion skipped until axis calibration is confirmed.",
                     warnings = warnings,
                 )
-                missingSignal(warnings)
+                OfflineSignalConversion(missingSignal(warnings), signal = null)
             }
             curveResult?.isUsable != true -> {
                 val warnings = listOf("signal_convert.curve_points_required")
@@ -684,15 +709,15 @@ class OfflineAnalysisRunner(
                     message = "Signal conversion skipped until usable curve points are available.",
                     warnings = warnings,
                 )
-                missingSignal(warnings)
+                OfflineSignalConversion(missingSignal(warnings), signal = null)
             }
             else -> {
                 runStage(
                     stage = "signal_convert",
                     graphIndex = graphIndex,
                     stages = stages,
-                    successMessage = { signal ->
-                        "points=${signal.pointCount}, time=${signal.timeRange}, intensity=${signal.intensityRange}."
+                    successMessage = { conversion ->
+                        "points=${conversion.audit.pointCount}, time=${conversion.audit.timeRange}, intensity=${conversion.audit.intensityRange}."
                     },
                 ) {
                     buildSignalAudit(
@@ -700,10 +725,40 @@ class OfflineAnalysisRunner(
                         axisCalibration = axisCalibration,
                         sourceImage = analysisImagePath,
                     )
-                } ?: missingSignal(listOf("signal_convert.stage_failed"))
+                } ?: OfflineSignalConversion(missingSignal(listOf("signal_convert.stage_failed")), signal = null)
             }
         }
+        val signalAudit = signalConversion.audit
         graphWarnings += signalAudit.warnings.filterNot { it in graphWarnings }
+
+        val peakDetectionAudit = if (signalAudit.ready && signalConversion.signal != null) {
+            val params = defaultOfflineCalculationParams()
+            runStage(
+                stage = "peak_detection",
+                graphIndex = graphIndex,
+                stages = stages,
+                successMessage = { result ->
+                    "ready=${result.ready}, peaks=${result.peakCount}, significant=${result.significantPeakCount}."
+                },
+            ) {
+                buildPeakDetectionAudit(
+                    signal = signalConversion.signal,
+                    sourceId = "graph_${graphIndex}_${analysisImagePath.substringAfterLast('/').substringAfterLast('\\')}",
+                    params = params,
+                )
+            } ?: missingPeakDetection(listOf("peak_detection.stage_failed"))
+        } else {
+            val warnings = listOf("peak_detection.signal_required")
+            graphWarnings += warnings
+            stages += skippedStage(
+                stage = "peak_detection",
+                graphIndex = graphIndex,
+                message = "Peak detection skipped until calibrated signal data is available.",
+                warnings = warnings,
+            )
+            missingPeakDetection(warnings)
+        }
+        graphWarnings += peakDetectionAudit.warnings.filterNot { it in graphWarnings }
 
         return OfflineGraphAudit(
             graphIndex = graphIndex,
@@ -731,10 +786,16 @@ class OfflineAnalysisRunner(
             curveCoverage = curveResult?.coverage ?: 0f,
             curveUsable = curveResult?.isUsable == true,
             signal = signalAudit,
+            peakDetection = peakDetectionAudit,
             warnings = graphWarnings,
         )
     }
 }
+
+private data class OfflineSignalConversion(
+    val audit: OfflineSignalAudit,
+    val signal: DigitalSignal?,
+)
 
 private enum class CalibrationAxis {
     X,
@@ -970,9 +1031,12 @@ private fun buildSignalAudit(
     curvePoints: List<CurvePoint>,
     axisCalibration: OfflineAxisCalibrationAudit,
     sourceImage: String,
-): OfflineSignalAudit {
+): OfflineSignalConversion {
     val pixelCalibration = axisCalibration.toPixelCalibration()
-        ?: return missingSignal(listOf("signal_convert.axis_calibration_invalid"))
+        ?: return OfflineSignalConversion(
+            audit = missingSignal(listOf("signal_convert.axis_calibration_invalid")),
+            signal = null,
+        )
     val signal = SignalConverter.convert(
         curvePoints = curvePoints,
         calibration = pixelCalibration,
@@ -986,7 +1050,7 @@ private fun buildSignalAudit(
         if (intensityRange < 0f) add("signal_convert.negative_intensity_range")
     }
 
-    return OfflineSignalAudit(
+    val audit = OfflineSignalAudit(
         ready = signal.points.isNotEmpty() &&
             signal.metadata.sortValid &&
             signal.timeRange > 0f &&
@@ -1002,6 +1066,11 @@ private fun buildSignalAudit(
         gapCount = signal.metadata.gapCount,
         sortValid = signal.metadata.sortValid,
         warnings = warnings,
+    )
+
+    return OfflineSignalConversion(
+        audit = audit,
+        signal = signal.takeIf { audit.ready },
     )
 }
 
@@ -1050,6 +1119,85 @@ private fun missingSignal(warnings: List<String>): OfflineSignalAudit =
         duplicateCount = 0,
         gapCount = 0,
         sortValid = false,
+        warnings = warnings,
+    )
+
+private fun defaultOfflineCalculationParams(): CalculationParams =
+    CalculationParams(
+        smoothingEnabled = true,
+        smoothingWindowSize = 7,
+        smoothingPolynomialOrder = 2,
+        baselineMethod = "ALS",
+        baselineLambda = 1e6,
+        baselineP = 0.01,
+        baselineIterations = 10,
+        minPeakHeight = 0.0,
+        minPeakProminence = 0.0,
+        minPeakDistance = 5,
+        minPeakWidth = 3,
+        maxPeakWidth = 0,
+        minSnr = 3.0,
+        noiseMethod = "MAD",
+        integrationMethod = "TRAPEZOIDAL",
+        boundaryMethod = "LOCAL_MINIMA",
+        boundaryPercentHeight = 0.01,
+        clampNegative = false,
+        useSmoothedForIntegration = false,
+        presetName = "Offline bench balanced",
+    )
+
+private fun buildPeakDetectionAudit(
+    signal: DigitalSignal,
+    sourceId: String,
+    params: CalculationParams,
+): OfflinePeakDetectionAudit {
+    val run = CalculationEngine.execute(
+        signal = signal,
+        sourceId = sourceId,
+        params = params,
+    )
+    val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
+    val dominantPeak = peaksByArea.firstOrNull()
+    val warnings = buildList {
+        if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
+        if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
+        run.validation.warnings.forEach { add("validation.$it") }
+        run.warnings.forEach { warning ->
+            add("${warning.stage}.${warning.message}")
+        }
+    }
+
+    return OfflinePeakDetectionAudit(
+        ready = run.validation.isValid && run.peaks.isNotEmpty(),
+        peakCount = run.peaks.size,
+        significantPeakCount = run.peaks.count { it.snr >= params.minSnr },
+        dominantPeakTime = dominantPeak?.rtApex,
+        dominantPeakHeight = dominantPeak?.height,
+        dominantPeakAreaPercent = dominantPeak?.areaPercent,
+        baselineMethod = params.baselineMethod,
+        boundaryMethod = params.boundaryMethod,
+        integrationMethod = params.integrationMethod,
+        clampNegative = params.clampNegative,
+        maxPeakWidth = params.maxPeakWidth,
+        minSnr = params.minSnr,
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAudit =
+    OfflinePeakDetectionAudit(
+        ready = false,
+        peakCount = 0,
+        significantPeakCount = 0,
+        dominantPeakTime = null,
+        dominantPeakHeight = null,
+        dominantPeakAreaPercent = null,
+        baselineMethod = null,
+        boundaryMethod = null,
+        integrationMethod = null,
+        clampNegative = null,
+        maxPeakWidth = null,
+        minSnr = null,
         warnings = warnings,
     )
 

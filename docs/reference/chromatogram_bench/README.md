@@ -250,6 +250,18 @@ With confirmed manual calibration, the runner converts curve points through
 `SignalConverter`, records point count, time range, intensity range, duplicates, gaps,
 and sort validity, and requires this signal audit before later calculation work.
 
+Phase 5.2 adds the audited peak-detection readiness gate. The runner now emits
+`peak_detection` only after calibrated signal conversion, runs the deterministic
+`CalculationEngine`, and records peak count, significant peak count, dominant peak
+time/height/area share, boundary method, integration mode, clamp-negative, max-width,
+min-S/N, and warnings. Missing signal data produces `peak_detection.signal_required`
+instead of a partial result. The executable fixture test validates this gate on
+`bench_03_small_tic_export`, `bench_06_photo_two_graphs_page`, and
+`bench_07_rotated_page_photo`, covering the best clean graph, a hard two-graph page,
+and a rotated page.
+
 ## Next Phase
 
-Phase 5.2 should add an audited peak detection readiness gate on calibrated signal data.
+Phase 5.3 should review peak boundaries, integration areas, S/N, dominant-peak
+selection, and false positives against real fixture overlays before final report
+rendering is allowed to consume these values.

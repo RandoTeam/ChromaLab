@@ -171,6 +171,14 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { "signal_convert.axis_calibration_required" in it.signal.warnings },
                 "${fixture.id} must expose the signal conversion gate while axis calibration is missing",
             )
+            assertTrue(
+                audit.graphs.all { !it.peakDetection.ready },
+                "${fixture.id} must not run peak detection before calibrated signal data exists",
+            )
+            assertTrue(
+                audit.graphs.all { "peak_detection.signal_required" in it.peakDetection.warnings },
+                "${fixture.id} must expose the peak-detection gate while signal conversion is missing",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -287,8 +295,8 @@ class ChromatogramBenchFixtureTest {
                             OfflineManualAxisCalibrationPointInput(pixel = 220f, value = 10f, label = "10.00"),
                         ),
                         yPoints = listOf(
-                            OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 0f, label = "0"),
-                            OfflineManualAxisCalibrationPointInput(pixel = 120f, value = 1f, label = "1.0"),
+                            OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 1_000f, label = "1000"),
+                            OfflineManualAxisCalibrationPointInput(pixel = 120f, value = 0f, label = "0"),
                         ),
                         xUnit = "min",
                         yUnit = "abundance",
@@ -317,8 +325,117 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "signal_convert" && it.status == OfflineStageStatus.SUCCESS },
             "confirmed manual calibration must run the signal conversion stage",
         )
+        assertTrue(graph.peakDetection.ready, "confirmed manual calibration must unlock audited peak detection")
+        assertTrue(graph.peakDetection.peakCount > 0, "peak detection must find real candidates on the clean TIC fixture")
+        assertTrue(
+            audit.stages.any { it.stage == "peak_detection" && it.status == OfflineStageStatus.SUCCESS },
+            "confirmed manual calibration must run the peak detection stage",
+        )
         assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
         assertTrue(audit.blockedAtStage != "signal_convert", "manual calibration must pass the signal conversion gate")
+        assertTrue(audit.blockedAtStage != "peak_detection", "manual calibration must pass the peak detection gate")
+    }
+
+    @Test
+    fun offlineRunnerDetectsPeaksOnBestAndHardManualCalibratedFixtures() = runBlocking {
+        val runner = OfflineAnalysisRunner()
+        val root = Files.createTempDirectory("chromalab-peak-detection-fixtures")
+
+        val best = runWithPlotManualCalibration(
+            runner = runner,
+            root = root,
+            fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_03_small_tic_export" },
+        )
+        assertPeakDetectionFixture(best, expectedGraphs = 1, minTotalPeaks = 3)
+
+        val twoGraphs = runWithPlotManualCalibration(
+            runner = runner,
+            root = root,
+            fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_06_photo_two_graphs_page" },
+        )
+        assertPeakDetectionFixture(twoGraphs, expectedGraphs = 2, minTotalPeaks = 4)
+
+        val rotated = runWithPlotManualCalibration(
+            runner = runner,
+            root = root,
+            fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_07_rotated_page_photo" },
+        )
+        assertTrue(rotated.orientationCorrection?.wasRotated == true, "rotated fixture must still use orientation correction")
+        assertPeakDetectionFixture(rotated, expectedGraphs = 1, minTotalPeaks = 4)
+    }
+
+    private suspend fun runWithPlotManualCalibration(
+        runner: OfflineAnalysisRunner,
+        root: Path,
+        fixture: ChromatogramBenchFixture,
+    ): OfflineAnalysisAudit {
+        val inputPath = root.resolve("${fixture.id}.${fixture.extension}")
+        Files.write(inputPath, fixture.resourceBytes())
+
+        val preview = runner.run(
+            OfflineAnalysisInput(
+                sourceId = "${fixture.id}_preview",
+                imagePath = inputPath.toAbsolutePath().toString(),
+                outputDir = root.resolve("${fixture.id}_preview").toAbsolutePath().toString(),
+                expectedGraphCount = fixture.expectedGraphCount,
+            )
+        )
+        assertEquals(fixture.expectedGraphCount, preview.graphs.size, "${fixture.id} preview graph count")
+
+        val xEndValue = if ("seconds_axis" in fixture.tags) 60f else 10f
+        val calibrations = preview.graphs.map { graph ->
+            val plot = assertNotNull(graph.plotArea.region, "${fixture.id} graph ${graph.graphIndex} plot area")
+            OfflineManualAxisCalibrationInput(
+                graphIndex = graph.graphIndex,
+                xPoints = listOf(
+                    OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 0f, label = "0"),
+                    OfflineManualAxisCalibrationPointInput(
+                        pixel = (plot.width - 1).coerceAtLeast(24).toFloat(),
+                        value = xEndValue,
+                        label = xEndValue.toString(),
+                    ),
+                ),
+                yPoints = listOf(
+                    OfflineManualAxisCalibrationPointInput(pixel = 0f, value = 1_000f, label = "1000"),
+                    OfflineManualAxisCalibrationPointInput(
+                        pixel = (plot.height - 1).coerceAtLeast(24).toFloat(),
+                        value = 0f,
+                        label = "0",
+                    ),
+                ),
+                xUnit = if ("seconds_axis" in fixture.tags) "s" else "min",
+                yUnit = "abundance",
+            )
+        }
+
+        return runner.run(
+            OfflineAnalysisInput(
+                sourceId = fixture.id,
+                imagePath = inputPath.toAbsolutePath().toString(),
+                outputDir = root.resolve("${fixture.id}_calibrated").toAbsolutePath().toString(),
+                expectedGraphCount = fixture.expectedGraphCount,
+                manualAxisCalibrations = calibrations,
+            )
+        )
+    }
+
+    private fun assertPeakDetectionFixture(
+        audit: OfflineAnalysisAudit,
+        expectedGraphs: Int,
+        minTotalPeaks: Int,
+    ) {
+        assertEquals(expectedGraphs, audit.graphs.size, "${audit.sourceId} calibrated graph count")
+        assertTrue(audit.graphs.all { it.signal.ready }, "${audit.sourceId} must convert signal on every graph")
+        assertTrue(audit.graphs.all { it.peakDetection.ready }, "${audit.sourceId} must detect peaks on every graph")
+        assertTrue(
+            audit.graphs.sumOf { it.peakDetection.peakCount } >= minTotalPeaks,
+            "${audit.sourceId} must detect visible peaks on real fixture examples",
+        )
+        assertTrue(
+            audit.stages.any { it.stage == "peak_detection" && it.status == OfflineStageStatus.SUCCESS },
+            "${audit.sourceId} must record peak_detection success stages",
+        )
+        assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
     }
 }
 

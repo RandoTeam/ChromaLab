@@ -51,11 +51,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- |")
+        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready | Peak ready |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} | ${graph.peakDetection.ready} |",
             )
         }
         appendLine()
@@ -147,6 +147,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Peak Detection")
+        appendLine()
+        appendLine("| Graph | Ready | Peaks | Significant | Dominant time | Dominant height | Dominant area | Baseline | Boundary | Integration | Clamp negative | Max width | Min S/N | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val peaks = graph.peakDetection
+            appendLine(
+                "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.peakCount} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Preprocessing Variant Ranking")
         appendLine()
         appendLine("| Graph | Rank | Selected | Variant | Score | Dark pixels | Edges | Contrast | H-lines | V-lines | Warnings |")
@@ -186,6 +198,14 @@ private fun Float.renderNumber(): String =
         this.isNaN() || this.isInfinite() -> "n/a"
         this >= 100f -> this.toInt().toString()
         this >= 10f -> "%.1f".format(this)
+        else -> "%.3f".format(this)
+    }
+
+private fun Double.renderNumber(): String =
+    when {
+        isNaN() || isInfinite() -> "n/a"
+        this >= 100.0 -> toInt().toString()
+        this >= 10.0 -> "%.1f".format(this)
         else -> "%.3f".format(this)
     }
 

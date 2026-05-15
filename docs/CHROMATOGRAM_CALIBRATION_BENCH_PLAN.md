@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.1 - calibrated curve-to-signal conversion gate`.
-- Next work slice: `Phase 5.2 - audited peak detection readiness gate`.
+- Latest completed work slice: `Phase 5.2 - audited peak detection readiness gate`.
+- Next work slice: `Phase 5.3 - audited peak metrics and integration review gate`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -59,7 +59,8 @@ artifact summary; it is not the primary plan.
 | Phase 2.12.1 | Done | `52b9183` | Add manual calibration focus artifacts for bench fixture review. |
 | Phase 2.12.2 | Done | `f62f92b` | Review generated focus artifacts and lock visual acceptance thresholds before numeric integration work. |
 | Phase 5.1 | Done | `8a37951` | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
-| Phase 5.2 | Next | Pending | Add audited peak detection readiness gate on calibrated signal data. |
+| Phase 5.2 | Done | Current slice | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
+| Phase 5.3 | Next | Pending | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -484,7 +485,7 @@ Exit criteria:
 
 Goal: calibrate the scientific calculation independently from model/runtime issues.
 
-- [ ] Extract raw curve points from each graph crop.
+- [x] Extract raw curve points from each graph crop.
 - [ ] Keep raw, smoothed, baseline, corrected, and integrated signals auditable.
 - [ ] Apply current `CalculationEngine` settings:
   - boundary method;
@@ -495,6 +496,38 @@ Goal: calibrate the scientific calculation independently from model/runtime issu
 - [ ] Compare detected peaks against fixture expected facts and visual sanity checks.
 - [ ] Flag missed dominant peaks, false peaks from text/grid/axis lines, and blank
   graph false positives.
+
+Phase 5.1 status:
+
+- The offline runner emits `signal_convert` after curve extraction.
+- Missing confirmed X/Y calibration skips signal conversion with an explicit
+  `signal_convert.axis_calibration_required` warning.
+- Confirmed manual calibration converts curve points through `SignalConverter` and
+  audits point count, time range, intensity range, duplicate count, gap count, and sort
+  validity.
+
+Phase 5.2 status:
+
+- The offline runner emits `peak_detection` only after a calibrated `DigitalSignal`
+  exists.
+- Peak detection runs through the current deterministic `CalculationEngine` using the
+  offline balanced calculation parameters and records peak count, significant peak
+  count, dominant peak time/height/area share, baseline method, boundary method,
+  integration mode, clamp-negative, max-width, min-S/N, and warnings.
+- Missing signal data skips peak detection with `peak_detection.signal_required`; the
+  pipeline does not fabricate a deterministic-only result.
+- Acceptance is tested on real fixture examples: clean `bench_03_small_tic_export`,
+  hard two-graph photographed `bench_06_photo_two_graphs_page`, and rotated
+  `bench_07_rotated_page_photo`.
+
+Next Phase 5.3 work slice:
+
+1. Review peak boundaries, integration areas, S/N, dominant-peak selection, and false
+   positives against real fixture overlays.
+2. Keep calculation output blocked from final report rendering until the peak metrics
+   are visually and numerically credible.
+3. Add fixture expectations for missed dominant peaks and blank/near-empty graph false
+   positives.
 
 Exit criteria:
 
@@ -660,3 +693,18 @@ Exit criteria:
    returning only the inner plot area.
 5. Lock the rotated fixture against regressions that would drop early peaks or the
    left graph-panel context.
+
+- Phase 5.1:
+
+1. Add calibrated signal conversion after confirmed axis calibration.
+2. Keep signal conversion skipped when manual/OCR calibration is missing.
+3. Record calibrated signal diagnostics in JSON and Markdown audit artifacts.
+
+- Phase 5.2:
+
+1. Add audited peak detection after calibrated signal conversion.
+2. Run the deterministic `CalculationEngine` for the readiness gate and record the
+   peak-detection calculation parameters.
+3. Keep peak detection skipped until calibrated signal data exists.
+4. Validate the gate on the clean, two-graph photographed, and rotated real bench
+   examples.
