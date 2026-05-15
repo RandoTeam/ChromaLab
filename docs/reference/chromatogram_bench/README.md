@@ -298,9 +298,15 @@ most are rejected by the prominence/noise gate; a stricter noise experiment also
 that graph 2 can turn bleed-through artifacts into false peaks, so artifact review must
 come before any threshold loosening.
 
+Phase 5.8b.1 records the external pixel-detection research in
+`docs/CHROMATOGRAM_PIXEL_DETECTION_RESEARCH.md`. The accepted direction is to borrow
+architecture from plot digitizers and chromatogram feature detectors, but implement the
+core locally: trace evidence first, artifact masks second, and peak-threshold tuning
+only after artifact-heavy graphs are protected.
+
 ## Next Phase
 
-Phase 5.8b should classify or suppress remaining non-edge false peaks, especially
+Phase 5.8b.2 should classify or suppress remaining non-edge false peaks, especially
 bleed-through/text/grid artifacts inside photographed plot areas. `bench_06` graph 1
 still needs a deeper trace/peak-detection pass, but the next implementation must not
 loosen noise/prominence gates until artifact-heavy graph 2 is protected.

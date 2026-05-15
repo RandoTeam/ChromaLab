@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8a - peak candidate diagnostics for photographed trace completeness`.
-- Next work slice: `Phase 5.8b - non-edge artifact rejection before changing noise thresholds`.
+- Latest completed work slice: `Phase 5.8b.1 - pixel detection research and artifact-first decision`.
+- Next work slice: `Phase 5.8b.2 - internal artifact diagnostics before threshold tuning`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -65,8 +65,9 @@ artifact summary; it is not the primary plan.
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 | Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
 | Phase 5.7 | Done | `3a25850` | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
-| Phase 5.8a | Done | Pending | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
-| Phase 5.8b | Next | Pending | Review non-edge bleed-through/text/grid artifacts before any noise-threshold or completeness tuning. |
+| Phase 5.8a | Done | `e7b0bb0` | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
+| Phase 5.8b.1 | Done | Pending | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
+| Phase 5.8b.2 | Next | Pending | Add internal artifact diagnostics before any noise-threshold or completeness tuning. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -608,7 +609,17 @@ Completed Phase 5.8a work slice:
    slice must first classify or suppress non-edge artifacts before changing noise or
    prominence behavior.
 
-Next Phase 5.8b work slice:
+Completed Phase 5.8b.1 work slice:
+
+1. Reviewed plot digitizer, morphology, line-detection, baseline, peak-picking, and
+   chromatography feature-detection references.
+2. Recorded the technical decision in `docs/CHROMATOGRAM_PIXEL_DETECTION_RESEARCH.md`:
+   no threshold loosening until internal plot artifacts are classified or suppressed.
+3. The chosen direction is an auditable trace-evidence layer: component/continuity,
+   skeleton/centerline, straight-line/text/bleed-through artifact score, and then
+   dynamic peak constraints.
+
+Next Phase 5.8b.2 work slice:
 
 1. Add diagnostics for non-edge bleed-through/text/grid artifacts inside photographed
    plot areas, especially `bench_06` graph 2.
