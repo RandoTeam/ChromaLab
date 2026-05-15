@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.8 - review sparse stacked ion peak quality before report validation`.
-- Next work slice: `Phase 6.1 - validate the structured report contract against calibrated fixture audits`.
+- Latest completed work slice: `Phase 6.1 - validate the structured report contract against calibrated fixture audits`.
+- Next work slice: `Phase 6.2 - add missing peak-table report columns to the calibrated audit contract`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -73,8 +73,9 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.5 | Done | `77b88d7` | Review tuned peak quality and false-positive controls before broadening fixture scope. |
 | Phase 5.8b.6 | Done | `e26cffc` | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
 | Phase 5.8b.7 | Done | `db56d9b` | Restore curve/signal readiness for weak stacked ion panels before report validation. |
-| Phase 5.8b.8 | Done | Pending | Review sparse stacked ion peak quality before report validation. |
-| Phase 6.1 | Next | Pending | Validate the structured report contract against calibrated fixture audits. |
+| Phase 5.8b.8 | Done | `4053c22` | Review sparse stacked ion peak quality before report validation. |
+| Phase 6.1 | Done | `a8fde0b` | Validate the structured report contract against calibrated fixture audits. |
+| Phase 6.2 | Next | Pending | Add missing peak-table report columns to the calibrated audit contract. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -756,12 +757,40 @@ Exit criteria:
 
 Goal: turn each fixture result into the future professional report contract.
 
-- [ ] Validate every fixture against `REPORT_SPEC.md`.
+- [x] Validate calibrated fixture audits against the `REPORT_SPEC.md` section contract.
 - [ ] Render per-graph overview, preparation, axis calibration, graph overlay, peak
   table, quality, Kovats/domain interpretation, warnings, and appendix.
 - [ ] Keep raw codes and debug details secondary.
 - [ ] Show missing metadata as missing, not invented.
 - [ ] Use the Belyi Tigr rendered report as shape/depth reference, not numeric truth.
+
+Completed Phase 6.1 work slice:
+
+1. `OfflineAnalysisAudit` now includes a structured `reportContract` audit that
+   checks the section family required by `REPORT_SPEC.md`: overview, source and graph
+   preparation, axis calibration, peak table, rendered graph, chromatographic quality,
+   Kovats, interpretation, warnings, and technical appendix.
+2. The offline runner records a `report_validation` stage after calculation readiness.
+   Stage success means validation ran; `reportContract.ready` records whether the
+   current data is enough for the final report contract.
+3. Clean, hard photographed, rotated, two-graph, and sparse stacked-ion fixtures now
+   exercise the report-contract audit in desktop tests.
+4. Sparse/XIC panels propagate report-level confidence requirements into the
+   `peak_table`, rendered graph, chromatographic quality, and interpretation sections.
+5. Current honest report-contract blockers are in the peak table: offline peak audit
+   rows still do not expose `peak_fwhm_column`, `peak_asymmetry_column`, or
+   `compound_candidate_columns`.
+6. Kovats and chemical interpretation remain warning-level sections for now: they
+   must render as not calculated / missing local knowledge instead of inventing values.
+
+Next Phase 6.2 work slice:
+
+1. Add FWHM and asymmetry/tailing data to the calibrated offline peak audit from
+   `PeakResult`.
+2. Keep compound/Kovats fields explicit as missing or not calculated until the local
+   knowledge pack and assignment logic are implemented.
+3. Update the report-contract tests so the peak table only blocks on fields that are
+   still genuinely unavailable.
 
 Exit criteria:
 

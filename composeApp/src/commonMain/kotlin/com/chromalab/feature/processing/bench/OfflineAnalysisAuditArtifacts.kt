@@ -247,6 +247,30 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Structured Report Contract")
+        appendLine()
+        appendLine("| Ready | Graphs | Sections | Ready sections | Warning sections | Blocked sections | Warnings |")
+        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | --- |")
+        val report = audit.reportContract
+        appendLine(
+            "| ${report.ready} | ${report.graphCount} | ${report.sectionCount} | ${report.readySectionCount} | ${report.warningSectionCount} | ${report.blockedSectionCount} | ${report.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+        )
+        appendLine()
+
+        appendLine("## Structured Report Sections")
+        appendLine()
+        appendLine("| Graph | Section | Status | Missing fields | Warnings |")
+        appendLine("| ---: | --- | --- | --- | --- |")
+        report.sections.forEach { section ->
+            appendLine(
+                "| ${section.graphIndex ?: ""} | ${section.section} | ${section.status} | ${section.missingFields.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${section.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        if (report.sections.isEmpty()) {
+            appendLine("|  | none | BLOCKED | report_validation_not_available | none |")
+        }
+        appendLine()
+
         appendLine("## Preprocessing Variant Ranking")
         appendLine()
         appendLine("| Graph | Rank | Selected | Variant | Score | Dark pixels | Edges | Contrast | H-lines | V-lines | Warnings |")

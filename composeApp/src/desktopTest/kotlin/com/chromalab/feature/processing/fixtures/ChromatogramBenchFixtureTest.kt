@@ -10,6 +10,7 @@ import com.chromalab.feature.processing.bench.OfflineGraphAudit
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationPointInput
 import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
+import com.chromalab.feature.processing.bench.OfflineReportContractSectionStatus
 import com.chromalab.feature.processing.bench.OfflineStageStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
@@ -377,6 +378,10 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "peak_sanity" && it.status == OfflineStageStatus.SUCCESS },
             "confirmed manual calibration must run the peak sanity stage",
         )
+        assertTrue(
+            audit.stages.any { it.stage == "report_validation" && it.status == OfflineStageStatus.SUCCESS },
+            "confirmed manual calibration must run the structured report validation stage",
+        )
         assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
         assertTrue(audit.blockedAtStage != "signal_convert", "manual calibration must pass the signal conversion gate")
         assertTrue(audit.blockedAtStage != "peak_detection", "manual calibration must pass the peak detection gate")
@@ -481,6 +486,7 @@ class ChromatogramBenchFixtureTest {
 
         assertSparseStackedIonSignalScope(auditsById)
         assertSparseStackedIonPeakQualityScope(auditsById)
+        auditsById.values.forEach { assertReportContractAudit(it) }
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -623,6 +629,7 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "peak_sanity" && it.status == OfflineStageStatus.SUCCESS },
             "${audit.sourceId} must record peak_sanity success stages",
         )
+        assertReportContractAudit(audit)
         assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
         assertTrue(audit.blockedAtStage != "peak_metrics", "${audit.sourceId} must pass peak metrics gate")
         if (expectPeakSanityReady) {
@@ -640,6 +647,104 @@ class ChromatogramBenchFixtureTest {
             )
         }
     }
+
+    private fun assertReportContractAudit(audit: OfflineAnalysisAudit) {
+        val report = audit.reportContract
+        val expectedSections = setOf(
+            "overview",
+            "source_and_graph_preparation",
+            "axis_calibration",
+            "peak_table",
+            "interactive_or_rendered_graph",
+            "chromatographic_quality",
+            "kovats_index_analysis",
+            "distribution_and_chemical_interpretation",
+            "warnings_and_red_flags",
+            "technical_appendix",
+        )
+
+        if (audit.blockedAtStage == null) {
+            assertTrue(
+                audit.stages.any { it.stage == "report_validation" && it.status == OfflineStageStatus.SUCCESS },
+                "${audit.sourceId} must run report_validation after calculation readiness",
+            )
+        } else {
+            assertTrue(
+                audit.stages.any { it.stage == "report_validation" && it.status == OfflineStageStatus.SKIPPED },
+                "${audit.sourceId} must skip report_validation when calculation is blocked at ${audit.blockedAtStage}",
+            )
+        }
+        assertEquals(audit.graphs.size, report.graphCount, "${audit.sourceId} report graph count")
+        expectedSections.forEach { section ->
+            assertTrue(
+                report.sections.any { it.section == section },
+                "${audit.sourceId} report contract must include $section",
+            )
+        }
+        audit.graphs.forEach { graph ->
+            expectedSections
+                .filterNot { it == "overview" || it == "technical_appendix" }
+                .forEach { section ->
+                    assertTrue(
+                        report.sections.any { it.graphIndex == graph.graphIndex && it.section == section },
+                        "${audit.sourceId} graph ${graph.graphIndex} must include report section $section",
+                    )
+                }
+        }
+
+        val blockedPeakSections = report.sections.filter {
+            it.status == OfflineReportContractSectionStatus.BLOCKED && it.section == "peak_table"
+        }
+        assertEquals(
+            audit.graphs.size,
+            blockedPeakSections.size,
+            "${audit.sourceId} must expose the current report-contract peak-table gaps per graph",
+        )
+        blockedPeakSections.forEach { section ->
+            assertTrue(
+                "peak_fwhm_column" in section.missingFields,
+                "${audit.sourceId} graph ${section.graphIndex} must mark FWHM as a report-contract gap",
+            )
+            assertTrue(
+                "peak_asymmetry_column" in section.missingFields,
+                "${audit.sourceId} graph ${section.graphIndex} must mark asymmetry as a report-contract gap",
+            )
+            assertTrue(
+                "compound_candidate_columns" in section.missingFields,
+                "${audit.sourceId} graph ${section.graphIndex} must mark compound columns as a report-contract gap",
+            )
+        }
+        val allowedBlockedSections = allowedReportBlockedSections(audit.blockedAtStage)
+        assertTrue(
+            report.sections
+                .filter { it.status == OfflineReportContractSectionStatus.BLOCKED }
+                .all { it.section in allowedBlockedSections },
+            "${audit.sourceId} must only block report validation in sections explained by current pipeline state",
+        )
+    }
+
+    private fun allowedReportBlockedSections(blockedAtStage: String?): Set<String> =
+        buildSet {
+            add("peak_table")
+            when (blockedAtStage) {
+                "crop_quality",
+                "plot_area" -> add("source_and_graph_preparation")
+                "axis_detect",
+                "axis_calibration" -> add("axis_calibration")
+                "curve_extract" -> add("interactive_or_rendered_graph")
+                "signal_convert" -> {
+                    add("interactive_or_rendered_graph")
+                    add("chromatographic_quality")
+                }
+                "peak_detection",
+                "peak_metrics",
+                "peak_sanity" -> {
+                    add("peak_table")
+                    add("chromatographic_quality")
+                    add("warnings_and_red_flags")
+                }
+            }
+        }
 
     private fun manualCalibrationXEndValue(fixture: ChromatogramBenchFixture): Float =
         when {
@@ -1030,6 +1135,13 @@ class ChromatogramBenchFixtureTest {
                 assertTrue(
                     graph.peakDetection.peaks.all { "sparse_trace.low_column_coverage" in it.qualityFlags },
                     "$fixtureId graph ${graph.graphIndex} sparse peaks must carry low-column-coverage flags",
+                )
+                val peakTableSection = audit.reportContract.sections.single {
+                    it.graphIndex == graph.graphIndex && it.section == "peak_table"
+                }
+                assertTrue(
+                    "report.peak_table.sparse_trace_confidence_text_required" in peakTableSection.warnings,
+                    "$fixtureId graph ${graph.graphIndex} report contract must require sparse trace confidence text",
                 )
                 if (expectation.localized) {
                     assertTrue(

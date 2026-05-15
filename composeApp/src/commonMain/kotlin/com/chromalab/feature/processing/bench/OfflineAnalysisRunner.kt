@@ -99,10 +99,39 @@ data class OfflineAnalysisAudit(
     val graphCandidates: List<OfflineGraphCandidateAudit>,
     val graphs: List<OfflineGraphAudit>,
     val stages: List<OfflineStageAudit>,
+    val reportContract: OfflineReportContractAudit = OfflineReportContractAudit(),
     val warnings: List<String>,
     val blockedAtStage: String?,
     val readyForCalculation: Boolean,
 )
+
+@Serializable
+data class OfflineReportContractAudit(
+    val ready: Boolean = false,
+    val graphCount: Int = 0,
+    val sectionCount: Int = 0,
+    val readySectionCount: Int = 0,
+    val warningSectionCount: Int = 0,
+    val blockedSectionCount: Int = 0,
+    val sections: List<OfflineReportContractSectionAudit> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineReportContractSectionAudit(
+    val graphIndex: Int? = null,
+    val section: String,
+    val status: OfflineReportContractSectionStatus,
+    val missingFields: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineReportContractSectionStatus {
+    READY,
+    WARNING,
+    BLOCKED,
+}
 
 @Serializable
 data class OfflineOrientationCorrectionAudit(
@@ -622,6 +651,38 @@ class OfflineAnalysisRunner(
                 message = "Report validation is blocked until calculation output exists.",
             )
         }
+        val auditWarnings = warnings + graphAudits.flatMap { graph -> graph.warnings.map { "graph_${graph.graphIndex}.$it" } }
+        val reportContractAudit = if (readyForCalculation) {
+            runStage(
+                stage = "report_validation",
+                stages = stages,
+                successMessage = { result ->
+                    "ready=${result.ready}, sections=${result.sectionCount}, blocked=${result.blockedSectionCount}, warnings=${result.warningSectionCount}."
+                },
+            ) {
+                buildOfflineReportContractAudit(
+                    imageWidth = orientation.width,
+                    imageHeight = orientation.height,
+                    expectedGraphCount = input.expectedGraphCount,
+                    detectedGraphCount = selectedRegions.size,
+                    graphAudits = graphAudits,
+                    stages = stages,
+                    warnings = auditWarnings,
+                )
+            } ?: OfflineReportContractAudit(
+                warnings = listOf("report_validation.stage_failed"),
+            )
+        } else {
+            buildOfflineReportContractAudit(
+                imageWidth = orientation.width,
+                imageHeight = orientation.height,
+                expectedGraphCount = input.expectedGraphCount,
+                detectedGraphCount = selectedRegions.size,
+                graphAudits = graphAudits,
+                stages = stages,
+                warnings = auditWarnings,
+            )
+        }
 
         return OfflineAnalysisAudit(
             sourceId = input.sourceId,
@@ -636,7 +697,8 @@ class OfflineAnalysisRunner(
             graphCandidates = graphCandidates,
             graphs = graphAudits,
             stages = stages,
-            warnings = warnings + graphAudits.flatMap { graph -> graph.warnings.map { "graph_${graph.graphIndex}.$it" } },
+            reportContract = reportContractAudit,
+            warnings = auditWarnings,
             blockedAtStage = when {
                 readyForCalculation -> null
                 !cropReady -> "crop_quality"
@@ -1717,6 +1779,239 @@ private fun buildPeakCandidateDiagnostics(
     )
 }
 
+private fun buildOfflineReportContractAudit(
+    imageWidth: Int?,
+    imageHeight: Int?,
+    expectedGraphCount: Int?,
+    detectedGraphCount: Int,
+    graphAudits: List<OfflineGraphAudit>,
+    stages: List<OfflineStageAudit>,
+    warnings: List<String>,
+): OfflineReportContractAudit {
+    val sections = buildList {
+        add(
+            reportContractSection(
+                section = "overview",
+                missingFields = buildList {
+                    if (imageWidth == null || imageHeight == null) add("source_image_dimensions")
+                    if (detectedGraphCount <= 0 || graphAudits.isEmpty()) add("detected_graphs")
+                },
+                warnings = buildList {
+                    if (expectedGraphCount != null && expectedGraphCount != detectedGraphCount) {
+                        add("report.overview.graph_count_mismatch")
+                    }
+                    if (warnings.isNotEmpty()) add("report.overview.pipeline_warnings_present")
+                },
+            ),
+        )
+
+        graphAudits.forEach { graph ->
+            add(buildReportSourcePreparationSection(graph))
+            add(buildReportAxisCalibrationSection(graph))
+            add(buildReportPeakTableSection(graph))
+            add(buildReportGraphOverlaySection(graph))
+            add(buildReportChromatographicQualitySection(graph))
+            add(buildReportKovatsSection(graph))
+            add(buildReportInterpretationSection(graph))
+            add(buildReportWarningsSection(graph))
+        }
+
+        add(
+            reportContractSection(
+                section = "technical_appendix",
+                missingFields = buildList {
+                    if (stages.isEmpty()) add("stage_timeline")
+                    if (graphAudits.isEmpty()) add("per_graph_audit")
+                },
+                warnings = buildList {
+                    if (stages.any { it.status == OfflineStageStatus.FAILED }) add("report.appendix.failed_stages_present")
+                },
+            ),
+        )
+    }
+
+    val readySectionCount = sections.count { it.status == OfflineReportContractSectionStatus.READY }
+    val warningSectionCount = sections.count { it.status == OfflineReportContractSectionStatus.WARNING }
+    val blockedSectionCount = sections.count { it.status == OfflineReportContractSectionStatus.BLOCKED }
+    return OfflineReportContractAudit(
+        ready = blockedSectionCount == 0,
+        graphCount = graphAudits.size,
+        sectionCount = sections.size,
+        readySectionCount = readySectionCount,
+        warningSectionCount = warningSectionCount,
+        blockedSectionCount = blockedSectionCount,
+        sections = sections,
+        warnings = sections.flatMap { section ->
+            section.missingFields.map { "${section.section}.$it" } + section.warnings.map { "${section.section}.$it" }
+        }.distinct(),
+    )
+}
+
+private fun buildReportSourcePreparationSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "source_and_graph_preparation",
+        missingFields = buildList {
+            if (graph.region.width <= 0 || graph.region.height <= 0) add("detected_graph_bounds")
+            if (!graph.cropQuality.acceptedForCalculation) add("accepted_crop_bounds")
+            if (!graph.cropBoundaryRisk.acceptedForCalculation) add("crop_boundary_clearance")
+            if (!graph.plotArea.detected || graph.plotArea.region == null) add("plot_area_bounds")
+            if (graph.selectedPreprocessingVariant == null) add("selected_preprocessing_variant")
+        },
+        warnings = (
+            graph.refinement.warnings +
+                graph.cropQuality.warnings +
+                graph.cropBoundaryRisk.warnings +
+                graph.plotArea.warnings
+            ).distinct(),
+    )
+
+private fun buildReportAxisCalibrationSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "axis_calibration",
+        missingFields = buildList {
+            if (!graph.axisCalibration.ready) add("confirmed_axis_calibration")
+            if (!graph.axisCalibration.xReady) add("x_axis_calibration")
+            if (!graph.axisCalibration.yReady) add("y_axis_calibration")
+            if (graph.axisCalibration.xCandidateCount < 2) add("x_axis_ticks")
+            if (graph.axisCalibration.yCandidateCount < 2) add("y_axis_ticks")
+            if (graph.axisCalibration.xUnit.isNullOrBlank()) add("x_axis_unit")
+            if (graph.axisCalibration.yUnit.isNullOrBlank()) add("y_axis_unit")
+            if (graph.axisCalibration.xPixelSpan <= 0f || abs(graph.axisCalibration.xValueSpan) <= 0f) {
+                add("x_pixel_to_unit_transform")
+            }
+            if (graph.axisCalibration.yPixelSpan <= 0f || abs(graph.axisCalibration.yValueSpan) <= 0f) {
+                add("y_pixel_to_unit_transform")
+            }
+        },
+        warnings = buildList {
+            addAll(graph.axisCalibration.warnings)
+            if (graph.axisConfidence < REPORT_AXIS_CONFIDENCE_REVIEW_THRESHOLD) add("report.axis.low_geometry_confidence")
+        }.distinct(),
+    )
+
+private fun buildReportPeakTableSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "peak_table",
+        missingFields = buildList {
+            if (!graph.peakDetection.ready) add("peak_detection")
+            if (!graph.peakMetrics.ready) add("peak_metrics")
+            if (graph.peakDetection.peaks.isEmpty()) add("peak_rows")
+            if (!graph.peakMetrics.orderedByRetentionTime) add("retention_time_order")
+            if (graph.peakDetection.peaks.isNotEmpty()) {
+                add("peak_fwhm_column")
+                add("peak_asymmetry_column")
+                add("compound_candidate_columns")
+            }
+        },
+        warnings = buildList {
+            if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
+                add("report.peak_table.sparse_trace_confidence_text_required")
+            }
+            if (graph.peakDetection.controlledTuningApplied) {
+                add("report.peak_table.guarded_completeness_confidence_text_required")
+            }
+            if (graph.peakMetrics.lowSnrCount > 0) add("report.peak_table.low_snr_review_required")
+            if (graph.peakMetrics.lowConfidenceCount > 0) add("report.peak_table.low_confidence_review_required")
+            if (graph.peakMetrics.unresolvedOverlapCount > 0) add("report.peak_table.overlap_review_required")
+            addAll(graph.peakDetection.warnings)
+            addAll(graph.peakMetrics.warnings)
+        }.distinct(),
+    )
+
+private fun buildReportGraphOverlaySection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "interactive_or_rendered_graph",
+        missingFields = buildList {
+            if (!graph.curveMaskAvailable) add("curve_mask")
+            if (!graph.curveUsable || graph.curvePointCount <= 0) add("curve_points")
+            if (graph.peakDetection.peaks.isEmpty()) add("peak_markers")
+            if (graph.plotArea.region == null) add("plot_area_overlay_bounds")
+        },
+        warnings = buildList {
+            if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
+                add("report.graph_overlay.sparse_trace_visual_review_required")
+            }
+        },
+    )
+
+private fun buildReportChromatographicQualitySection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "chromatographic_quality",
+        missingFields = buildList {
+            if (!graph.peakMetrics.ready) add("peak_metrics")
+            if (graph.peakDetection.noiseLevel == null) add("noise_estimate")
+            if (graph.peakMetrics.totalAbsArea <= 0.0) add("global_integrated_area")
+            if (graph.peakDetection.dominantPeakTime == null) add("dominant_peak")
+        },
+        warnings = buildList {
+            addAll(graph.peakMetrics.warnings)
+            if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
+                add("report.quality.sparse_trace_quality_text_required")
+            }
+            if (graph.peakDetection.guardedQualityReview.available) {
+                addAll(graph.peakDetection.guardedQualityReview.warnings)
+            }
+        }.distinct(),
+    )
+
+private fun buildReportKovatsSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "kovats_index_analysis",
+        warnings = listOf(
+            "report.kovats.reference_series_missing",
+            "report.kovats.must_render_not_calculated_state",
+        ),
+    )
+
+private fun buildReportInterpretationSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "distribution_and_chemical_interpretation",
+        warnings = buildList {
+            add("report.interpretation.local_knowledge_pack_required")
+            add("report.interpretation.compound_assignments_missing")
+            if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
+                add("report.interpretation.sparse_trace_limits_interpretation_confidence")
+            }
+        },
+    )
+
+private fun buildReportWarningsSection(graph: OfflineGraphAudit): OfflineReportContractSectionAudit =
+    reportContractSection(
+        graphIndex = graph.graphIndex,
+        section = "warnings_and_red_flags",
+        warnings = buildList {
+            addAll(graph.warnings.map { "pipeline.$it" })
+            addAll(graph.peakDetection.warnings.map { "peak.$it" })
+            addAll(graph.peakMetrics.warnings.map { "metrics.$it" })
+            addAll(graph.peakSanity.warnings.map { "sanity.$it" })
+        }.distinct(),
+    )
+
+private fun reportContractSection(
+    section: String,
+    graphIndex: Int? = null,
+    missingFields: List<String> = emptyList(),
+    warnings: List<String> = emptyList(),
+): OfflineReportContractSectionAudit =
+    OfflineReportContractSectionAudit(
+        graphIndex = graphIndex,
+        section = section,
+        status = when {
+            missingFields.isNotEmpty() -> OfflineReportContractSectionStatus.BLOCKED
+            warnings.isNotEmpty() -> OfflineReportContractSectionStatus.WARNING
+            else -> OfflineReportContractSectionStatus.READY
+        },
+        missingFields = missingFields.distinct(),
+        warnings = warnings.distinct(),
+    )
+
 private fun offlineNoiseMethod(value: String): NoiseMethod =
     when (value.trim().lowercase()) {
         "mad", "robust", "mad_robust", "mad (robust)" -> NoiseMethod.MAD
@@ -2086,6 +2381,7 @@ private const val CONTROLLED_TUNING_MAX_REVIEW_FRACTION = 0.35
 private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
 private const val CONTROLLED_TUNING_MAX_EXTRA_PEAKS = 20
 private const val CONTROLLED_TUNING_MAX_TOTAL_PEAKS = 32
+private const val REPORT_AXIS_CONFIDENCE_REVIEW_THRESHOLD = 0.55f
 
 private fun emptyAxes(): AxesResult =
     AxesResult(

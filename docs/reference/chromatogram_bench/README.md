@@ -353,7 +353,15 @@ or enabling guarded completeness tuning. `bench_04` sparse graphs review `4` and
 peaks; `bench_05` sparse graphs review `4`, `9`, and `4` peaks, with low-area and
 overlap flags where the recovered weak ion traces are most ambiguous.
 
+Phase 6.1 adds structured report-contract validation to each calibrated offline audit.
+The audit now records `report_validation` and a `reportContract` section matrix for
+overview, preparation, axis calibration, peak table, graph rendering, chromatographic
+quality, Kovats, interpretation, warnings, and appendix. The current honest blockers
+are peak-table report fields that are not yet exposed by the offline peak audit:
+FWHM, asymmetry/tailing, and compound candidate columns.
+
 ## Next Phase
 
-Phase 6.1 should validate the structured report contract against calibrated fixture
-audits, including sparse-trace confidence wording and guarded-completeness wording.
+Phase 6.2 should add the missing peak-table report columns that can already be derived
+from `PeakResult`, while keeping compound/Kovats assignments explicit as missing until
+the local knowledge pack is implemented.

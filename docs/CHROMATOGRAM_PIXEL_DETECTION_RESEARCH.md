@@ -150,8 +150,14 @@ The review explicitly keeps sparse trace readiness separate from guarded complet
 the detector remains on the default profile, `minSnr` is not lowered, and tuned peak
 counts are not populated for sparse XIC/ion panels.
 
-Phase 6.1 should validate the structured report contract against the calibrated audits,
-including sparse-trace confidence wording and guarded-completeness wording.
+Phase 6.1 is implemented: calibrated offline audits now include a `reportContract`
+matrix and a `report_validation` stage. Sparse-trace confidence requirements are
+propagated into report sections, while missing peak-table fields are blocked instead
+of being hidden.
+
+Phase 6.2 should add the missing peak-table fields that are already available from
+`PeakResult`, especially FWHM and asymmetry/tailing, while keeping compound and Kovats
+assignment fields explicit as missing until the local knowledge pack is implemented.
 
 ## Sources
 
