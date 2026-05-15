@@ -243,7 +243,13 @@ not show the full source page when a graph crop exists, keeps the plot area insi
 focused panel, preserves graph-panel context outside the plot area, and keeps the
 plot-area ratio within a sane range.
 
+Phase 5.1 adds the calibrated curve-to-signal gate. The offline runner now emits a
+`signal_convert` stage after curve extraction. Without confirmed X/Y calibration, the
+stage is skipped with an explicit `signal_convert.axis_calibration_required` warning.
+With confirmed manual calibration, the runner converts curve points through
+`SignalConverter`, records point count, time range, intensity range, duplicates, gaps,
+and sort validity, and requires this signal audit before later calculation work.
+
 ## Next Phase
 
-Phase 5.1 should start calibrated curve-to-signal conversion from confirmed axis
-calibration before numeric peak integration work starts.
+Phase 5.2 should add an audited peak detection readiness gate on calibrated signal data.
