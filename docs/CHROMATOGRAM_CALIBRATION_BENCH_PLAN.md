@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.5 - review tuned peak quality and false-positive controls before broadening fixture scope`.
-- Next work slice: `Phase 5.8b.6 - broaden guarded completeness review to additional hard fixtures only after quality gates pass`.
+- Latest completed work slice: `Phase 5.8b.6 - broaden guarded completeness review to additional hard fixtures only after quality gates pass`.
+- Next work slice: `Phase 5.8b.7 - restore curve/signal readiness for weak stacked ion panels before report validation`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -66,12 +66,13 @@ artifact summary; it is not the primary plan.
 | Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
 | Phase 5.7 | Done | `3a25850` | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
 | Phase 5.8a | Done | `e7b0bb0` | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
-| Phase 5.8b.1 | Done | Pending | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
-| Phase 5.8b.2 | Done | Pending | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
-| Phase 5.8b.3 | Done | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
-| Phase 5.8b.4 | Done | Pending | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
-| Phase 5.8b.5 | Done | Pending | Review tuned peak quality and false-positive controls before broadening fixture scope. |
-| Phase 5.8b.6 | Next | Pending | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
+| Phase 5.8b.1 | Done | `5eabe69` | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
+| Phase 5.8b.2 | Done | `32aca3f` | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
+| Phase 5.8b.3 | Done | `5e13ac3` | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
+| Phase 5.8b.4 | Done | `4f0acd4` | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
+| Phase 5.8b.5 | Done | `77b88d7` | Review tuned peak quality and false-positive controls before broadening fixture scope. |
+| Phase 5.8b.6 | Done | Pending | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
+| Phase 5.8b.7 | Next | Pending | Restore curve/signal readiness for weak stacked ion panels before report validation. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -677,14 +678,35 @@ Completed Phase 5.8b.5 work slice:
    lower-than-default S/N review flags and no low-area or narrow-boundary flags; graph 2
    still has no guarded quality review because tuning remains blocked by artifacts.
 
-Next Phase 5.8b.6 work slice:
+Completed Phase 5.8b.6 work slice:
 
-1. Apply the same guarded-quality audit to additional hard fixtures only where their
-   artifact guard and under-detection facts justify it.
-2. Review generated peak overlays for guarded runs and add stricter visual/metric gates
-   if any recovered peak is not visually defensible.
-3. Keep report generation downstream blocked from treating guarded-review flags as
-   final scientific certainty until the report contract has explicit confidence text.
+1. The calibrated fixture contract now broadens guarded-completeness review beyond
+   `bench_06` by running additional hard fixtures `bench_01`, `bench_02`, and
+   `bench_08` through the same manual-calibration peak path.
+2. `bench_08_mz71_duplicate_candidate` is the first additional accepted guarded case:
+   the base table has `5` peaks, guarded completeness reviews `9` peaks, and the
+   quality review records `1` lower-than-default S/N peak with `0` low-area-share and
+   `0` narrow-boundary peaks.
+3. `bench_01_mz71_screenshot_page` stays on the default profile because both graph
+   panels block threshold relaxation through the trace-artifact guard.
+4. `bench_02_mz92_belyi_tigr` exposes `thresholdRelaxationAllowed=true`, but stays on
+   the default profile because its base table has `11` peaks and is not treated as
+   under-detected.
+5. `bench_04_stacked_xic_resolution` and `bench_05_tic_plus_ions` are intentionally
+   not promoted into guarded peak tuning yet: some weak stacked ion panels block
+   earlier at `curve_extract`/`signal_convert`, so the next work must repair extraction
+   before peak-completeness logic can honestly evaluate them.
+
+Next Phase 5.8b.7 work slice:
+
+1. Inspect weak stacked ion panels in `bench_04` graphs 3-4 and `bench_05` graphs 2-4
+   where curve extraction currently produces no usable calibrated signal.
+2. Add or refine non-destructive curve extraction diagnostics for those panels before
+   changing peak thresholds.
+3. Recover usable curve/signal data for the weak stacked panels without weakening the
+   artifact guard that protects `bench_06` graph 2 and the default-profile fixtures.
+4. Keep Phase 6 report validation blocked until every fixture graph can either produce
+   an auditable signal or an explicit earlier-stage failure reason.
 
 Exit criteria:
 

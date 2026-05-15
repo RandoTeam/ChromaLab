@@ -415,6 +415,36 @@ class ChromatogramBenchFixtureTest {
         assertTraceArtifactDiagnostics(rotated)
     }
 
+    @Test
+    fun guardedCompletenessReviewStaysBoundedAcrossAdditionalHardFixtures() = runBlocking {
+        val runner = OfflineAnalysisRunner()
+        val root = Files.createTempDirectory("chromalab-guarded-completeness-fixtures")
+        val fixturesById = ChromatogramBenchFixtures.all.associateBy { it.id }
+        val additionalHardFixtures = listOf(
+            "bench_01_mz71_screenshot_page",
+            "bench_02_mz92_belyi_tigr",
+            "bench_08_mz71_duplicate_candidate",
+        ).map { fixturesById.getValue(it) }
+
+        val auditsById = additionalHardFixtures.associate { fixture ->
+            val audit = runWithPlotManualCalibration(
+                runner = runner,
+                root = root,
+                fixture = fixture,
+            )
+            assertPeakDetectionFixture(
+                audit = audit,
+                expectedGraphs = fixture.expectedGraphCount,
+                minTotalPeaks = fixture.expectedGraphCount,
+            )
+            assertTraceArtifactDiagnostics(audit)
+            assertGuardedQualityReviewContract(audit)
+            fixture.id to audit
+        }
+
+        assertAdditionalGuardedCompletenessScope(auditsById)
+    }
+
     private suspend fun runWithPlotManualCalibration(
         runner: OfflineAnalysisRunner,
         root: Path,
@@ -711,6 +741,109 @@ class ChromatogramBenchFixtureTest {
         assertTrue(
             "peak_detection.threshold_relaxation_blocked_by_trace_artifacts" in graph2.peakDetection.warnings,
             "${audit.sourceId} graph 2 peak detection must carry the artifact guard",
+        )
+    }
+
+    private fun assertGuardedQualityReviewContract(audit: OfflineAnalysisAudit) {
+        audit.graphs.forEach { graph ->
+            val quality = graph.peakDetection.guardedQualityReview
+            if (graph.peakDetection.controlledTuningApplied) {
+                assertEquals(
+                    "guarded_completeness",
+                    graph.peakDetection.detectionProfile,
+                    "${audit.sourceId} graph ${graph.graphIndex} guarded tuning must record the guarded profile",
+                )
+                assertTrue(
+                    quality.available,
+                    "${audit.sourceId} graph ${graph.graphIndex} guarded tuning must expose quality review",
+                )
+                assertTrue(
+                    quality.acceptedForGuardedCompleteness,
+                    "${audit.sourceId} graph ${graph.graphIndex} guarded tuning must pass quality review",
+                )
+                assertEquals(
+                    graph.peakDetection.peakCount,
+                    quality.reviewPeakCount,
+                    "${audit.sourceId} graph ${graph.graphIndex} guarded quality review must cover selected peaks",
+                )
+                assertTrue(
+                    graph.peakDetection.peakCount > (graph.peakDetection.basePeakCount ?: 0),
+                    "${audit.sourceId} graph ${graph.graphIndex} guarded tuning must improve completeness",
+                )
+            } else if (quality.available) {
+                assertTrue(
+                    !quality.acceptedForGuardedCompleteness || graph.peakDetection.controlledTuningReason != null,
+                    "${audit.sourceId} graph ${graph.graphIndex} rejected guarded review must explain why it was not selected",
+                )
+            } else {
+                assertTrue(
+                    graph.peakDetection.peaks.all { it.qualityFlags.isEmpty() },
+                    "${audit.sourceId} graph ${graph.graphIndex} default profile must not expose guarded-only peak flags",
+                )
+            }
+        }
+    }
+
+    private fun assertAdditionalGuardedCompletenessScope(auditsById: Map<String, OfflineAnalysisAudit>) {
+        val bench01 = auditsById.getValue("bench_01_mz71_screenshot_page")
+        assertTrue(
+            bench01.graphs.all {
+                it.peakDetection.thresholdRelaxationAllowed == false &&
+                    !it.peakDetection.controlledTuningApplied &&
+                    !it.peakDetection.guardedQualityReview.available
+            },
+            "bench_01 must stay on default detection because artifact risk blocks guarded completeness",
+        )
+
+        val bench02 = auditsById.getValue("bench_02_mz92_belyi_tigr").graphs.single()
+        assertTrue(
+            bench02.peakDetection.thresholdRelaxationAllowed == true,
+            "bench_02 should expose that artifact guard allows threshold review",
+        )
+        assertTrue(
+            !bench02.peakDetection.controlledTuningApplied,
+            "bench_02 must stay on default detection because the base peak table is not under-detected",
+        )
+        assertTrue(
+            !bench02.peakDetection.guardedQualityReview.available,
+            "bench_02 must not create guarded quality review when tuning is not attempted",
+        )
+
+        val bench08 = auditsById.getValue("bench_08_mz71_duplicate_candidate").graphs.single()
+        val quality = bench08.peakDetection.guardedQualityReview
+        assertTrue(
+            bench08.peakDetection.controlledTuningApplied,
+            "bench_08 must broaden guarded completeness beyond bench_06",
+        )
+        assertEquals(
+            5,
+            bench08.peakDetection.basePeakCount,
+            "bench_08 guarded tuning must start from an under-detected base table",
+        )
+        assertEquals(
+            9,
+            bench08.peakDetection.tunedPeakCount,
+            "bench_08 guarded tuning must expose the reviewed tuned peak count",
+        )
+        assertEquals(
+            9,
+            quality.reviewPeakCount,
+            "bench_08 quality review must cover the full guarded peak table",
+        )
+        assertEquals(
+            1,
+            quality.lowDefaultSnrCount,
+            "bench_08 should isolate only one lower-S/N recovered peak",
+        )
+        assertEquals(
+            0,
+            quality.lowAreaShareCount,
+            "bench_08 guarded tuning must not accept low-area-share peaks",
+        )
+        assertEquals(
+            0,
+            quality.narrowBoundaryCount,
+            "bench_08 guarded tuning must not accept narrow-boundary peaks",
         )
     }
 

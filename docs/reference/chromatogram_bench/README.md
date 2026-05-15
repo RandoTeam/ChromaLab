@@ -331,7 +331,16 @@ rejected if too many peaks are below the default S/N reference, low area share, 
 narrow. The current calibrated `bench_06` graph 1 guarded table keeps 14 peaks with 3
 lower-than-default S/N review flags and no low-area or narrow-boundary flags.
 
+Phase 5.8b.6 broadens the executable guarded-quality contract to additional hard
+fixtures. `bench_08_mz71_duplicate_candidate` now exercises guarded completeness beyond
+`bench_06`: it moves from 5 base peaks to 9 reviewed peaks, with one lower-than-default
+S/N flag and no low-area or narrow-boundary flags. `bench_01` remains blocked from
+threshold relaxation by trace artifacts, while `bench_02` remains default because its
+base table is already above the under-detection gate. `bench_04` and `bench_05` are not
+yet eligible for guarded peak tuning because weak stacked panels still block earlier at
+curve/signal extraction.
+
 ## Next Phase
 
-Phase 5.8b.6 should broaden guarded completeness review only to additional hard
-fixtures whose artifact guard and under-detection facts justify it.
+Phase 5.8b.7 should restore curve/signal readiness for weak stacked ion panels before
+report validation or broader peak-completeness tuning.

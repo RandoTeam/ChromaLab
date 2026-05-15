@@ -121,8 +121,20 @@ Phase 5.8b.5 is implemented:
 4. Calibrated `bench_06` graph 1 keeps 14 peaks with 3 lower-than-default S/N review
    flags and no low-area or narrow-boundary flags.
 
-Phase 5.8b.6 should broaden this guarded path only to additional hard fixtures whose
-artifact and under-detection audits justify it, while keeping report confidence explicit.
+Phase 5.8b.6 is implemented:
+
+1. The calibrated fixture contract now includes additional hard fixtures `bench_01`,
+   `bench_02`, and `bench_08` for guarded-quality scope review.
+2. `bench_08` is the accepted additional guarded case: 5 base peaks become 9 reviewed
+   guarded peaks, with one lower-than-default S/N flag and no low-area or narrow-boundary
+   flags.
+3. `bench_01` remains protected by the artifact guard, and `bench_02` remains on the
+   default profile because its base peak table is not under-detected.
+4. `bench_04` and `bench_05` stay out of peak-completeness tuning until weak stacked
+   panels can produce usable curve/signal data.
+
+Phase 5.8b.7 should focus on weak stacked ion panel curve extraction before broader
+peak tuning or report validation.
 
 ## Sources
 
