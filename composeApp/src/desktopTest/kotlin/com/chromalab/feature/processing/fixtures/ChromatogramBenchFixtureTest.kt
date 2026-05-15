@@ -380,12 +380,7 @@ class ChromatogramBenchFixtureTest {
             root = root,
             fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_03_small_tic_export" },
         )
-        assertPeakDetectionFixture(
-            best,
-            expectedGraphs = 1,
-            minTotalPeaks = 3,
-            expectPeakSanityReady = false,
-        )
+        assertPeakDetectionFixture(best, expectedGraphs = 1, minTotalPeaks = 5)
 
         val twoGraphs = runWithPlotManualCalibration(
             runner = runner,

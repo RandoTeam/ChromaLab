@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.5 - fixture-specific dominant and false peak sanity gate`.
-- Next work slice: `Phase 5.6 - tune missed expected peaks and false peak sources`.
+- Latest completed work slice: `Phase 5.6 - compact annotated plot peak recovery`.
+- Next work slice: `Phase 5.7 - large-photo false peak and trace classifier review`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -63,7 +63,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
 | Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
-| Phase 5.6 | Next | Pending | Tune curve extraction and peak detection against failed expected-apex sanity fixtures. |
+| Phase 5.6 | Done | Pending | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
+| Phase 5.7 | Next | Pending | Review large photographed plots for false peaks and add a less size-limited trace classifier. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -565,12 +566,26 @@ Phase 5.5 status:
   blocks because the current extraction misses several labeled apexes at 3.244, 3.890,
   4.647, 5.610, and 8.560 min.
 
-Next Phase 5.6 work slice:
+Phase 5.6 status:
 
-1. Use the failed `bench_03_small_tic_export` sanity contract to tune curve extraction,
-   calibration, and peak detection until the labeled apexes are recovered.
-2. Re-check the photographed two-graph and rotated fixtures for false peaks from text,
-   grid lines, axis labels, and page boundaries.
+- The desktop curve-mask preparer now uses the detected x-axis/origin to remove floating
+  text components on compact low-resolution plots. This targets peak labels and title
+  text that are inside the plot rectangle but do not connect back to the signal baseline.
+- The cleanup is guarded by column-coverage readiness and is limited to compact plots,
+  so weak/near-empty large photographed channels such as `bench_06` graph 2 are not
+  stripped below the usable curve threshold.
+- `bench_03_small_tic_export` now passes the expected-apex sanity contract: all five
+  labeled apexes at 3.244, 3.890, 4.647, 5.610, and 8.560 min are matched.
+- The full `ChromatogramBenchFixtureTest` still passes for the clean compact export,
+  two-graph photographed page, and rotated photographed page.
+
+Next Phase 5.7 work slice:
+
+1. Review large photographed plots for remaining false peaks from text, grid lines,
+   axis labels, page borders, and very tall non-signal artifacts.
+2. Replace the compact-only text cleanup with a broader trace classifier only after it
+   preserves weak-channel coverage on `bench_06` and rotated-page coverage on
+   `bench_07`.
 3. Keep final report rendering blocked until expected-apex sanity and false-positive
    review are stable on the fixture set.
 

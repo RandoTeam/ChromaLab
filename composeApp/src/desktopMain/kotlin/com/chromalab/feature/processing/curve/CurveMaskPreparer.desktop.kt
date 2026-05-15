@@ -46,6 +46,8 @@ actual class CurveMaskPreparer actual constructor() {
         suppressions += "left_axis"
         suppressImageBorder(cleanMask, width, height)
         suppressions += "border"
+        val removedFloating = suppressFloatingComponents(cleanMask, width, height, axes, region)
+        if (removedFloating) suppressions += "floating_text_components"
         val removedSmall = suppressSmallComponents(cleanMask, width, height, maxSize = 5)
         if (removedSmall) suppressions += "small_components"
         val cleanCount = cleanMask.count { it }
@@ -230,6 +232,129 @@ actual class CurveMaskPreparer actual constructor() {
         return true
     }
 
+    private fun suppressFloatingComponents(
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+        axes: AxesResult,
+        region: GraphRegion,
+    ): Boolean {
+        if (!isCompactLowResolutionPlot(width, height)) return false
+        val axisY = axes.origin
+            ?.let { (it.y - region.y).roundToInt() }
+            ?.takeIf { it in 0 until height }
+            ?: findLikelyXAxisRow(mask, width, height)
+            ?: return false
+        val labels = IntArray(width * height)
+        val components = mutableListOf<ComponentBounds>()
+        var nextLabel = 1
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                if (mask[index] && labels[index] == 0) {
+                    components += floodFillBounds(mask, labels, width, height, x, y, nextLabel)
+                    nextLabel++
+                }
+            }
+        }
+
+        val baselineTolerance = (height * 0.12f).roundToInt().coerceIn(4, 18)
+        val tallSignalHeight = (height * 0.34f).roundToInt().coerceAtLeast(18)
+        val lowerSignalBand = (axisY - height * 0.20f).roundToInt().coerceAtLeast(0)
+        val removableLabels = components
+            .filter { component ->
+                val reachesBaseline = component.maxY >= axisY - baselineTolerance
+                val tallSignalCandidate = component.height >= tallSignalHeight && component.maxY >= lowerSignalBand
+                !reachesBaseline && !tallSignalCandidate
+            }
+            .map { it.label }
+            .toSet()
+        if (removableLabels.isEmpty()) return false
+        if (wouldDropBelowUsableCoverage(labels, mask, width, height, removableLabels)) return false
+
+        for (index in labels.indices) {
+            if (labels[index] in removableLabels) {
+                mask[index] = false
+            }
+        }
+        return true
+    }
+
+    private fun findLikelyXAxisRow(mask: BooleanArray, width: Int, height: Int): Int? {
+        val startY = (height * 0.55f).roundToInt().coerceIn(0, height - 1)
+        var bestY: Int? = null
+        var bestCount = 0
+        for (y in startY until height) {
+            val count = (0 until width).count { x -> mask[y * width + x] }
+            if (count > bestCount) {
+                bestCount = count
+                bestY = y
+            }
+        }
+        return bestY?.takeIf { bestCount >= (width * 0.08f).roundToInt().coerceAtLeast(8) }
+    }
+
+    private fun wouldDropBelowUsableCoverage(
+        labels: IntArray,
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+        removableLabels: Set<Int>,
+    ): Boolean {
+        val retainedColumns = BooleanArray(width)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                if (mask[index] && labels[index] !in removableLabels) {
+                    retainedColumns[x] = true
+                }
+            }
+        }
+        val retainedCoverage = retainedColumns.count { it }.toFloat() / width.coerceAtLeast(1).toFloat()
+        return retainedCoverage < MIN_USABLE_COLUMN_COVERAGE
+    }
+
+    private fun isCompactLowResolutionPlot(width: Int, height: Int): Boolean =
+        width <= MAX_COMPACT_PLOT_WIDTH && height <= MAX_COMPACT_PLOT_HEIGHT
+
+    private fun floodFillBounds(
+        mask: BooleanArray,
+        labels: IntArray,
+        width: Int,
+        height: Int,
+        startX: Int,
+        startY: Int,
+        label: Int,
+    ): ComponentBounds {
+        val stack = ArrayDeque<Int>()
+        stack.add(startY * width + startX)
+        labels[startY * width + startX] = label
+        var minY = startY
+        var maxY = startY
+        while (stack.isNotEmpty()) {
+            val index = stack.removeLast()
+            val x = index % width
+            val y = index / width
+            minY = minOf(minY, y)
+            maxY = maxOf(maxY, y)
+            for ((dx, dy) in NEIGHBORS_4) {
+                val nextX = x + dx
+                val nextY = y + dy
+                if (nextX !in 0 until width || nextY !in 0 until height) continue
+                val nextIndex = nextY * width + nextX
+                if (mask[nextIndex] && labels[nextIndex] == 0) {
+                    labels[nextIndex] = label
+                    stack.add(nextIndex)
+                }
+            }
+        }
+        return ComponentBounds(
+            label = label,
+            minY = minY,
+            maxY = maxY,
+        )
+    }
+
     private fun floodFill(
         mask: BooleanArray,
         labels: IntArray,
@@ -322,6 +447,9 @@ actual class CurveMaskPreparer actual constructor() {
     private companion object {
         private const val WHITE = -0x1
         private const val BLACK = -0x1000000
+        private const val MIN_USABLE_COLUMN_COVERAGE = 0.30f
+        private const val MAX_COMPACT_PLOT_WIDTH = 480
+        private const val MAX_COMPACT_PLOT_HEIGHT = 180
         private val NEIGHBORS_4 = listOf(0 to -1, 0 to 1, -1 to 0, 1 to 0)
     }
 }
@@ -348,4 +476,12 @@ private fun GraphRegion.clampTo(imageWidth: Int, imageHeight: Int): GraphRegion?
     val bottom = bottom.coerceIn(top, imageHeight)
     if (right - left <= 1 || bottom - top <= 1) return null
     return copy(x = left, y = top, width = right - left, height = bottom - top)
+}
+
+private data class ComponentBounds(
+    val label: Int,
+    val minY: Int,
+    val maxY: Int,
+) {
+    val height: Int get() = maxY - minY + 1
 }
