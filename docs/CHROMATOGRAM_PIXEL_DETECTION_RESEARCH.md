@@ -85,17 +85,24 @@ Only after artifact-heavy graphs are protected:
 
 ## Next Implementation Slice
 
-Phase 5.8b.2 is now implemented:
+Phase 5.8b.2 is implemented:
 
 1. `traceArtifactAudit` records internal straight-line/text/bleed-through risk.
 2. `trace_artifacts.png` renders gray clean-mask pixels and red artifact-risk pixels.
 3. Accepted peak behavior remains unchanged.
 
-Phase 5.8b.3 should use this audit as a guard before any threshold tuning:
+Phase 5.8b.3 is implemented:
 
-1. Build an artifact-suppressed trace hypothesis beside the current mask.
-2. Compare hypothesis quality against current extraction on `bench_06` graph 1 and graph 2.
-3. Keep accepted peaks unchanged until graph 2 remains protected from internal artifacts.
+1. `trace_artifact_suppressed_mask.png` stores the cleanup hypothesis beside the current mask.
+2. `traceArtifactAudit` records retained ratio, retained column coverage, and the
+   threshold-relaxation guard.
+3. `bench_06` graph 2 blocks threshold loosening through the artifact guard while graph
+   1 remains eligible for later controlled completeness review.
+4. Accepted peak behavior remains unchanged.
+
+Phase 5.8b.4 should compare the cleanup hypothesis against current extraction on
+`bench_06` graph 1 and graph 2, then tune completeness only where
+`thresholdRelaxationAllowed=true`.
 
 ## Sources
 

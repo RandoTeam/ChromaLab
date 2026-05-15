@@ -268,6 +268,10 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} graph ${graph.graphIndex} trace artifact mask must be written",
                 )
                 assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("trace_artifact_suppressed_mask.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} trace cleanup hypothesis mask must be written",
+                )
+                assertTrue(
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
                 )
@@ -398,6 +402,7 @@ class ChromatogramBenchFixtureTest {
         assertPeakDetectionFixture(twoGraphs, expectedGraphs = 2, minTotalPeaks = 4)
         assertRightFrameSuppression(twoGraphs)
         assertTraceArtifactDiagnostics(twoGraphs)
+        assertArtifactGuardProtectsBench06Graph2(twoGraphs)
 
         val rotated = runWithPlotManualCalibration(
             runner = runner,
@@ -602,15 +607,59 @@ class ChromatogramBenchFixtureTest {
                 artifacts.artifactMaskPath,
                 "${audit.sourceId} graph ${graph.graphIndex} must write a trace-artifact mask path",
             )
+            assertNotNull(
+                artifacts.cleanupHypothesisMaskPath,
+                "${audit.sourceId} graph ${graph.graphIndex} must write a trace cleanup hypothesis mask path",
+            )
             assertTrue(
                 Files.size(Path.of(artifacts.artifactMaskPath)) > 0L,
                 "${audit.sourceId} graph ${graph.graphIndex} trace-artifact mask must be non-empty",
             )
             assertTrue(
+                Files.size(Path.of(artifacts.cleanupHypothesisMaskPath)) > 0L,
+                "${audit.sourceId} graph ${graph.graphIndex} trace cleanup hypothesis mask must be non-empty",
+            )
+            assertTrue(
                 artifacts.artifactPixelRatio >= 0f,
                 "${audit.sourceId} graph ${graph.graphIndex} artifact ratio must be non-negative",
             )
+            assertTrue(
+                artifacts.cleanupHypothesisRetainedRatio in 0f..1f,
+                "${audit.sourceId} graph ${graph.graphIndex} cleanup hypothesis retained ratio must be bounded",
+            )
+            assertTrue(
+                artifacts.cleanupHypothesisColumnCoverage >= 0f,
+                "${audit.sourceId} graph ${graph.graphIndex} cleanup hypothesis coverage must be non-negative",
+            )
         }
+    }
+
+    private fun assertArtifactGuardProtectsBench06Graph2(audit: OfflineAnalysisAudit) {
+        val graph1 = assertNotNull(
+            audit.graphs.firstOrNull { it.graphIndex == 1 },
+            "${audit.sourceId} graph 1 must exist for artifact guard review",
+        )
+        val graph2 = assertNotNull(
+            audit.graphs.firstOrNull { it.graphIndex == 2 },
+            "${audit.sourceId} graph 2 must exist for artifact guard review",
+        )
+
+        assertTrue(
+            graph1.traceArtifacts.thresholdRelaxationAllowed,
+            "${audit.sourceId} graph 1 must remain eligible for later protected threshold review",
+        )
+        assertTrue(
+            !graph2.traceArtifacts.thresholdRelaxationAllowed,
+            "${audit.sourceId} graph 2 must block threshold relaxation while internal artifacts are high",
+        )
+        assertTrue(
+            "trace_artifact.threshold_relaxation_blocked" in graph2.traceArtifacts.cleanupHypothesisWarnings,
+            "${audit.sourceId} graph 2 must explain the artifact guard",
+        )
+        assertTrue(
+            "peak_detection.threshold_relaxation_blocked_by_trace_artifacts" in graph2.peakDetection.warnings,
+            "${audit.sourceId} graph 2 peak detection must carry the artifact guard",
+        )
     }
 
     private fun peakSanityExpectationsFor(fixture: ChromatogramBenchFixture): List<OfflinePeakSanityExpectationInput> =

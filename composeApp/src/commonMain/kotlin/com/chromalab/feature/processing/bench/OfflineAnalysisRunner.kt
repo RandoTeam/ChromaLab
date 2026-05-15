@@ -186,6 +186,8 @@ data class OfflinePeakDetectionAudit(
     val detectionSignalSource: String? = null,
     val noiseLevel: Double? = null,
     val noiseMethod: String? = null,
+    val thresholdRelaxationAllowed: Boolean? = null,
+    val thresholdRelaxationGuardReason: String? = null,
     val baselineMethod: String?,
     val boundaryMethod: String?,
     val integrationMethod: String?,
@@ -760,7 +762,10 @@ class OfflineAnalysisRunner(
                 message = "Curve extraction skipped because curve mask is unavailable.",
             )
         }
-        maskResult?.traceArtifactAudit?.warnings.orEmpty().forEach { warning ->
+        val traceArtifactWarnings = maskResult?.traceArtifactAudit?.let { audit ->
+            audit.warnings + audit.cleanupHypothesisWarnings
+        }.orEmpty()
+        traceArtifactWarnings.forEach { warning ->
             if (warning !in graphWarnings) graphWarnings += warning
         }
 
@@ -844,6 +849,7 @@ class OfflineAnalysisRunner(
                     signal = signalConversion.signal,
                     sourceId = "graph_${graphIndex}_${analysisImagePath.substringAfterLast('/').substringAfterLast('\\')}",
                     params = params,
+                    traceArtifactAudit = maskResult?.traceArtifactAudit,
                 )
             } ?: OfflinePeakDetectionResult(
                 audit = missingPeakDetection(listOf("peak_detection.stage_failed")),
@@ -1322,6 +1328,7 @@ private fun buildPeakDetectionAudit(
     signal: DigitalSignal,
     sourceId: String,
     params: CalculationParams,
+    traceArtifactAudit: CurveTraceArtifactAudit?,
 ): OfflinePeakDetectionResult {
     val run = CalculationEngine.execute(
         signal = signal,
@@ -1334,6 +1341,9 @@ private fun buildPeakDetectionAudit(
     val warnings = buildList {
         if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
         if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
+        if (traceArtifactAudit?.thresholdRelaxationAllowed == false) {
+            add("peak_detection.threshold_relaxation_blocked_by_trace_artifacts")
+        }
         run.validation.warnings.forEach { add("validation.$it") }
         run.warnings.forEach { warning ->
             add("${warning.stage}.${warning.message}")
@@ -1352,6 +1362,9 @@ private fun buildPeakDetectionAudit(
         detectionSignalSource = candidateDiagnostics.detectionSignalSource,
         noiseLevel = candidateDiagnostics.noiseLevel,
         noiseMethod = candidateDiagnostics.noiseMethod,
+        thresholdRelaxationAllowed = traceArtifactAudit?.thresholdRelaxationAllowed,
+        thresholdRelaxationGuardReason = traceArtifactAudit?.cleanupHypothesisWarnings
+            ?.firstOrNull { it == "trace_artifact.threshold_relaxation_blocked" },
         baselineMethod = params.baselineMethod,
         boundaryMethod = params.boundaryMethod,
         integrationMethod = params.integrationMethod,
@@ -1466,6 +1479,8 @@ private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAu
         detectionSignalSource = null,
         noiseLevel = null,
         noiseMethod = null,
+        thresholdRelaxationAllowed = null,
+        thresholdRelaxationGuardReason = null,
         baselineMethod = null,
         boundaryMethod = null,
         integrationMethod = null,

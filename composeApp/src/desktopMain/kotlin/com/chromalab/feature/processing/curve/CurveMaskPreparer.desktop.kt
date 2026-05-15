@@ -58,6 +58,7 @@ actual class CurveMaskPreparer actual constructor() {
         val rawPath = File(dir, "mask_raw.png").absolutePath
         val cleanPath = File(dir, "mask_clean.png").absolutePath
         val traceArtifactPath = File(dir, "trace_artifacts.png").absolutePath
+        val cleanupHypothesisPath = File(dir, "trace_artifact_suppressed_mask.png").absolutePath
         val traceArtifactAudit = buildTraceArtifactAudit(
             mask = cleanMask,
             width = width,
@@ -65,6 +66,7 @@ actual class CurveMaskPreparer actual constructor() {
             axes = axes,
             region = region,
             artifactPath = traceArtifactPath,
+            cleanupHypothesisPath = cleanupHypothesisPath,
         )
         saveMask(rawMask, width, height, rawPath)
         saveMask(cleanMask, width, height, cleanPath)
@@ -369,6 +371,19 @@ actual class CurveMaskPreparer actual constructor() {
         return retainedCoverage < MIN_USABLE_COLUMN_COVERAGE
     }
 
+    private fun columnCoverage(mask: BooleanArray, width: Int, height: Int): Float {
+        if (width <= 0 || height <= 0) return 0f
+        val columns = BooleanArray(width)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                if (mask[y * width + x]) {
+                    columns[x] = true
+                }
+            }
+        }
+        return columns.count { it }.toFloat() / width.toFloat()
+    }
+
     private fun isCompactLowResolutionPlot(width: Int, height: Int): Boolean =
         width <= MAX_COMPACT_PLOT_WIDTH && height <= MAX_COMPACT_PLOT_HEIGHT
 
@@ -379,6 +394,7 @@ actual class CurveMaskPreparer actual constructor() {
         axes: AxesResult,
         region: GraphRegion,
         artifactPath: String,
+        cleanupHypothesisPath: String,
     ): CurveTraceArtifactAudit {
         if (width <= 0 || height <= 0 || mask.isEmpty()) return CurveTraceArtifactAudit()
         val baselineY = axes.origin
@@ -449,27 +465,56 @@ actual class CurveMaskPreparer actual constructor() {
             }
         }
         saveTraceArtifactMask(mask, artifactMask, width, height, artifactPath)
+        val cleanupHypothesisMask = mask.copyOf()
+        for (index in cleanupHypothesisMask.indices) {
+            if (artifactMask[index]) {
+                cleanupHypothesisMask[index] = false
+            }
+        }
+        saveMask(cleanupHypothesisMask, width, height, cleanupHypothesisPath)
 
         val cleanPixels = mask.count { it }.coerceAtLeast(1)
+        val cleanupHypothesisPixels = cleanupHypothesisMask.count { it }
         val artifactRatio = artifactPixels.toFloat() / cleanPixels.toFloat()
+        val cleanupHypothesisRetainedRatio = cleanupHypothesisPixels.toFloat() / cleanPixels.toFloat()
+        val cleanupHypothesisColumnCoverage = columnCoverage(cleanupHypothesisMask, width, height)
+        val thresholdRelaxationAllowed = artifactRatio < HIGH_INTERNAL_ARTIFACT_RATIO &&
+            verticalLabels.size < VERTICAL_ARTIFACT_BLOCK_COUNT &&
+            horizontalLabels.size < HORIZONTAL_ARTIFACT_BLOCK_COUNT &&
+            floatingLabels.size < FLOATING_ARTIFACT_BLOCK_COUNT
         val warnings = buildList {
-            if (artifactRatio >= 0.18f) add("trace_artifact.high_internal_artifact_ratio")
-            if (verticalLabels.size >= 12) add("trace_artifact.vertical_bleed_through_risk")
+            if (artifactRatio >= HIGH_INTERNAL_ARTIFACT_RATIO) add("trace_artifact.high_internal_artifact_ratio")
+            if (verticalLabels.size >= VERTICAL_ARTIFACT_BLOCK_COUNT) add("trace_artifact.vertical_bleed_through_risk")
             if (topBandLabels.size >= 10) add("trace_artifact.top_band_text_risk")
-            if (floatingLabels.size >= 40) add("trace_artifact.many_floating_components")
+            if (floatingLabels.size >= FLOATING_ARTIFACT_BLOCK_COUNT) add("trace_artifact.many_floating_components")
+        }
+        val cleanupHypothesisWarnings = buildList {
+            if (!thresholdRelaxationAllowed) add("trace_artifact.threshold_relaxation_blocked")
+            if (cleanupHypothesisColumnCoverage < MIN_USABLE_COLUMN_COVERAGE) {
+                add("trace_artifact.cleanup_hypothesis_low_column_coverage")
+            }
+            if (cleanupHypothesisRetainedRatio < MIN_CLEANUP_RETAINED_RATIO) {
+                add("trace_artifact.cleanup_hypothesis_removes_too_much_mask")
+            }
         }
 
         return CurveTraceArtifactAudit(
             available = true,
             artifactMaskPath = artifactPath,
+            cleanupHypothesisMaskPath = cleanupHypothesisPath,
             baselineRow = baselineY,
             artifactPixelCount = artifactPixels,
             artifactPixelRatio = artifactRatio,
+            cleanupHypothesisPixelCount = cleanupHypothesisPixels,
+            cleanupHypothesisRetainedRatio = cleanupHypothesisRetainedRatio,
+            cleanupHypothesisColumnCoverage = cleanupHypothesisColumnCoverage,
+            thresholdRelaxationAllowed = thresholdRelaxationAllowed,
             floatingComponentCount = floatingLabels.size,
             floatingPixelCount = floatingPixels,
             verticalLineComponentCount = verticalLabels.size,
             horizontalLineComponentCount = horizontalLabels.size,
             topBandComponentCount = topBandLabels.size,
+            cleanupHypothesisWarnings = cleanupHypothesisWarnings,
             warnings = warnings,
         )
     }
@@ -640,6 +685,11 @@ actual class CurveMaskPreparer actual constructor() {
         private const val MASK_GRAY = -0x777778
         private const val ARTIFACT_RED = -0x10000
         private const val MIN_USABLE_COLUMN_COVERAGE = 0.30f
+        private const val HIGH_INTERNAL_ARTIFACT_RATIO = 0.18f
+        private const val MIN_CLEANUP_RETAINED_RATIO = 0.70f
+        private const val VERTICAL_ARTIFACT_BLOCK_COUNT = 12
+        private const val HORIZONTAL_ARTIFACT_BLOCK_COUNT = 6
+        private const val FLOATING_ARTIFACT_BLOCK_COUNT = 40
         private const val MAX_COMPACT_PLOT_WIDTH = 480
         private const val MAX_COMPACT_PLOT_HEIGHT = 180
         private val NEIGHBORS_4 = listOf(0 to -1, 0 to 1, -1 to 0, 1 to 0)

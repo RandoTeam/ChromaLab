@@ -137,12 +137,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Trace Artifact Diagnostics")
         appendLine()
-        appendLine("| Graph | Available | Artifact pixels | Artifact ratio | Floating components | Floating pixels | Vertical lines | Horizontal lines | Top-band components | Baseline row | Warnings |")
-        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Available | Artifact pixels | Artifact ratio | Hypothesis pixels | Hypothesis retained | Hypothesis coverage | Relaxation allowed | Floating components | Floating pixels | Vertical lines | Horizontal lines | Top-band components | Baseline row | Warnings | Hypothesis warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
         audit.graphs.forEach { graph ->
             val artifacts = graph.traceArtifacts
             appendLine(
-                "| ${graph.graphIndex} | ${artifacts.available} | ${artifacts.artifactPixelCount} | ${artifacts.artifactPixelRatio.renderPercent()} | ${artifacts.floatingComponentCount} | ${artifacts.floatingPixelCount} | ${artifacts.verticalLineComponentCount} | ${artifacts.horizontalLineComponentCount} | ${artifacts.topBandComponentCount} | ${artifacts.baselineRow ?: "n/a"} | ${artifacts.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${artifacts.available} | ${artifacts.artifactPixelCount} | ${artifacts.artifactPixelRatio.renderPercent()} | ${artifacts.cleanupHypothesisPixelCount} | ${artifacts.cleanupHypothesisRetainedRatio.renderPercent()} | ${artifacts.cleanupHypothesisColumnCoverage.renderPercent()} | ${artifacts.thresholdRelaxationAllowed} | ${artifacts.floatingComponentCount} | ${artifacts.floatingPixelCount} | ${artifacts.verticalLineComponentCount} | ${artifacts.horizontalLineComponentCount} | ${artifacts.topBandComponentCount} | ${artifacts.baselineRow ?: "n/a"} | ${artifacts.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${artifacts.cleanupHypothesisWarnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -173,12 +173,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Peak Candidate Diagnostics")
         appendLine()
-        appendLine("| Graph | Detection signal | Noise | Noise method | Candidates | Rejected | Top rejection reasons |")
-        appendLine("| ---: | --- | ---: | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Detection signal | Noise | Noise method | Threshold relaxation | Guard reason | Candidates | Rejected | Top rejection reasons |")
+        appendLine("| ---: | --- | ---: | --- | --- | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val peaks = graph.peakDetection
             appendLine(
-                "| ${graph.graphIndex} | ${peaks.detectionSignalSource ?: "n/a"} | ${peaks.noiseLevel?.renderNumber() ?: "n/a"} | ${peaks.noiseMethod ?: "n/a"} | ${peaks.candidateCount ?: "n/a"} | ${peaks.rejectedCandidateCount ?: "n/a"} | ${peaks.rejectionReasons.renderRejectionReasons().escapeTable()} |",
+                "| ${graph.graphIndex} | ${peaks.detectionSignalSource ?: "n/a"} | ${peaks.noiseLevel?.renderNumber() ?: "n/a"} | ${peaks.noiseMethod ?: "n/a"} | ${peaks.thresholdRelaxationAllowed ?: "n/a"} | ${(peaks.thresholdRelaxationGuardReason ?: "none").escapeTable()} | ${peaks.candidateCount ?: "n/a"} | ${peaks.rejectedCandidateCount ?: "n/a"} | ${peaks.rejectionReasons.renderRejectionReasons().escapeTable()} |",
             )
         }
         appendLine()

@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.2 - internal trace-artifact diagnostics before threshold tuning`.
-- Next work slice: `Phase 5.8b.3 - use artifact diagnostics to protect trace cleanup and completeness tuning`.
+- Latest completed work slice: `Phase 5.8b.3 - use artifact diagnostics to protect trace cleanup and completeness tuning`.
+- Next work slice: `Phase 5.8b.4 - review artifact-suppressed hypothesis before controlled completeness tuning`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -68,7 +68,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.8a | Done | `e7b0bb0` | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
 | Phase 5.8b.1 | Done | Pending | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
 | Phase 5.8b.2 | Done | Pending | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
-| Phase 5.8b.3 | Next | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
+| Phase 5.8b.3 | Done | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
+| Phase 5.8b.4 | Next | Pending | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -633,13 +634,25 @@ Completed Phase 5.8b.2 work slice:
    artifact-risk pixels and is flagged as high internal artifact risk.
 4. Accepted peak behavior is unchanged in this slice.
 
-Next Phase 5.8b.3 work slice:
+Completed Phase 5.8b.3 work slice:
 
-1. Use `traceArtifactAudit` to prevent threshold/noise loosening on artifact-heavy graphs.
-2. Build an artifact-suppressed trace hypothesis beside the current mask, but keep the
-   current accepted peak table unchanged until the hypothesis passes fixture review.
-3. Re-run `bench_06` graph 1 completeness only after graph 2's internal artifact risk is
-   protected.
+1. `traceArtifactAudit` now records a separate cleanup hypothesis mask path, retained
+   pixel ratio, retained column coverage, and threshold-relaxation guard.
+2. Desktop bench runs now write `graph_N/trace_artifact_suppressed_mask.png` beside the
+   current clean mask. The current accepted peak table still uses `mask_clean.png`; this
+   slice does not change accepted peaks.
+3. Artifact-heavy graphs block future threshold/noise loosening through
+   `trace_artifact.threshold_relaxation_blocked` and
+   `peak_detection.threshold_relaxation_blocked_by_trace_artifacts`.
+4. The fixture contract protects `bench_06` graph 2 from threshold relaxation while
+   keeping graph 1 eligible for later controlled completeness review.
+
+Next Phase 5.8b.4 work slice:
+
+1. Review the cleanup hypothesis masks and audit values for `bench_06` graph 1 and graph 2.
+2. Apply controlled completeness tuning only where `thresholdRelaxationAllowed=true`.
+3. Keep graph 2 blocked from threshold loosening unless its artifact risk is actually
+   reduced by a validated cleanup stage.
 
 Exit criteria:
 

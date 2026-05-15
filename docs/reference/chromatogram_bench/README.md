@@ -311,8 +311,14 @@ components. On calibrated `bench_06`, graph 1 is mainly a top-band/text risk whi
 2 is flagged as high internal artifact risk, which matches the observed false-positive
 risk when thresholds are loosened.
 
+Phase 5.8b.3 adds the guard layer before threshold tuning. Each desktop bench graph now
+also writes `graph_N/trace_artifact_suppressed_mask.png`, records the cleanup hypothesis
+retained ratio and column coverage, and exposes whether later threshold relaxation is
+allowed. `bench_06` graph 2 is explicitly blocked from threshold relaxation because its
+internal artifact risk is high; graph 1 remains eligible for later controlled review.
+Accepted peaks still come from the current clean mask in this phase.
+
 ## Next Phase
 
-Phase 5.8b.3 should use `traceArtifactAudit` as a guard before any noise/prominence
-tuning. The next code slice should build an artifact-suppressed trace hypothesis and
-review it against `bench_06` graph 1 and graph 2 before changing accepted peaks.
+Phase 5.8b.4 should review the artifact-suppressed hypothesis against `bench_06` graph 1
+and graph 2, then apply controlled completeness tuning only where the guard allows it.
