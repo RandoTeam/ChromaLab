@@ -163,6 +163,14 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { it.curveCoverage > 0f },
                 "${fixture.id} must expose non-zero curve extraction coverage",
             )
+            assertTrue(
+                audit.graphs.all { !it.signal.ready },
+                "${fixture.id} must not convert a calibrated signal before axis calibration is confirmed",
+            )
+            assertTrue(
+                audit.graphs.all { "signal_convert.axis_calibration_required" in it.signal.warnings },
+                "${fixture.id} must expose the signal conversion gate while axis calibration is missing",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -300,7 +308,17 @@ class ChromatogramBenchFixtureTest {
             "axis_calibration.manual_required" !in graph.axisCalibration.warnings,
             "confirmed manual points must not keep the manual-required warning",
         )
+        assertTrue(graph.signal.ready, "confirmed manual calibration must unlock signal conversion")
+        assertTrue(graph.signal.pointCount > 0, "signal conversion must expose calibrated points")
+        assertTrue(graph.signal.timeRange > 0f, "signal conversion must expose positive time range")
+        assertTrue(graph.signal.intensityRange >= 0f, "signal conversion must expose intensity range")
+        assertTrue(graph.signal.sortValid, "signal conversion must keep calibrated points sorted")
+        assertTrue(
+            audit.stages.any { it.stage == "signal_convert" && it.status == OfflineStageStatus.SUCCESS },
+            "confirmed manual calibration must run the signal conversion stage",
+        )
         assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
+        assertTrue(audit.blockedAtStage != "signal_convert", "manual calibration must pass the signal conversion gate")
     }
 }
 

@@ -51,11 +51,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} |",
             )
         }
         appendLine()
@@ -131,6 +131,18 @@ object OfflineAnalysisAuditArtifacts {
             }
             appendLine(
                 "| ${graph.graphIndex} | ${graph.curveMaskAvailable} | ${graph.curveMaskRawPixelCount} | ${graph.curveMaskCleanPixelCount} | ${ratio.renderPercent()} | ${graph.curveMaskSuppressionApplied.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Signal Conversion")
+        appendLine()
+        appendLine("| Graph | Ready | Points | Time start | Time end | Time range | Intensity min | Intensity max | Intensity range | Duplicates | Gaps | Sort valid | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            val signal = graph.signal
+            appendLine(
+                "| ${graph.graphIndex} | ${signal.ready} | ${signal.pointCount} | ${signal.timeStart?.renderNumber() ?: "n/a"} | ${signal.timeEnd?.renderNumber() ?: "n/a"} | ${signal.timeRange.renderNumber()} | ${signal.intensityMin?.renderNumber() ?: "n/a"} | ${signal.intensityMax?.renderNumber() ?: "n/a"} | ${signal.intensityRange.renderNumber()} | ${signal.duplicateCount} | ${signal.gapCount} | ${signal.sortValid} | ${signal.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()

@@ -2,7 +2,11 @@ package com.chromalab.feature.processing.bench
 
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
+import com.chromalab.feature.processing.calibration.CalibrationPoint
+import com.chromalab.feature.processing.calibration.LinearCalibration
+import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.curve.CurveExtractor
+import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
@@ -29,7 +33,9 @@ import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.preprocess.PreprocessingVariantRanker
 import com.chromalab.feature.processing.preprocess.PreprocessingVariantScore
 import com.chromalab.feature.processing.preprocess.variants
+import com.chromalab.feature.processing.signal.SignalConverter
 import kotlinx.serialization.Serializable
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 @Serializable
@@ -122,7 +128,24 @@ data class OfflineGraphAudit(
     val curvePointCount: Int,
     val curveCoverage: Float,
     val curveUsable: Boolean,
+    val signal: OfflineSignalAudit,
     val warnings: List<String>,
+)
+
+@Serializable
+data class OfflineSignalAudit(
+    val ready: Boolean,
+    val pointCount: Int,
+    val timeStart: Float?,
+    val timeEnd: Float?,
+    val timeRange: Float,
+    val intensityMin: Float?,
+    val intensityMax: Float?,
+    val intensityRange: Float,
+    val duplicateCount: Int,
+    val gapCount: Int,
+    val sortValid: Boolean,
+    val warnings: List<String> = emptyList(),
 )
 
 @Serializable
@@ -421,7 +444,13 @@ class OfflineAnalysisRunner(
         val axisCalibrationReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.axisCalibration.ready }
         val curveReady = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
-        val readyForCalculation = cropReady && plotAreaReady && axisGeometryReady && axisCalibrationReady && curveReady
+        val signalReady = graphAudits.isNotEmpty() && graphAudits.all { it.signal.ready }
+        val readyForCalculation = cropReady &&
+            plotAreaReady &&
+            axisGeometryReady &&
+            axisCalibrationReady &&
+            curveReady &&
+            signalReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
@@ -430,7 +459,8 @@ class OfflineAnalysisRunner(
                     !plotAreaReady -> "Calculation is blocked until every graph has audited plot-area bounds."
                     !axisGeometryReady -> "Calculation is blocked until every graph has detected axis geometry and origin."
                     !axisCalibrationReady -> "Calculation is blocked until every graph has confirmed pixel-to-axis calibration."
-                    else -> "Calculation is blocked until every graph has usable extracted curve data."
+                    !curveReady -> "Calculation is blocked until every graph has usable extracted curve data."
+                    else -> "Calculation is blocked until every graph has calibrated signal data."
                 },
             )
             stages += skippedStage(
@@ -459,7 +489,8 @@ class OfflineAnalysisRunner(
                 !plotAreaReady -> "plot_area"
                 !axisGeometryReady -> "axis_detect"
                 !axisCalibrationReady -> "axis_calibration"
-                else -> "curve_extract"
+                !curveReady -> "curve_extract"
+                else -> "signal_convert"
             },
             readyForCalculation = readyForCalculation,
         )
@@ -632,6 +663,48 @@ class OfflineAnalysisRunner(
             graphWarnings += "curve_not_usable"
         }
 
+        val signalAudit = when {
+            !axisCalibration.ready -> {
+                val warnings = listOf("signal_convert.axis_calibration_required")
+                graphWarnings += warnings
+                stages += skippedStage(
+                    stage = "signal_convert",
+                    graphIndex = graphIndex,
+                    message = "Signal conversion skipped until axis calibration is confirmed.",
+                    warnings = warnings,
+                )
+                missingSignal(warnings)
+            }
+            curveResult?.isUsable != true -> {
+                val warnings = listOf("signal_convert.curve_points_required")
+                graphWarnings += warnings
+                stages += skippedStage(
+                    stage = "signal_convert",
+                    graphIndex = graphIndex,
+                    message = "Signal conversion skipped until usable curve points are available.",
+                    warnings = warnings,
+                )
+                missingSignal(warnings)
+            }
+            else -> {
+                runStage(
+                    stage = "signal_convert",
+                    graphIndex = graphIndex,
+                    stages = stages,
+                    successMessage = { signal ->
+                        "points=${signal.pointCount}, time=${signal.timeRange}, intensity=${signal.intensityRange}."
+                    },
+                ) {
+                    buildSignalAudit(
+                        curvePoints = curveResult.points,
+                        axisCalibration = axisCalibration,
+                        sourceImage = analysisImagePath,
+                    )
+                } ?: missingSignal(listOf("signal_convert.stage_failed"))
+            }
+        }
+        graphWarnings += signalAudit.warnings.filterNot { it in graphWarnings }
+
         return OfflineGraphAudit(
             graphIndex = graphIndex,
             originalRegion = refinement.originalRegion,
@@ -657,6 +730,7 @@ class OfflineAnalysisRunner(
             curvePointCount = curveResult?.points?.size ?: 0,
             curveCoverage = curveResult?.coverage ?: 0f,
             curveUsable = curveResult?.isUsable == true,
+            signal = signalAudit,
             warnings = graphWarnings,
         )
     }
@@ -864,7 +938,7 @@ private fun List<OfflineAxisCalibrationPointAudit>.axisStats(): AxisCalibrationS
     val valueSpan = sorted.last().value - sorted.first().value
     val minPixelSpan = maxOf(24f, pixelSpan * 0.05f)
     return AxisCalibrationStats(
-        ready = pixelSpan >= minPixelSpan && valueSpan > 0f,
+        ready = pixelSpan >= minPixelSpan && abs(valueSpan) > 0f,
         pixelSpan = pixelSpan.coerceAtLeast(0f),
         valueSpan = valueSpan,
     )
@@ -890,6 +964,93 @@ private fun missingAxisCalibration(): OfflineAxisCalibrationAudit =
         xCandidates = emptyList(),
         yCandidates = emptyList(),
         warnings = listOf("axis_calibration.stage_failed", "axis_calibration.manual_required"),
+    )
+
+private fun buildSignalAudit(
+    curvePoints: List<CurvePoint>,
+    axisCalibration: OfflineAxisCalibrationAudit,
+    sourceImage: String,
+): OfflineSignalAudit {
+    val pixelCalibration = axisCalibration.toPixelCalibration()
+        ?: return missingSignal(listOf("signal_convert.axis_calibration_invalid"))
+    val signal = SignalConverter.convert(
+        curvePoints = curvePoints,
+        calibration = pixelCalibration,
+        sourceImage = sourceImage,
+    )
+    val intensityRange = signal.maxIntensity - signal.minIntensity
+    val warnings = buildList {
+        if (signal.points.isEmpty()) add("signal_convert.no_points")
+        if (!signal.metadata.sortValid) add("signal_convert.time_sort_invalid")
+        if (signal.timeRange <= 0f) add("signal_convert.non_positive_time_range")
+        if (intensityRange < 0f) add("signal_convert.negative_intensity_range")
+    }
+
+    return OfflineSignalAudit(
+        ready = signal.points.isNotEmpty() &&
+            signal.metadata.sortValid &&
+            signal.timeRange > 0f &&
+            warnings.isEmpty(),
+        pointCount = signal.points.size,
+        timeStart = signal.points.firstOrNull()?.time,
+        timeEnd = signal.points.lastOrNull()?.time,
+        timeRange = signal.timeRange,
+        intensityMin = signal.points.minOfOrNull { it.intensity },
+        intensityMax = signal.points.maxOfOrNull { it.intensity },
+        intensityRange = intensityRange.coerceAtLeast(0f),
+        duplicateCount = signal.metadata.duplicatesRemoved,
+        gapCount = signal.metadata.gapCount,
+        sortValid = signal.metadata.sortValid,
+        warnings = warnings,
+    )
+}
+
+private fun OfflineAxisCalibrationAudit.toPixelCalibration(): PixelCalibration? {
+    if (!ready) return null
+    val xPair = xCandidates.maxSpanPair() ?: return null
+    val yPair = yCandidates.maxSpanPair() ?: return null
+    val xCalibration = LinearCalibration(
+        CalibrationPoint(xPair.first.pixel, xPair.first.value),
+        CalibrationPoint(xPair.second.pixel, xPair.second.value),
+    )
+    val yCalibration = LinearCalibration(
+        CalibrationPoint(yPair.first.pixel, yPair.first.value),
+        CalibrationPoint(yPair.second.pixel, yPair.second.value),
+    )
+    if (!xCalibration.isValid || !yCalibration.isValid) return null
+
+    return PixelCalibration(
+        xCalibration = xCalibration,
+        yCalibration = yCalibration,
+        xUnit = xUnit ?: "unknown",
+        yUnit = yUnit ?: "unknown",
+        originPixelX = 0f,
+        originPixelY = 0f,
+        timestamp = 0L,
+    )
+}
+
+private fun List<OfflineAxisCalibrationPointAudit>.maxSpanPair():
+    Pair<OfflineAxisCalibrationPointAudit, OfflineAxisCalibrationPointAudit>? {
+    if (size < 2) return null
+    val sorted = sortedBy { it.pixel }
+    return sorted.first() to sorted.last()
+}
+
+private fun missingSignal(warnings: List<String>): OfflineSignalAudit =
+    OfflineSignalAudit(
+        ready = false,
+        pointCount = 0,
+        timeStart = null,
+        timeEnd = null,
+        timeRange = 0f,
+        intensityMin = null,
+        intensityMax = null,
+        intensityRange = 0f,
+        duplicateCount = 0,
+        gapCount = 0,
+        sortValid = false,
+        warnings = warnings,
     )
 
 private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAudit =
@@ -1101,6 +1262,7 @@ private fun skippedStage(
     stage: String,
     graphIndex: Int? = null,
     message: String,
+    warnings: List<String> = emptyList(),
 ): OfflineStageAudit =
     OfflineStageAudit(
         stage = stage,
@@ -1109,6 +1271,7 @@ private fun skippedStage(
         startedAtMillis = System.currentTimeMillis(),
         durationMillis = 0L,
         message = message,
+        warnings = warnings,
     )
 
 private fun OfflineAnalysisInput.blockedAudit(
