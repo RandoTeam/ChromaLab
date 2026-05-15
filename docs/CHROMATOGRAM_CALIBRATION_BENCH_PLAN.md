@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.7 - large-photo right-frame false peak suppression`.
-- Next work slice: `Phase 5.8 - photographed trace completeness and non-edge false peak review`.
+- Latest completed work slice: `Phase 5.8a - peak candidate diagnostics for photographed trace completeness`.
+- Next work slice: `Phase 5.8b - non-edge artifact rejection before changing noise thresholds`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -65,7 +65,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 | Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
 | Phase 5.7 | Done | `3a25850` | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
-| Phase 5.8 | Next | Pending | Review photographed trace completeness and non-edge false peaks after frame-line cleanup. |
+| Phase 5.8a | Done | Pending | Add candidate/rejection diagnostics to explain photographed trace under-detection without changing accepted results. |
+| Phase 5.8b | Next | Pending | Review non-edge bleed-through/text/grid artifacts before any noise-threshold or completeness tuning. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -592,15 +593,29 @@ Phase 5.7 status:
   keeps the rotated-page peak train while dropping the right-edge frame artifact.
 - The full `ChromatogramBenchFixtureTest` passes after the frame-line cleanup.
 
-Next Phase 5.8 work slice:
+Completed Phase 5.8a work slice:
 
-1. Review photographed trace completeness after the right-frame cleanup. In particular,
-   `bench_06` graph 1 still under-detects visible n-alkane peaks compared with the
-   visual trace.
-2. Add non-edge false-positive diagnostics for grid/text/axis artifacts that remain
-   inside the plot, without weakening real weak-channel extraction.
-3. Keep final report rendering blocked until expected-apex sanity and false-positive
-   review are stable on the fixture set.
+1. Peak detection audit now records the detection signal source, noise method/value,
+   total local-maximum candidates, rejected candidate count, and dominant rejection
+   reasons.
+2. On `bench_06`, graph 1 currently exposes `77` candidates with `75` rejected by
+   `prominence_below_threshold`; graph 2 exposes `90` candidates with `81` rejected
+   by the same reason. This confirms the current under-detection is downstream of
+   curve extraction and inside the candidate/noise/prominence gate, not an absence
+   of visible trace candidates.
+3. A local first-difference MAD experiment increased graph 1 completeness but also
+   accepted many bleed-through artifacts on graph 2, so it was not accepted. The next
+   slice must first classify or suppress non-edge artifacts before changing noise or
+   prominence behavior.
+
+Next Phase 5.8b work slice:
+
+1. Add diagnostics for non-edge bleed-through/text/grid artifacts inside photographed
+   plot areas, especially `bench_06` graph 2.
+2. Block or flag low-confidence artifact-heavy peak tables instead of silently producing
+   a final report from contaminated candidates.
+3. Only after artifact review is stable, revisit noise/prominence behavior for graph 1
+   trace completeness.
 
 Exit criteria:
 

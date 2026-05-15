@@ -159,6 +159,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Peak Candidate Diagnostics")
+        appendLine()
+        appendLine("| Graph | Detection signal | Noise | Noise method | Candidates | Rejected | Top rejection reasons |")
+        appendLine("| ---: | --- | ---: | --- | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val peaks = graph.peakDetection
+            appendLine(
+                "| ${graph.graphIndex} | ${peaks.detectionSignalSource ?: "n/a"} | ${peaks.noiseLevel?.renderNumber() ?: "n/a"} | ${peaks.noiseMethod ?: "n/a"} | ${peaks.candidateCount ?: "n/a"} | ${peaks.rejectedCandidateCount ?: "n/a"} | ${peaks.rejectionReasons.renderRejectionReasons().escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Peak Table Snapshot")
         appendLine()
         appendLine("| Graph | Peak | RT apex | Left | Right | Height | Area | Area % | S/N | Confidence | Overlap | Warnings |")
@@ -248,6 +260,9 @@ private fun Double.renderNumber(): String =
         this >= 10.0 -> "%.1f".format(this)
         else -> "%.3f".format(this)
     }
+
+private fun List<OfflinePeakRejectionAudit>.renderRejectionReasons(): String =
+    joinToString("; ") { "${it.reason}:${it.count}" }.ifBlank { "none" }
 
 private fun String.escapeTable(): String =
     replace("|", "\\|").replace("\n", " ")

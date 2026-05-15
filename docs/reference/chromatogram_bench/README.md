@@ -290,8 +290,17 @@ preparer now removes narrow, tall components at the right plot edge only when re
 column coverage stays usable. The fixture test verifies this on `bench_06` and
 `bench_07` so right-border lines cannot re-enter the peak table as late false peaks.
 
+Phase 5.8a adds peak-candidate diagnostics without changing accepted peak behavior.
+`audit.json` and `audit_summary.md` now expose the detection signal source, noise
+method/value, total candidates, rejected candidates, and top rejection reasons. The
+current `bench_06` calibrated run shows that graph 1 has many visible candidates but
+most are rejected by the prominence/noise gate; a stricter noise experiment also showed
+that graph 2 can turn bleed-through artifacts into false peaks, so artifact review must
+come before any threshold loosening.
+
 ## Next Phase
 
-Phase 5.8 should review photographed trace completeness and remaining non-edge false
-peaks. `bench_06` graph 1 still needs a deeper trace/peak-detection pass because it
-visually contains more peaks than the current accepted peak table exposes.
+Phase 5.8b should classify or suppress remaining non-edge false peaks, especially
+bleed-through/text/grid artifacts inside photographed plot areas. `bench_06` graph 1
+still needs a deeper trace/peak-detection pass, but the next implementation must not
+loosen noise/prominence gates until artifact-heavy graph 2 is protected.

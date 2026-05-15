@@ -489,6 +489,35 @@ class ChromatogramBenchFixtureTest {
                 graph.peakDetection.peaks.isNotEmpty(),
                 "${audit.sourceId} graph ${graph.graphIndex} must expose per-peak audit rows",
             )
+            val candidateCount = assertNotNull(
+                graph.peakDetection.candidateCount,
+                "${audit.sourceId} graph ${graph.graphIndex} must expose peak candidate diagnostics",
+            )
+            val rejectedCandidateCount = assertNotNull(
+                graph.peakDetection.rejectedCandidateCount,
+                "${audit.sourceId} graph ${graph.graphIndex} must expose rejected peak candidate diagnostics",
+            )
+            assertTrue(
+                candidateCount >= graph.peakDetection.peakCount,
+                "${audit.sourceId} graph ${graph.graphIndex} candidate count must cover accepted peaks",
+            )
+            assertTrue(
+                rejectedCandidateCount >= 0,
+                "${audit.sourceId} graph ${graph.graphIndex} rejected candidate count must be non-negative",
+            )
+            assertEquals(
+                candidateCount - graph.peakDetection.peakCount,
+                rejectedCandidateCount,
+                "${audit.sourceId} graph ${graph.graphIndex} rejected candidates must match candidate minus accepted count",
+            )
+            assertNotNull(
+                graph.peakDetection.noiseLevel,
+                "${audit.sourceId} graph ${graph.graphIndex} must expose noise diagnostics",
+            )
+            assertNotNull(
+                graph.peakDetection.detectionSignalSource,
+                "${audit.sourceId} graph ${graph.graphIndex} must expose detection signal source",
+            )
             assertTrue(
                 graph.peakDetection.peaks.all { it.leftBoundaryTime < it.rtApex && it.rtApex < it.rightBoundaryTime },
                 "${audit.sourceId} graph ${graph.graphIndex} must expose sane per-peak boundaries",

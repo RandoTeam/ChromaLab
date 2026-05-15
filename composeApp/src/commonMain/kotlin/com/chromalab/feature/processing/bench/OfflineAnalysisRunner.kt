@@ -3,8 +3,12 @@ package com.chromalab.feature.processing.bench
 import com.chromalab.feature.calculation.core.CalculationEngine
 import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.calculation.core.SignalModelBuilder
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
+import com.chromalab.feature.calculation.algorithm.NoiseEstimator
+import com.chromalab.feature.calculation.algorithm.NoiseMethod
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
+import com.chromalab.feature.calculation.algorithm.PeakDetector
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.calibration.CalibrationPoint
@@ -172,9 +176,14 @@ data class OfflinePeakDetectionAudit(
     val ready: Boolean,
     val peakCount: Int,
     val significantPeakCount: Int,
+    val candidateCount: Int? = null,
+    val rejectedCandidateCount: Int? = null,
     val dominantPeakTime: Double?,
     val dominantPeakHeight: Double?,
     val dominantPeakAreaPercent: Double?,
+    val detectionSignalSource: String? = null,
+    val noiseLevel: Double? = null,
+    val noiseMethod: String? = null,
     val baselineMethod: String?,
     val boundaryMethod: String?,
     val integrationMethod: String?,
@@ -182,7 +191,14 @@ data class OfflinePeakDetectionAudit(
     val maxPeakWidth: Int?,
     val minSnr: Double?,
     val peaks: List<OfflinePeakAudit> = emptyList(),
+    val rejectionReasons: List<OfflinePeakRejectionAudit> = emptyList(),
     val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakRejectionAudit(
+    val reason: String,
+    val count: Int,
 )
 
 @Serializable
@@ -1308,6 +1324,7 @@ private fun buildPeakDetectionAudit(
     )
     val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
     val dominantPeak = peaksByArea.firstOrNull()
+    val candidateDiagnostics = buildPeakCandidateDiagnostics(run, params)
     val warnings = buildList {
         if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
         if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
@@ -1321,9 +1338,14 @@ private fun buildPeakDetectionAudit(
         ready = run.validation.isValid && run.peaks.isNotEmpty(),
         peakCount = run.peaks.size,
         significantPeakCount = run.peaks.count { it.snr >= params.minSnr },
+        candidateCount = candidateDiagnostics.candidateCount,
+        rejectedCandidateCount = candidateDiagnostics.rejectedCandidateCount,
         dominantPeakTime = dominantPeak?.rtApex,
         dominantPeakHeight = dominantPeak?.height,
         dominantPeakAreaPercent = dominantPeak?.areaPercent,
+        detectionSignalSource = candidateDiagnostics.detectionSignalSource,
+        noiseLevel = candidateDiagnostics.noiseLevel,
+        noiseMethod = candidateDiagnostics.noiseMethod,
         baselineMethod = params.baselineMethod,
         boundaryMethod = params.boundaryMethod,
         integrationMethod = params.integrationMethod,
@@ -1345,6 +1367,7 @@ private fun buildPeakDetectionAudit(
                 warningCount = peak.warnings.size,
             )
         },
+        rejectionReasons = candidateDiagnostics.rejectionReasons,
         warnings = warnings.distinct(),
     )
 
@@ -1355,14 +1378,88 @@ private fun buildPeakDetectionAudit(
     )
 }
 
+private data class OfflinePeakCandidateDiagnostics(
+    val candidateCount: Int,
+    val rejectedCandidateCount: Int,
+    val detectionSignalSource: String,
+    val noiseLevel: Double,
+    val noiseMethod: String,
+    val rejectionReasons: List<OfflinePeakRejectionAudit>,
+)
+
+private fun buildPeakCandidateDiagnostics(
+    run: CalculationRun,
+    params: CalculationParams,
+): OfflinePeakCandidateDiagnostics {
+    val detectionPoints = SignalModelBuilder.getSignal(
+        bundle = run.signals,
+        source = run.signals.signalUsedForDetection,
+    )
+    val maxPeakWidth = params.maxPeakWidth.takeIf { it > 0 && it < Int.MAX_VALUE } ?: 0
+    val noiseMethod = offlineNoiseMethod(params.noiseMethod)
+    val noiseResult = NoiseEstimator.estimate(
+        points = detectionPoints,
+        method = noiseMethod,
+    )
+    val detection = PeakDetector.detect(
+        points = detectionPoints,
+        minHeight = params.minPeakHeight,
+        minProminence = params.minPeakProminence,
+        minDistance = params.minPeakDistance,
+        minWidth = params.minPeakWidth,
+        maxWidth = maxPeakWidth,
+        noiseLevel = noiseResult.noiseValue,
+        noiseK = params.minSnr,
+    )
+    val rejectionReasons = detection.rejected
+        .groupingBy { rejectionReasonKey(it.rejectReason) }
+        .eachCount()
+        .entries
+        .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+        .map { OfflinePeakRejectionAudit(reason = it.key, count = it.value) }
+
+    return OfflinePeakCandidateDiagnostics(
+        candidateCount = detection.totalCandidates,
+        rejectedCandidateCount = detection.rejected.size,
+        detectionSignalSource = run.signals.signalUsedForDetection.name,
+        noiseLevel = noiseResult.noiseValue,
+        noiseMethod = noiseResult.method.name,
+        rejectionReasons = rejectionReasons,
+    )
+}
+
+private fun offlineNoiseMethod(value: String): NoiseMethod =
+    when (value.trim().lowercase()) {
+        "mad", "robust", "mad_robust", "mad (robust)" -> NoiseMethod.MAD
+        "rms" -> NoiseMethod.RMS
+        else -> NoiseMethod.PEAK_TO_PEAK
+    }
+
+private fun rejectionReasonKey(reason: String?): String {
+    if (reason.isNullOrBlank()) return "unknown"
+    return when {
+        reason.startsWith("Prominence") -> "prominence_below_threshold"
+        "RT=" in reason -> "too_close_to_stronger_peak"
+        "Ñ‚Ð¾Ñ‡ÐµÐº" in reason && "<" in reason -> "width_below_threshold"
+        "Ñ‚Ð¾Ñ‡ÐµÐº" in reason && ">" in reason -> "width_above_threshold"
+        "Ð’Ñ‹ÑÐ¾Ñ‚Ð°" in reason -> "height_below_threshold"
+        else -> "other"
+    }
+}
+
 private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAudit =
     OfflinePeakDetectionAudit(
         ready = false,
         peakCount = 0,
         significantPeakCount = 0,
+        candidateCount = null,
+        rejectedCandidateCount = null,
         dominantPeakTime = null,
         dominantPeakHeight = null,
         dominantPeakAreaPercent = null,
+        detectionSignalSource = null,
+        noiseLevel = null,
+        noiseMethod = null,
         baselineMethod = null,
         boundaryMethod = null,
         integrationMethod = null,
@@ -1370,6 +1467,7 @@ private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAu
         maxPeakWidth = null,
         minSnr = null,
         peaks = emptyList(),
+        rejectionReasons = emptyList(),
         warnings = warnings,
     )
 
