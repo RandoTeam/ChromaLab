@@ -184,8 +184,13 @@ data class OfflinePeakDetectionAudit(
     val dominantPeakHeight: Double?,
     val dominantPeakAreaPercent: Double?,
     val detectionSignalSource: String? = null,
+    val detectionProfile: String? = null,
     val noiseLevel: Double? = null,
     val noiseMethod: String? = null,
+    val basePeakCount: Int? = null,
+    val tunedPeakCount: Int? = null,
+    val controlledTuningApplied: Boolean = false,
+    val controlledTuningReason: String? = null,
     val thresholdRelaxationAllowed: Boolean? = null,
     val thresholdRelaxationGuardReason: String? = null,
     val baselineMethod: String?,
@@ -1330,17 +1335,23 @@ private fun buildPeakDetectionAudit(
     params: CalculationParams,
     traceArtifactAudit: CurveTraceArtifactAudit?,
 ): OfflinePeakDetectionResult {
-    val run = CalculationEngine.execute(
+    val choice = choosePeakDetectionRun(
         signal = signal,
         sourceId = sourceId,
         params = params,
+        traceArtifactAudit = traceArtifactAudit,
     )
+    val run = choice.run
+    val selectedParams = choice.params
+    val candidateDiagnostics = choice.candidateDiagnostics
     val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
     val dominantPeak = peaksByArea.firstOrNull()
-    val candidateDiagnostics = buildPeakCandidateDiagnostics(run, params)
     val warnings = buildList {
         if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
         if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
+        if (choice.controlledTuningApplied) {
+            add("peak_detection.controlled_threshold_relaxation_applied")
+        }
         if (traceArtifactAudit?.thresholdRelaxationAllowed == false) {
             add("peak_detection.threshold_relaxation_blocked_by_trace_artifacts")
         }
@@ -1353,24 +1364,29 @@ private fun buildPeakDetectionAudit(
     val audit = OfflinePeakDetectionAudit(
         ready = run.validation.isValid && run.peaks.isNotEmpty(),
         peakCount = run.peaks.size,
-        significantPeakCount = run.peaks.count { it.snr >= params.minSnr },
+        significantPeakCount = run.peaks.count { it.snr >= selectedParams.minSnr },
         candidateCount = candidateDiagnostics.candidateCount,
         rejectedCandidateCount = candidateDiagnostics.rejectedCandidateCount,
         dominantPeakTime = dominantPeak?.rtApex,
         dominantPeakHeight = dominantPeak?.height,
         dominantPeakAreaPercent = dominantPeak?.areaPercent,
         detectionSignalSource = candidateDiagnostics.detectionSignalSource,
+        detectionProfile = choice.detectionProfile,
         noiseLevel = candidateDiagnostics.noiseLevel,
         noiseMethod = candidateDiagnostics.noiseMethod,
+        basePeakCount = choice.basePeakCount,
+        tunedPeakCount = choice.tunedPeakCount,
+        controlledTuningApplied = choice.controlledTuningApplied,
+        controlledTuningReason = choice.controlledTuningReason,
         thresholdRelaxationAllowed = traceArtifactAudit?.thresholdRelaxationAllowed,
         thresholdRelaxationGuardReason = traceArtifactAudit?.cleanupHypothesisWarnings
             ?.firstOrNull { it == "trace_artifact.threshold_relaxation_blocked" },
-        baselineMethod = params.baselineMethod,
-        boundaryMethod = params.boundaryMethod,
-        integrationMethod = params.integrationMethod,
-        clampNegative = params.clampNegative,
-        maxPeakWidth = params.maxPeakWidth,
-        minSnr = params.minSnr,
+        baselineMethod = selectedParams.baselineMethod,
+        boundaryMethod = selectedParams.boundaryMethod,
+        integrationMethod = selectedParams.integrationMethod,
+        clampNegative = selectedParams.clampNegative,
+        maxPeakWidth = selectedParams.maxPeakWidth,
+        minSnr = selectedParams.minSnr,
         peaks = run.peaks.mapIndexed { index, peak ->
             OfflinePeakAudit(
                 peakNumber = index + 1,
@@ -1393,7 +1409,71 @@ private fun buildPeakDetectionAudit(
     return OfflinePeakDetectionResult(
         audit = audit,
         run = run,
+        params = selectedParams,
+    )
+}
+
+private fun choosePeakDetectionRun(
+    signal: DigitalSignal,
+    sourceId: String,
+    params: CalculationParams,
+    traceArtifactAudit: CurveTraceArtifactAudit?,
+): OfflinePeakDetectionChoice {
+    val baseRun = CalculationEngine.execute(
+        signal = signal,
+        sourceId = sourceId,
         params = params,
+    )
+    val baseDiagnostics = buildPeakCandidateDiagnostics(baseRun, params)
+    val baseChoice = OfflinePeakDetectionChoice(
+        run = baseRun,
+        params = params,
+        candidateDiagnostics = baseDiagnostics,
+        detectionProfile = "default",
+        basePeakCount = baseRun.peaks.size,
+        tunedPeakCount = null,
+        controlledTuningApplied = false,
+        controlledTuningReason = null,
+    )
+    if (traceArtifactAudit?.thresholdRelaxationAllowed != true) return baseChoice
+    if (!baseRun.validation.isValid) return baseChoice
+    if (baseRun.peaks.size > CONTROLLED_TUNING_MAX_BASE_PEAKS) return baseChoice
+
+    val prominenceRejects = baseDiagnostics.rejectionReasons
+        .firstOrNull { it.reason == "prominence_below_threshold" }
+        ?.count ?: 0
+    if (prominenceRejects < CONTROLLED_TUNING_MIN_PROMINENCE_REJECTS) return baseChoice
+
+    val tunedParams = params.copy(
+        minSnr = CONTROLLED_TUNING_MIN_SNR,
+        presetName = "${params.presetName} guarded completeness",
+    )
+    val tunedRun = CalculationEngine.execute(
+        signal = signal,
+        sourceId = "${sourceId}_guarded_completeness",
+        params = tunedParams,
+    )
+    val tunedDiagnostics = buildPeakCandidateDiagnostics(tunedRun, tunedParams)
+    val addedPeaks = tunedRun.peaks.size - baseRun.peaks.size
+    val tunedIsControlled = tunedRun.validation.isValid &&
+        addedPeaks in 1..CONTROLLED_TUNING_MAX_EXTRA_PEAKS &&
+        tunedRun.peaks.size <= CONTROLLED_TUNING_MAX_TOTAL_PEAKS
+    if (!tunedIsControlled) {
+        return baseChoice.copy(
+            tunedPeakCount = tunedRun.peaks.size,
+            controlledTuningReason = "controlled_threshold_relaxation_rejected",
+        )
+    }
+
+    return OfflinePeakDetectionChoice(
+        run = tunedRun,
+        params = tunedParams,
+        candidateDiagnostics = tunedDiagnostics,
+        detectionProfile = "guarded_completeness",
+        basePeakCount = baseRun.peaks.size,
+        tunedPeakCount = tunedRun.peaks.size,
+        controlledTuningApplied = true,
+        controlledTuningReason = "threshold_relaxation_allowed_by_trace_artifact_guard",
     )
 }
 
@@ -1404,6 +1484,17 @@ private data class OfflinePeakCandidateDiagnostics(
     val noiseLevel: Double,
     val noiseMethod: String,
     val rejectionReasons: List<OfflinePeakRejectionAudit>,
+)
+
+private data class OfflinePeakDetectionChoice(
+    val run: CalculationRun,
+    val params: CalculationParams,
+    val candidateDiagnostics: OfflinePeakCandidateDiagnostics,
+    val detectionProfile: String,
+    val basePeakCount: Int,
+    val tunedPeakCount: Int?,
+    val controlledTuningApplied: Boolean,
+    val controlledTuningReason: String?,
 )
 
 private fun buildPeakCandidateDiagnostics(
@@ -1477,8 +1568,13 @@ private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAu
         dominantPeakHeight = null,
         dominantPeakAreaPercent = null,
         detectionSignalSource = null,
+        detectionProfile = null,
         noiseLevel = null,
         noiseMethod = null,
+        basePeakCount = null,
+        tunedPeakCount = null,
+        controlledTuningApplied = false,
+        controlledTuningReason = null,
         thresholdRelaxationAllowed = null,
         thresholdRelaxationGuardReason = null,
         baselineMethod = null,
@@ -1800,6 +1896,12 @@ private fun GraphRegionRefinementResult.cropQualityAudit(
 
 private fun GraphRegion.edgeContactCount(imageWidth: Int, imageHeight: Int): Int =
     listOf(y <= 0, right >= imageWidth, bottom >= imageHeight, x <= 0).count { it }
+
+private const val CONTROLLED_TUNING_MIN_SNR = 2.0
+private const val CONTROLLED_TUNING_MIN_PROMINENCE_REJECTS = 8
+private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
+private const val CONTROLLED_TUNING_MAX_EXTRA_PEAKS = 20
+private const val CONTROLLED_TUNING_MAX_TOTAL_PEAKS = 32
 
 private fun emptyAxes(): AxesResult =
     AxesResult(

@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.3 - use artifact diagnostics to protect trace cleanup and completeness tuning`.
-- Next work slice: `Phase 5.8b.4 - review artifact-suppressed hypothesis before controlled completeness tuning`.
+- Latest completed work slice: `Phase 5.8b.4 - review artifact-suppressed hypothesis before controlled completeness tuning`.
+- Next work slice: `Phase 5.8b.5 - review tuned peak quality and false-positive controls before broadening fixture scope`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -69,7 +69,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.1 | Done | Pending | Research plot digitizer, morphology, line-detection, and chromatography peak-picking references; decide artifact-first path. |
 | Phase 5.8b.2 | Done | Pending | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
 | Phase 5.8b.3 | Done | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
-| Phase 5.8b.4 | Next | Pending | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
+| Phase 5.8b.4 | Done | Pending | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
+| Phase 5.8b.5 | Next | Pending | Review tuned peak quality and false-positive controls before broadening fixture scope. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -647,12 +648,29 @@ Completed Phase 5.8b.3 work slice:
 4. The fixture contract protects `bench_06` graph 2 from threshold relaxation while
    keeping graph 1 eligible for later controlled completeness review.
 
-Next Phase 5.8b.4 work slice:
+Completed Phase 5.8b.4 work slice:
 
-1. Review the cleanup hypothesis masks and audit values for `bench_06` graph 1 and graph 2.
-2. Apply controlled completeness tuning only where `thresholdRelaxationAllowed=true`.
-3. Keep graph 2 blocked from threshold loosening unless its artifact risk is actually
-   reduced by a validated cleanup stage.
+1. Peak detection now records the active detection profile, base peak count, tuned peak
+   count, controlled tuning state, and tuning reason in JSON/Markdown audit artifacts.
+2. A guarded completeness pass can lower the offline bench `minSnr` only when:
+   `thresholdRelaxationAllowed=true`, the base run is valid, the base run is clearly
+   under-detected, many candidates were rejected by prominence, and the tuned result
+   stays within bounded peak-count limits.
+3. On calibrated `bench_06`, graph 1 uses `guarded_completeness` and increases from `2`
+   accepted peaks to `14`; graph 2 stays on the default profile because its artifact
+   guard blocks threshold relaxation.
+4. The rotated page fixture stays on the default profile because it already has enough
+   base peaks; this prevents the tuning pass from reintroducing late/right-frame false
+   positives.
+
+Next Phase 5.8b.5 work slice:
+
+1. Review the tuned `bench_06` graph 1 peak table and overlay for false positives,
+   especially narrow low-area peaks.
+2. Add per-peak quality controls for guarded completeness output before applying the
+   same tuning path to more fixtures.
+3. Keep artifact-heavy graph 2 and already-complete rotated fixtures out of the tuning
+   path unless their audit facts change.
 
 Exit criteria:
 

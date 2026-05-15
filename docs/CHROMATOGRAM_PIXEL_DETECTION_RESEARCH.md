@@ -100,9 +100,19 @@ Phase 5.8b.3 is implemented:
    1 remains eligible for later controlled completeness review.
 4. Accepted peak behavior remains unchanged.
 
-Phase 5.8b.4 should compare the cleanup hypothesis against current extraction on
-`bench_06` graph 1 and graph 2, then tune completeness only where
-`thresholdRelaxationAllowed=true`.
+Phase 5.8b.4 is implemented:
+
+1. Peak detection now compares a default run against a guarded completeness run only
+   when `thresholdRelaxationAllowed=true`.
+2. The guarded run is selected only for under-detected graphs with many
+   prominence-threshold rejections and bounded added peak count.
+3. Calibrated `bench_06` graph 1 moves from 2 to 14 accepted peaks; graph 2 remains
+   blocked by the artifact guard.
+4. Already-complete rotated pages stay on the default profile, preventing late
+   right-frame artifacts from re-entering.
+
+Phase 5.8b.5 should review tuned peak quality and add per-peak false-positive controls
+before this path is broadened beyond the current protected case.
 
 ## Sources
 

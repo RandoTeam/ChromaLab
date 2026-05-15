@@ -161,24 +161,24 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Peak Detection")
         appendLine()
-        appendLine("| Graph | Ready | Peaks | Significant | Dominant time | Dominant height | Dominant area | Baseline | Boundary | Integration | Clamp negative | Max width | Min S/N | Warnings |")
-        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Ready | Profile | Peaks | Base peaks | Tuned peaks | Significant | Dominant time | Dominant height | Dominant area | Baseline | Boundary | Integration | Clamp negative | Max width | Min S/N | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val peaks = graph.peakDetection
             appendLine(
-                "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.peakCount} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.detectionProfile ?: "n/a"} | ${peaks.peakCount} | ${peaks.basePeakCount ?: "n/a"} | ${peaks.tunedPeakCount ?: "n/a"} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
 
         appendLine("## Peak Candidate Diagnostics")
         appendLine()
-        appendLine("| Graph | Detection signal | Noise | Noise method | Threshold relaxation | Guard reason | Candidates | Rejected | Top rejection reasons |")
-        appendLine("| ---: | --- | ---: | --- | --- | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Detection signal | Noise | Noise method | Controlled tuning | Tuning reason | Threshold relaxation | Guard reason | Candidates | Rejected | Top rejection reasons |")
+        appendLine("| ---: | --- | ---: | --- | --- | --- | --- | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val peaks = graph.peakDetection
             appendLine(
-                "| ${graph.graphIndex} | ${peaks.detectionSignalSource ?: "n/a"} | ${peaks.noiseLevel?.renderNumber() ?: "n/a"} | ${peaks.noiseMethod ?: "n/a"} | ${peaks.thresholdRelaxationAllowed ?: "n/a"} | ${(peaks.thresholdRelaxationGuardReason ?: "none").escapeTable()} | ${peaks.candidateCount ?: "n/a"} | ${peaks.rejectedCandidateCount ?: "n/a"} | ${peaks.rejectionReasons.renderRejectionReasons().escapeTable()} |",
+                "| ${graph.graphIndex} | ${peaks.detectionSignalSource ?: "n/a"} | ${peaks.noiseLevel?.renderNumber() ?: "n/a"} | ${peaks.noiseMethod ?: "n/a"} | ${peaks.controlledTuningApplied} | ${(peaks.controlledTuningReason ?: "none").escapeTable()} | ${peaks.thresholdRelaxationAllowed ?: "n/a"} | ${(peaks.thresholdRelaxationGuardReason ?: "none").escapeTable()} | ${peaks.candidateCount ?: "n/a"} | ${peaks.rejectedCandidateCount ?: "n/a"} | ${peaks.rejectionReasons.renderRejectionReasons().escapeTable()} |",
             )
         }
         appendLine()

@@ -318,7 +318,14 @@ allowed. `bench_06` graph 2 is explicitly blocked from threshold relaxation beca
 internal artifact risk is high; graph 1 remains eligible for later controlled review.
 Accepted peaks still come from the current clean mask in this phase.
 
+Phase 5.8b.4 applies the first guarded completeness tuning. The offline peak audit now
+records the detection profile, base peak count, tuned peak count, controlled tuning
+state, and tuning reason. The tuning pass is selected only for clearly under-detected
+graphs with `thresholdRelaxationAllowed=true`. On calibrated `bench_06`, graph 1 moves
+from 2 to 14 accepted peaks, graph 2 remains blocked by artifact risk, and the rotated
+fixture remains on the default profile because it was not under-detected.
+
 ## Next Phase
 
-Phase 5.8b.4 should review the artifact-suppressed hypothesis against `bench_06` graph 1
-and graph 2, then apply controlled completeness tuning only where the guard allows it.
+Phase 5.8b.5 should review the tuned `bench_06` graph 1 peak table and overlay for
+false positives, then add per-peak quality controls before broadening the tuning path.

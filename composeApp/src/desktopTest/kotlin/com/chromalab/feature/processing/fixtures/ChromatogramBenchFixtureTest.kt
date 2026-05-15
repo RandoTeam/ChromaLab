@@ -649,8 +649,25 @@ class ChromatogramBenchFixtureTest {
             "${audit.sourceId} graph 1 must remain eligible for later protected threshold review",
         )
         assertTrue(
+            graph1.peakDetection.controlledTuningApplied,
+            "${audit.sourceId} graph 1 must apply guarded completeness tuning after artifact review",
+        )
+        assertEquals(
+            "guarded_completeness",
+            graph1.peakDetection.detectionProfile,
+            "${audit.sourceId} graph 1 must record the guarded detection profile",
+        )
+        assertTrue(
+            graph1.peakDetection.peakCount > (graph1.peakDetection.basePeakCount ?: 0),
+            "${audit.sourceId} graph 1 guarded tuning must increase accepted peak completeness",
+        )
+        assertTrue(
             !graph2.traceArtifacts.thresholdRelaxationAllowed,
             "${audit.sourceId} graph 2 must block threshold relaxation while internal artifacts are high",
+        )
+        assertTrue(
+            !graph2.peakDetection.controlledTuningApplied,
+            "${audit.sourceId} graph 2 must not apply controlled tuning while artifact guard is blocked",
         )
         assertTrue(
             "trace_artifact.threshold_relaxation_blocked" in graph2.traceArtifacts.cleanupHypothesisWarnings,
