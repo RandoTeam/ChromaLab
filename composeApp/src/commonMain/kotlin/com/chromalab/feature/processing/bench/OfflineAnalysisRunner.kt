@@ -193,6 +193,7 @@ data class OfflinePeakDetectionAudit(
     val controlledTuningApplied: Boolean = false,
     val controlledTuningReason: String? = null,
     val guardedQualityReview: OfflineGuardedPeakQualityAudit = OfflineGuardedPeakQualityAudit(),
+    val sparseTraceQualityReview: OfflineSparseTracePeakQualityAudit = OfflineSparseTracePeakQualityAudit(),
     val thresholdRelaxationAllowed: Boolean? = null,
     val thresholdRelaxationGuardReason: String? = null,
     val baselineMethod: String?,
@@ -220,6 +221,20 @@ data class OfflineGuardedPeakQualityAudit(
     val lowAreaShareCount: Int = 0,
     val narrowBoundaryCount: Int = 0,
     val acceptedForGuardedCompleteness: Boolean = false,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineSparseTracePeakQualityAudit(
+    val available: Boolean = false,
+    val sparseTrace: Boolean = false,
+    val localizedSparseTrace: Boolean = false,
+    val reviewPeakCount: Int = 0,
+    val lowSnrCount: Int = 0,
+    val lowAreaShareCount: Int = 0,
+    val lowConfidenceCount: Int = 0,
+    val overlapReviewCount: Int = 0,
+    val requiresReportConfidenceText: Boolean = false,
     val warnings: List<String> = emptyList(),
 )
 
@@ -873,6 +888,7 @@ class OfflineAnalysisRunner(
                     sourceId = "graph_${graphIndex}_${analysisImagePath.substringAfterLast('/').substringAfterLast('\\')}",
                     params = params,
                     traceArtifactAudit = maskResult?.traceArtifactAudit,
+                    curveWarnings = curveResult?.warnings.orEmpty(),
                 )
             } ?: OfflinePeakDetectionResult(
                 audit = missingPeakDetection(listOf("peak_detection.stage_failed")),
@@ -1352,6 +1368,7 @@ private fun buildPeakDetectionAudit(
     sourceId: String,
     params: CalculationParams,
     traceArtifactAudit: CurveTraceArtifactAudit?,
+    curveWarnings: List<String>,
 ): OfflinePeakDetectionResult {
     val choice = choosePeakDetectionRun(
         signal = signal,
@@ -1363,6 +1380,11 @@ private fun buildPeakDetectionAudit(
     val selectedParams = choice.params
     val candidateDiagnostics = choice.candidateDiagnostics
     val guardedQualityReview = choice.guardedQualityReview
+    val sparseTraceQualityReview = buildSparseTracePeakQualityAudit(
+        peaks = run.peaks,
+        curveWarnings = curveWarnings,
+        minSnr = selectedParams.minSnr,
+    )
     val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
     val dominantPeak = peaksByArea.firstOrNull()
     val warnings = buildList {
@@ -1375,6 +1397,7 @@ private fun buildPeakDetectionAudit(
             add("peak_detection.threshold_relaxation_blocked_by_trace_artifacts")
         }
         guardedQualityReview.warnings.forEach { add(it) }
+        sparseTraceQualityReview.warnings.forEach { add(it) }
         run.validation.warnings.forEach { add("validation.$it") }
         run.warnings.forEach { warning ->
             add("${warning.stage}.${warning.message}")
@@ -1399,6 +1422,7 @@ private fun buildPeakDetectionAudit(
         controlledTuningApplied = choice.controlledTuningApplied,
         controlledTuningReason = choice.controlledTuningReason,
         guardedQualityReview = guardedQualityReview,
+        sparseTraceQualityReview = sparseTraceQualityReview,
         thresholdRelaxationAllowed = traceArtifactAudit?.thresholdRelaxationAllowed,
         thresholdRelaxationGuardReason = traceArtifactAudit?.cleanupHypothesisWarnings
             ?.firstOrNull { it == "trace_artifact.threshold_relaxation_blocked" },
@@ -1425,6 +1449,10 @@ private fun buildPeakDetectionAudit(
                 qualityFlags = guardedPeakQualityFlags(
                     peak = peak,
                     guardedCompletenessApplied = choice.controlledTuningApplied,
+                ) + sparseTracePeakQualityFlags(
+                    peak = peak,
+                    sparseTraceQualityReview = sparseTraceQualityReview,
+                    minSnr = selectedParams.minSnr,
                 ),
             )
         },
@@ -1436,6 +1464,47 @@ private fun buildPeakDetectionAudit(
         audit = audit,
         run = run,
         params = selectedParams,
+    )
+}
+
+private fun buildSparseTracePeakQualityAudit(
+    peaks: List<PeakResult>,
+    curveWarnings: List<String>,
+    minSnr: Double,
+): OfflineSparseTracePeakQualityAudit {
+    val sparseTrace = "curve_extract.sparse_trace_low_column_coverage_accepted" in curveWarnings
+    if (!sparseTrace) return OfflineSparseTracePeakQualityAudit()
+
+    val localizedSparseTrace = "curve_extract.sparse_trace_localized_review_required" in curveWarnings
+    val lowSnrCount = peaks.count { it.snr < minSnr }
+    val lowAreaShareCount = peaks.count { it.areaPercent < SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW }
+    val lowConfidenceCount = peaks.count {
+        it.confidence == ConfidenceGrade.LOW || it.confidence == ConfidenceGrade.FAILED
+    }
+    val overlapReviewCount = peaks.count {
+        it.overlapStatus == OverlapStatus.SHOULDER || it.overlapStatus == OverlapStatus.UNRESOLVED
+    }
+    val warnings = buildList {
+        add("peak_detection.sparse_trace_report_confidence_required")
+        if (localizedSparseTrace) add("peak_detection.sparse_trace_localized_review_required")
+        if (peaks.isEmpty()) add("peak_detection.sparse_trace.no_peaks")
+        if (lowSnrCount > 0) add("peak_detection.sparse_trace_low_snr_peaks")
+        if (lowAreaShareCount > 0) add("peak_detection.sparse_trace_low_area_share_peaks")
+        if (lowConfidenceCount > 0) add("peak_detection.sparse_trace_low_confidence_peaks")
+        if (overlapReviewCount > 0) add("peak_detection.sparse_trace_overlap_review_required")
+    }
+
+    return OfflineSparseTracePeakQualityAudit(
+        available = true,
+        sparseTrace = true,
+        localizedSparseTrace = localizedSparseTrace,
+        reviewPeakCount = peaks.size,
+        lowSnrCount = lowSnrCount,
+        lowAreaShareCount = lowAreaShareCount,
+        lowConfidenceCount = lowConfidenceCount,
+        overlapReviewCount = overlapReviewCount,
+        requiresReportConfidenceText = true,
+        warnings = warnings,
     )
 }
 
@@ -1581,6 +1650,26 @@ private fun guardedPeakQualityFlags(
         if (peak.snr < CONTROLLED_TUNING_REFERENCE_MIN_SNR) add("guarded_peak.low_default_snr")
         if (peak.areaPercent < CONTROLLED_TUNING_MIN_AREA_PERCENT_REVIEW) add("guarded_peak.low_area_share")
         if (peak.widthBase < CONTROLLED_TUNING_MIN_WIDTH_REVIEW) add("guarded_peak.narrow_boundary")
+    }
+}
+
+private fun sparseTracePeakQualityFlags(
+    peak: PeakResult,
+    sparseTraceQualityReview: OfflineSparseTracePeakQualityAudit,
+    minSnr: Double,
+): List<String> {
+    if (!sparseTraceQualityReview.available) return emptyList()
+    return buildList {
+        add("sparse_trace.low_column_coverage")
+        if (sparseTraceQualityReview.localizedSparseTrace) add("sparse_trace.localized_evidence")
+        if (peak.snr < minSnr) add("sparse_peak.low_snr")
+        if (peak.areaPercent < SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW) add("sparse_peak.low_area_share")
+        if (peak.confidence == ConfidenceGrade.LOW || peak.confidence == ConfidenceGrade.FAILED) {
+            add("sparse_peak.low_confidence")
+        }
+        if (peak.overlapStatus == OverlapStatus.SHOULDER || peak.overlapStatus == OverlapStatus.UNRESOLVED) {
+            add("sparse_peak.overlap_review")
+        }
     }
 }
 
@@ -1991,6 +2080,7 @@ private const val CONTROLLED_TUNING_MIN_SNR = 2.0
 private const val CONTROLLED_TUNING_REFERENCE_MIN_SNR = 3.0
 private const val CONTROLLED_TUNING_MIN_PROMINENCE_REJECTS = 8
 private const val CONTROLLED_TUNING_MIN_AREA_PERCENT_REVIEW = 2.5
+private const val SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW = 2.5
 private const val CONTROLLED_TUNING_MIN_WIDTH_REVIEW = 0.20
 private const val CONTROLLED_TUNING_MAX_REVIEW_FRACTION = 0.35
 private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6

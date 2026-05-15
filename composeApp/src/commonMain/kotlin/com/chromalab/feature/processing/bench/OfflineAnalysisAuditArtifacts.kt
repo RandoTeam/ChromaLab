@@ -195,6 +195,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Sparse Trace Peak Quality")
+        appendLine()
+        appendLine("| Graph | Available | Sparse | Localized | Review peaks | Low S/N | Low area share | Low confidence | Overlap review | Report confidence text | Warnings |")
+        appendLine("| ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            val quality = graph.peakDetection.sparseTraceQualityReview
+            appendLine(
+                "| ${graph.graphIndex} | ${quality.available} | ${quality.sparseTrace} | ${quality.localizedSparseTrace} | ${quality.reviewPeakCount} | ${quality.lowSnrCount} | ${quality.lowAreaShareCount} | ${quality.lowConfidenceCount} | ${quality.overlapReviewCount} | ${quality.requiresReportConfidenceText} | ${quality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Peak Table Snapshot")
         appendLine()
         appendLine("| Graph | Peak | RT apex | Left | Right | Width | Height | Area | Area % | S/N | Confidence | Overlap | Quality flags | Warnings |")

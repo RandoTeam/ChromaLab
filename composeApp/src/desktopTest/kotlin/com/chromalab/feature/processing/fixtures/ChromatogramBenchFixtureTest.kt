@@ -26,7 +26,9 @@ import kotlinx.coroutines.runBlocking
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ChromatogramBenchFixtureTest {
@@ -478,6 +480,7 @@ class ChromatogramBenchFixtureTest {
         }
 
         assertSparseStackedIonSignalScope(auditsById)
+        assertSparseStackedIonPeakQualityScope(auditsById)
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -919,6 +922,131 @@ class ChromatogramBenchFixtureTest {
             }
         }
     }
+
+    private fun assertSparseStackedIonPeakQualityScope(auditsById: Map<String, OfflineAnalysisAudit>) {
+        val expectedSparseGraphs = mapOf(
+            "bench_04_stacked_xic_resolution" to mapOf(
+                3 to SparsePeakQualityExpectation(peakCount = 4),
+                4 to SparsePeakQualityExpectation(peakCount = 1, localized = true),
+            ),
+            "bench_05_tic_plus_ions" to mapOf(
+                2 to SparsePeakQualityExpectation(peakCount = 4),
+                3 to SparsePeakQualityExpectation(peakCount = 9, lowAreaShareCount = 4, overlapReviewCount = 6),
+                4 to SparsePeakQualityExpectation(peakCount = 4, overlapReviewCount = 4),
+            ),
+        )
+        auditsById.forEach { (fixtureId, audit) ->
+            val sparseGraphs = expectedSparseGraphs.getValue(fixtureId)
+            audit.graphs.forEach { graph ->
+                val expectation = sparseGraphs[graph.graphIndex]
+                val review = graph.peakDetection.sparseTraceQualityReview
+                if (expectation == null) {
+                    assertFalse(
+                        review.available,
+                        "$fixtureId graph ${graph.graphIndex} must not run sparse peak quality review for dense traces",
+                    )
+                    assertTrue(
+                        graph.peakDetection.peaks.none { peak ->
+                            peak.qualityFlags.any { it.startsWith("sparse_") || it.startsWith("sparse.") }
+                        },
+                        "$fixtureId graph ${graph.graphIndex} must not attach sparse peak flags to dense traces",
+                    )
+                    return@forEach
+                }
+
+                assertTrue(
+                    review.available,
+                    "$fixtureId graph ${graph.graphIndex} must expose sparse peak quality review",
+                )
+                assertTrue(
+                    review.sparseTrace,
+                    "$fixtureId graph ${graph.graphIndex} must mark sparse trace context",
+                )
+                assertEquals(
+                    expectation.localized,
+                    review.localizedSparseTrace,
+                    "$fixtureId graph ${graph.graphIndex} localized sparse trace state",
+                )
+                assertEquals(
+                    expectation.peakCount,
+                    review.reviewPeakCount,
+                    "$fixtureId graph ${graph.graphIndex} sparse reviewed peak count",
+                )
+                assertEquals(
+                    expectation.lowAreaShareCount,
+                    review.lowAreaShareCount,
+                    "$fixtureId graph ${graph.graphIndex} sparse low-area peak count",
+                )
+                assertEquals(
+                    expectation.overlapReviewCount,
+                    review.overlapReviewCount,
+                    "$fixtureId graph ${graph.graphIndex} sparse overlap review count",
+                )
+                assertTrue(
+                    review.requiresReportConfidenceText,
+                    "$fixtureId graph ${graph.graphIndex} must require report confidence text",
+                )
+                assertTrue(
+                    "peak_detection.sparse_trace_report_confidence_required" in graph.peakDetection.warnings,
+                    "$fixtureId graph ${graph.graphIndex} must carry sparse report-confidence warning",
+                )
+                if (expectation.localized) {
+                    assertTrue(
+                        "peak_detection.sparse_trace_localized_review_required" in graph.peakDetection.warnings,
+                        "$fixtureId graph ${graph.graphIndex} must carry localized sparse peak warning",
+                    )
+                }
+                if (expectation.lowAreaShareCount > 0) {
+                    assertTrue(
+                        "peak_detection.sparse_trace_low_area_share_peaks" in graph.peakDetection.warnings,
+                        "$fixtureId graph ${graph.graphIndex} must carry low-area sparse peak warning",
+                    )
+                }
+                if (expectation.overlapReviewCount > 0) {
+                    assertTrue(
+                        "peak_detection.sparse_trace_overlap_review_required" in graph.peakDetection.warnings,
+                        "$fixtureId graph ${graph.graphIndex} must carry sparse overlap warning",
+                    )
+                }
+                assertFalse(
+                    graph.peakDetection.controlledTuningApplied,
+                    "$fixtureId graph ${graph.graphIndex} sparse trace review must not apply guarded threshold relaxation",
+                )
+                assertNull(
+                    graph.peakDetection.tunedPeakCount,
+                    "$fixtureId graph ${graph.graphIndex} sparse trace review must keep tuned peak count empty",
+                )
+                assertEquals(
+                    "default",
+                    graph.peakDetection.detectionProfile,
+                    "$fixtureId graph ${graph.graphIndex} sparse trace review must keep default detection profile",
+                )
+                assertEquals(
+                    3.0,
+                    graph.peakDetection.minSnr ?: 0.0,
+                    0.001,
+                    "$fixtureId graph ${graph.graphIndex} sparse trace review must not lower the S/N threshold",
+                )
+                assertTrue(
+                    graph.peakDetection.peaks.all { "sparse_trace.low_column_coverage" in it.qualityFlags },
+                    "$fixtureId graph ${graph.graphIndex} sparse peaks must carry low-column-coverage flags",
+                )
+                if (expectation.localized) {
+                    assertTrue(
+                        graph.peakDetection.peaks.all { "sparse_trace.localized_evidence" in it.qualityFlags },
+                        "$fixtureId graph ${graph.graphIndex} localized sparse peaks must carry localized evidence flags",
+                    )
+                }
+            }
+        }
+    }
+
+    private data class SparsePeakQualityExpectation(
+        val peakCount: Int,
+        val localized: Boolean = false,
+        val lowAreaShareCount: Int = 0,
+        val overlapReviewCount: Int = 0,
+    )
 
     private fun peakSanityExpectationsFor(fixture: ChromatogramBenchFixture): List<OfflinePeakSanityExpectationInput> =
         when (fixture.id) {

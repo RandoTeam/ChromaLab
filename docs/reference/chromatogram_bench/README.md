@@ -346,7 +346,14 @@ contain enough extracted points, while the audit records low-column-coverage acc
 and localized sparse evidence. `bench_04` graphs 3-4 and `bench_05` graphs 2-4 now reach
 signal conversion and peak detection instead of stopping at `signal_convert.curve_points_required`.
 
+Phase 5.8b.8 adds sparse stacked-ion peak quality review before report validation.
+Sparse graph peak tables now carry a separate `sparseTraceQualityReview`, report
+confidence warnings, and per-peak sparse flags without changing default S/N thresholds
+or enabling guarded completeness tuning. `bench_04` sparse graphs review `4` and `1`
+peaks; `bench_05` sparse graphs review `4`, `9`, and `4` peaks, with low-area and
+overlap flags where the recovered weak ion traces are most ambiguous.
+
 ## Next Phase
 
-Phase 5.8b.8 should review the newly recovered sparse stacked-ion peak tables and
-overlays before report validation or broader peak-completeness tuning.
+Phase 6.1 should validate the structured report contract against calibrated fixture
+audits, including sparse-trace confidence wording and guarded-completeness wording.

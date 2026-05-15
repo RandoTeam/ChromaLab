@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.7 - restore curve/signal readiness for weak stacked ion panels before report validation`.
-- Next work slice: `Phase 5.8b.8 - review sparse stacked ion peak quality before report validation`.
+- Latest completed work slice: `Phase 5.8b.8 - review sparse stacked ion peak quality before report validation`.
+- Next work slice: `Phase 6.1 - validate the structured report contract against calibrated fixture audits`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -72,8 +72,9 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.4 | Done | `4f0acd4` | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
 | Phase 5.8b.5 | Done | `77b88d7` | Review tuned peak quality and false-positive controls before broadening fixture scope. |
 | Phase 5.8b.6 | Done | `e26cffc` | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
-| Phase 5.8b.7 | Done | Pending | Restore curve/signal readiness for weak stacked ion panels before report validation. |
-| Phase 5.8b.8 | Next | Pending | Review sparse stacked ion peak quality before report validation. |
+| Phase 5.8b.7 | Done | `db56d9b` | Restore curve/signal readiness for weak stacked ion panels before report validation. |
+| Phase 5.8b.8 | Done | Pending | Review sparse stacked ion peak quality before report validation. |
+| Phase 6.1 | Next | Pending | Validate the structured report contract against calibrated fixture audits. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -716,14 +717,34 @@ Completed Phase 5.8b.7 work slice:
 5. No peak thresholds were loosened in this slice; the new behavior only prevents
    sparse but real ion traces from being blocked at `signal_convert.curve_points_required`.
 
-Next Phase 5.8b.8 work slice:
+Completed Phase 5.8b.8 work slice:
 
-1. Review the newly recovered sparse stacked-ion peak tables and overlays for
-   false-positive risk before any broader report validation.
-2. Decide whether sparse/localized traces need separate confidence text or stricter
-   peak-quality gates.
-3. Keep guarded completeness independent from sparse trace readiness: sparse signal
-   conversion must not automatically imply threshold relaxation.
+1. Sparse stacked-ion peak tables now receive a separate
+   `sparseTraceQualityReview` audit rather than silently flowing into the future
+   final report as normal dense traces.
+2. Sparse traces always require report confidence text through
+   `peak_detection.sparse_trace_report_confidence_required`; localized traces also
+   keep `peak_detection.sparse_trace_localized_review_required`.
+3. Sparse peak rows carry per-peak flags such as `sparse_trace.low_column_coverage`,
+   `sparse_trace.localized_evidence`, `sparse_peak.low_area_share`, and
+   `sparse_peak.overlap_review` where applicable.
+4. `bench_04` sparse graphs remain on the default peak detector with no threshold
+   relaxation: graph 3 has `4` reviewed peaks, graph 4 has `1` localized reviewed peak.
+5. `bench_05` sparse graphs remain on the default peak detector with no threshold
+   relaxation: graph 2 has `4` reviewed peaks, graph 3 has `9` reviewed peaks with
+   `4` low-area-share and `6` overlap-review flags, and graph 4 has `4` reviewed
+   peaks with `4` overlap-review flags.
+6. Guarded completeness remains independent: sparse trace readiness does not lower
+   `minSnr`, does not populate `tunedPeakCount`, and does not switch the detection
+   profile away from `default`.
+
+Next Phase 6.1 work slice:
+
+1. Validate the calibrated fixture audits against the structured final report
+   contract, including sparse-trace confidence wording and guarded-completeness
+   wording.
+2. Keep raw debug warnings secondary to professional report sections.
+3. Show missing domain/metadata explicitly instead of inventing chemical conclusions.
 
 Exit criteria:
 

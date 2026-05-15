@@ -144,8 +144,14 @@ Phase 5.8b.7 is implemented:
 3. `bench_04` graphs 3-4 and `bench_05` graphs 2-4 now reach signal conversion and
    peak detection without changing peak thresholds.
 
-Phase 5.8b.8 should review sparse stacked-ion peak quality and overlay evidence before
-report validation.
+Phase 5.8b.8 is implemented: sparse stacked-ion peak tables now receive a dedicated
+`sparseTraceQualityReview`, report-confidence warnings, and per-peak sparse flags.
+The review explicitly keeps sparse trace readiness separate from guarded completeness:
+the detector remains on the default profile, `minSnr` is not lowered, and tuned peak
+counts are not populated for sparse XIC/ion panels.
+
+Phase 6.1 should validate the structured report contract against the calibrated audits,
+including sparse-trace confidence wording and guarded-completeness wording.
 
 ## Sources
 
