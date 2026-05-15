@@ -537,6 +537,10 @@ class ChromatogramBenchFixtureTest {
                 graph.peakDetection.peaks.all { it.leftBoundaryTime < it.rtApex && it.rtApex < it.rightBoundaryTime },
                 "${audit.sourceId} graph ${graph.graphIndex} must expose sane per-peak boundaries",
             )
+            assertTrue(
+                graph.peakDetection.peaks.all { it.widthBase > 0.0 },
+                "${audit.sourceId} graph ${graph.graphIndex} must expose positive per-peak widths",
+            )
             assertPeakOverlayArtifact(audit, graph)
         }
         assertTrue(
@@ -661,6 +665,33 @@ class ChromatogramBenchFixtureTest {
             graph1.peakDetection.peakCount > (graph1.peakDetection.basePeakCount ?: 0),
             "${audit.sourceId} graph 1 guarded tuning must increase accepted peak completeness",
         )
+        val quality = graph1.peakDetection.guardedQualityReview
+        assertTrue(
+            quality.available,
+            "${audit.sourceId} graph 1 guarded tuning must expose peak-quality review",
+        )
+        assertTrue(
+            quality.acceptedForGuardedCompleteness,
+            "${audit.sourceId} graph 1 guarded tuning must pass peak-quality controls",
+        )
+        assertEquals(
+            graph1.peakDetection.peakCount,
+            quality.reviewPeakCount,
+            "${audit.sourceId} graph 1 quality review must cover the selected peak table",
+        )
+        assertTrue(
+            quality.lowDefaultSnrCount in 1..4,
+            "${audit.sourceId} graph 1 quality review must isolate only a small number of lower-S/N recovered peaks",
+        )
+        assertEquals(
+            0,
+            quality.lowAreaShareCount,
+            "${audit.sourceId} graph 1 guarded tuning must not accept low-area-share peaks",
+        )
+        assertTrue(
+            graph1.peakDetection.peaks.any { "guarded_peak.low_default_snr" in it.qualityFlags },
+            "${audit.sourceId} graph 1 must flag lower-S/N recovered peaks for review",
+        )
         assertTrue(
             !graph2.traceArtifacts.thresholdRelaxationAllowed,
             "${audit.sourceId} graph 2 must block threshold relaxation while internal artifacts are high",
@@ -668,6 +699,10 @@ class ChromatogramBenchFixtureTest {
         assertTrue(
             !graph2.peakDetection.controlledTuningApplied,
             "${audit.sourceId} graph 2 must not apply controlled tuning while artifact guard is blocked",
+        )
+        assertTrue(
+            !graph2.peakDetection.guardedQualityReview.available,
+            "${audit.sourceId} graph 2 must not expose guarded quality review without guarded tuning",
         )
         assertTrue(
             "trace_artifact.threshold_relaxation_blocked" in graph2.traceArtifacts.cleanupHypothesisWarnings,

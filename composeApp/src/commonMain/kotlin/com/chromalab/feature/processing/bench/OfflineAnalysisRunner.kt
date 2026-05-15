@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.bench
 import com.chromalab.feature.calculation.core.CalculationEngine
 import com.chromalab.feature.calculation.core.CalculationParams
 import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.core.SignalModelBuilder
 import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
 import com.chromalab.feature.calculation.algorithm.NoiseEstimator
@@ -191,6 +192,7 @@ data class OfflinePeakDetectionAudit(
     val tunedPeakCount: Int? = null,
     val controlledTuningApplied: Boolean = false,
     val controlledTuningReason: String? = null,
+    val guardedQualityReview: OfflineGuardedPeakQualityAudit = OfflineGuardedPeakQualityAudit(),
     val thresholdRelaxationAllowed: Boolean? = null,
     val thresholdRelaxationGuardReason: String? = null,
     val baselineMethod: String?,
@@ -211,6 +213,17 @@ data class OfflinePeakRejectionAudit(
 )
 
 @Serializable
+data class OfflineGuardedPeakQualityAudit(
+    val available: Boolean = false,
+    val reviewPeakCount: Int = 0,
+    val lowDefaultSnrCount: Int = 0,
+    val lowAreaShareCount: Int = 0,
+    val narrowBoundaryCount: Int = 0,
+    val acceptedForGuardedCompleteness: Boolean = false,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class OfflinePeakAudit(
     val peakNumber: Int,
     val rtApex: Double,
@@ -219,10 +232,12 @@ data class OfflinePeakAudit(
     val height: Double,
     val area: Double,
     val areaPercent: Double,
+    val widthBase: Double,
     val snr: Double,
     val confidence: String,
     val overlapStatus: String,
     val warningCount: Int,
+    val qualityFlags: List<String> = emptyList(),
 )
 
 @Serializable
@@ -1344,6 +1359,7 @@ private fun buildPeakDetectionAudit(
     val run = choice.run
     val selectedParams = choice.params
     val candidateDiagnostics = choice.candidateDiagnostics
+    val guardedQualityReview = choice.guardedQualityReview
     val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
     val dominantPeak = peaksByArea.firstOrNull()
     val warnings = buildList {
@@ -1355,6 +1371,7 @@ private fun buildPeakDetectionAudit(
         if (traceArtifactAudit?.thresholdRelaxationAllowed == false) {
             add("peak_detection.threshold_relaxation_blocked_by_trace_artifacts")
         }
+        guardedQualityReview.warnings.forEach { add(it) }
         run.validation.warnings.forEach { add("validation.$it") }
         run.warnings.forEach { warning ->
             add("${warning.stage}.${warning.message}")
@@ -1378,6 +1395,7 @@ private fun buildPeakDetectionAudit(
         tunedPeakCount = choice.tunedPeakCount,
         controlledTuningApplied = choice.controlledTuningApplied,
         controlledTuningReason = choice.controlledTuningReason,
+        guardedQualityReview = guardedQualityReview,
         thresholdRelaxationAllowed = traceArtifactAudit?.thresholdRelaxationAllowed,
         thresholdRelaxationGuardReason = traceArtifactAudit?.cleanupHypothesisWarnings
             ?.firstOrNull { it == "trace_artifact.threshold_relaxation_blocked" },
@@ -1396,10 +1414,15 @@ private fun buildPeakDetectionAudit(
                 height = peak.height,
                 area = peak.area,
                 areaPercent = peak.areaPercent,
+                widthBase = peak.widthBase,
                 snr = peak.snr,
                 confidence = peak.confidence.name,
                 overlapStatus = peak.overlapStatus.name,
                 warningCount = peak.warnings.size,
+                qualityFlags = guardedPeakQualityFlags(
+                    peak = peak,
+                    guardedCompletenessApplied = choice.controlledTuningApplied,
+                ),
             )
         },
         rejectionReasons = candidateDiagnostics.rejectionReasons,
@@ -1434,6 +1457,7 @@ private fun choosePeakDetectionRun(
         tunedPeakCount = null,
         controlledTuningApplied = false,
         controlledTuningReason = null,
+        guardedQualityReview = OfflineGuardedPeakQualityAudit(),
     )
     if (traceArtifactAudit?.thresholdRelaxationAllowed != true) return baseChoice
     if (!baseRun.validation.isValid) return baseChoice
@@ -1455,13 +1479,20 @@ private fun choosePeakDetectionRun(
     )
     val tunedDiagnostics = buildPeakCandidateDiagnostics(tunedRun, tunedParams)
     val addedPeaks = tunedRun.peaks.size - baseRun.peaks.size
+    val guardedQualityReview = buildGuardedPeakQualityAudit(tunedRun.peaks)
     val tunedIsControlled = tunedRun.validation.isValid &&
         addedPeaks in 1..CONTROLLED_TUNING_MAX_EXTRA_PEAKS &&
-        tunedRun.peaks.size <= CONTROLLED_TUNING_MAX_TOTAL_PEAKS
+        tunedRun.peaks.size <= CONTROLLED_TUNING_MAX_TOTAL_PEAKS &&
+        guardedQualityReview.acceptedForGuardedCompleteness
     if (!tunedIsControlled) {
         return baseChoice.copy(
             tunedPeakCount = tunedRun.peaks.size,
-            controlledTuningReason = "controlled_threshold_relaxation_rejected",
+            controlledTuningReason = if (guardedQualityReview.acceptedForGuardedCompleteness) {
+                "controlled_threshold_relaxation_rejected"
+            } else {
+                "controlled_threshold_relaxation_rejected_by_peak_quality"
+            },
+            guardedQualityReview = guardedQualityReview,
         )
     }
 
@@ -1474,6 +1505,7 @@ private fun choosePeakDetectionRun(
         tunedPeakCount = tunedRun.peaks.size,
         controlledTuningApplied = true,
         controlledTuningReason = "threshold_relaxation_allowed_by_trace_artifact_guard",
+        guardedQualityReview = guardedQualityReview,
     )
 }
 
@@ -1495,7 +1527,62 @@ private data class OfflinePeakDetectionChoice(
     val tunedPeakCount: Int?,
     val controlledTuningApplied: Boolean,
     val controlledTuningReason: String?,
+    val guardedQualityReview: OfflineGuardedPeakQualityAudit,
 )
+
+private fun buildGuardedPeakQualityAudit(peaks: List<PeakResult>): OfflineGuardedPeakQualityAudit {
+    if (peaks.isEmpty()) {
+        return OfflineGuardedPeakQualityAudit(
+            available = true,
+            acceptedForGuardedCompleteness = false,
+            warnings = listOf("peak_detection.guarded_quality.no_peaks"),
+        )
+    }
+    val lowDefaultSnrCount = peaks.count {
+        "guarded_peak.low_default_snr" in guardedPeakQualityFlags(it, guardedCompletenessApplied = true)
+    }
+    val lowAreaShareCount = peaks.count {
+        "guarded_peak.low_area_share" in guardedPeakQualityFlags(it, guardedCompletenessApplied = true)
+    }
+    val narrowBoundaryCount = peaks.count {
+        "guarded_peak.narrow_boundary" in guardedPeakQualityFlags(it, guardedCompletenessApplied = true)
+    }
+    val warnings = buildList {
+        if (lowDefaultSnrCount > maxAllowedGuardedReviewCount(peaks.size)) {
+            add("peak_detection.guarded_quality.too_many_low_default_snr_peaks")
+        }
+        if (lowAreaShareCount > maxAllowedGuardedReviewCount(peaks.size)) {
+            add("peak_detection.guarded_quality.too_many_low_area_peaks")
+        }
+        if (narrowBoundaryCount > maxAllowedGuardedReviewCount(peaks.size)) {
+            add("peak_detection.guarded_quality.too_many_narrow_peaks")
+        }
+    }
+    return OfflineGuardedPeakQualityAudit(
+        available = true,
+        reviewPeakCount = peaks.size,
+        lowDefaultSnrCount = lowDefaultSnrCount,
+        lowAreaShareCount = lowAreaShareCount,
+        narrowBoundaryCount = narrowBoundaryCount,
+        acceptedForGuardedCompleteness = warnings.isEmpty(),
+        warnings = warnings,
+    )
+}
+
+private fun guardedPeakQualityFlags(
+    peak: PeakResult,
+    guardedCompletenessApplied: Boolean,
+): List<String> {
+    if (!guardedCompletenessApplied) return emptyList()
+    return buildList {
+        if (peak.snr < CONTROLLED_TUNING_REFERENCE_MIN_SNR) add("guarded_peak.low_default_snr")
+        if (peak.areaPercent < CONTROLLED_TUNING_MIN_AREA_PERCENT_REVIEW) add("guarded_peak.low_area_share")
+        if (peak.widthBase < CONTROLLED_TUNING_MIN_WIDTH_REVIEW) add("guarded_peak.narrow_boundary")
+    }
+}
+
+private fun maxAllowedGuardedReviewCount(peakCount: Int): Int =
+    maxOf(2, (peakCount * CONTROLLED_TUNING_MAX_REVIEW_FRACTION).toInt())
 
 private fun buildPeakCandidateDiagnostics(
     run: CalculationRun,
@@ -1898,7 +1985,11 @@ private fun GraphRegion.edgeContactCount(imageWidth: Int, imageHeight: Int): Int
     listOf(y <= 0, right >= imageWidth, bottom >= imageHeight, x <= 0).count { it }
 
 private const val CONTROLLED_TUNING_MIN_SNR = 2.0
+private const val CONTROLLED_TUNING_REFERENCE_MIN_SNR = 3.0
 private const val CONTROLLED_TUNING_MIN_PROMINENCE_REJECTS = 8
+private const val CONTROLLED_TUNING_MIN_AREA_PERCENT_REVIEW = 2.5
+private const val CONTROLLED_TUNING_MIN_WIDTH_REVIEW = 0.20
+private const val CONTROLLED_TUNING_MAX_REVIEW_FRACTION = 0.35
 private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
 private const val CONTROLLED_TUNING_MAX_EXTRA_PEAKS = 20
 private const val CONTROLLED_TUNING_MAX_TOTAL_PEAKS = 32

@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.8b.4 - review artifact-suppressed hypothesis before controlled completeness tuning`.
-- Next work slice: `Phase 5.8b.5 - review tuned peak quality and false-positive controls before broadening fixture scope`.
+- Latest completed work slice: `Phase 5.8b.5 - review tuned peak quality and false-positive controls before broadening fixture scope`.
+- Next work slice: `Phase 5.8b.6 - broaden guarded completeness review to additional hard fixtures only after quality gates pass`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -70,7 +70,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.2 | Done | Pending | Add internal trace-artifact diagnostics and PNG masks before any noise-threshold or completeness tuning. |
 | Phase 5.8b.3 | Done | Pending | Use trace-artifact diagnostics to guard cleanup/tuning for missed peaks without accepting contaminated graph-2 artifacts. |
 | Phase 5.8b.4 | Done | Pending | Review artifact-suppressed hypothesis and apply controlled completeness tuning only where the guard allows it. |
-| Phase 5.8b.5 | Next | Pending | Review tuned peak quality and false-positive controls before broadening fixture scope. |
+| Phase 5.8b.5 | Done | Pending | Review tuned peak quality and false-positive controls before broadening fixture scope. |
+| Phase 5.8b.6 | Next | Pending | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -663,14 +664,27 @@ Completed Phase 5.8b.4 work slice:
    base peaks; this prevents the tuning pass from reintroducing late/right-frame false
    positives.
 
-Next Phase 5.8b.5 work slice:
+Completed Phase 5.8b.5 work slice:
 
-1. Review the tuned `bench_06` graph 1 peak table and overlay for false positives,
-   especially narrow low-area peaks.
-2. Add per-peak quality controls for guarded completeness output before applying the
-   same tuning path to more fixtures.
-3. Keep artifact-heavy graph 2 and already-complete rotated fixtures out of the tuning
-   path unless their audit facts change.
+1. Guarded completeness now has an explicit `guardedQualityReview` audit with review
+   peak count, lower-than-default S/N count, low-area-share count, narrow-boundary
+   count, accepted state, and warnings.
+2. Each guarded peak row records `qualityFlags` and `widthBase`, so recovered peaks can
+   be reviewed individually instead of hidden behind aggregate peak counts.
+3. The guarded run is rejected if too many peaks are below the default S/N reference,
+   too many have low area share, or too many have very narrow boundaries.
+4. On calibrated `bench_06`, graph 1 keeps the guarded `14`-peak table with `3`
+   lower-than-default S/N review flags and no low-area or narrow-boundary flags; graph 2
+   still has no guarded quality review because tuning remains blocked by artifacts.
+
+Next Phase 5.8b.6 work slice:
+
+1. Apply the same guarded-quality audit to additional hard fixtures only where their
+   artifact guard and under-detection facts justify it.
+2. Review generated peak overlays for guarded runs and add stricter visual/metric gates
+   if any recovered peak is not visually defensible.
+3. Keep report generation downstream blocked from treating guarded-review flags as
+   final scientific certainty until the report contract has explicit confidence text.
 
 Exit criteria:
 

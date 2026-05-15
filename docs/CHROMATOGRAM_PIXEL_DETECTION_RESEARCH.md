@@ -111,8 +111,18 @@ Phase 5.8b.4 is implemented:
 4. Already-complete rotated pages stay on the default profile, preventing late
    right-frame artifacts from re-entering.
 
-Phase 5.8b.5 should review tuned peak quality and add per-peak false-positive controls
-before this path is broadened beyond the current protected case.
+Phase 5.8b.5 is implemented:
+
+1. Guarded completeness now records `guardedQualityReview` with lower-than-default S/N,
+   low-area-share, and narrow-boundary counters.
+2. Peak rows include `widthBase` and `qualityFlags` so recovered peaks remain auditable
+   at row level.
+3. Guarded tuning is rejected when too many recovered peaks trip those review controls.
+4. Calibrated `bench_06` graph 1 keeps 14 peaks with 3 lower-than-default S/N review
+   flags and no low-area or narrow-boundary flags.
+
+Phase 5.8b.6 should broaden this guarded path only to additional hard fixtures whose
+artifact and under-detection audits justify it, while keeping report confidence explicit.
 
 ## Sources
 

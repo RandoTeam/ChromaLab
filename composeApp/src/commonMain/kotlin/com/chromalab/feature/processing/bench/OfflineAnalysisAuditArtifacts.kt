@@ -183,14 +183,26 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Guarded Peak Quality")
+        appendLine()
+        appendLine("| Graph | Available | Review peaks | Accepted | Low default S/N | Low area share | Narrow boundary | Warnings |")
+        appendLine("| ---: | --- | ---: | --- | ---: | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val quality = graph.peakDetection.guardedQualityReview
+            appendLine(
+                "| ${graph.graphIndex} | ${quality.available} | ${quality.reviewPeakCount} | ${quality.acceptedForGuardedCompleteness} | ${quality.lowDefaultSnrCount} | ${quality.lowAreaShareCount} | ${quality.narrowBoundaryCount} | ${quality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Peak Table Snapshot")
         appendLine()
-        appendLine("| Graph | Peak | RT apex | Left | Right | Height | Area | Area % | S/N | Confidence | Overlap | Warnings |")
-        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: |")
+        appendLine("| Graph | Peak | RT apex | Left | Right | Width | Height | Area | Area % | S/N | Confidence | Overlap | Quality flags | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | ---: |")
         audit.graphs.forEach { graph ->
             graph.peakDetection.peaks.forEach { peak ->
                 appendLine(
-                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rtApex.renderNumber()} | ${peak.leftBoundaryTime.renderNumber()} | ${peak.rightBoundaryTime.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.areaPercent.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.confidence} | ${peak.overlapStatus} | ${peak.warningCount} |",
+                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rtApex.renderNumber()} | ${peak.leftBoundaryTime.renderNumber()} | ${peak.rightBoundaryTime.renderNumber()} | ${peak.widthBase.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.areaPercent.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.confidence} | ${peak.overlapStatus} | ${peak.qualityFlags.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${peak.warningCount} |",
                 )
             }
         }

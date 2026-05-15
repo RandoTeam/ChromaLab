@@ -325,7 +325,13 @@ graphs with `thresholdRelaxationAllowed=true`. On calibrated `bench_06`, graph 1
 from 2 to 14 accepted peaks, graph 2 remains blocked by artifact risk, and the rotated
 fixture remains on the default profile because it was not under-detected.
 
+Phase 5.8b.5 adds per-peak quality controls for guarded tuning. The audit now records
+`guardedQualityReview`, peak width, and per-peak `qualityFlags`. A guarded run is
+rejected if too many peaks are below the default S/N reference, low area share, or very
+narrow. The current calibrated `bench_06` graph 1 guarded table keeps 14 peaks with 3
+lower-than-default S/N review flags and no low-area or narrow-boundary flags.
+
 ## Next Phase
 
-Phase 5.8b.5 should review the tuned `bench_06` graph 1 peak table and overlay for
-false positives, then add per-peak quality controls before broadening the tuning path.
+Phase 5.8b.6 should broaden guarded completeness review only to additional hard
+fixtures whose artifact guard and under-detection facts justify it.
