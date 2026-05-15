@@ -5,6 +5,7 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationSource
+import com.chromalab.feature.processing.bench.OfflineGraphAudit
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationPointInput
 import com.chromalab.feature.processing.bench.OfflineStageStatus
@@ -231,6 +232,7 @@ class ChromatogramBenchFixtureTest {
                     Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
                 )
+                assertManualCalibrationFocusArtifact(fixture.id, audit, graph, outputDir)
             }
 
             if (fixture.strictGraphCount) {
@@ -675,3 +677,69 @@ private fun GraphRegion.clampedTo(imageWidth: Int, imageHeight: Int): GraphRegio
     val height = this.height.coerceIn(1, imageHeight - y)
     return GraphRegion(x = x, y = y, width = width, height = height, label = label)
 }
+
+private fun assertManualCalibrationFocusArtifact(
+    fixtureId: String,
+    audit: OfflineAnalysisAudit,
+    graph: OfflineGraphAudit,
+    outputDir: Path,
+) {
+    val imageWidth = assertNotNull(audit.imageWidth, "$fixtureId must expose analysis image width")
+    val imageHeight = assertNotNull(audit.imageHeight, "$fixtureId must expose analysis image height")
+    val expectedRegion = graph.region.clampedTo(imageWidth, imageHeight)
+    val artifactPath = outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")
+    val artifact = assertNotNull(
+        ImageIO.read(artifactPath.toFile()),
+        "$fixtureId graph ${graph.graphIndex} manual calibration focus artifact must be readable",
+    )
+    try {
+        assertEquals(
+            expectedRegion.width,
+            artifact.width,
+            "$fixtureId graph ${graph.graphIndex} manual focus width must match graph panel width",
+        )
+        assertEquals(
+            expectedRegion.height,
+            artifact.height,
+            "$fixtureId graph ${graph.graphIndex} manual focus height must match graph panel height",
+        )
+
+        if (!expectedRegion.isFullImage(imageWidth, imageHeight)) {
+            val fullArea = imageWidth.toLong() * imageHeight.toLong()
+            val focusArea = artifact.width.toLong() * artifact.height.toLong()
+            assertTrue(
+                focusArea < fullArea,
+                "$fixtureId graph ${graph.graphIndex} manual focus must not show the full source page",
+            )
+        }
+
+        val plotArea = assertNotNull(
+            graph.plotArea.region,
+            "$fixtureId graph ${graph.graphIndex} must expose plot area for manual focus review",
+        )
+        val leftMargin = plotArea.x - expectedRegion.x
+        val topMargin = plotArea.y - expectedRegion.y
+        val rightMargin = expectedRegion.x + expectedRegion.width - (plotArea.x + plotArea.width)
+        val bottomMargin = expectedRegion.y + expectedRegion.height - (plotArea.y + plotArea.height)
+        assertTrue(
+            leftMargin >= 0 && topMargin >= 0 && rightMargin >= 0 && bottomMargin >= 0,
+            "$fixtureId graph ${graph.graphIndex} plot area must be inside manual focus panel",
+        )
+        assertTrue(
+            leftMargin > 0 || topMargin > 0 || rightMargin > 0 || bottomMargin > 0,
+            "$fixtureId graph ${graph.graphIndex} manual focus must preserve graph-panel context outside plot area",
+        )
+
+        val plotRatio = (plotArea.width.toFloat() * plotArea.height.toFloat()) /
+            (expectedRegion.width.toFloat() * expectedRegion.height.toFloat())
+        assertTrue(
+            plotRatio in 0.05f..0.98f,
+            "$fixtureId graph ${graph.graphIndex} plot area ratio in manual focus is suspicious: $plotRatio",
+        )
+    } finally {
+        artifact.flush()
+    }
+}
+
+private fun GraphRegion.isFullImage(imageWidth: Int, imageHeight: Int): Boolean =
+    x == 0 && y == 0 && width >= imageWidth && height >= imageHeight
