@@ -64,7 +64,7 @@ artifact summary; it is not the primary plan.
 | Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 | Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
-| Phase 5.7 | Done | Pending | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
+| Phase 5.7 | Done | `3a25850` | Suppress right-frame false peaks on large photographed plots without breaking weak channels. |
 | Phase 5.8 | Next | Pending | Review photographed trace completeness and non-edge false peaks after frame-line cleanup. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
