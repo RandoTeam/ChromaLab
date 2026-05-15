@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.4 - peak overlay artifact and per-peak audit gate`.
-- Next work slice: `Phase 5.5 - fixture-specific dominant and false peak sanity gate`.
+- Latest completed work slice: `Phase 5.5 - fixture-specific dominant and false peak sanity gate`.
+- Next work slice: `Phase 5.6 - tune missed expected peaks and false peak sources`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -62,7 +62,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.2 | Done | `547573c` | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
 | Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
 | Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
-| Phase 5.5 | Next | Pending | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
+| Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
+| Phase 5.6 | Next | Pending | Tune curve extraction and peak detection against failed expected-apex sanity fixtures. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -550,12 +551,28 @@ Phase 5.4 status:
 - The executable fixture test validates those overlays on `bench_03_small_tic_export`,
   `bench_06_photo_two_graphs_page`, and `bench_07_rotated_page_photo`.
 
-Next Phase 5.5 work slice:
+Phase 5.5 status:
 
-1. Use the new per-peak rows and overlays to add fixture-specific sanity contracts for
-   missed dominant peaks, false peaks from text/grid/axis artifacts, and blank/near-empty
-   graph false positives.
-2. Keep final report rendering blocked until those visual/numeric checks are stable.
+- The offline runner accepts `peakSanityExpectations` and emits an explicit
+  `peak_sanity` stage after `peak_metrics`.
+- Peak sanity can require a minimum peak count and can lock expected apex retention
+  times with a fixture-specific tolerance. Missing expected apexes now block
+  calculation at `peak_sanity` instead of flowing into report validation.
+- The Markdown artifact adds a `Peak Sanity` table with expectations, matched/missing
+  apexes, unexpected candidates, tolerance, and warnings.
+- The fixture test now proves the gate on three real examples: the two-graph photo and
+  rotated page pass minimum-peak sanity, while `bench_03_small_tic_export` intentionally
+  blocks because the current extraction misses several labeled apexes at 3.244, 3.890,
+  4.647, 5.610, and 8.560 min.
+
+Next Phase 5.6 work slice:
+
+1. Use the failed `bench_03_small_tic_export` sanity contract to tune curve extraction,
+   calibration, and peak detection until the labeled apexes are recovered.
+2. Re-check the photographed two-graph and rotated fixtures for false peaks from text,
+   grid lines, axis labels, and page boundaries.
+3. Keep final report rendering blocked until expected-apex sanity and false-positive
+   review are stable on the fixture set.
 
 Exit criteria:
 

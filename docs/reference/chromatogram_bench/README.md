@@ -277,8 +277,16 @@ image with apex and left/right integration boundary markers. The fixture test va
 these overlays on the clean `bench_03`, two-graph `bench_06`, and rotated `bench_07`
 examples.
 
+Phase 5.5 adds fixture-specific peak sanity expectations. The offline runner now emits
+`peak_sanity` after peak metrics and can require minimum peak counts plus expected apex
+retention times with tolerance. `bench_06` and `bench_07` pass the new minimum-peak
+sanity gate. `bench_03` is intentionally blocked at `peak_sanity` because the current
+curve/peak extraction does not yet recover the labeled apexes at 3.244, 3.890, 4.647,
+5.610, and 8.560 min.
+
 ## Next Phase
 
-Phase 5.5 should use the per-peak rows and overlays to add fixture-specific sanity
-contracts for missed dominant peaks, false peaks from text/grid/axis artifacts, and
-blank graph false positives before final report rendering consumes the peak table.
+Phase 5.6 should tune curve extraction, calibration, and peak detection against the
+failed `bench_03` expected-apex contract, then re-check the hard photographed fixtures
+for false peaks from text/grid/axis/page artifacts before final report rendering
+consumes the peak table.
