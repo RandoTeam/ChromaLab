@@ -60,7 +60,7 @@ artifact summary; it is not the primary plan.
 | Phase 2.12.2 | Done | `f62f92b` | Review generated focus artifacts and lock visual acceptance thresholds before numeric integration work. |
 | Phase 5.1 | Done | `8a37951` | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
 | Phase 5.2 | Done | `547573c` | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
-| Phase 5.3 | Done | Current slice | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
+| Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
 | Phase 5.4 | Next | Pending | Add fixture-specific peak sanity checks and visual overlay review for missed/false dominant peaks. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
