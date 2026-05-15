@@ -61,7 +61,7 @@ artifact summary; it is not the primary plan.
 | Phase 5.1 | Done | `8a37951` | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
 | Phase 5.2 | Done | `547573c` | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
 | Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
-| Phase 5.4 | Done | Current slice | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
+| Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
 | Phase 5.5 | Next | Pending | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
