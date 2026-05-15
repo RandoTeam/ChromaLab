@@ -9,6 +9,7 @@ import com.chromalab.feature.processing.bench.OfflineAxisCalibrationSource
 import com.chromalab.feature.processing.bench.OfflineGraphAudit
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationPointInput
+import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
 import com.chromalab.feature.processing.bench.OfflineStageStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
@@ -189,6 +190,14 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { "peak_metrics.peak_detection_required" in it.peakMetrics.warnings },
                 "${fixture.id} must expose the peak-metrics gate while peak detection is missing",
             )
+            assertTrue(
+                audit.graphs.all { !it.peakSanity.ready },
+                "${fixture.id} must not mark peak sanity ready before peak metrics exist",
+            )
+            assertTrue(
+                audit.graphs.all { "peak_sanity.peak_metrics_required" in it.peakSanity.warnings },
+                "${fixture.id} must expose the peak-sanity gate while peak metrics are missing",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -349,10 +358,16 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "peak_metrics" && it.status == OfflineStageStatus.SUCCESS },
             "confirmed manual calibration must run the peak metrics review stage",
         )
+        assertTrue(graph.peakSanity.ready, "confirmed manual calibration without fixture expectations must pass generic peak sanity")
+        assertTrue(
+            audit.stages.any { it.stage == "peak_sanity" && it.status == OfflineStageStatus.SUCCESS },
+            "confirmed manual calibration must run the peak sanity stage",
+        )
         assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
         assertTrue(audit.blockedAtStage != "signal_convert", "manual calibration must pass the signal conversion gate")
         assertTrue(audit.blockedAtStage != "peak_detection", "manual calibration must pass the peak detection gate")
         assertTrue(audit.blockedAtStage != "peak_metrics", "manual calibration must pass the peak metrics gate")
+        assertTrue(audit.blockedAtStage != "peak_sanity", "manual calibration without fixture expectations must pass peak sanity")
     }
 
     @Test
@@ -365,7 +380,12 @@ class ChromatogramBenchFixtureTest {
             root = root,
             fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_03_small_tic_export" },
         )
-        assertPeakDetectionFixture(best, expectedGraphs = 1, minTotalPeaks = 3)
+        assertPeakDetectionFixture(
+            best,
+            expectedGraphs = 1,
+            minTotalPeaks = 3,
+            expectPeakSanityReady = false,
+        )
 
         val twoGraphs = runWithPlotManualCalibration(
             runner = runner,
@@ -401,7 +421,7 @@ class ChromatogramBenchFixtureTest {
         )
         assertEquals(fixture.expectedGraphCount, preview.graphs.size, "${fixture.id} preview graph count")
 
-        val xEndValue = if ("seconds_axis" in fixture.tags) 60f else 10f
+        val xEndValue = manualCalibrationXEndValue(fixture)
         val calibrations = preview.graphs.map { graph ->
             val plot = assertNotNull(graph.plotArea.region, "${fixture.id} graph ${graph.graphIndex} plot area")
             OfflineManualAxisCalibrationInput(
@@ -434,6 +454,7 @@ class ChromatogramBenchFixtureTest {
                 outputDir = root.resolve("${fixture.id}_calibrated").toAbsolutePath().toString(),
                 expectedGraphCount = fixture.expectedGraphCount,
                 manualAxisCalibrations = calibrations,
+                peakSanityExpectations = peakSanityExpectationsFor(fixture),
             )
         ).also { audit ->
             writeAuditArtifacts(
@@ -448,6 +469,7 @@ class ChromatogramBenchFixtureTest {
         audit: OfflineAnalysisAudit,
         expectedGraphs: Int,
         minTotalPeaks: Int,
+        expectPeakSanityReady: Boolean = true,
     ) {
         assertEquals(expectedGraphs, audit.graphs.size, "${audit.sourceId} calibrated graph count")
         assertTrue(audit.graphs.all { it.signal.ready }, "${audit.sourceId} must convert signal on every graph")
@@ -484,9 +506,54 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "peak_metrics" && it.status == OfflineStageStatus.SUCCESS },
             "${audit.sourceId} must record peak_metrics success stages",
         )
+        assertTrue(
+            audit.stages.any { it.stage == "peak_sanity" && it.status == OfflineStageStatus.SUCCESS },
+            "${audit.sourceId} must record peak_sanity success stages",
+        )
         assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
         assertTrue(audit.blockedAtStage != "peak_metrics", "${audit.sourceId} must pass peak metrics gate")
+        if (expectPeakSanityReady) {
+            assertTrue(audit.graphs.all { it.peakSanity.ready }, "${audit.sourceId} must pass fixture peak sanity")
+            assertTrue(audit.blockedAtStage != "peak_sanity", "${audit.sourceId} must pass peak sanity gate")
+        } else {
+            assertTrue(audit.graphs.any { !it.peakSanity.ready }, "${audit.sourceId} must expose failed fixture peak sanity")
+            assertEquals("peak_sanity", audit.blockedAtStage, "${audit.sourceId} must block calculation at peak sanity")
+            assertTrue(
+                audit.graphs.any {
+                    "peak_sanity.expected_apex_missing" in it.peakSanity.warnings ||
+                        "peak_sanity.min_peak_count_not_met" in it.peakSanity.warnings
+                },
+                "${audit.sourceId} must explain why fixture peak sanity failed",
+            )
+        }
     }
+
+    private fun manualCalibrationXEndValue(fixture: ChromatogramBenchFixture): Float =
+        when {
+            fixture.id == "bench_03_small_tic_export" -> 15f
+            "seconds_axis" in fixture.tags -> 150f
+            else -> 60f
+        }
+
+    private fun peakSanityExpectationsFor(fixture: ChromatogramBenchFixture): List<OfflinePeakSanityExpectationInput> =
+        when (fixture.id) {
+            "bench_03_small_tic_export" -> listOf(
+                OfflinePeakSanityExpectationInput(
+                    graphIndex = 1,
+                    expectedApexTimes = listOf(3.244, 3.890, 4.647, 5.610, 8.560),
+                    apexTolerance = 0.45,
+                    minPeakCount = 5,
+                ),
+            )
+            "bench_06_photo_two_graphs_page" -> listOf(
+                OfflinePeakSanityExpectationInput(graphIndex = 1, minPeakCount = 1, lockExpectedApexTimes = false),
+                OfflinePeakSanityExpectationInput(graphIndex = 2, minPeakCount = 1, lockExpectedApexTimes = false),
+            )
+            "bench_07_rotated_page_photo" -> listOf(
+                OfflinePeakSanityExpectationInput(graphIndex = 1, minPeakCount = 10, lockExpectedApexTimes = false),
+            )
+            else -> emptyList()
+        }
 }
 
 private object ChromatogramBenchFixtures {

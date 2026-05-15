@@ -51,11 +51,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready | Peak ready | Metrics ready |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- | --- | --- |")
+        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready | Peak ready | Metrics ready | Sanity ready |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} | ${graph.peakDetection.ready} | ${graph.peakMetrics.ready} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} | ${graph.peakDetection.ready} | ${graph.peakMetrics.ready} | ${graph.peakSanity.ready} |",
             )
         }
         appendLine()
@@ -183,6 +183,18 @@ object OfflineAnalysisAuditArtifacts {
             val metrics = graph.peakMetrics
             appendLine(
                 "| ${graph.graphIndex} | ${metrics.ready} | ${metrics.orderedByRetentionTime} | ${metrics.totalAbsArea.renderNumber()} | ${metrics.areaPercentSum.renderNumber()} | ${metrics.maximumHeight?.renderNumber() ?: "n/a"} | ${metrics.firstPeakTime?.renderNumber() ?: "n/a"} | ${metrics.lastPeakTime?.renderNumber() ?: "n/a"} | ${metrics.minBoundaryWidth?.renderNumber() ?: "n/a"} | ${metrics.maxBoundaryWidth?.renderNumber() ?: "n/a"} | ${metrics.invalidNumericCount} | ${metrics.invalidBoundaryCount} | ${metrics.nonPositiveAreaCount} | ${metrics.nonPositiveHeightCount} | ${metrics.missingWidthCount} | ${metrics.lowSnrCount} | ${metrics.lowConfidenceCount} | ${metrics.unresolvedOverlapCount} | ${metrics.peakWarningCount} | ${metrics.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Peak Sanity")
+        appendLine()
+        appendLine("| Graph | Ready | Expectations | Min peaks | Expected apexes | Matched | Missing apexes | Unexpected | Tolerance | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | --- | ---: | --- | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val sanity = graph.peakSanity
+            appendLine(
+                "| ${graph.graphIndex} | ${sanity.ready} | ${sanity.expectationProvided} | ${sanity.minPeakCount ?: "n/a"} | ${sanity.expectedApexTimes.joinToString(", ") { it.renderNumber() }.ifBlank { "none" }} | ${sanity.detectedExpectedPeakCount} | ${sanity.missingExpectedApexTimes.joinToString(", ") { it.renderNumber() }.ifBlank { "none" }} | ${sanity.unexpectedPeakCount} | ${sanity.apexTolerance.renderNumber()} | ${sanity.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()

@@ -51,6 +51,7 @@ data class OfflineAnalysisInput(
     val outputDir: String,
     val expectedGraphCount: Int? = null,
     val manualAxisCalibrations: List<OfflineManualAxisCalibrationInput> = emptyList(),
+    val peakSanityExpectations: List<OfflinePeakSanityExpectationInput> = emptyList(),
 )
 
 @Serializable
@@ -67,6 +68,15 @@ data class OfflineManualAxisCalibrationPointInput(
     val pixel: Float,
     val value: Float,
     val label: String? = null,
+)
+
+@Serializable
+data class OfflinePeakSanityExpectationInput(
+    val graphIndex: Int,
+    val expectedApexTimes: List<Double> = emptyList(),
+    val apexTolerance: Double = 0.0,
+    val minPeakCount: Int? = null,
+    val lockExpectedApexTimes: Boolean = true,
 )
 
 @Serializable
@@ -137,6 +147,7 @@ data class OfflineGraphAudit(
     val signal: OfflineSignalAudit,
     val peakDetection: OfflinePeakDetectionAudit,
     val peakMetrics: OfflinePeakMetricsAudit,
+    val peakSanity: OfflinePeakSanityAudit,
     val warnings: List<String>,
 )
 
@@ -209,6 +220,19 @@ data class OfflinePeakMetricsAudit(
     val lowConfidenceCount: Int,
     val unresolvedOverlapCount: Int,
     val peakWarningCount: Int,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakSanityAudit(
+    val ready: Boolean,
+    val expectationProvided: Boolean,
+    val minPeakCount: Int?,
+    val expectedApexTimes: List<Double>,
+    val detectedExpectedPeakCount: Int,
+    val missingExpectedApexTimes: List<Double>,
+    val unexpectedPeakCount: Int,
+    val apexTolerance: Double,
     val warnings: List<String> = emptyList(),
 )
 
@@ -487,6 +511,7 @@ class OfflineAnalysisRunner(
         }
 
         val manualCalibrationsByGraph = input.manualAxisCalibrations.associateBy { it.graphIndex }
+        val peakSanityByGraph = input.peakSanityExpectations.associateBy { it.graphIndex }
         val graphAudits = refinedRegions.mapIndexed { index, refinement ->
             auditGraph(
                 graphIndex = index + 1,
@@ -496,6 +521,7 @@ class OfflineAnalysisRunner(
                 imageWidth = orientation.width,
                 imageHeight = orientation.height,
                 manualCalibration = manualCalibrationsByGraph[index + 1],
+                peakSanityExpectation = peakSanityByGraph[index + 1],
                 stages = stages,
             )
         }
@@ -511,6 +537,7 @@ class OfflineAnalysisRunner(
         val signalReady = graphAudits.isNotEmpty() && graphAudits.all { it.signal.ready }
         val peakDetectionReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakDetection.ready }
         val peakMetricsReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakMetrics.ready }
+        val peakSanityReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakSanity.ready }
         val readyForCalculation = cropReady &&
             plotAreaReady &&
             axisGeometryReady &&
@@ -518,7 +545,8 @@ class OfflineAnalysisRunner(
             curveReady &&
             signalReady &&
             peakDetectionReady &&
-            peakMetricsReady
+            peakMetricsReady &&
+            peakSanityReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
@@ -530,7 +558,8 @@ class OfflineAnalysisRunner(
                     !curveReady -> "Calculation is blocked until every graph has usable extracted curve data."
                     !signalReady -> "Calculation is blocked until every graph has calibrated signal data."
                     !peakDetectionReady -> "Calculation is blocked until every graph has detected peaks from calibrated signal data."
-                    else -> "Calculation is blocked until every graph has auditable peak metrics and integration output."
+                    !peakMetricsReady -> "Calculation is blocked until every graph has auditable peak metrics and integration output."
+                    else -> "Calculation is blocked until every graph passes peak sanity expectations."
                 },
             )
             stages += skippedStage(
@@ -562,7 +591,8 @@ class OfflineAnalysisRunner(
                 !curveReady -> "curve_extract"
                 !signalReady -> "signal_convert"
                 !peakDetectionReady -> "peak_detection"
-                else -> "peak_metrics"
+                !peakMetricsReady -> "peak_metrics"
+                else -> "peak_sanity"
             },
             readyForCalculation = readyForCalculation,
         )
@@ -576,6 +606,7 @@ class OfflineAnalysisRunner(
         imageWidth: Int,
         imageHeight: Int,
         manualCalibration: OfflineManualAxisCalibrationInput?,
+        peakSanityExpectation: OfflinePeakSanityExpectationInput?,
         stages: MutableList<OfflineStageAudit>,
     ): OfflineGraphAudit {
         val graphWarnings = mutableListOf<String>()
@@ -843,6 +874,34 @@ class OfflineAnalysisRunner(
         }
         graphWarnings += peakMetricsAudit.warnings.filterNot { it in graphWarnings }
 
+        val peakSanityAudit = if (peakMetricsAudit.ready) {
+            runStage(
+                stage = "peak_sanity",
+                graphIndex = graphIndex,
+                stages = stages,
+                successMessage = { result ->
+                    "ready=${result.ready}, expected=${result.expectedApexTimes.size}, missing=${result.missingExpectedApexTimes.size}."
+                },
+            ) {
+                buildPeakSanityAudit(
+                    peakDetection = peakDetectionAudit,
+                    peakMetrics = peakMetricsAudit,
+                    expectation = peakSanityExpectation,
+                )
+            } ?: missingPeakSanity(listOf("peak_sanity.stage_failed"))
+        } else {
+            val warnings = listOf("peak_sanity.peak_metrics_required")
+            graphWarnings += warnings
+            stages += skippedStage(
+                stage = "peak_sanity",
+                graphIndex = graphIndex,
+                message = "Peak sanity review skipped until peak metrics are ready.",
+                warnings = warnings,
+            )
+            missingPeakSanity(warnings)
+        }
+        graphWarnings += peakSanityAudit.warnings.filterNot { it in graphWarnings }
+
         return OfflineGraphAudit(
             graphIndex = graphIndex,
             originalRegion = refinement.originalRegion,
@@ -871,6 +930,7 @@ class OfflineAnalysisRunner(
             signal = signalAudit,
             peakDetection = peakDetectionAudit,
             peakMetrics = peakMetricsAudit,
+            peakSanity = peakSanityAudit,
             warnings = graphWarnings,
         )
     }
@@ -1418,6 +1478,70 @@ private fun missingPeakMetrics(warnings: List<String>): OfflinePeakMetricsAudit 
         lowConfidenceCount = 0,
         unresolvedOverlapCount = 0,
         peakWarningCount = 0,
+        warnings = warnings,
+    )
+
+private fun buildPeakSanityAudit(
+    peakDetection: OfflinePeakDetectionAudit,
+    peakMetrics: OfflinePeakMetricsAudit,
+    expectation: OfflinePeakSanityExpectationInput?,
+): OfflinePeakSanityAudit {
+    val detectedTimes = peakDetection.peaks.map { it.rtApex }
+    val expectedTimes = expectation?.expectedApexTimes.orEmpty()
+    val tolerance = expectation?.apexTolerance ?: 0.0
+    val missing = if (expectedTimes.isNotEmpty()) {
+        if (tolerance > 0.0) {
+            expectedTimes.filter { expected ->
+                detectedTimes.none { detected -> abs(detected - expected) <= tolerance }
+            }
+        } else {
+            expectedTimes
+        }
+    } else {
+        emptyList()
+    }
+    val matchedCount = expectedTimes.size - missing.size
+    val minPeakCount = expectation?.minPeakCount
+    val unexpectedPeakCount = if (expectedTimes.isNotEmpty() && tolerance > 0.0) {
+        detectedTimes.count { detected ->
+            expectedTimes.none { expected -> abs(detected - expected) <= tolerance }
+        }
+    } else {
+        0
+    }
+    val warnings = buildList {
+        if (!peakMetrics.ready) add("peak_sanity.peak_metrics_required")
+        if (expectedTimes.isNotEmpty() && tolerance <= 0.0) add("peak_sanity.apex_tolerance_required")
+        if (minPeakCount != null && peakDetection.peakCount < minPeakCount) add("peak_sanity.min_peak_count_not_met")
+        if (missing.isNotEmpty()) add("peak_sanity.expected_apex_missing")
+        if (unexpectedPeakCount > 0 && expectedTimes.isNotEmpty()) add("peak_sanity.unexpected_apex_candidates")
+    }
+    val expectedReady = expectation?.lockExpectedApexTimes != true || missing.isEmpty()
+    val minCountReady = minPeakCount == null || peakDetection.peakCount >= minPeakCount
+
+    return OfflinePeakSanityAudit(
+        ready = peakMetrics.ready && expectedReady && minCountReady,
+        expectationProvided = expectation != null,
+        minPeakCount = minPeakCount,
+        expectedApexTimes = expectedTimes,
+        detectedExpectedPeakCount = matchedCount,
+        missingExpectedApexTimes = missing,
+        unexpectedPeakCount = unexpectedPeakCount,
+        apexTolerance = tolerance,
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun missingPeakSanity(warnings: List<String>): OfflinePeakSanityAudit =
+    OfflinePeakSanityAudit(
+        ready = false,
+        expectationProvided = false,
+        minPeakCount = null,
+        expectedApexTimes = emptyList(),
+        detectedExpectedPeakCount = 0,
+        missingExpectedApexTimes = emptyList(),
+        unexpectedPeakCount = 0,
+        apexTolerance = 0.0,
         warnings = warnings,
     )
 
