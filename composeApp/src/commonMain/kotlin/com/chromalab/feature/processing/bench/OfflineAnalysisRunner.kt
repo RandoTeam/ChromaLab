@@ -2,6 +2,9 @@ package com.chromalab.feature.processing.bench
 
 import com.chromalab.feature.calculation.core.CalculationEngine
 import com.chromalab.feature.calculation.core.CalculationParams
+import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.calculation.algorithm.ConfidenceGrade
+import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.calibration.CalibrationPoint
@@ -133,6 +136,7 @@ data class OfflineGraphAudit(
     val curveUsable: Boolean,
     val signal: OfflineSignalAudit,
     val peakDetection: OfflinePeakDetectionAudit,
+    val peakMetrics: OfflinePeakMetricsAudit,
     val warnings: List<String>,
 )
 
@@ -166,6 +170,29 @@ data class OfflinePeakDetectionAudit(
     val clampNegative: Boolean?,
     val maxPeakWidth: Int?,
     val minSnr: Double?,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakMetricsAudit(
+    val ready: Boolean,
+    val orderedByRetentionTime: Boolean,
+    val totalAbsArea: Double,
+    val areaPercentSum: Double,
+    val maximumHeight: Double?,
+    val firstPeakTime: Double?,
+    val lastPeakTime: Double?,
+    val minBoundaryWidth: Double?,
+    val maxBoundaryWidth: Double?,
+    val invalidNumericCount: Int,
+    val invalidBoundaryCount: Int,
+    val nonPositiveAreaCount: Int,
+    val nonPositiveHeightCount: Int,
+    val missingWidthCount: Int,
+    val lowSnrCount: Int,
+    val lowConfidenceCount: Int,
+    val unresolvedOverlapCount: Int,
+    val peakWarningCount: Int,
     val warnings: List<String> = emptyList(),
 )
 
@@ -467,13 +494,15 @@ class OfflineAnalysisRunner(
         val curveReady = graphAudits.isNotEmpty() && graphAudits.all { it.curveUsable }
         val signalReady = graphAudits.isNotEmpty() && graphAudits.all { it.signal.ready }
         val peakDetectionReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakDetection.ready }
+        val peakMetricsReady = graphAudits.isNotEmpty() && graphAudits.all { it.peakMetrics.ready }
         val readyForCalculation = cropReady &&
             plotAreaReady &&
             axisGeometryReady &&
             axisCalibrationReady &&
             curveReady &&
             signalReady &&
-            peakDetectionReady
+            peakDetectionReady &&
+            peakMetricsReady
         if (!readyForCalculation) {
             stages += skippedStage(
                 stage = "calculation",
@@ -484,7 +513,8 @@ class OfflineAnalysisRunner(
                     !axisCalibrationReady -> "Calculation is blocked until every graph has confirmed pixel-to-axis calibration."
                     !curveReady -> "Calculation is blocked until every graph has usable extracted curve data."
                     !signalReady -> "Calculation is blocked until every graph has calibrated signal data."
-                    else -> "Calculation is blocked until every graph has detected peaks from calibrated signal data."
+                    !peakDetectionReady -> "Calculation is blocked until every graph has detected peaks from calibrated signal data."
+                    else -> "Calculation is blocked until every graph has auditable peak metrics and integration output."
                 },
             )
             stages += skippedStage(
@@ -515,7 +545,8 @@ class OfflineAnalysisRunner(
                 !axisCalibrationReady -> "axis_calibration"
                 !curveReady -> "curve_extract"
                 !signalReady -> "signal_convert"
-                else -> "peak_detection"
+                !peakDetectionReady -> "peak_detection"
+                else -> "peak_metrics"
             },
             readyForCalculation = readyForCalculation,
         )
@@ -731,14 +762,14 @@ class OfflineAnalysisRunner(
         val signalAudit = signalConversion.audit
         graphWarnings += signalAudit.warnings.filterNot { it in graphWarnings }
 
-        val peakDetectionAudit = if (signalAudit.ready && signalConversion.signal != null) {
+        val peakDetectionResult = if (signalAudit.ready && signalConversion.signal != null) {
             val params = defaultOfflineCalculationParams()
             runStage(
                 stage = "peak_detection",
                 graphIndex = graphIndex,
                 stages = stages,
                 successMessage = { result ->
-                    "ready=${result.ready}, peaks=${result.peakCount}, significant=${result.significantPeakCount}."
+                    "ready=${result.audit.ready}, peaks=${result.audit.peakCount}, significant=${result.audit.significantPeakCount}."
                 },
             ) {
                 buildPeakDetectionAudit(
@@ -746,7 +777,11 @@ class OfflineAnalysisRunner(
                     sourceId = "graph_${graphIndex}_${analysisImagePath.substringAfterLast('/').substringAfterLast('\\')}",
                     params = params,
                 )
-            } ?: missingPeakDetection(listOf("peak_detection.stage_failed"))
+            } ?: OfflinePeakDetectionResult(
+                audit = missingPeakDetection(listOf("peak_detection.stage_failed")),
+                run = null,
+                params = null,
+            )
         } else {
             val warnings = listOf("peak_detection.signal_required")
             graphWarnings += warnings
@@ -756,9 +791,41 @@ class OfflineAnalysisRunner(
                 message = "Peak detection skipped until calibrated signal data is available.",
                 warnings = warnings,
             )
-            missingPeakDetection(warnings)
+            OfflinePeakDetectionResult(
+                audit = missingPeakDetection(warnings),
+                run = null,
+                params = null,
+            )
         }
+        val peakDetectionAudit = peakDetectionResult.audit
         graphWarnings += peakDetectionAudit.warnings.filterNot { it in graphWarnings }
+
+        val peakMetricsAudit = if (peakDetectionAudit.ready && peakDetectionResult.run != null && peakDetectionResult.params != null) {
+            runStage(
+                stage = "peak_metrics",
+                graphIndex = graphIndex,
+                stages = stages,
+                successMessage = { result ->
+                    "ready=${result.ready}, invalidBoundaries=${result.invalidBoundaryCount}, nonPositiveArea=${result.nonPositiveAreaCount}."
+                },
+            ) {
+                buildPeakMetricsAudit(
+                    run = peakDetectionResult.run,
+                    params = peakDetectionResult.params,
+                )
+            } ?: missingPeakMetrics(listOf("peak_metrics.stage_failed"))
+        } else {
+            val warnings = listOf("peak_metrics.peak_detection_required")
+            graphWarnings += warnings
+            stages += skippedStage(
+                stage = "peak_metrics",
+                graphIndex = graphIndex,
+                message = "Peak metrics review skipped until peak detection is ready.",
+                warnings = warnings,
+            )
+            missingPeakMetrics(warnings)
+        }
+        graphWarnings += peakMetricsAudit.warnings.filterNot { it in graphWarnings }
 
         return OfflineGraphAudit(
             graphIndex = graphIndex,
@@ -787,6 +854,7 @@ class OfflineAnalysisRunner(
             curveUsable = curveResult?.isUsable == true,
             signal = signalAudit,
             peakDetection = peakDetectionAudit,
+            peakMetrics = peakMetricsAudit,
             warnings = graphWarnings,
         )
     }
@@ -795,6 +863,12 @@ class OfflineAnalysisRunner(
 private data class OfflineSignalConversion(
     val audit: OfflineSignalAudit,
     val signal: DigitalSignal?,
+)
+
+private data class OfflinePeakDetectionResult(
+    val audit: OfflinePeakDetectionAudit,
+    val run: CalculationRun?,
+    val params: CalculationParams?,
 )
 
 private enum class CalibrationAxis {
@@ -1150,7 +1224,7 @@ private fun buildPeakDetectionAudit(
     signal: DigitalSignal,
     sourceId: String,
     params: CalculationParams,
-): OfflinePeakDetectionAudit {
+): OfflinePeakDetectionResult {
     val run = CalculationEngine.execute(
         signal = signal,
         sourceId = sourceId,
@@ -1167,7 +1241,7 @@ private fun buildPeakDetectionAudit(
         }
     }
 
-    return OfflinePeakDetectionAudit(
+    val audit = OfflinePeakDetectionAudit(
         ready = run.validation.isValid && run.peaks.isNotEmpty(),
         peakCount = run.peaks.size,
         significantPeakCount = run.peaks.count { it.snr >= params.minSnr },
@@ -1181,6 +1255,12 @@ private fun buildPeakDetectionAudit(
         maxPeakWidth = params.maxPeakWidth,
         minSnr = params.minSnr,
         warnings = warnings.distinct(),
+    )
+
+    return OfflinePeakDetectionResult(
+        audit = audit,
+        run = run,
+        params = params,
     )
 }
 
@@ -1200,6 +1280,117 @@ private fun missingPeakDetection(warnings: List<String>): OfflinePeakDetectionAu
         minSnr = null,
         warnings = warnings,
     )
+
+private fun buildPeakMetricsAudit(
+    run: CalculationRun,
+    params: CalculationParams,
+): OfflinePeakMetricsAudit {
+    val peaks = run.peaks
+    val orderedByRetentionTime = peaks.zipWithNext().all { (a, b) -> a.rtApex <= b.rtApex }
+    val invalidNumericCount = peaks.count { peak ->
+        listOf(
+            peak.rtApex,
+            peak.height,
+            peak.area,
+            peak.widthBase,
+            peak.prominence,
+            peak.snr,
+            peak.leftBoundaryTime,
+            peak.rightBoundaryTime,
+            peak.areaPercent,
+        ).any { !it.isUsableNumber() } || peak.widthHalfHeight?.isUsableNumber() == false
+    }
+    val invalidBoundaryCount = peaks.count { peak ->
+        peak.leftBoundaryTime >= peak.rtApex ||
+            peak.rightBoundaryTime <= peak.rtApex ||
+            peak.rightBoundaryTime <= peak.leftBoundaryTime ||
+            peak.widthBase <= 0.0
+    }
+    val nonPositiveAreaCount = peaks.count { abs(it.area) <= 0.0 }
+    val nonPositiveHeightCount = peaks.count { it.height <= 0.0 }
+    val missingWidthCount = peaks.count { peak ->
+        peak.widthBase <= 0.0 || (peak.widthHalfHeight ?: 0.0) <= 0.0
+    }
+    val lowSnrCount = peaks.count { it.snr < params.minSnr }
+    val lowConfidenceCount = peaks.count {
+        it.confidence == ConfidenceGrade.LOW || it.confidence == ConfidenceGrade.FAILED
+    }
+    val unresolvedOverlapCount = peaks.count {
+        it.overlapStatus == OverlapStatus.SHOULDER || it.overlapStatus == OverlapStatus.UNRESOLVED
+    }
+    val areaPercentSum = peaks.sumOf { it.areaPercent }
+    val areaPercentValid = peaks.isNotEmpty() && areaPercentSum in 99.0..101.0
+    val warnings = buildList {
+        if (peaks.isEmpty()) add("peak_metrics.no_peaks")
+        if (!run.validation.isValid) add("peak_metrics.signal_validation_failed")
+        if (!orderedByRetentionTime) add("peak_metrics.retention_time_order_invalid")
+        if (invalidNumericCount > 0) add("peak_metrics.invalid_numeric_values")
+        if (invalidBoundaryCount > 0) add("peak_metrics.invalid_boundaries")
+        if (nonPositiveAreaCount > 0) add("peak_metrics.non_positive_area")
+        if (nonPositiveHeightCount > 0) add("peak_metrics.non_positive_height")
+        if (missingWidthCount > 0) add("peak_metrics.missing_width")
+        if (!areaPercentValid) add("peak_metrics.area_percent_sum_invalid")
+        if (lowSnrCount > 0) add("peak_metrics.low_snr_review_required")
+        if (lowConfidenceCount > 0) add("peak_metrics.low_confidence_review_required")
+        if (unresolvedOverlapCount > 0) add("peak_metrics.overlap_review_required")
+    }
+
+    return OfflinePeakMetricsAudit(
+        ready = run.validation.isValid &&
+            peaks.isNotEmpty() &&
+            orderedByRetentionTime &&
+            invalidNumericCount == 0 &&
+            invalidBoundaryCount == 0 &&
+            nonPositiveAreaCount == 0 &&
+            nonPositiveHeightCount == 0 &&
+            missingWidthCount == 0 &&
+            areaPercentValid,
+        orderedByRetentionTime = orderedByRetentionTime,
+        totalAbsArea = peaks.sumOf { abs(it.area) },
+        areaPercentSum = areaPercentSum,
+        maximumHeight = peaks.maxOfOrNull { it.height },
+        firstPeakTime = peaks.firstOrNull()?.rtApex,
+        lastPeakTime = peaks.lastOrNull()?.rtApex,
+        minBoundaryWidth = peaks.minOfOrNull { it.widthBase },
+        maxBoundaryWidth = peaks.maxOfOrNull { it.widthBase },
+        invalidNumericCount = invalidNumericCount,
+        invalidBoundaryCount = invalidBoundaryCount,
+        nonPositiveAreaCount = nonPositiveAreaCount,
+        nonPositiveHeightCount = nonPositiveHeightCount,
+        missingWidthCount = missingWidthCount,
+        lowSnrCount = lowSnrCount,
+        lowConfidenceCount = lowConfidenceCount,
+        unresolvedOverlapCount = unresolvedOverlapCount,
+        peakWarningCount = peaks.sumOf { it.warnings.size },
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun missingPeakMetrics(warnings: List<String>): OfflinePeakMetricsAudit =
+    OfflinePeakMetricsAudit(
+        ready = false,
+        orderedByRetentionTime = false,
+        totalAbsArea = 0.0,
+        areaPercentSum = 0.0,
+        maximumHeight = null,
+        firstPeakTime = null,
+        lastPeakTime = null,
+        minBoundaryWidth = null,
+        maxBoundaryWidth = null,
+        invalidNumericCount = 0,
+        invalidBoundaryCount = 0,
+        nonPositiveAreaCount = 0,
+        nonPositiveHeightCount = 0,
+        missingWidthCount = 0,
+        lowSnrCount = 0,
+        lowConfidenceCount = 0,
+        unresolvedOverlapCount = 0,
+        peakWarningCount = 0,
+        warnings = warnings,
+    )
+
+private fun Double.isUsableNumber(): Boolean =
+    !isNaN() && !isInfinite()
 
 private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAudit =
     OfflineGraphCandidateAudit(

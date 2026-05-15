@@ -51,11 +51,11 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Per-Graph Audit")
         appendLine()
-        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready | Peak ready |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- | --- |")
+        appendLine("| Graph | Region | Plot area | Crop QA | Boundary QA | Prep variant | OCR | X ticks | Y ticks | Axes | Axis conf. | Calibration | Mask pixels | Curve points | Curve coverage | Curve usable | Signal ready | Peak ready | Metrics ready |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- | ---: | ---: | ---: | --- | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             appendLine(
-                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} | ${graph.peakDetection.ready} |",
+                "| ${graph.graphIndex} | ${graph.region.renderRegion()} | ${graph.plotArea.region?.renderRegion() ?: "not detected"} | ${graph.cropQuality.acceptedForCalculation} | ${graph.cropBoundaryRisk.acceptedForCalculation} | ${graph.selectedPreprocessingVariant ?: "none"} | ${graph.ocrStatus} | ${graph.xSuggestionCount} | ${graph.ySuggestionCount} | ${graph.axesDetected} | ${graph.axisConfidence.renderNumber()} | ${graph.axisCalibration.ready} | ${graph.curveMaskCleanPixelCount} | ${graph.curvePointCount} | ${graph.curveCoverage.renderPercent()} | ${graph.curveUsable} | ${graph.signal.ready} | ${graph.peakDetection.ready} | ${graph.peakMetrics.ready} |",
             )
         }
         appendLine()
@@ -155,6 +155,18 @@ object OfflineAnalysisAuditArtifacts {
             val peaks = graph.peakDetection
             appendLine(
                 "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.peakCount} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Peak Metrics Review")
+        appendLine()
+        appendLine("| Graph | Ready | RT order | Total area | Area % sum | Max height | First RT | Last RT | Min width | Max width | Invalid nums | Invalid bounds | Non-positive area | Non-positive height | Missing width | Low S/N | Low confidence | Overlap review | Peak warnings | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val metrics = graph.peakMetrics
+            appendLine(
+                "| ${graph.graphIndex} | ${metrics.ready} | ${metrics.orderedByRetentionTime} | ${metrics.totalAbsArea.renderNumber()} | ${metrics.areaPercentSum.renderNumber()} | ${metrics.maximumHeight?.renderNumber() ?: "n/a"} | ${metrics.firstPeakTime?.renderNumber() ?: "n/a"} | ${metrics.lastPeakTime?.renderNumber() ?: "n/a"} | ${metrics.minBoundaryWidth?.renderNumber() ?: "n/a"} | ${metrics.maxBoundaryWidth?.renderNumber() ?: "n/a"} | ${metrics.invalidNumericCount} | ${metrics.invalidBoundaryCount} | ${metrics.nonPositiveAreaCount} | ${metrics.nonPositiveHeightCount} | ${metrics.missingWidthCount} | ${metrics.lowSnrCount} | ${metrics.lowConfidenceCount} | ${metrics.unresolvedOverlapCount} | ${metrics.peakWarningCount} | ${metrics.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()

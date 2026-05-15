@@ -260,8 +260,17 @@ instead of a partial result. The executable fixture test validates this gate on
 `bench_07_rotated_page_photo`, covering the best clean graph, a hard two-graph page,
 and a rotated page.
 
+Phase 5.3 adds the audited peak-metrics and integration review gate. After
+`peak_detection`, the runner now emits `peak_metrics` from the real `CalculationRun`
+and records retention-time ordering, total area, area percent sum, boundary width
+range, invalid numeric/boundary counts, non-positive area/height counts, missing
+width count, low S/N count, low-confidence count, overlap-review count, and peak
+warnings. Structural metric failures block calculation readiness at `peak_metrics`.
+The fixture test validates this on the same clean, two-graph, and rotated real
+examples before those values can feed report validation.
+
 ## Next Phase
 
-Phase 5.3 should review peak boundaries, integration areas, S/N, dominant-peak
-selection, and false positives against real fixture overlays before final report
-rendering is allowed to consume these values.
+Phase 5.4 should add fixture-specific peak sanity checks and visual overlay review for
+missed dominant peaks, false peaks from text/grid/axis artifacts, and blank graph false
+positives before final report rendering consumes the peak table.

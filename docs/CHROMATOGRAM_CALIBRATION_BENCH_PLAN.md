@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 5.2 - audited peak detection readiness gate`.
-- Next work slice: `Phase 5.3 - audited peak metrics and integration review gate`.
+- Latest completed work slice: `Phase 5.3 - audited peak metrics and integration review gate`.
+- Next work slice: `Phase 5.4 - fixture peak sanity and overlay review gate`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -60,7 +60,8 @@ artifact summary; it is not the primary plan.
 | Phase 2.12.2 | Done | `f62f92b` | Review generated focus artifacts and lock visual acceptance thresholds before numeric integration work. |
 | Phase 5.1 | Done | `8a37951` | Start calibrated curve-to-signal conversion from confirmed axis calibration before peak integration. |
 | Phase 5.2 | Done | `547573c` | Add audited peak detection readiness gate on calibrated signal data and verify it on clean, two-graph, and rotated fixtures. |
-| Phase 5.3 | Next | Pending | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
+| Phase 5.3 | Done | Current slice | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
+| Phase 5.4 | Next | Pending | Add fixture-specific peak sanity checks and visual overlay review for missed/false dominant peaks. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -487,7 +488,7 @@ Goal: calibrate the scientific calculation independently from model/runtime issu
 
 - [x] Extract raw curve points from each graph crop.
 - [ ] Keep raw, smoothed, baseline, corrected, and integrated signals auditable.
-- [ ] Apply current `CalculationEngine` settings:
+- [x] Apply current `CalculationEngine` settings:
   - boundary method;
   - clamp negative;
   - max width;
@@ -520,14 +521,27 @@ Phase 5.2 status:
   hard two-graph photographed `bench_06_photo_two_graphs_page`, and rotated
   `bench_07_rotated_page_photo`.
 
-Next Phase 5.3 work slice:
+Phase 5.3 status:
 
-1. Review peak boundaries, integration areas, S/N, dominant-peak selection, and false
-   positives against real fixture overlays.
-2. Keep calculation output blocked from final report rendering until the peak metrics
-   are visually and numerically credible.
-3. Add fixture expectations for missed dominant peaks and blank/near-empty graph false
-   positives.
+- The offline runner emits `peak_metrics` after `peak_detection` and only when a real
+  `CalculationRun` exists.
+- The audit now records retention-time ordering, total integrated area, area percent
+  sum, maximum height, first/last peak time, boundary width range, invalid numeric
+  count, invalid boundary count, non-positive area/height counts, missing width count,
+  low S/N count, low-confidence count, overlap-review count, and peak-warning count.
+- Calculation readiness now requires the peak-metrics gate. Structural metric failures
+  block at `peak_metrics` instead of flowing into report validation.
+- The fixture gate verifies this stage on the clean `bench_03_small_tic_export`, hard
+  two-graph `bench_06_photo_two_graphs_page`, and rotated
+  `bench_07_rotated_page_photo` examples.
+
+Next Phase 5.4 work slice:
+
+1. Add visual peak overlay artifacts or equivalent fixture diagnostics for the detected
+   peak positions and integration boundaries.
+2. Add fixture-specific sanity checks for missed dominant peaks, false peaks from
+   text/grid/axis artifacts, and blank/near-empty graph false positives.
+3. Keep final report rendering blocked until those visual/numeric checks are stable.
 
 Exit criteria:
 
@@ -707,4 +721,13 @@ Exit criteria:
    peak-detection calculation parameters.
 3. Keep peak detection skipped until calibrated signal data exists.
 4. Validate the gate on the clean, two-graph photographed, and rotated real bench
+   examples.
+
+- Phase 5.3:
+
+1. Add audited peak metrics and integration review after peak detection.
+2. Block calculation readiness when structural peak metrics are invalid.
+3. Record area, boundary, S/N, confidence, overlap, and warning diagnostics in JSON and
+   Markdown audit artifacts.
+4. Validate the gate on the same clean, two-graph photographed, and rotated real bench
    examples.

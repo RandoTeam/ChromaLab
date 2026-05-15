@@ -179,6 +179,14 @@ class ChromatogramBenchFixtureTest {
                 audit.graphs.all { "peak_detection.signal_required" in it.peakDetection.warnings },
                 "${fixture.id} must expose the peak-detection gate while signal conversion is missing",
             )
+            assertTrue(
+                audit.graphs.all { !it.peakMetrics.ready },
+                "${fixture.id} must not mark peak metrics ready before peak detection exists",
+            )
+            assertTrue(
+                audit.graphs.all { "peak_metrics.peak_detection_required" in it.peakMetrics.warnings },
+                "${fixture.id} must expose the peak-metrics gate while peak detection is missing",
+            )
             fixture.expectedCropBounds.forEach { expectedCrop ->
                 val graph = assertNotNull(
                     audit.graphs.firstOrNull { it.graphIndex == expectedCrop.graphIndex },
@@ -331,9 +339,18 @@ class ChromatogramBenchFixtureTest {
             audit.stages.any { it.stage == "peak_detection" && it.status == OfflineStageStatus.SUCCESS },
             "confirmed manual calibration must run the peak detection stage",
         )
+        assertTrue(graph.peakMetrics.ready, "confirmed manual calibration must unlock peak metrics review")
+        assertTrue(graph.peakMetrics.totalAbsArea > 0.0, "peak metrics must expose positive total integrated area")
+        assertEquals(0, graph.peakMetrics.invalidBoundaryCount, "peak metrics must reject invalid boundaries")
+        assertEquals(0, graph.peakMetrics.nonPositiveAreaCount, "peak metrics must reject non-positive peak areas")
+        assertTrue(
+            audit.stages.any { it.stage == "peak_metrics" && it.status == OfflineStageStatus.SUCCESS },
+            "confirmed manual calibration must run the peak metrics review stage",
+        )
         assertTrue(audit.blockedAtStage != "axis_calibration", "manual calibration must pass the scale gate")
         assertTrue(audit.blockedAtStage != "signal_convert", "manual calibration must pass the signal conversion gate")
         assertTrue(audit.blockedAtStage != "peak_detection", "manual calibration must pass the peak detection gate")
+        assertTrue(audit.blockedAtStage != "peak_metrics", "manual calibration must pass the peak metrics gate")
     }
 
     @Test
@@ -427,15 +444,29 @@ class ChromatogramBenchFixtureTest {
         assertEquals(expectedGraphs, audit.graphs.size, "${audit.sourceId} calibrated graph count")
         assertTrue(audit.graphs.all { it.signal.ready }, "${audit.sourceId} must convert signal on every graph")
         assertTrue(audit.graphs.all { it.peakDetection.ready }, "${audit.sourceId} must detect peaks on every graph")
+        assertTrue(audit.graphs.all { it.peakMetrics.ready }, "${audit.sourceId} must pass peak metrics review on every graph")
         assertTrue(
             audit.graphs.sumOf { it.peakDetection.peakCount } >= minTotalPeaks,
             "${audit.sourceId} must detect visible peaks on real fixture examples",
         )
         assertTrue(
+            audit.graphs.all { it.peakMetrics.invalidBoundaryCount == 0 },
+            "${audit.sourceId} must not accept invalid peak boundaries",
+        )
+        assertTrue(
+            audit.graphs.all { it.peakMetrics.totalAbsArea > 0.0 },
+            "${audit.sourceId} must produce positive integrated peak area",
+        )
+        assertTrue(
             audit.stages.any { it.stage == "peak_detection" && it.status == OfflineStageStatus.SUCCESS },
             "${audit.sourceId} must record peak_detection success stages",
         )
+        assertTrue(
+            audit.stages.any { it.stage == "peak_metrics" && it.status == OfflineStageStatus.SUCCESS },
+            "${audit.sourceId} must record peak_metrics success stages",
+        )
         assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
+        assertTrue(audit.blockedAtStage != "peak_metrics", "${audit.sourceId} must pass peak metrics gate")
     }
 }
 
