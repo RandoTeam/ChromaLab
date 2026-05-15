@@ -63,7 +63,7 @@ artifact summary; it is not the primary plan.
 | Phase 5.3 | Done | `d9db9d2` | Review peak metrics, boundaries, and integration quality on calibrated real-fixture signals before report rendering. |
 | Phase 5.4 | Done | `a4113e8` | Add per-peak audit rows and visual peak overlay artifacts for clean, two-graph, and rotated fixtures. |
 | Phase 5.5 | Done | `256960f` | Add fixture-specific dominant/missed/false peak sanity checks before report rendering. |
-| Phase 5.6 | Done | Pending | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
+| Phase 5.6 | Done | `4a630d9` | Recover labeled apexes on compact annotated TIC exports without regressing photographed multi-graph pages. |
 | Phase 5.7 | Next | Pending | Review large photographed plots for false peaks and add a less size-limited trace classifier. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
