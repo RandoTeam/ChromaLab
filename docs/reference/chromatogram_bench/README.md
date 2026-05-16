@@ -435,8 +435,19 @@ Phase 7.4 connects the offline scientific knowledge pack to report interpretatio
   reference retention times are not invented and Kovats values remain not calculated
   until same-method references are supplied.
 
+Phase 8.1 defines the strict model-assisted stage contract:
+
+- graph-region and title/ION/axis extraction are required VLM contract stages for full
+  photo chromatogram analysis;
+- axis-structure model output is an optional hint;
+- chemical interpretation stays local-knowledge/model-suggested and cannot become a
+  final compound assignment by itself;
+- numeric peak data remains deterministic-only;
+- GGUF VLM analysis requires base + `mmproj`, and OCR/document-only model families are
+  excluded from strict chromatogram VLM selection.
+
 ## Next Phase
 
-Phase 8 should add model-assisted stages only through strict contracts: model output may
-help graph/title/ION recognition and interpretation, but it must not replace calibrated
-deterministic calculations or invent unsupported chemical assignments.
+Phase 8.2 should route model-stage outcomes into the analysis/report audit so required
+VLM failures, selected/executed model, runtime, backend, and timings are visible in the
+same structured evidence chain as deterministic calculation results.

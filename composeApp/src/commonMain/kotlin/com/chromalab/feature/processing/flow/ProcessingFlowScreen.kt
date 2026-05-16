@@ -36,6 +36,7 @@ import com.chromalab.feature.processing.graph.GraphSelectionScreen
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrSuggestionScreen
 import com.chromalab.feature.processing.perspective.PerspectiveCorrectionResult
@@ -240,7 +241,7 @@ fun ProcessingFlowScreen(
                             vlmLoadingStatus = if (vlmReady) "AI модель готова" else null
                             println("PIPELINE[VLM] Model ready: $vlmReady")
                             if (!vlmReady) {
-                                error("AI vision model is required for photo chromatogram analysis. Download or activate a chromatography VLM first.")
+                                error(ModelAssistedAnalysisContract.MISSING_CHROMATOGRAM_VLM_MESSAGE)
                             }
                         }
 

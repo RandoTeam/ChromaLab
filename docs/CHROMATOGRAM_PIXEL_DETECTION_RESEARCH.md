@@ -189,6 +189,11 @@ compound-class hypotheses, provenance notes, and assignment cautions. Kovats out
 keeps measured reference retention times empty until same-method references are supplied;
 the local n-paraffin RI scale is context only, not fabricated RT data.
 
+Phase 8.1 is implemented: model-assisted stages now have a shared strict contract.
+Models can help graph-region and title/ION/axis recognition, but numeric peak results
+remain deterministic-only. GGUF image analysis requires the base model plus `mmproj`,
+and OCR/document-only families are excluded from strict chromatogram VLM selection.
+
 ## Sources
 
 - WebPlotDigitizer: https://github.com/automeris-io/WebPlotDigitizer

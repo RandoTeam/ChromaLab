@@ -45,6 +45,24 @@ class ModelRegistryVisionPackageTest {
     }
 
     @Test
+    fun strictChromatogramVisionRejectsGgufWithoutMmprojAndOcrOnlyFamilies() {
+        val baseOnlyQwen = ggufModel(
+            family = "qwen3-vl",
+            files = listOf(ModelFile("qwen.gguf", 100L, ModelFileType.GGUF_BASE, "")),
+        )
+        val ocrOnly = ggufModel(
+            family = "paddleocr-vl",
+            files = listOf(
+                ModelFile("paddle.gguf", 100L, ModelFileType.GGUF_BASE, ""),
+                ModelFile("mmproj-paddle.gguf", 10L, ModelFileType.GGUF_MMPROJ, ""),
+            ),
+        )
+
+        assertFalse(ModelRegistry.isChromatogramVisionModel(baseOnlyQwen))
+        assertFalse(ModelRegistry.isChromatogramVisionModel(ocrOnly))
+    }
+
+    @Test
     fun fastVlmLiteRtBundleIsRegisteredAsVisionModel() {
         val model = assertNotNull(ModelRegistry.findById("fastvlm-05b-litert"))
 
@@ -78,10 +96,13 @@ class ModelRegistryVisionPackageTest {
         assertEquals(1_159_757_824L, model.files.single().sizeBytes)
     }
 
-    private fun ggufModel(files: List<ModelFile>) = ModelInfo(
+    private fun ggufModel(
+        files: List<ModelFile>,
+        family: String = "custom",
+    ) = ModelInfo(
         id = "custom",
         displayName = "Custom",
-        family = "custom",
+        family = family,
         runtime = ModelRuntime.LLAMA_CPP,
         files = files,
         minRamMb = 4096,

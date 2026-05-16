@@ -605,13 +605,7 @@ object ModelRegistry {
     }
 
     fun isChromatogramVisionModel(model: ModelInfo): Boolean {
-        if (!model.supportsVision) return false
-        val family = model.family.lowercase()
-        return family.contains("gemma") ||
-            family.contains("fastvlm") ||
-            family.contains("smolvlm") ||
-            family.contains("moondream") ||
-            family.contains("qwen")
+        return ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(model).eligible
     }
 
     fun hasGgufVisionFilePair(model: ModelInfo): Boolean =

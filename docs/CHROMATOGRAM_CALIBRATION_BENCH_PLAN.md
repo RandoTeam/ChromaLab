@@ -14,10 +14,11 @@ Current execution point:
 
 - Main roadmap item: `Stabilize Chromatography Core`.
 - Active plan: this document.
-- Active phase: `Phase 7 - Offline Domain Knowledge Pack`, using the calibrated
-  desktop/emulator bench artifacts and the structured report contract from Phase 6.
-- Latest completed work slice: `Phase 7.4 - expand common chromatogram/ion coverage and wire local knowledge into report interpretation`.
-- Next work slice: `Phase 8 - Model-Assisted Stages`.
+- Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
+  desktop/emulator bench artifacts, structured report contract, and local knowledge
+  pack from earlier phases.
+- Latest completed work slice: `Phase 8.1 - define strict model-assisted stage contract`.
+- Next work slice: `Phase 8.2 - route model-stage outcomes into analysis/report audit`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -83,6 +84,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.2 | Done | `4707498` | Add m/z 92 alkylbenzene knowledge data. |
 | Phase 7.3 | Done | `30df15d` | Add n-paraffin Kovats reference support. |
 | Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
+| Phase 8.1 | Done | `TBD` | Define strict model-assisted stage contract and model eligibility rules. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -919,10 +921,24 @@ Goal: add models only where they improve recognition without replacing calculati
 - [ ] Run deterministic-only stages first where they are sufficient.
 - [ ] Use LiteRT/GGUF VLM assistance for hard graph bounds, title/ION extraction, and
   interpretation only through strict structured contracts.
-- [ ] Require base GGUF plus matching `mmproj` for GGUF image analysis.
-- [ ] Keep OCR/document-only models out of strict chromatogram analysis unless a
+  - [x] Phase 8.1 defines the strict stage contract and model eligibility gates.
+- [x] Require base GGUF plus matching `mmproj` for GGUF image analysis.
+- [x] Keep OCR/document-only models out of strict chromatogram analysis unless a
   validated adapter exists.
 - [ ] Fail clearly when a required neural vision stage fails.
+
+Completed Phase 8.1 work slice:
+
+1. Add `ModelAssistedAnalysisContract` as the shared strict contract for model-assisted
+   chromatogram stages.
+2. Define required VLM contracts for graph-region and title/ION/axis extraction,
+   optional VLM hints for axis structure, local-knowledge-only chemical interpretation,
+   and deterministic-only numeric calculation.
+3. Route chromatogram model eligibility through the contract so GGUF image analysis
+   requires base + `mmproj`, and OCR/document-only families are rejected for strict
+   chromatogram VLM analysis.
+4. Reuse the same contract markers for non-skippable full-analysis failures.
+5. Document the contract in `docs/MODEL_ASSISTED_STAGE_CONTRACT.md`.
 
 Exit criteria:
 
