@@ -76,7 +76,7 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.8 | Done | `4053c22` | Review sparse stacked ion peak quality before report validation. |
 | Phase 6.1 | Done | `c54fbb3` | Validate the structured report contract against calibrated fixture audits. |
 | Phase 6.2 | Done | `e28aecf` | Add missing peak-table report columns to the calibrated audit contract. |
-| Phase 6.3 | Done | Pending | Render calibrated audit report sections from the structured contract. |
+| Phase 6.3 | Done | `e642368` | Render calibrated audit report sections from the structured contract. |
 | Phase 6.4 | Next | Pending | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
