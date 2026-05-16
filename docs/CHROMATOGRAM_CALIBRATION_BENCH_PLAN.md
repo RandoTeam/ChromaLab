@@ -75,7 +75,7 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.7 | Done | `db56d9b` | Restore curve/signal readiness for weak stacked ion panels before report validation. |
 | Phase 5.8b.8 | Done | `4053c22` | Review sparse stacked ion peak quality before report validation. |
 | Phase 6.1 | Done | `c54fbb3` | Validate the structured report contract against calibrated fixture audits. |
-| Phase 6.2 | Done | `c409d12` | Add missing peak-table report columns to the calibrated audit contract. |
+| Phase 6.2 | Done | `e28aecf` | Add missing peak-table report columns to the calibrated audit contract. |
 | Phase 6.3 | Next | Pending | Render calibrated audit report sections from the structured contract. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
