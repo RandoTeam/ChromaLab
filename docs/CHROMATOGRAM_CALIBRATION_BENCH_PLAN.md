@@ -85,7 +85,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.3 | Done | `30df15d` | Add n-paraffin Kovats reference support. |
 | Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
-| Phase 8.2 | Done | `TBD` | Route model-stage outcomes into processing metadata and final report audit. |
+| Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
