@@ -29,21 +29,31 @@ actual class AxisOcrReader actual constructor() {
         imagePath: String,
         graphRegion: GraphRegion,
     ): AxisOcrResult = withContext(Dispatchers.IO) {
-        val config = DesktopAxisVlmConfig.fromEnvironment() ?: return@withContext unavailableAxisOcrResult()
+        val config = DesktopAxisVlmConfig.fromEnvironment()
+            ?: return@withContext unavailableAxisOcrResult("desktop_axis_vlm.endpoint_not_configured")
         runCatching {
-            val image = ImageIO.read(File(imagePath)) ?: return@runCatching unavailableAxisOcrResult()
+            val image = ImageIO.read(File(imagePath))
+                ?: return@runCatching unavailableAxisOcrResult("desktop_axis_vlm.image_read_failed")
             val bands = AxisBandSet.from(image.width, image.height, graphRegion)
-            if (!bands.isUsable) return@runCatching unavailableAxisOcrResult()
+            if (!bands.isUsable) {
+                return@runCatching unavailableAxisOcrResult("desktop_axis_vlm.axis_bands_unusable")
+            }
 
             val rawResponse = DesktopOpenAiVisionClient(config).readAxisBands(
                 xBandImage = image.crop(bands.xBand),
                 yBandImage = image.crop(bands.yBand),
                 titleBandImage = image.crop(bands.titleBand),
             )
-            val modelResult = parseAxisBandModelResult(rawResponse) ?: return@runCatching unavailableAxisOcrResult()
-            modelResult.toAxisOcrResult(bands, config.minConfidence)
+            if (rawResponse.content == null) {
+                return@runCatching unavailableAxisOcrResult(rawResponse.warnings)
+            }
+            val modelResult = parseAxisBandModelResult(rawResponse.content)
+                ?: return@runCatching unavailableAxisOcrResult(
+                    rawResponse.warnings + "desktop_axis_vlm.response_json_unparseable",
+                )
+            modelResult.toAxisOcrResult(bands, config.minConfidence, rawResponse.warnings)
         }.getOrElse {
-            unavailableAxisOcrResult()
+            unavailableAxisOcrResult("desktop_axis_vlm.request_failed")
         }
     }
 }
@@ -90,7 +100,7 @@ private class DesktopOpenAiVisionClient(
         xBandImage: BufferedImage,
         yBandImage: BufferedImage,
         titleBandImage: BufferedImage,
-    ): String? {
+    ): DesktopVlmTextResult {
         val payload = buildJsonObject {
             put("model", config.model)
             put("temperature", 0)
@@ -123,8 +133,21 @@ private class DesktopOpenAiVisionClient(
             .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
             .build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) return null
-        return response.contentText(json)
+        if (response.statusCode() !in 200..299) {
+            return DesktopVlmTextResult(
+                content = null,
+                warnings = listOf("desktop_axis_vlm.http_status_${response.statusCode()}"),
+            )
+        }
+        val content = response.contentText(json)
+        return DesktopVlmTextResult(
+            content = content,
+            warnings = if (content == null) {
+                listOf("desktop_axis_vlm.response_content_missing")
+            } else {
+                emptyList()
+            },
+        )
     }
 
     private fun buildContentArray(
@@ -185,6 +208,11 @@ private class DesktopOpenAiVisionClient(
     }
 }
 
+private data class DesktopVlmTextResult(
+    val content: String?,
+    val warnings: List<String>,
+)
+
 private data class AxisBandSet(
     val panel: AxisBandRect,
     val xBand: AxisBandRect,
@@ -239,8 +267,13 @@ private data class AxisBandModelResult(
     val xUnit: String?,
     val yUnit: String?,
     val confidence: Float?,
+    val warnings: List<String>,
 ) {
-    fun toAxisOcrResult(bands: AxisBandSet, minConfidence: Float): AxisOcrResult {
+    fun toAxisOcrResult(
+        bands: AxisBandSet,
+        minConfidence: Float,
+        upstreamWarnings: List<String>,
+    ): AxisOcrResult {
         val xElements = xTicks.map { tick -> tick.toTextElement(bands.xBand, AxisBandDirection.HORIZONTAL) }
         val yElements = yTicks.map { tick -> tick.toTextElement(bands.yBand, AxisBandDirection.VERTICAL) }
         val allTicks = xTicks + yTicks
@@ -253,6 +286,15 @@ private data class AxisBandModelResult(
         val accepted = xTicks.distinctValueCount() >= 2 &&
             yTicks.distinctValueCount() >= 2 &&
             (averageConfidence ?: 0f) >= minConfidence
+        val acceptanceWarnings = buildList {
+            if (xTicks.distinctValueCount() < 2) add("desktop_axis_vlm.x_requires_two_ticks")
+            if (yTicks.distinctValueCount() < 2) add("desktop_axis_vlm.y_requires_two_ticks")
+            if (averageConfidence == null) {
+                add("desktop_axis_vlm.confidence_missing")
+            } else if (averageConfidence < minConfidence) {
+                add("desktop_axis_vlm.confidence_below_threshold")
+            }
+        }
         return AxisOcrResult(
             rawElements = xElements + yElements,
             suggestedXValues = xTicks.map { it.value }.distinct().sorted(),
@@ -261,6 +303,7 @@ private data class AxisBandModelResult(
             yUnit = yUnit,
             status = if (accepted) OcrStatus.AUTO_ACCEPTED else OcrStatus.NOT_AVAILABLE,
             confidence = averageConfidence,
+            warnings = (upstreamWarnings + warnings + acceptanceWarnings).distinct(),
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -311,6 +354,7 @@ private fun parseAxisBandModelResult(rawResponse: String?): AxisBandModelResult?
         xUnit = xAxis?.stringOrNull("unit")?.takeUnless { it.equals("null", ignoreCase = true) },
         yUnit = yAxis?.stringOrNull("unit")?.takeUnless { it.equals("null", ignoreCase = true) },
         confidence = root.floatOrNull("confidence"),
+        warnings = root.stringArrayOrEmpty("warnings"),
     )
 }
 
@@ -345,13 +389,17 @@ private fun BufferedImage.toPngDataUrl(): String {
     return "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes.toByteArray())
 }
 
-private fun unavailableAxisOcrResult(): AxisOcrResult = AxisOcrResult(
+private fun unavailableAxisOcrResult(vararg warnings: String): AxisOcrResult =
+    unavailableAxisOcrResult(warnings.toList())
+
+private fun unavailableAxisOcrResult(warnings: List<String>): AxisOcrResult = AxisOcrResult(
     rawElements = emptyList(),
     suggestedXValues = emptyList(),
     suggestedYValues = emptyList(),
     xUnit = null,
     yUnit = null,
     status = OcrStatus.NOT_AVAILABLE,
+    warnings = warnings.distinct(),
     timestamp = System.currentTimeMillis(),
 )
 
@@ -396,6 +444,12 @@ private fun JsonObject.stringOrNull(key: String): String? =
 
 private fun JsonObject.floatOrNull(key: String): Float? =
     stringOrNull(key)?.parseAxisFloat()
+
+private fun JsonObject.stringArrayOrEmpty(key: String): List<String> =
+    this[key]
+        ?.asArray()
+        ?.mapNotNull { it.jsonPrimitive.contentOrNull?.takeIf { warning -> warning.isNotBlank() } }
+        .orEmpty()
 
 private fun String.parseAxisFloat(): Float? {
     val match = Regex("""-?\d+(?:[.,]\d+)?""").find(replace(" ", "")) ?: return null

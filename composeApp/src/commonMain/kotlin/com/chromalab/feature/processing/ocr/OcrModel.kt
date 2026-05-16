@@ -47,6 +47,7 @@ data class AxisOcrResult(
     val confirmedXValues: List<Float>? = null,
     val confirmedYValues: List<Float>? = null,
     val confidence: Float? = null,
+    val warnings: List<String> = emptyList(),
     val timestamp: Long,
 ) {
     /** Whether OCR found usable numeric values */

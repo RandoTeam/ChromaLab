@@ -821,6 +821,7 @@ class OfflineAnalysisRunner(
         if (ocrResult == null || ocrResult.status == OcrStatus.NOT_AVAILABLE) {
             graphWarnings += "axis_ocr_not_available"
         }
+        graphWarnings += ocrResult?.warnings.orEmpty()
 
         val axesResult = runStage(
             stage = "axis_detect",

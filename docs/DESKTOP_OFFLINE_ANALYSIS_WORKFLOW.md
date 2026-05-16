@@ -41,6 +41,22 @@ It must return numeric tick values plus normalized tick positions. A result is m
 `AUTO_ACCEPTED` only when both axes have at least two usable tick anchors and the
 confidence gate passes. Otherwise the run remains blocked at axis calibration.
 
+Desktop VLM/OCR warnings are propagated into the stage audit and report warning
+sections. Important warning codes include:
+
+- `desktop_axis_vlm.endpoint_not_configured` - no local OpenAI-compatible endpoint
+  is configured.
+- `desktop_axis_vlm.http_status_N` - endpoint replied with a non-success status.
+- `desktop_axis_vlm.response_content_missing` - endpoint response had no message
+  content.
+- `desktop_axis_vlm.response_json_unparseable` - model output did not contain the
+  required JSON object.
+- `desktop_axis_vlm.x_requires_two_ticks` and
+  `desktop_axis_vlm.y_requires_two_ticks` - fewer than two tick anchors were found
+  for calibration.
+- `desktop_axis_vlm.confidence_below_threshold` - tick anchors were present, but
+  confidence did not pass the configured gate.
+
 ## Outputs
 
 Each run writes:
@@ -80,9 +96,10 @@ Initial validation on 2026-05-16:
   multi-graph overlays, then blocks at `axis_calibration` for the same desktop OCR
   gap.
 
-Phase 8.3c.3 connects those isolated bands to an optional local VLM reader. If no
-local endpoint is configured, desktop OCR still returns `NOT_AVAILABLE`; this is an
-expected honest blocker, not a fallback calculation mode.
+Phase 8.3c.4 adds audit-visible VLM/OCR warning propagation. If no local endpoint
+is configured, desktop OCR still returns `NOT_AVAILABLE`; this is an expected honest
+blocker, not a fallback calculation mode, and is now visible as
+`desktop_axis_vlm.endpoint_not_configured`.
 
 These are expected blockers for the next desktop-first slices. They prove the
 computer workflow can reproduce the exact failure chain without phone testing.
