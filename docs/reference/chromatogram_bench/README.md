@@ -455,8 +455,17 @@ Phase 8.2 routes model-stage outcomes into saved report metadata:
 - if full photo analysis has no executed vision runtime, required VLM stages are
   stored as `FAILED` report warnings instead of being hidden in logs.
 
+Phase 8.3a validates saved-report propagation:
+
+- processing metadata is saved through `ChromatogramEntity.algorithmConfig` and read
+  back by `buildCalculationReportOptions`;
+- final report mapping preserves selected model metadata, device name, stage timings,
+  and failed required model-stage warnings;
+- a selected GGUF/VLM with no executed runtime remains visibly blocked in the report
+  through failed model-stage warnings plus `runtime.executed_unknown`.
+
 ## Next Phase
 
-Phase 8.3 should validate the model-stage audit behavior on saved reports and device
-runs, especially LiteRT success, GGUF success/failure, and selected-model/runtime
-mismatch cases.
+Phase 8.3b should validate the same model-stage audit behavior on Android/device runs,
+especially LiteRT success, GGUF success/failure, and selected-model/runtime mismatch
+cases.

@@ -14,6 +14,7 @@ import com.chromalab.feature.calculation.core.SignalPoint
 import com.chromalab.feature.calculation.core.SignalSource
 import com.chromalab.feature.calculation.core.ValidationResult
 import com.chromalab.feature.calculation.core.WarningSeverity
+import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -267,6 +268,83 @@ class StoredReportMetadataTest {
         assertEquals(2, graph.peaks.single().warnings.single().graphIndex)
         assertEquals(2, graph.warnings.first { it.code == "calculation_run.peak_detection" }.graphIndex)
         assertEquals(2, graph.warnings.first { it.code == "legacy.graph.warning" }.graphIndex)
+    }
+
+    @Test
+    fun savedProcessingModelAuditSurvivesOptionsBuilderAndFinalReport() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\samples\mi8_photo.jpg""",
+            processedPath = """C:\samples\mi8_photo_crop.jpg""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 3,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_500L,
+            sourceImageBounds = PixelRect(0, 0, 900, 700),
+            detectedGraphBounds = PixelRect(30, 50, 820, 560),
+            cropConfidence = 0.88,
+            selectedModel = ModelExecutionInfo(
+                modelId = "qwen3-vl-2b-q4km",
+                modelName = "Qwen3-VL 2B Q4_K_M",
+                runtime = ExecutedRuntime.GGUF,
+            ),
+            executedModel = null,
+            executedRuntime = ExecutedRuntime.UNKNOWN,
+            deviceName = "Xiaomi Mi 8",
+            stageTimings = listOf(
+                ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
+            ),
+        )
+        val chromatogram = chromatogramEntity(
+            sourceType = SourceType.PHOTO,
+            filePath = """C:\samples\mi8_photo.jpg""",
+            algorithmConfig = config,
+        )
+        val run = calculationRun(
+            peaks = listOf(
+                peakResult(
+                    peakId = 0,
+                    rtApex = 1.0,
+                    warning = "fixture peak",
+                ),
+            ),
+        )
+
+        val options = buildCalculationReportOptions(
+            run = run,
+            chromatogram = chromatogram,
+            signal = null,
+        )
+        val report = CalculationRunReportMapper.map(run = run, options = options)
+        val warningCodes = report.warnings.map { it.code }
+
+        assertEquals(ProcessingMode.FULL_ANALYSIS, options.processingMode)
+        assertEquals(ExecutedRuntime.UNKNOWN, options.executedRuntime)
+        assertEquals("qwen3-vl-2b-q4km", options.selectedModel?.modelId)
+        assertEquals("Xiaomi Mi 8", options.deviceName)
+        assertEquals(125L, options.stageTimings.single { it.stageId == "IMAGE_QUALITY" }.durationMillis)
+        assertTrue(options.additionalReportWarnings.any { it.code == "model.execution_missing" })
+        assertTrue(options.additionalReportWarnings.any { it.code == "model.graph_region.required_vision_failed" })
+        assertTrue(options.additionalReportWarnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
+        assertEquals("qwen3-vl-2b-q4km", report.metadata.selectedModel?.modelId)
+        assertNull(report.metadata.executedModel)
+        assertTrue(warningCodes.contains("model.execution_missing"))
+        assertTrue(warningCodes.contains("model.graph_region.required_vision_failed"))
+        assertTrue(warningCodes.contains("model.title_ion_axis.required_vision_failed"))
+        assertTrue(warningCodes.contains("runtime.executed_unknown"))
+        assertEquals(
+            ReportSeverity.FAILED,
+            report.warnings.single { it.code == "model.graph_region.required_vision_failed" }.severity,
+        )
+        assertEquals(
+            ReportSeverity.FAILED,
+            report.warnings.single { it.code == "model.title_ion_axis.required_vision_failed" }.severity,
+        )
+        assertEquals(
+            ReportSeverity.SERIOUS,
+            report.warnings.single { it.code == "runtime.executed_unknown" }.severity,
+        )
     }
 
     @Test

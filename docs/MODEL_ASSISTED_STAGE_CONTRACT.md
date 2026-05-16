@@ -43,6 +43,9 @@ compound assignments.
   timing entries for strict VLM contracts when a vision runtime is executed.
 - Full-analysis metadata records failed required VLM stages as structured report
   warnings when no executed vision model/runtime is present.
+- Saved processing metadata is covered by a regression test through
+  `algorithmConfig`, `buildCalculationReportOptions`, and `CalculationRunReportMapper`
+  so model-stage audit failures remain visible in final reports.
 - Report metadata already records selected/executed model, runtime, backend, device,
   and stage timings; those fields remain required evidence for Phase 8 validation.
 
@@ -56,3 +59,7 @@ Saved reports can now contain these model-stage timing IDs:
 If a full photo analysis has no executed LiteRT/GGUF/MIXED vision runtime, the same
 required stages are stored as `FAILED` report warnings. This keeps failed model stages
 visible in the final report audit instead of only in runtime logs.
+
+Phase 8.3a validates this saved-report path on desktop tests. Android/device validation
+remains a separate required step because it must prove that the runtime metadata written
+by an actual device run matches the same contract.

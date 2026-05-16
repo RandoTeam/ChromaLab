@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.2 - route model-stage outcomes into analysis/report audit`.
-- Next work slice: `Phase 8.3 - validate model-assisted audit behavior on saved reports and device runs`.
+- Latest completed work slice: `Phase 8.3a - validate saved-report model audit propagation`.
+- Next work slice: `Phase 8.3b - validate model-assisted audit behavior on Android/device runs`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -86,6 +86,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
 | Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
+| Phase 8.3a | Done | `TBD` | Validate saved-report model audit propagation through options builder and final report mapper. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -927,6 +928,8 @@ Goal: add models only where they improve recognition without replacing calculati
 - [x] Keep OCR/document-only models out of strict chromatogram analysis unless a
   validated adapter exists.
 - [x] Fail clearly when a required neural vision stage fails.
+- [x] Validate saved-report propagation for model-stage warnings and timings.
+- [ ] Validate the same audit behavior on Android/device runs.
 
 Completed Phase 8.1 work slice:
 
@@ -950,6 +953,20 @@ Completed Phase 8.2 work slice:
    analysis has no executed vision model/runtime.
 4. Preserve selected/executed model metadata and route model-stage warnings through the
    same stored metadata path used by final report export.
+
+Completed Phase 8.3a work slice:
+
+1. Add a regression test for the full saved-report chain:
+   `buildProcessingReportMetadataConfig -> ChromatogramEntity.algorithmConfig ->
+   buildCalculationReportOptions -> CalculationRunReportMapper`.
+2. Verify that selected model metadata, device name, stage timings, and failed required
+   model-stage warnings survive from processing metadata into the final report.
+3. Verify that a selected GGUF/VLM with no executed runtime remains visibly blocked in
+   the final report through `model.execution_missing`,
+   `model.graph_region.required_vision_failed`,
+   `model.title_ion_axis.required_vision_failed`, and `runtime.executed_unknown`.
+4. Keep Android/device model-run validation as Phase 8.3b instead of marking it done
+   without a real device execution.
 
 Exit criteria:
 
