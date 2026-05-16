@@ -22,6 +22,25 @@ Use absolute image and output paths when invoking through Gradle. The desktop ru
 task starts inside the `composeApp` project directory, so repository-relative paths
 can be interpreted differently.
 
+## Optional Local VLM Axis OCR
+
+Desktop axis OCR is disabled unless a local OpenAI-compatible vision endpoint is
+explicitly configured. This keeps the offline runner deterministic and prevents fake
+axis calibration when no model is available.
+
+Example with LM Studio local server:
+
+```powershell
+$env:CHROMALAB_DESKTOP_VLM_BASE_URL = "http://127.0.0.1:1234/v1"
+$env:CHROMALAB_DESKTOP_VLM_MODEL = "qwen3-vl-2b-instruct"
+$env:CHROMALAB_DESKTOP_VLM_MIN_CONFIDENCE = "0.65"
+```
+
+The model is asked to read only the isolated X-axis, Y-axis, and title/ION bands.
+It must return numeric tick values plus normalized tick positions. A result is marked
+`AUTO_ACCEPTED` only when both axes have at least two usable tick anchors and the
+confidence gate passes. Otherwise the run remains blocked at axis calibration.
+
 ## Outputs
 
 Each run writes:
@@ -61,10 +80,9 @@ Initial validation on 2026-05-16:
   multi-graph overlays, then blocks at `axis_calibration` for the same desktop OCR
   gap.
 
-Phase 8.3c.2 adds axis-calibration diagnostic artifacts for each detected graph.
-Those artifacts isolate the exact OCR target bands before any desktop OCR/model
-integration is attempted. This prevents the desktop path from sending whole-page
-photos to OCR/VLM stages when only axis labels and title/ION text are needed.
+Phase 8.3c.3 connects those isolated bands to an optional local VLM reader. If no
+local endpoint is configured, desktop OCR still returns `NOT_AVAILABLE`; this is an
+expected honest blocker, not a fallback calculation mode.
 
 These are expected blockers for the next desktop-first slices. They prove the
 computer workflow can reproduce the exact failure chain without phone testing.

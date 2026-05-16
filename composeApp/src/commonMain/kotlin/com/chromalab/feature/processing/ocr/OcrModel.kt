@@ -10,6 +10,8 @@ enum class OcrStatus {
     ACCEPTED,
     /** OCR result corrected by user */
     CORRECTED,
+    /** OCR/model result accepted by automatic quality gates */
+    AUTO_ACCEPTED,
     /** OCR result ignored, user entered manually */
     IGNORED,
     /** OCR not attempted or failed */
@@ -32,7 +34,7 @@ data class OcrTextElement(
 
 /**
  * OCR result for axis labels.
- * Used as a HINT only — never as ground truth without user confirmation.
+ * Used as a hint until it is accepted by the user or by automatic quality gates.
  */
 @Serializable
 data class AxisOcrResult(

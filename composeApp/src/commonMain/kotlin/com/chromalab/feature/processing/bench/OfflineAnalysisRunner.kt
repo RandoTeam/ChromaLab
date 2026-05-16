@@ -1144,12 +1144,14 @@ private fun buildAxisCalibrationAudit(
     val yStats = yCandidates.axisStats()
     val xReady = xStats.ready
     val yReady = yStats.ready
-    val userConfirmed = ocrResult?.status == OcrStatus.ACCEPTED || ocrResult?.status == OcrStatus.CORRECTED
-    val ready = xReady && yReady && userConfirmed
+    val calibrationAccepted = ocrResult?.status == OcrStatus.ACCEPTED ||
+        ocrResult?.status == OcrStatus.CORRECTED ||
+        ocrResult?.status == OcrStatus.AUTO_ACCEPTED
+    val ready = xReady && yReady && calibrationAccepted
 
     if (!xReady) warnings += "axis_calibration.x_requires_two_pixel_value_points"
     if (!yReady) warnings += "axis_calibration.y_requires_two_pixel_value_points"
-    if (xReady && yReady && !userConfirmed) warnings += "axis_calibration.user_confirmation_required"
+    if (xReady && yReady && !calibrationAccepted) warnings += "axis_calibration.auto_acceptance_required"
     if (!ready) warnings += "axis_calibration.manual_required"
 
     val source = when {
