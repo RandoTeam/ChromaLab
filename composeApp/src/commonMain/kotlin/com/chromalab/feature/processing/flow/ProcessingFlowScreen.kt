@@ -12,9 +12,7 @@ import com.chromalab.feature.processing.axis.AxisEditorScreen
 import com.chromalab.feature.processing.axis.AxisLine
 import com.chromalab.feature.processing.axis.AxisOrigin
 import com.chromalab.feature.processing.calibration.XAxisCalibration
-import com.chromalab.feature.processing.calibration.XCalibrationScreen
 import com.chromalab.feature.processing.calibration.YAxisCalibration
-import com.chromalab.feature.processing.calibration.YCalibrationScreen
 import com.chromalab.feature.processing.crop.CropRect
 import com.chromalab.feature.processing.crop.CropResult
 import com.chromalab.feature.processing.crop.CropReviewScreen
@@ -191,7 +189,6 @@ fun ProcessingFlowScreen(
 
     // --- Run real processing on step entry ---
     var processingError by remember { mutableStateOf<String?>(null) }
-    var manualCalibrationReason by remember { mutableStateOf<String?>(null) }
     var savedSignalId by remember { mutableStateOf<Long?>(null) }
 
     val captureCurrentGraphSnapshot = {
@@ -226,7 +223,6 @@ fun ProcessingFlowScreen(
     LaunchedEffect(currentStep) {
         isProcessing = true
         processingError = null  // clear previous error on step entry
-        manualCalibrationReason = null
         val timedStep = currentStep
         val stepStartedAt = System.currentTimeMillis()
         try {
@@ -434,10 +430,10 @@ fun ProcessingFlowScreen(
                                     )
                                 } else {
                                     println("PIPELINE[X_CAL] blocked: not enough valid OCR points (${validPoints.size})")
-                                    manualCalibrationReason = "Axis calibration requires at least two X tick labels with distinct pixel positions."
+                                    failAutomaticAxisCalibration("at least two distinct X tick label positions are required")
                                 }
                             } else {
-                                manualCalibrationReason = "Axis calibration requires at least two X tick labels before signal conversion."
+                                failAutomaticAxisCalibration("at least two X tick labels are required before signal conversion")
                             }
                         }
                     }
@@ -493,22 +489,18 @@ fun ProcessingFlowScreen(
                                     yCalibration = candidateCalibration
                                 } else {
                                     println("PIPELINE[Y_CAL] blocked: invalid OCR pixels py1=$py1 py2=$py2")
-                                    manualCalibrationReason = "Axis calibration requires valid Y tick pixel positions before signal conversion."
+                                    failAutomaticAxisCalibration("valid Y tick pixel positions are required before signal conversion")
                                 }
                             } else {
-                                manualCalibrationReason = "Axis calibration requires at least two Y tick labels before signal conversion."
+                                failAutomaticAxisCalibration("at least two Y tick labels are required before signal conversion")
                             }
 
-                            if (manualCalibrationReason == null) {
-                                pixelCalibration = buildConfirmedPixelCalibration(
-                                    xCalibration = xCalibration,
-                                    yCalibration = yCalibration,
-                                    axesResult = axes,
-                                    selectedRegion = selectedRegion,
-                                ) ?: error("Axis calibration is incomplete; signal conversion is blocked until X and Y calibration are confirmed.")
-                            } else {
-                                println("PIPELINE[Y_CAL] manual calibration required: $manualCalibrationReason")
-                            }
+                            pixelCalibration = buildConfirmedPixelCalibration(
+                                xCalibration = xCalibration,
+                                yCalibration = yCalibration,
+                                axesResult = axes,
+                                selectedRegion = selectedRegion,
+                            ) ?: failAutomaticAxisCalibration("confirmed X and Y calibration are required before signal conversion")
                         }
                     }
 
@@ -606,7 +598,6 @@ fun ProcessingFlowScreen(
         // All steps auto-advance except EXPORT (the final dashboard).
         if (processingError == null) {
             val shouldAutoAdvance = currentStep.autoAdvance == AutoAdvancePolicy.ALWAYS &&
-                manualCalibrationReason == null &&
                 currentStep.hasRequiredCalibrationOutput(
                     xCalibration = xCalibration,
                     yCalibration = yCalibration,
@@ -929,99 +920,21 @@ fun ProcessingFlowScreen(
             currentStep = next
         }
     }
-    val goBack = { step: ProcessingStep ->
-        val prev = step.prev()
-        if (prev != null) currentStep = prev else onCancel()
-    }
-    val manualAxesResult = axesResult
-    val manualImageWidth = imageWidth.takeIf { it > 0 }
-        ?: (selectedRegion.x + selectedRegion.width).coerceAtLeast(1)
-    val manualImageHeight = imageHeight.takeIf { it > 0 }
-        ?: (selectedRegion.y + selectedRegion.height).coerceAtLeast(1)
-
     Column(modifier = modifier.fillMaxSize()) {
         // Step content
         Box(modifier = Modifier.weight(1f)) {
             // All steps auto-advance — show processing overlay
             if (currentStep != ProcessingStep.EXPORT) {
-                val showManualXCalibration = currentStep == ProcessingStep.X_CALIBRATION &&
-                    !isProcessing &&
-                    processingError == null &&
-                    xCalibration == null &&
-                    manualAxesResult != null
-                val showManualYCalibration = currentStep == ProcessingStep.Y_CALIBRATION &&
-                    !isProcessing &&
-                    processingError == null &&
-                    yCalibration == null &&
-                    manualAxesResult != null
-
-                when {
-                    showManualXCalibration -> {
-                        XCalibrationScreen(
-                            imagePath = currentImagePath,
-                            graphRegion = selectedRegion,
-                            axes = manualAxesResult,
-                            ocrSuggestion = ocrResult,
-                            onAccept = { calibration ->
-                                xCalibration = calibration
-                                manualCalibrationReason = null
-                                advance(ProcessingStep.X_CALIBRATION)
-                            },
-                            onSkip = {},
-                            onBack = { goBack(ProcessingStep.X_CALIBRATION) },
-                            sourceImageWidth = manualImageWidth,
-                            sourceImageHeight = manualImageHeight,
-                            allowSkip = false,
-                            allowWarningAccept = false,
-                            focusGraphRegion = true,
-                        )
-                    }
-
-                    showManualYCalibration -> {
-                        YCalibrationScreen(
-                            imagePath = currentImagePath,
-                            graphRegion = selectedRegion,
-                            axes = manualAxesResult,
-                            ocrSuggestion = ocrResult,
-                            onAccept = { calibration ->
-                                yCalibration = calibration
-                                val confirmed = buildConfirmedPixelCalibration(
-                                    xCalibration = xCalibration,
-                                    yCalibration = yCalibration,
-                                    axesResult = manualAxesResult,
-                                    selectedRegion = selectedRegion,
-                                )
-                                if (confirmed != null) {
-                                    pixelCalibration = confirmed
-                                    manualCalibrationReason = null
-                                    advance(ProcessingStep.Y_CALIBRATION)
-                                } else {
-                                    processingError = "Axis calibration is incomplete; signal conversion is blocked until X and Y calibration are confirmed."
-                                }
-                            },
-                            onSkip = {},
-                            onBack = { goBack(ProcessingStep.Y_CALIBRATION) },
-                            sourceImageWidth = manualImageWidth,
-                            sourceImageHeight = manualImageHeight,
-                            allowSkip = false,
-                            allowWarningAccept = false,
-                            focusGraphRegion = true,
-                        )
-                    }
-
-                    else -> {
-                        AutoProgressOverlay(
-                            currentStep = currentStep,
-                            isProcessing = isProcessing,
-                            sweepProgress = sweepProgress,
-                            bestSweepConfig = bestSweepConfig,
-                            currentGraphIndex = currentGraphIndex,
-                            totalGraphs = graphResult?.filteredRegions?.size ?: 1,
-                            vlmLoadingStatus = vlmLoadingStatus,
-                            elapsedSeconds = elapsedSeconds,
-                        )
-                    }
-                }
+                AutoProgressOverlay(
+                    currentStep = currentStep,
+                    isProcessing = isProcessing,
+                    sweepProgress = sweepProgress,
+                    bestSweepConfig = bestSweepConfig,
+                    currentGraphIndex = currentGraphIndex,
+                    totalGraphs = graphResult?.filteredRegions?.size ?: 1,
+                    vlmLoadingStatus = vlmLoadingStatus,
+                    elapsedSeconds = elapsedSeconds,
+                )
 
                 // Error overlay on top
                 val error = processingError
@@ -1291,6 +1204,13 @@ private fun buildConfirmedPixelCalibration(
         originPixelX = (origin?.x ?: selectedRegion.x.toFloat()) - selectedRegion.x.toFloat(),
         originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) -
             selectedRegion.y.toFloat(),
+    )
+}
+
+private fun failAutomaticAxisCalibration(reason: String): Nothing {
+    error(
+        "Automatic axis calibration failed: $reason. " +
+            "The report was not saved because X/Y axes must be calibrated automatically.",
     )
 }
 

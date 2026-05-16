@@ -37,7 +37,13 @@ The capture flow should feel like an assisted scanner:
 - show minimal framing guidance, not technical instructions;
 - run automatic crop, perspective correction, normalization, filter sweep, OCR, and graph detection;
 - keep filter/crop/preparation details as internal audit data;
-- ask for manual correction only when automatic preparation cannot produce a trustworthy graph.
+- stop with a clear retake/review state when automatic preparation cannot produce a trustworthy graph.
+
+Normal chromatogram analysis must not open manual X/Y axis calibration as a required
+user step. Axis calibration is an internal audited stage: it either succeeds
+automatically from graph geometry and tick OCR, or the analysis is blocked without a
+saved report. Manual axis tooling may exist only as a diagnostic/developer workflow
+until a separate guided review mode is intentionally designed.
 
 The user-facing screen should show a compact state such as:
 
