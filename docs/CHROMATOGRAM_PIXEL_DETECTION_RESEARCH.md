@@ -177,8 +177,11 @@ Phase 6.5 is implemented: calibrated bench runs now write
 main report sections, visual evidence, appendix sections, and export artifacts without
 treating raw Markdown as the final phone presentation.
 
-Phase 6.6 should wire this contract into the real report/export surface while keeping
-trace-artifact and raw warning-code data secondary.
+Phase 6.6 is implemented: real calculation reports now export
+`chromatogram_report_ui_contract.json`, the Compose report preview follows the UI
+contract for graph order and visual evidence placement, and HTML export renders directly
+from the structured UI contract instead of parsing Markdown. Trace-artifact and raw
+warning-code data remain secondary appendix material.
 
 ## Sources
 

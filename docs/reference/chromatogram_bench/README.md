@@ -413,7 +413,18 @@ Fixture tests parse the JSON contract and verify that main report sections do no
 raw warning codes, that the appendix does, and that generated visual evidence artifacts
 exist when the contract marks them as generated.
 
+Phase 6.6 connects the same idea to the real report/export surface:
+
+- real calculation exports now include `chromatogram_report_ui_contract.json`;
+- the final HTML report is rendered directly from the structured UI contract rather
+  than by parsing raw Markdown;
+- the Compose report preview consumes the UI contract for graph order and visual
+  evidence placement;
+- graph focus, curve overlay, and peak overlay markers appear next to the report
+  sections they support;
+- raw warning codes and export manifests stay inside the technical appendix path.
+
 ## Next Phase
 
-Phase 6.6 should wire this contract into the real report/export surface while preserving
-nearby visual evidence and keeping technical appendix details secondary.
+Phase 7 should start the offline domain knowledge pack for chromatogram types, common
+ions, and supported chemical interpretation rules.

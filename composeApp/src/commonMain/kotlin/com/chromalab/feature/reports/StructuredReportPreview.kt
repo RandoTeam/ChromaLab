@@ -50,11 +50,16 @@ fun StructuredReportPreview(
     validation: ReportContractValidationResult,
     modifier: Modifier = Modifier,
     graphOverlays: Map<Int, ChromatogramChartState> = emptyMap(),
+    uiContract: ChromatogramReportUiContract? = null,
 ) {
+    val reportUiContract = uiContract ?: remember(report, validation) {
+        ChromatogramReportUiContractBuilder.build(report, validation)
+    }
     val allWarnings = remember(report) { report.allWarnings() }
     val qualityState = remember(report, validation) {
         buildQualityState(validation, allWarnings)
     }
+    val graphsByIndex = remember(report) { report.graphs.associateBy { it.graphIndex } }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -91,14 +96,16 @@ fun StructuredReportPreview(
             warnings = allWarnings,
         )
 
-        report.graphs.forEach { graph ->
+        reportUiContract.graphs.forEach { graphContract ->
+            val graph = graphsByIndex[graphContract.graphIndex] ?: return@forEach
             GraphReportSection(
                 graph = graph,
                 overlay = graphOverlays[graph.graphIndex],
+                uiContract = graphContract,
             )
         }
 
-        TechnicalAppendix(report = report, warnings = allWarnings)
+        TechnicalAppendix(report = report, warnings = allWarnings, uiContract = reportUiContract)
     }
 }
 
@@ -340,17 +347,27 @@ private fun ReportHeader(
 private fun GraphReportSection(
     graph: GraphReport,
     overlay: ChromatogramChartState?,
+    uiContract: GraphReportUiContract,
 ) {
     ReportSection(title = "Graph ${graph.graphIndex}") {
         IdentificationBlock(graph)
         HorizontalDivider()
         PreparationBlock(graph)
+        VisualEvidenceStrip(uiContract.visualEvidenceFor("source_and_graph_preparation"))
         HorizontalDivider()
         AxisBlock(graph)
+        VisualEvidenceStrip(uiContract.visualEvidenceFor("axis_calibration"))
         HorizontalDivider()
-        GraphOverlayBlock(graph = graph, overlay = overlay)
+        GraphOverlayBlock(
+            graph = graph,
+            overlay = overlay,
+            visualEvidence = uiContract.visualEvidenceFor("interactive_or_rendered_graph"),
+        )
         HorizontalDivider()
-        PeakTable(peaks = graph.peaks)
+        PeakTable(
+            peaks = graph.peaks,
+            visualEvidence = uiContract.visualEvidenceFor("peak_table"),
+        )
         HorizontalDivider()
         QualityBlock(graph)
         HorizontalDivider()
@@ -364,8 +381,10 @@ private fun GraphReportSection(
 private fun GraphOverlayBlock(
     graph: GraphReport,
     overlay: ChromatogramChartState?,
+    visualEvidence: List<ReportVisualEvidenceContract>,
 ) {
     SectionBlock(title = "Graph overlay") {
+        VisualEvidenceStrip(visualEvidence)
         val chartState = remember(graph, overlay) {
             overlay?.withReportLabels(graph) ?: graph.toMetricOverlayState()
         }
@@ -503,8 +522,12 @@ private fun OverlayLegend(layers: List<ChartLayer>) {
 }
 
 @Composable
-private fun PeakTable(peaks: List<ReportPeak>) {
+private fun PeakTable(
+    peaks: List<ReportPeak>,
+    visualEvidence: List<ReportVisualEvidenceContract>,
+) {
     SectionBlock(title = "Peak table") {
+        VisualEvidenceStrip(visualEvidence)
         if (peaks.isEmpty()) {
             EmptyText("No peaks available.")
             return@SectionBlock
@@ -673,6 +696,7 @@ private fun QualitySummary(
 private fun TechnicalAppendix(
     report: ChromatogramReport,
     warnings: List<ReportWarning>,
+    uiContract: ChromatogramReportUiContract,
 ) {
     var expanded by remember { mutableStateOf(false) }
     ReportSection(title = "Technical appendix") {
@@ -722,6 +746,58 @@ private fun TechnicalAppendix(
         SectionBlock(title = "Warning codes") {
             CompactWarningList(warnings, maxItems = 20, includeCode = true)
         }
+
+        SectionBlock(title = "Export manifest") {
+            uiContract.exportArtifacts.forEach { artifact ->
+                DetailLine(
+                    label = artifact.label,
+                    value = "${artifact.artifactPath} / ${if (artifact.userFacing) "user-facing" else "technical"}",
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VisualEvidenceStrip(visualEvidence: List<ReportVisualEvidenceContract>) {
+    if (visualEvidence.isEmpty()) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        visualEvidence.forEach { evidence ->
+            EvidenceChip(evidence)
+        }
+    }
+}
+
+@Composable
+private fun EvidenceChip(evidence: ReportVisualEvidenceContract) {
+    val ready = evidence.generatedStatus == "rendered" || evidence.generatedStatus == "generated"
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = if (ready) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.70f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.70f)
+        },
+        contentColor = if (ready) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+    ) {
+        Text(
+            text = evidence.label,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -1103,6 +1179,9 @@ private fun GraphReport.toMetricOverlayState(): ChromatogramChartState {
         peaks = markerData,
     )
 }
+
+private fun GraphReportUiContract.visualEvidenceFor(sectionId: String): List<ReportVisualEvidenceContract> =
+    visualEvidence.filter { it.nearSectionId == sectionId && it.placement == ReportUiPlacement.MAIN_REPORT }
 
 private fun ReportPeak.toMetricSignalPoints(defaultBaseline: Double): List<ChartPoint> {
     val apexTime = retentionTime.value.takeIfUsable() ?: return emptyList()

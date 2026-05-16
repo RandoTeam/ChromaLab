@@ -15,8 +15,12 @@ class ReportHtmlRendererTest {
         assertTrue(html.contains("@page { size: A4; margin: 14mm; }"), html)
         assertTrue(html.contains("@media print"), html)
         assertTrue(html.contains("ChromaLab offline analytical report"), html)
+        assertTrue(html.contains("data-ui-schema=\"chromalab.chromatogram_report_ui.v1\""), html)
         assertTrue(html.contains("<h2>1. Overview</h2>"), html)
         assertTrue(html.contains("<table>"), html)
+        assertTrue(html.contains("Selected graph focus"), html)
+        assertTrue(html.contains("Curve extraction overlay"), html)
+        assertTrue(html.contains("Peak integration overlay"), html)
         assertTrue(html.contains("Value provenance"), html)
         assertTrue(html.contains("Fixture executed vision model"), html)
     }

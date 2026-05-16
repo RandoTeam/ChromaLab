@@ -32,6 +32,7 @@ import com.chromalab.feature.reports.StructuredReportPreview
  * Connected to real ExportEngine logic:
  * - peaks.csv via PeaksCsvExporter
  * - calculation.json via CalculationJsonExporter
+ * - chromatogram_report_ui_contract.json via CalculationRunReportExporter
  * - chromatogram_report.md via CalculationRunReportExporter
  * - chromatogram_report.html via CalculationRunReportExporter
  * - Share via onShare callback with generated content
@@ -58,6 +59,9 @@ fun ExportCalculationScreen(
     }
     val structuredValidation = remember(run, reportOptions) {
         CalculationRunReportExporter.validate(run, reportOptions)
+    }
+    val reportUiContract = remember(run, reportOptions) {
+        CalculationRunReportExporter.buildUiContract(run, reportOptions)
     }
     val reportGraphOverlays = remember(run, structuredReport, reportOptions) {
         val graphIndex = structuredReport.graphs.singleOrNull()?.graphIndex ?: reportOptions.graphIndex.coerceAtLeast(1)
@@ -101,6 +105,7 @@ fun ExportCalculationScreen(
                 report = structuredReport,
                 validation = structuredValidation,
                 graphOverlays = reportGraphOverlays,
+                uiContract = reportUiContract,
             )
         }
 
@@ -143,7 +148,7 @@ fun ExportCalculationScreen(
 
         ExportButton(
             title = "Final report (HTML / PDF-ready)",
-            subtitle = "chromatogram_report.html - same structured report, styled for print or PDF",
+            subtitle = "chromatogram_report.html - user-facing report rendered from the UI contract",
             icon = Icons.Filled.Description,
             color = Color(0xFFAB47BC),
             onClick = {
@@ -151,6 +156,18 @@ fun ExportCalculationScreen(
                 val validation = CalculationRunReportExporter.validate(run, reportOptions)
                 onFileSave("chromatogram_report_${run.id}.html", html)
                 exportStatus = "Saved chromatogram_report.html - ${validation.errorCount} errors, ${validation.warningCount} warnings"
+            },
+        )
+
+        ExportButton(
+            title = "Report UI contract (JSON)",
+            subtitle = "chromatogram_report_ui_contract.json - structured surface map for UI/export",
+            icon = Icons.Filled.Code,
+            color = Color(0xFF26A69A),
+            onClick = {
+                val contractJson = CalculationRunReportExporter.exportUiContractJson(run, reportOptions)
+                onFileSave("chromatogram_report_ui_contract_${run.id}.json", contractJson)
+                exportStatus = "Saved chromatogram_report_ui_contract.json"
             },
         )
 
