@@ -12,6 +12,9 @@ object OfflineAnalysisAuditArtifacts {
     fun toJson(audit: OfflineAnalysisAudit): String =
         json.encodeToString(audit)
 
+    fun toCalibratedReportUiContractJson(audit: OfflineAnalysisAudit): String =
+        json.encodeToString(OfflineCalibratedReportUiContractBuilder.build(audit))
+
     fun toCalibratedReportMarkdown(audit: OfflineAnalysisAudit): String = buildString {
         appendLine("# ChromaLab Calibrated Chromatogram Report")
         appendLine()

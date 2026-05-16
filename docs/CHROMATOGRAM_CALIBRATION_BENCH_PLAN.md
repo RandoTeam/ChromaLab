@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 6 - Structured Report Validation`, using the calibrated
   desktop/emulator bench artifacts produced by the earlier preparation, calibration,
   signal, and peak-detection gates.
-- Latest completed work slice: `Phase 6.4 - connect rendered report artifacts to visual graph evidence and export/UI planning`.
-- Next work slice: `Phase 6.5 - prepare calibrated report contract for mobile/export UI wiring`.
+- Latest completed work slice: `Phase 6.5 - prepare calibrated report contract for mobile/export UI wiring`.
+- Next work slice: `Phase 6.6 - wire calibrated report contract into the export/report UI surface`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -78,7 +78,8 @@ artifact summary; it is not the primary plan.
 | Phase 6.2 | Done | `e28aecf` | Add missing peak-table report columns to the calibrated audit contract. |
 | Phase 6.3 | Done | `e642368` | Render calibrated audit report sections from the structured contract. |
 | Phase 6.4 | Done | `178b9c9` | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
-| Phase 6.5 | Next | Pending | Prepare calibrated report contract for mobile/export UI wiring. |
+| Phase 6.5 | Done | Pending | Prepare calibrated report contract for mobile/export UI wiring. |
+| Phase 6.6 | Next | Pending | Wire calibrated report contract into the export/report UI surface. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -832,13 +833,27 @@ Completed Phase 6.4 work slice:
 5. Keep graph/report ordering and raw-code separation locked while preparing export/UI
    integration.
 
-Next Phase 6.5 work slice:
+Completed Phase 6.5 work slice:
 
 1. Define how the calibrated report artifact maps into the actual mobile/export report
    surface without showing raw Markdown as the finished phone UI.
 2. Preserve the visual-evidence contract so graph focus, curve overlay, and peak overlay
    can be rendered near their related sections.
 3. Keep technical appendix data secondary and explicit.
+4. Add `calibrated_report_ui_contract.json` as a structured UI/export contract beside
+   `calibrated_report.md`.
+5. Mark `rawMarkdownIsFinalUi=false`, keep main report sections free of raw warning
+   codes, and keep raw codes visible only in the technical appendix contract.
+6. Require fixture tests to parse the UI contract, verify graph order, verify visual
+   evidence placement, and verify generated artifacts exist when marked as generated.
+
+Next Phase 6.6 work slice:
+
+1. Wire the calibrated report UI contract into the real report/export surface instead
+   of relying on raw Markdown parsing.
+2. Render graph focus, curve overlay, and peak overlay near their related report
+   sections.
+3. Keep technical appendix details behind secondary UI/export affordances.
 
 Exit criteria:
 

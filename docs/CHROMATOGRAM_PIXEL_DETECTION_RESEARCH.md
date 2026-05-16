@@ -172,8 +172,13 @@ graph focus, curve, and peak overlays; trace-artifact masks stay in the technica
 appendix path. Fixture tests verify that referenced artifacts exist for calibrated
 reports.
 
-Phase 6.5 should prepare this report/evidence contract for mobile/export UI wiring
-without treating raw Markdown as the final phone presentation.
+Phase 6.5 is implemented: calibrated bench runs now write
+`calibrated_report_ui_contract.json`, a structured mobile/export contract that maps
+main report sections, visual evidence, appendix sections, and export artifacts without
+treating raw Markdown as the final phone presentation.
+
+Phase 6.6 should wire this contract into the real report/export surface while keeping
+trace-artifact and raw warning-code data secondary.
 
 ## Sources
 

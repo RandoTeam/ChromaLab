@@ -6,11 +6,13 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationSource
+import com.chromalab.feature.processing.bench.OfflineCalibratedReportUiContract
 import com.chromalab.feature.processing.bench.OfflineGraphAudit
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationInput
 import com.chromalab.feature.processing.bench.OfflineManualAxisCalibrationPointInput
 import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
 import com.chromalab.feature.processing.bench.OfflineReportContractSectionStatus
+import com.chromalab.feature.processing.bench.OfflineReportUiPlacement
 import com.chromalab.feature.processing.bench.OfflineStageStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
@@ -24,6 +26,8 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import javax.imageio.ImageIO
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,6 +35,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+
+private val reportContractJson = Json {
+    ignoreUnknownKeys = false
+}
 
 class ChromatogramBenchFixtureTest {
 
@@ -251,6 +259,10 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 Files.size(outputDir.resolve("calibrated_report.md")) > 0L,
                 "${fixture.id} calibrated report artifact must be written",
+            )
+            assertTrue(
+                Files.size(outputDir.resolve("calibrated_report_ui_contract.json")) > 0L,
+                "${fixture.id} calibrated report UI contract must be written",
             )
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
             audit.graphs.forEach { graph ->
@@ -492,6 +504,7 @@ class ChromatogramBenchFixtureTest {
         assertSparseStackedIonPeakQualityScope(auditsById)
         auditsById.values.forEach { assertReportContractAudit(it) }
         auditsById.values.forEach { assertCalibratedReportArtifact(it) }
+        auditsById.values.forEach { assertCalibratedReportUiContractArtifact(it) }
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -636,6 +649,7 @@ class ChromatogramBenchFixtureTest {
         )
         assertReportContractAudit(audit)
         assertCalibratedReportArtifact(audit)
+        assertCalibratedReportUiContractArtifact(audit)
         assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
         assertTrue(audit.blockedAtStage != "peak_metrics", "${audit.sourceId} must pass peak metrics gate")
         if (expectPeakSanityReady) {
@@ -843,6 +857,140 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 Files.size(outputDir.resolve(relativePath)) > 0L,
                 "${audit.sourceId} graph ${graph.graphIndex} visual evidence artifact $relativePath must exist",
+            )
+        }
+    }
+
+    private fun assertCalibratedReportUiContractArtifact(audit: OfflineAnalysisAudit) {
+        val contractPath = Path.of(audit.outputDir).resolve("calibrated_report_ui_contract.json")
+        assertTrue(Files.size(contractPath) > 0L, "${audit.sourceId} UI contract artifact must be non-empty")
+        val contract = reportContractJson.decodeFromString<OfflineCalibratedReportUiContract>(
+            Files.readString(contractPath),
+        )
+
+        assertEquals(audit.sourceId, contract.sourceId, "${audit.sourceId} UI contract source")
+        assertEquals(audit.graphs.size, contract.graphCount, "${audit.sourceId} UI contract graph count")
+        assertFalse(contract.rawMarkdownIsFinalUi, "${audit.sourceId} raw Markdown must not be marked as final phone UI")
+        assertEquals("calibrated_report.md", contract.markdownArtifactPath, "${audit.sourceId} Markdown artifact path")
+        assertFalse(
+            contract.primarySurface.rawWarningCodesVisible,
+            "${audit.sourceId} main report surface must not expose raw warning codes",
+        )
+        assertTrue(
+            contract.primarySurface.sections.any {
+                it.sectionId == "overview" && it.placement == OfflineReportUiPlacement.MAIN_REPORT
+            },
+            "${audit.sourceId} UI contract must expose overview as a main report section",
+        )
+        assertTrue(
+            contract.exportArtifacts.any {
+                it.artifactPath == "calibrated_report_ui_contract.json" && !it.userFacing
+            },
+            "${audit.sourceId} UI contract artifact must be available for app/export wiring",
+        )
+        assertEquals(
+            audit.graphs.sortedBy { it.graphIndex }.map { it.graphIndex },
+            contract.graphs.map { it.graphIndex },
+            "${audit.sourceId} UI contract must preserve graph order",
+        )
+        assertTrue(
+            contract.technicalAppendix.rawWarningCodesVisible,
+            "${audit.sourceId} technical appendix must keep raw warning codes visible",
+        )
+
+        audit.graphs.forEach { graph ->
+            val graphContract = contract.graphs.single { it.graphIndex == graph.graphIndex }
+            assertTrue(
+                graphContract.sections.none {
+                    it.placement == OfflineReportUiPlacement.MAIN_REPORT && it.rawWarningCodesVisible
+                },
+                "${audit.sourceId} graph ${graph.graphIndex} main UI sections must not expose raw warning codes",
+            )
+            assertTrue(
+                graphContract.sections.any {
+                    it.sectionId == "visual_evidence" &&
+                        it.placement == OfflineReportUiPlacement.MAIN_REPORT &&
+                        it.sourceContractSection == "interactive_or_rendered_graph"
+                },
+                "${audit.sourceId} graph ${graph.graphIndex} must map visual evidence into the main report",
+            )
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "manual_calibration_focus",
+                expectedPath = "manual_calibration_graph_${graph.graphIndex}.png",
+                expectedPlacement = OfflineReportUiPlacement.MAIN_REPORT,
+                expectedNearSection = "axis_calibration",
+                requiredForMobile = true,
+            )
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "curve_overlay",
+                expectedPath = "graph_${graph.graphIndex}/curve_overlay.png",
+                expectedPlacement = OfflineReportUiPlacement.MAIN_REPORT,
+                expectedNearSection = "interactive_or_rendered_graph",
+                requiredForMobile = true,
+            )
+            if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
+                assertVisualEvidenceContractEntry(
+                    audit = audit,
+                    graph = graph,
+                    contract = contract,
+                    evidenceId = "peak_overlay",
+                    expectedPath = "peak_overlay_graph_${graph.graphIndex}.png",
+                    expectedPlacement = OfflineReportUiPlacement.MAIN_REPORT,
+                    expectedNearSection = "peak_table",
+                    requiredForMobile = true,
+                )
+            }
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "trace_artifact_mask",
+                expectedPath = "graph_${graph.graphIndex}/trace_artifacts.png",
+                expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                expectedNearSection = "trace_artifact_masks",
+                requiredForMobile = false,
+            )
+        }
+    }
+
+    private fun assertVisualEvidenceContractEntry(
+        audit: OfflineAnalysisAudit,
+        graph: OfflineGraphAudit,
+        contract: OfflineCalibratedReportUiContract,
+        evidenceId: String,
+        expectedPath: String,
+        expectedPlacement: OfflineReportUiPlacement,
+        expectedNearSection: String,
+        requiredForMobile: Boolean,
+    ) {
+        val graphContract = contract.graphs.single { it.graphIndex == graph.graphIndex }
+        val evidence = graphContract.visualEvidence.single { it.evidenceId == evidenceId }
+        assertEquals(expectedPath, evidence.artifactPath, "${audit.sourceId} graph ${graph.graphIndex} $evidenceId path")
+        assertEquals(
+            expectedPlacement,
+            evidence.placement,
+            "${audit.sourceId} graph ${graph.graphIndex} $evidenceId placement",
+        )
+        assertEquals(
+            expectedNearSection,
+            evidence.nearSectionId,
+            "${audit.sourceId} graph ${graph.graphIndex} $evidenceId nearby section",
+        )
+        assertEquals(
+            requiredForMobile,
+            evidence.requiredForMobile,
+            "${audit.sourceId} graph ${graph.graphIndex} $evidenceId mobile requirement",
+        )
+        if (evidence.generatedStatus == "generated") {
+            assertTrue(
+                Files.size(Path.of(audit.outputDir).resolve(expectedPath)) > 0L,
+                "${audit.sourceId} graph ${graph.graphIndex} $evidenceId generated artifact must exist",
             )
         }
     }
@@ -1505,6 +1653,10 @@ private fun writeAuditArtifacts(
     Files.createDirectories(outputDir)
     Files.writeString(outputDir.resolve("audit.json"), OfflineAnalysisAuditArtifacts.toJson(audit))
     Files.writeString(outputDir.resolve("audit_summary.md"), OfflineAnalysisAuditArtifacts.toSummaryMarkdown(audit))
+    Files.writeString(
+        outputDir.resolve("calibrated_report_ui_contract.json"),
+        OfflineAnalysisAuditArtifacts.toCalibratedReportUiContractJson(audit),
+    )
     Files.writeString(outputDir.resolve("calibrated_report.md"), OfflineAnalysisAuditArtifacts.toCalibratedReportMarkdown(audit))
     val overlayImagePath = audit.orientationCorrection?.imagePath?.let { Path.of(it) } ?: imagePath
     writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))

@@ -394,8 +394,26 @@ The table also records whether each artifact belongs near the main report sectio
 the technical appendix, which is the first bridge toward the future mobile/export UI
 without treating raw Markdown as the final phone presentation.
 
+Phase 6.5 adds the first explicit mobile/export UI contract artifact:
+
+- `calibrated_report_ui_contract.json` - structured contract for rendering the
+  calibrated report without parsing `calibrated_report.md` as the phone UI.
+
+The contract records:
+
+- `rawMarkdownIsFinalUi=false`;
+- main report sections versus technical appendix sections;
+- graph/report order;
+- visual evidence placement near preparation, axis calibration, rendered graph, and
+  peak table sections;
+- trace-artifact masks as appendix-only evidence;
+- export artifacts and whether they are user-facing.
+
+Fixture tests parse the JSON contract and verify that main report sections do not expose
+raw warning codes, that the appendix does, and that generated visual evidence artifacts
+exist when the contract marks them as generated.
+
 ## Next Phase
 
-Phase 6.5 should prepare the calibrated report contract for mobile/export UI wiring
-while preserving graph/report ordering, nearby visual evidence, and secondary technical
-appendix details.
+Phase 6.6 should wire this contract into the real report/export surface while preserving
+nearby visual evidence and keeping technical appendix details secondary.
