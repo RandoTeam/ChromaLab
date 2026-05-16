@@ -104,6 +104,9 @@ Needs cleanup before broader alpha testing:
 - [ ] Cache Hugging Face search results.
 - [ ] Add cancel/retry UI for downloads and activation.
 - [ ] Add memory-pressure handling for chat sessions.
+- [ ] Add desktop model runtime path from `docs/DESKTOP_MODEL_RUNTIME_ARCHITECTURE.md`:
+  LM Studio/OpenAI-compatible server first, then managed desktop llama.cpp with
+  CUDA/Vulkan/CPU backends.
 
 ### 4. App UX Settings
 
