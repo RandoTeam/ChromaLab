@@ -36,6 +36,19 @@ $env:CHROMALAB_DESKTOP_VLM_MODEL = "qwen3-vl-2b-instruct"
 $env:CHROMALAB_DESKTOP_VLM_MIN_CONFIDENCE = "0.65"
 ```
 
+For deterministic parser/gate debugging without a running model, use a recorded
+response file:
+
+```powershell
+$env:CHROMALAB_DESKTOP_VLM_RESPONSE_FILE = "C:\VietnAi\Hromotograth\docs\reference\chromatogram_bench\axis_vlm_replay_bench_07.json"
+```
+
+Replay mode goes through the same JSON parser, tick-position mapping, acceptance
+gate, axis calibration, signal conversion, peak detection, and report validation
+path as a live model response. It adds the warning
+`desktop_axis_vlm.replay_response_file` so diagnostic replay output is not mistaken
+for a live model result.
+
 The model is asked to read only the isolated X-axis, Y-axis, and title/ION bands.
 It must return numeric tick values plus normalized tick positions. A result is marked
 `AUTO_ACCEPTED` only when both axes have at least two usable tick anchors and the
@@ -46,6 +59,10 @@ sections. Important warning codes include:
 
 - `desktop_axis_vlm.endpoint_not_configured` - no local OpenAI-compatible endpoint
   is configured.
+- `desktop_axis_vlm.replay_response_file` - a recorded response file was used
+  instead of a live model call.
+- `desktop_axis_vlm.replay_file_read_failed` - the configured replay response file
+  could not be read.
 - `desktop_axis_vlm.http_status_N` - endpoint replied with a non-success status.
 - `desktop_axis_vlm.response_content_missing` - endpoint response had no message
   content.
@@ -96,9 +113,12 @@ Initial validation on 2026-05-16:
   multi-graph overlays, then blocks at `axis_calibration` for the same desktop OCR
   gap.
 
-Phase 8.3c.4 adds audit-visible VLM/OCR warning propagation. If no local endpoint
-is configured, desktop OCR still returns `NOT_AVAILABLE`; this is an expected honest
-blocker, not a fallback calculation mode, and is now visible as
+Phase 8.3c.5a adds replay mode for recorded VLM JSON responses. On
+`bench_07_rotated_page_photo`, the included replay file drives the full desktop path
+through `AUTO_ACCEPTED` OCR, confirmed axis calibration, signal conversion, peak
+detection, and report validation. Without either replay file or local endpoint,
+desktop OCR still returns `NOT_AVAILABLE`; this remains an expected honest blocker,
+not a fallback calculation mode, and is visible as
 `desktop_axis_vlm.endpoint_not_configured`.
 
 These are expected blockers for the next desktop-first slices. They prove the

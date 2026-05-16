@@ -1,0 +1,21 @@
+{
+  "xAxis": {
+    "unit": "min",
+    "ticks": [
+      { "text": "5.00", "value": 5.0, "position": 0.08, "confidence": 0.92 },
+      { "text": "30.00", "value": 30.0, "position": 0.48, "confidence": 0.92 },
+      { "text": "55.00", "value": 55.0, "position": 0.88, "confidence": 0.92 }
+    ]
+  },
+  "yAxis": {
+    "unit": "Abundance",
+    "ticks": [
+      { "text": "0", "value": 0.0, "position": 0.92, "confidence": 0.90 },
+      { "text": "200000", "value": 200000.0, "position": 0.54, "confidence": 0.90 },
+      { "text": "400000", "value": 400000.0, "position": 0.16, "confidence": 0.90 }
+    ]
+  },
+  "title": "Ion 71.00 (70.70 to 71.70): BELYI TIGR_1.D\\data.ms",
+  "confidence": 0.91,
+  "warnings": []
+}

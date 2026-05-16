@@ -39,7 +39,7 @@ actual class AxisOcrReader actual constructor() {
                 return@runCatching unavailableAxisOcrResult("desktop_axis_vlm.axis_bands_unusable")
             }
 
-            val rawResponse = DesktopOpenAiVisionClient(config).readAxisBands(
+            val rawResponse = config.readReplayResponse() ?: DesktopOpenAiVisionClient(config).readAxisBands(
                 xBandImage = image.crop(bands.xBand),
                 yBandImage = image.crop(bands.yBand),
                 titleBandImage = image.crop(bands.titleBand),
@@ -58,11 +58,32 @@ actual class AxisOcrReader actual constructor() {
     }
 }
 
+private fun DesktopAxisVlmConfig.readReplayResponse(): DesktopVlmTextResult? {
+    val path = responseFile ?: return null
+    return runCatching {
+        File(path).readText()
+    }.fold(
+        onSuccess = { content ->
+            DesktopVlmTextResult(
+                content = content,
+                warnings = listOf("desktop_axis_vlm.replay_response_file"),
+            )
+        },
+        onFailure = {
+            DesktopVlmTextResult(
+                content = null,
+                warnings = listOf("desktop_axis_vlm.replay_file_read_failed"),
+            )
+        },
+    )
+}
+
 private data class DesktopAxisVlmConfig(
-    val baseUrl: String,
+    val baseUrl: String?,
     val model: String,
     val timeoutMs: Long,
     val minConfidence: Float,
+    val responseFile: String?,
 ) {
     companion object {
         fun fromEnvironment(): DesktopAxisVlmConfig? {
@@ -70,7 +91,10 @@ private data class DesktopAxisVlmConfig(
                 ?.trim()
                 ?.trimEnd('/')
                 ?.takeIf { it.isNotBlank() }
-                ?: return null
+            val responseFile = System.getenv("CHROMALAB_DESKTOP_VLM_RESPONSE_FILE")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+            if (baseUrl == null && responseFile == null) return null
             val model = System.getenv("CHROMALAB_DESKTOP_VLM_MODEL")
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
@@ -83,7 +107,7 @@ private data class DesktopAxisVlmConfig(
                 ?.toFloatOrNull()
                 ?.coerceIn(0.1f, 0.99f)
                 ?: 0.65f
-            return DesktopAxisVlmConfig(baseUrl, model, timeoutMs, minConfidence)
+            return DesktopAxisVlmConfig(baseUrl, model, timeoutMs, minConfidence, responseFile)
         }
     }
 }
@@ -101,6 +125,10 @@ private class DesktopOpenAiVisionClient(
         yBandImage: BufferedImage,
         titleBandImage: BufferedImage,
     ): DesktopVlmTextResult {
+        val baseUrl = config.baseUrl ?: return DesktopVlmTextResult(
+            content = null,
+            warnings = listOf("desktop_axis_vlm.endpoint_not_configured"),
+        )
         val payload = buildJsonObject {
             put("model", config.model)
             put("temperature", 0)
@@ -127,7 +155,7 @@ private class DesktopOpenAiVisionClient(
             )
         }
         val request = HttpRequest.newBuilder()
-            .uri(URI.create("${config.baseUrl}/chat/completions"))
+            .uri(URI.create("$baseUrl/chat/completions"))
             .timeout(Duration.ofMillis(config.timeoutMs))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
