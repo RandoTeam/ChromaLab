@@ -2,7 +2,9 @@
 
 Phase 7.1 defines the offline knowledge-pack schema. Phase 7.2 adds the first conservative
 GC-MS EI `m/z 92` and alkylbenzene-oriented reference data. Phase 7.3 adds n-paraffin
-reference-series support for Kovats calculations.
+reference-series support for Kovats calculations. Phase 7.4 expands the built-in
+chromatogram/ion coverage and wires the local knowledge into structured report
+interpretation.
 
 The goal is to keep chemical interpretation conservative and auditable:
 
@@ -18,6 +20,7 @@ composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgeP
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgePackValidator.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/ChromaLabBaseKnowledgePack.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/KovatsIndexCalculator.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/ReportKnowledgeInterpreter.kt
 ```
 
 ## Top-Level Groups
@@ -51,10 +54,13 @@ Empty Kovats libraries are allowed as schema drafts, but they produce warnings.
 It currently includes:
 
 - NIST Chemistry WebBook source records for SRD 69, toluene, ethylbenzene, m-xylene, p-xylene, and o-xylene.
-- A `gc-ms-ei-eic` chromatogram type for GC-MS EI extracted ion chromatograms.
+- GC-MS TIC, EIC, XIC, and SIM chromatogram type contracts.
 - The `ei-mz-92` channel with the `91.70..92.70 m/z` window.
-- The related `ei-mz-91` support channel.
+- Related channels used by the current bench/reference images: `m/z 57`, `71`, `83`,
+  `91`, `191`, `217`, `218`, `198.0315`, `326`, `360`, and `394`.
 - A conservative `monoalkylbenzenes` compound class.
+- Conservative `n-paraffins`, `petroleum-biomarkers`, and `method-targeted-extracts`
+  classes.
 - A `monoalkylbenzene-carbon-series` candidate series for C7-C30.
 - A non-polar temperature-ramp Kovats seed library for C7-C8 alkylbenzenes.
 - A `n-paraffins` compound class for straight-chain alkane references.
@@ -68,6 +74,11 @@ The built-in pack is intentionally conservative:
 - Xylene and ethylbenzene isomers are kept as separate reference entries, but their shared formula and overlapping RI behavior must be treated as an ambiguity, not a resolved identity.
 - The C7-C8 RI records are broad seed ranges from NIST WebBook literature records; they are suitable for candidate ranking and warnings, not final release-quality naming by themselves.
 - The n-paraffin built-in entries define the RI scale only. They do not provide measured reference retention times for a user's chromatographic method.
+- TIC/EIC/XIC/SIM channel matches can produce class-level report hypotheses, but never
+  final peak names without retention-index, spectrum/library, method-target, or user
+  evidence.
+- Exact-mass and high-mass XIC channels are reported as method-targeted channels until
+  the instrument method or target list is attached.
 
 ## Kovats Calculation Support
 
@@ -87,6 +98,19 @@ If the measured reference series is missing, non-monotonic, out of range, or lac
 bracketing references, the calculator returns a non-calculable status instead of estimating a weak
 Kovats value.
 
+## Report Integration
+
+`ReportKnowledgeInterpreter` maps report identification metadata to local knowledge:
+
+- chromatogram mode (`TIC`, `EIC`, `XIC`, `SIM`);
+- extracted ion/channel values such as `Ion 92.00`, `m/z 92.00`, and comma-decimal XIC labels;
+- candidate compound classes and source/caution notes.
+
+The report mapper may now show a local-knowledge class hypothesis and provenance notes.
+It still keeps Kovats status as `NOT_CALCULATED` when same-method reference retention
+times are absent. The built-in n-paraffin RI scale is shown as local context, not as fake
+measured retention-time data.
+
 ## Source Links
 
 - NIST Chemistry WebBook, SRD 69: <https://webbook.nist.gov/chemistry/>
@@ -99,11 +123,11 @@ Kovats value.
 
 ## Phase Boundaries
 
-Phase 7.3 intentionally does not:
+Phase 7.4 intentionally does not:
 
-- connect Kovats calculation results into report mapping or UI;
 - assign compounds to peaks;
 - generate warning rules for co-elution, contamination, weak baseline, weak crop, or unsupported runtimes;
-- change report rendering or UI.
+- redesign the final mobile report UI;
+- replace measured reference retention times with built-in RI anchors.
 
 Those are later Phase 7 subphases.

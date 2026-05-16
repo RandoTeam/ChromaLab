@@ -22,9 +22,43 @@ class ChromaLabBaseKnowledgePackTest {
 
         assertEquals(pack, decoded)
         assertEquals("chromalab-base", decoded.id)
-        assertEquals("gc-ms-ei-eic", decoded.chromatogramTypes.single().id)
+        assertTrue(decoded.chromatogramTypes.any { it.id == "gc-ms-ei-eic" })
         assertTrue(decoded.compoundClasses.any { it.id == "n-paraffins" })
         assertTrue(decoded.carbonNumberSeries.any { it.id == "n-paraffin-reference-series" })
+    }
+
+    @Test
+    fun basePackCoversReferenceFixtureChromatogramModesAndIonChannels() {
+        val pack = ChromaLabBaseKnowledgePack.pack
+        val chromatogramTypeIds = pack.chromatogramTypes.map { it.id }.toSet()
+        val ionIds = pack.ionFragments.map { it.id }.toSet()
+        val compoundClassIds = pack.compoundClasses.map { it.id }.toSet()
+
+        assertTrue(
+            chromatogramTypeIds.containsAll(
+                setOf("gc-ms-ei-tic", "gc-ms-ei-eic", "gc-ms-ei-xic", "gc-ms-ei-sim"),
+            ),
+        )
+        assertTrue(
+            ionIds.containsAll(
+                setOf(
+                    "ei-mz-71",
+                    "ei-mz-83",
+                    "ei-mz-92",
+                    "ei-mz-217",
+                    "ei-mz-218",
+                    "ei-mz-198-0315",
+                    "ei-mz-326",
+                    "ei-mz-360",
+                    "ei-mz-394",
+                ),
+            ),
+        )
+        assertTrue(
+            compoundClassIds.containsAll(
+                setOf("monoalkylbenzenes", "n-paraffins", "petroleum-biomarkers", "method-targeted-extracts"),
+            ),
+        )
     }
 
     @Test

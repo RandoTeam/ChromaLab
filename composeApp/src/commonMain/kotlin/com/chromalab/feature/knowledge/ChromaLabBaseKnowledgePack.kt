@@ -8,7 +8,7 @@ object ChromaLabBaseKnowledgePack {
     private fun buildPack(): LocalKnowledgePack = LocalKnowledgePack(
         id = "chromalab-base",
         name = "ChromaLab Base Knowledge Pack",
-        revision = "2026-05-13-phase-7.3",
+        revision = "2026-05-16-phase-7.4",
         description = "Conservative offline reference facts for GC-MS chromatogram interpretation.",
         sources = listOf(
             KnowledgeSource(
@@ -60,12 +60,57 @@ object ChromaLabBaseKnowledgePack {
                 sourceType = KnowledgeSourceType.LITERATURE,
                 notes = listOf("Formula C8H10, molecular weight 106.1650, EI mass spectrum available, non-polar RI records available."),
             ),
+            KnowledgeSource(
+                id = "chromalab-reference-report-contract",
+                label = "ChromaLab reference report contract",
+                sourceType = KnowledgeSourceType.INTERNAL_CURATED,
+                notes = listOf("Internal contract derived from the supplied Belyi Tigr reference report format: identify graph type, ion/channel, axes, peak table, Kovats status, interpretation basis, and confidence limits explicitly."),
+            ),
+            KnowledgeSource(
+                id = "chromalab-petroleum-gcms-curation",
+                label = "ChromaLab conservative petroleum GC-MS curation",
+                sourceType = KnowledgeSourceType.INTERNAL_CURATED,
+                notes = listOf("Used for conservative chromatogram-channel labeling only. It must not produce final compound names without retention-index, spectrum/library, or user confirmation."),
+            ),
         ),
-        chromatogramTypes = listOf(gcMsEiEic),
-        ionFragments = listOf(eiMz92, eiMz91),
-        compoundClasses = listOf(monoAlkylbenzenes, nParaffins),
+        chromatogramTypes = listOf(gcMsEiTic, gcMsEiEic, gcMsEiXic, gcMsEiSim),
+        ionFragments = listOf(
+            eiMz57,
+            eiMz71,
+            eiMz83,
+            eiMz91,
+            eiMz92,
+            eiMz191,
+            eiMz217,
+            eiMz218,
+            eiMz1980315,
+            eiMz326,
+            eiMz360,
+            eiMz394,
+        ),
+        compoundClasses = listOf(monoAlkylbenzenes, nParaffins, petroleumBiomarkers, methodTargetedExtracts),
         carbonNumberSeries = listOf(alkylbenzeneSeries, nParaffinReferenceSeries),
         kovatsLibraries = listOf(nonPolarAlkylbenzeneSeedRi, nParaffinReferenceRiScale),
+    )
+
+    private val gcMsEiTic = ChromatogramTypeDefinition(
+        id = "gc-ms-ei-tic",
+        label = "GC-MS EI total ion chromatogram",
+        analysisType = "GC-MS",
+        chromatogramMode = "TIC",
+        expectedXAxisUnit = "min",
+        expectedYAxisUnit = "counts",
+        supportedIonFragmentIds = listOf("ei-mz-57", "ei-mz-71", "ei-mz-83", "ei-mz-91", "ei-mz-92", "ei-mz-191", "ei-mz-217", "ei-mz-218"),
+        targetCompoundClassIds = listOf("n-paraffins", "monoalkylbenzenes", "petroleum-biomarkers"),
+        interpretationNotes = listOf(
+            KnowledgeStatement(
+                text = "A TIC is a broad signal summary. Peak detection, baseline quality, and co-elution warnings are valid, but compound-class labels require extracted-ion, spectrum, retention-index, or user/library evidence.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-reference-report-contract"),
+            ),
+        ),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val gcMsEiEic = ChromatogramTypeDefinition(
@@ -86,6 +131,106 @@ object ChromaLabBaseKnowledgePack {
             ),
         ),
         sourceIds = listOf("nist-webbook-srd69"),
+    )
+
+    private val gcMsEiXic = ChromatogramTypeDefinition(
+        id = "gc-ms-ei-xic",
+        label = "GC-MS extracted ion chromatogram / exact-mass XIC",
+        analysisType = "GC-MS",
+        chromatogramMode = "XIC",
+        expectedXAxisUnit = "min",
+        expectedYAxisUnit = "counts",
+        supportedIonFragmentIds = listOf("ei-mz-198-0315", "ei-mz-326", "ei-mz-360", "ei-mz-394"),
+        targetCompoundClassIds = listOf("method-targeted-extracts"),
+        interpretationNotes = listOf(
+            KnowledgeStatement(
+                text = "An exact-mass or narrow-window XIC is method-targeted evidence. The report may preserve the channel and measured peaks, but formula and compound names stay unresolved unless the method/library supplies them.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val gcMsEiSim = ChromatogramTypeDefinition(
+        id = "gc-ms-ei-sim",
+        label = "GC-MS selected ion monitoring chromatogram",
+        analysisType = "GC-MS",
+        chromatogramMode = "SIM",
+        expectedXAxisUnit = "min",
+        expectedYAxisUnit = "counts",
+        supportedIonFragmentIds = listOf("ei-mz-71", "ei-mz-83", "ei-mz-191", "ei-mz-217", "ei-mz-218"),
+        targetCompoundClassIds = listOf("n-paraffins", "petroleum-biomarkers"),
+        interpretationNotes = listOf(
+            KnowledgeStatement(
+                text = "SIM panels should be interpreted graph-by-graph and ion-by-ion. A channel can support a compound-class hypothesis, but it is not a standalone compound identification.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-reference-report-contract"),
+            ),
+        ),
+        sourceIds = listOf("chromalab-reference-report-contract"),
+    )
+
+    private val eiMz57 = IonFragmentDefinition(
+        id = "ei-mz-57",
+        nominalMz = 57.0,
+        mzWindow = KnowledgeDoubleRange(56.70, 57.70, "m/z"),
+        label = "m/z 57 EI hydrocarbon channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("n-paraffins"),
+        relatedIonFragmentIds = listOf("ei-mz-71"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 57 is treated as general saturated-hydrocarbon fragment evidence in this pack, useful for n-paraffin-pattern review but not specific enough for a peak name.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.75,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 57")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val eiMz71 = IonFragmentDefinition(
+        id = "ei-mz-71",
+        nominalMz = 71.0,
+        mzWindow = KnowledgeDoubleRange(70.70, 71.70, "m/z"),
+        label = "m/z 71 EI alkane-series channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("n-paraffins"),
+        relatedIonFragmentIds = listOf("ei-mz-57", "ei-mz-83"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 71 is a conservative n-paraffin / saturated-hydrocarbon series channel for report grouping when the chromatogram shows a homologous retention pattern.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.75,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 71")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val eiMz83 = IonFragmentDefinition(
+        id = "ei-mz-83",
+        nominalMz = 83.0,
+        mzWindow = KnowledgeDoubleRange(82.70, 83.70, "m/z"),
+        label = "m/z 83 EI hydrocarbon channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("n-paraffins", "petroleum-biomarkers"),
+        relatedIonFragmentIds = listOf("ei-mz-71"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 83 is stored as hydrocarbon-channel evidence for SIM/EIC panels. It can guide class-level review but must remain lower confidence without method context.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.65,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 83")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
     )
 
     private val eiMz92 = IonFragmentDefinition(
@@ -148,6 +293,89 @@ object ChromaLabBaseKnowledgePack {
         sourceIds = listOf("nist-webbook-srd69"),
     )
 
+    private val eiMz191 = IonFragmentDefinition(
+        id = "ei-mz-191",
+        nominalMz = 191.0,
+        mzWindow = KnowledgeDoubleRange(190.70, 191.70, "m/z"),
+        label = "m/z 191 petroleum biomarker SIM channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("petroleum-biomarkers"),
+        relatedIonFragmentIds = listOf("ei-mz-217", "ei-mz-218"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 191 is treated as petroleum-biomarker channel evidence in this pack. Report text must keep any terpane/hopane assignment as a hypothesis until method/library evidence is available.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.65,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 191")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val eiMz217 = IonFragmentDefinition(
+        id = "ei-mz-217",
+        nominalMz = 217.0,
+        mzWindow = KnowledgeDoubleRange(216.70, 217.70, "m/z"),
+        label = "m/z 217 petroleum biomarker SIM channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("petroleum-biomarkers"),
+        relatedIonFragmentIds = listOf("ei-mz-218", "ei-mz-191"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 217 is stored as biomarker-channel evidence for petroleum GC-MS work. It supports a class-level hypothesis only without matching retention order and library context.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.65,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 217")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val eiMz218 = IonFragmentDefinition(
+        id = "ei-mz-218",
+        nominalMz = 218.0,
+        mzWindow = KnowledgeDoubleRange(217.70, 218.70, "m/z"),
+        label = "m/z 218 related biomarker SIM channel",
+        ionization = IonizationMode.ELECTRON_IONIZATION,
+        diagnosticForCompoundClassIds = listOf("petroleum-biomarkers"),
+        relatedIonFragmentIds = listOf("ei-mz-217", "ei-mz-191"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 218 is stored as related biomarker-channel evidence and should be interpreted together with the method's expected ion set and retention pattern.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.60,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 218")),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val eiMz1980315 = IonFragmentDefinition(
+        id = "ei-mz-198-0315",
+        nominalMz = 198.0315,
+        mzWindow = KnowledgeDoubleRange(198.0313, 198.0317, "m/z"),
+        label = "m/z 198.0315 exact-mass XIC",
+        ionization = IonizationMode.UNKNOWN,
+        diagnosticForCompoundClassIds = listOf("method-targeted-extracts"),
+        interpretation = listOf(
+            KnowledgeStatement(
+                text = "m/z 198.0315 is retained as exact-channel evidence. The app must report the measured channel and resolution window, but compound/formula assignment requires the method target list.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-reference-report-contract"),
+            ),
+        ),
+        cautions = listOf(channelNotStandalone("m/z 198.0315")),
+        sourceIds = listOf("chromalab-reference-report-contract"),
+    )
+
+    private val eiMz326 = highMassTargetIon("ei-mz-326", 326.0)
+    private val eiMz360 = highMassTargetIon("ei-mz-360", 360.0)
+    private val eiMz394 = highMassTargetIon("ei-mz-394", 394.0)
+
     private val monoAlkylbenzenes = CompoundClassDefinition(
         id = "monoalkylbenzenes",
         label = "Monocyclic alkylbenzenes",
@@ -173,6 +401,55 @@ object ChromaLabBaseKnowledgePack {
             ),
         ),
         sourceIds = listOf("nist-webbook-srd69"),
+    )
+
+    private val petroleumBiomarkers = CompoundClassDefinition(
+        id = "petroleum-biomarkers",
+        label = "Petroleum biomarker channels",
+        description = "Class-level bucket for petroleum geochemistry SIM/EIC channels. Built-in notes are conservative and never assign a peak without method/library support.",
+        carbonNumberRange = KnowledgeIntRange(15, 40),
+        diagnosticIonFragmentIds = listOf("ei-mz-83", "ei-mz-191", "ei-mz-217", "ei-mz-218"),
+        interpretationNotes = listOf(
+            KnowledgeStatement(
+                text = "Biomarker-channel reports should emphasize ion channel, retention order, peak ratios, and confidence flags before any compound names.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        assignmentCautions = listOf(
+            KnowledgeStatement(
+                text = "Do not infer sterane, terpane, hopane, or related biomarker names from one ion channel alone.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+            ),
+        ),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
+    )
+
+    private val methodTargetedExtracts = CompoundClassDefinition(
+        id = "method-targeted-extracts",
+        label = "Method-targeted extracted channels",
+        description = "Exact-mass or high-mass extracted channels whose meaning depends on a supplied instrument method or target list.",
+        diagnosticIonFragmentIds = listOf("ei-mz-198-0315", "ei-mz-326", "ei-mz-360", "ei-mz-394"),
+        interpretationNotes = listOf(
+            KnowledgeStatement(
+                text = "Report the channel, resolution window, peaks, and quality metrics, but keep compound identity unresolved until the method target list is attached.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-reference-report-contract"),
+            ),
+        ),
+        assignmentCautions = listOf(
+            KnowledgeStatement(
+                text = "Exact m/z alone is not a release-quality identification without formula/adduct rules, isotope checks, retention evidence, or a library target.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 1.0,
+                sourceIds = listOf("chromalab-reference-report-contract"),
+            ),
+        ),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val alkylbenzeneSeries = CarbonNumberSeriesDefinition(
@@ -346,4 +623,32 @@ object ChromaLabBaseKnowledgePack {
             30 -> "n-Triacontane"
             else -> "n-C$carbonNumber alkane"
         }
+
+    private fun highMassTargetIon(id: String, nominalMz: Double): IonFragmentDefinition =
+        IonFragmentDefinition(
+            id = id,
+            nominalMz = nominalMz,
+            mzWindow = KnowledgeDoubleRange(nominalMz - 0.30, nominalMz + 0.30, "m/z"),
+            label = "m/z ${nominalMz.toInt()} high-mass extracted channel",
+            ionization = IonizationMode.UNKNOWN,
+            diagnosticForCompoundClassIds = listOf("method-targeted-extracts"),
+            interpretation = listOf(
+                KnowledgeStatement(
+                    text = "This high-mass extracted channel is preserved as method-targeted evidence. The app must not infer a compound name unless the target method or library supplies one.",
+                    evidence = KnowledgeEvidence.CURATED,
+                    confidence = 1.0,
+                    sourceIds = listOf("chromalab-reference-report-contract"),
+                ),
+            ),
+            cautions = listOf(channelNotStandalone("m/z ${nominalMz.toInt()}")),
+            sourceIds = listOf("chromalab-reference-report-contract"),
+        )
+
+    private fun channelNotStandalone(label: String): KnowledgeStatement =
+        KnowledgeStatement(
+            text = "$label is channel evidence only; final compound assignment requires retention-index, spectrum/library, method target, or user confirmation.",
+            evidence = KnowledgeEvidence.CURATED,
+            confidence = 1.0,
+            sourceIds = listOf("chromalab-reference-report-contract"),
+        )
 }

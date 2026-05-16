@@ -14,11 +14,10 @@ Current execution point:
 
 - Main roadmap item: `Stabilize Chromatography Core`.
 - Active plan: this document.
-- Active phase: `Phase 6 - Structured Report Validation`, using the calibrated
-  desktop/emulator bench artifacts produced by the earlier preparation, calibration,
-  signal, and peak-detection gates.
-- Latest completed work slice: `Phase 6.6 - wire calibrated report contract into the export/report UI surface`.
-- Next work slice: `Phase 7 - Offline Domain Knowledge Pack`.
+- Active phase: `Phase 7 - Offline Domain Knowledge Pack`, using the calibrated
+  desktop/emulator bench artifacts and the structured report contract from Phase 6.
+- Latest completed work slice: `Phase 7.4 - expand common chromatogram/ion coverage and wire local knowledge into report interpretation`.
+- Next work slice: `Phase 8 - Model-Assisted Stages`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -80,6 +79,10 @@ artifact summary; it is not the primary plan.
 | Phase 6.4 | Done | `178b9c9` | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
 | Phase 6.5 | Done | `0a9582f` | Prepare calibrated report contract for mobile/export UI wiring. |
 | Phase 6.6 | Done | `1b7020f` | Wire calibrated report contract into the export/report UI surface. |
+| Phase 7.1 | Done | `6bd442f` | Define local knowledge pack schema. |
+| Phase 7.2 | Done | `4707498` | Add m/z 92 alkylbenzene knowledge data. |
+| Phase 7.3 | Done | `30df15d` | Add n-paraffin Kovats reference support. |
+| Phase 7.4 | Done | `TBD` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -875,15 +878,34 @@ Exit criteria:
 
 Goal: prepare local scientific context without relying on model memory.
 
-- [ ] Extend the local knowledge pack for common chromatogram types:
+- [x] Extend the local knowledge pack for common chromatogram types:
   - GC-MS TIC;
   - GC-MS EIC/XIC;
   - SIM/ion-channel traces.
-- [ ] Add common ions and interpretation notes beyond the initial `m/z 92` case.
-- [ ] Add oil, condensate, gas, alkane, alkylbenzene, and related compound-class
+- [x] Add common ions and interpretation notes beyond the initial `m/z 92` case.
+- [x] Add oil, condensate, gas, alkane, alkylbenzene, and related compound-class
   notes as structured offline data.
-- [ ] Keep compound assignments as hypotheses unless supported by retention index,
+- [x] Keep compound assignments as hypotheses unless supported by retention index,
   spectrum/library evidence, local rules, or user data.
+
+Completed Phase 7.1-7.3 work slices:
+
+1. Define the local knowledge-pack schema, validator, and initial base-pack storage.
+2. Add conservative GC-MS EI `m/z 92` / alkylbenzene-oriented reference data.
+3. Add C7-C30 n-paraffin reference-series support for Kovats calculations.
+
+Completed Phase 7.4 work slice:
+
+1. Expand built-in chromatogram modes to GC-MS TIC, EIC, XIC, and SIM.
+2. Add bench/reference ion-channel coverage for `m/z 57`, `71`, `83`, `91`, `92`,
+   `191`, `217`, `218`, `198.0315`, `326`, `360`, and `394`.
+3. Add conservative compound-class notes for normal paraffins, alkylbenzenes,
+   petroleum-biomarker channels, and method-targeted extracted channels.
+4. Wire local knowledge into structured report interpretation as class-level
+   hypotheses with source notes and assignment cautions.
+5. Keep Kovats output scientific: formula and local RI scale can be shown, but measured
+   reference retention times are not fabricated and Kovats values stay not calculated
+   until same-method references are supplied.
 
 Exit criteria:
 

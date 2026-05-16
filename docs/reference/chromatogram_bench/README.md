@@ -424,7 +424,19 @@ Phase 6.6 connects the same idea to the real report/export surface:
   sections they support;
 - raw warning codes and export manifests stay inside the technical appendix path.
 
+Phase 7.4 connects the offline scientific knowledge pack to report interpretation:
+
+- built-in coverage now includes GC-MS TIC, EIC, XIC, and SIM modes;
+- current fixture/reference channels include `m/z 57`, `71`, `83`, `91`, `92`, `191`,
+  `217`, `218`, `198.0315`, `326`, `360`, and `394`;
+- report interpretation can show local-knowledge class hypotheses with provenance and
+  assignment cautions;
+- Kovats reports may show the formula and local n-paraffin RI scale, but measured
+  reference retention times are not invented and Kovats values remain not calculated
+  until same-method references are supplied.
+
 ## Next Phase
 
-Phase 7 should start the offline domain knowledge pack for chromatogram types, common
-ions, and supported chemical interpretation rules.
+Phase 8 should add model-assisted stages only through strict contracts: model output may
+help graph/title/ION recognition and interpretation, but it must not replace calibrated
+deterministic calculations or invent unsupported chemical assignments.

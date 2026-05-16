@@ -12,6 +12,8 @@ import com.chromalab.feature.calculation.core.CalculationWarning
 import com.chromalab.feature.calculation.core.PeakResult
 import com.chromalab.feature.calculation.core.SignalPoint
 import com.chromalab.feature.calculation.core.WarningSeverity
+import com.chromalab.feature.knowledge.ChromaLabBaseKnowledgePack
+import com.chromalab.feature.knowledge.LocalKnowledgePack
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -35,6 +37,7 @@ data class CalculationRunReportOptions(
     val axisCalibration: ReportAxisCalibration? = null,
     val additionalReportWarnings: List<ReportWarning> = emptyList(),
     val additionalGraphWarnings: List<ReportWarning> = emptyList(),
+    val localKnowledgePack: LocalKnowledgePack? = ChromaLabBaseKnowledgePack.pack,
 )
 
 /**
@@ -55,6 +58,8 @@ object CalculationRunReportMapper {
         val distribution = run.distribution ?: DistributionAnalyzer.analyze(sortedPeaks)
         val methodQuality = run.methodQuality ?: MethodQualityAnalyzer.analyze(sortedPeaks, run.signals)
         val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex, options)
+        val identification = options.identification ?: buildIdentification(options.sourceName ?: run.sourceSignalId)
+        val knowledge = ReportKnowledgeInterpreter.interpret(identification, options.localKnowledgePack)
 
         val report = ChromatogramReport(
             metadata = ReportMetadata(
@@ -77,16 +82,21 @@ object CalculationRunReportMapper {
                 GraphReport(
                     graphIndex = graphIndex,
                     source = buildSourceMetadata(run.params, options.graphSourceMetadata),
-                    identification = options.identification ?: buildIdentification(options.sourceName ?: run.sourceSignalId),
+                    identification = identification,
                     axisCalibration = options.axisCalibration ?: buildAxisCalibration(run, graphIndex),
                     signal = buildSignalReport(run),
                     peaks = sortedPeaks.mapIndexed { index, peak ->
                         peak.toReportPeak(index + 1, run, graphIndex)
                     },
                     quality = buildQualityReport(sortedPeaks, run.params, distribution, methodQuality, graphWarnings),
-                    kovats = buildKovatsReport(sortedPeaks),
-                    interpretation = buildInterpretation(sortedPeaks, run, distribution),
-                    sectionStatus = buildSectionStatus(run, sortedPeaks),
+                    kovats = buildKovatsReport(sortedPeaks, options.localKnowledgePack),
+                    interpretation = buildInterpretation(
+                        peaks = sortedPeaks,
+                        run = run,
+                        distribution = distribution,
+                        knowledge = knowledge,
+                    ),
+                    sectionStatus = buildSectionStatus(run, sortedPeaks, knowledge),
                     warnings = graphWarnings,
                 ),
             ),
@@ -226,9 +236,24 @@ object CalculationRunReportMapper {
         )
     }
 
-    private fun buildKovatsReport(peaks: List<PeakResult>): KovatsIndexReport =
-        KovatsIndexReport(
+    private fun buildKovatsReport(
+        peaks: List<PeakResult>,
+        localKnowledgePack: LocalKnowledgePack?,
+    ): KovatsIndexReport {
+        val nParaffinReference = localKnowledgePack
+            ?.carbonNumberSeries
+            ?.firstOrNull { it.id == "n-paraffin-reference-series" }
+        val referenceLibrary = localKnowledgePack
+            ?.kovatsLibraries
+            ?.firstOrNull { it.referenceSeriesId == "n-paraffin-reference-series" }
+
+        return KovatsIndexReport(
             status = ReportValueStatus.NOT_CALCULATED,
+            formula = nParaffinReference?.let {
+                "I = 100*z + 100*(RT(x)-RT(z))/(RT(z+1)-RT(z))"
+            },
+            referenceSeries = nParaffinReference?.label,
+            referenceRetentionTimes = emptyList(),
             results = peaks.mapNotNull { peak ->
                 peak.compoundName?.takeIf { it.isNotBlank() }?.let { name ->
                     KovatsIndexResult(
@@ -239,15 +264,23 @@ object CalculationRunReportMapper {
                     )
                 }
             },
-            missingDataNotes = listOf(
-                "CalculationRun does not contain n-paraffin reference retention times, literature ranges, or a local Kovats knowledge-pack result yet.",
-            ),
+            missingDataNotes = buildList {
+                add("Measured n-paraffin reference retention times are not attached to this CalculationRun, so Kovats values remain not calculable.")
+                if (referenceLibrary != null) {
+                    add("The local knowledge pack provides the n-paraffin RI scale, but those RI anchors do not replace same-method reference retention times.")
+                    add("Reference scale available locally: ${referenceLibrary.label}; measured reference retention times must still be supplied before any Kovats index is calculated.")
+                } else {
+                    add("No local n-paraffin reference library is attached to this report.")
+                }
+            },
         )
+    }
 
     private fun buildInterpretation(
         peaks: List<PeakResult>,
         run: CalculationRun,
         distribution: DistributionResult?,
+        knowledge: ReportKnowledgeContext,
     ): ChemicalInterpretationReport {
         val totalArea = peaks.sumOf { abs(it.area) }
         val distributionBuckets = run.geochemistry?.let { geochemistry ->
@@ -264,6 +297,7 @@ object CalculationRunReportMapper {
         } ?: emptyList()
 
         val notes = buildList {
+            addAll(knowledge.domainContextNotes)
             distribution?.let {
                 add("Dominant peak #${it.dominantPeak.peakIndex + 1} contributes ${"%.2f".format(it.dominantPeak.areaPercent)}% of the integrated area.")
             }
@@ -276,16 +310,18 @@ object CalculationRunReportMapper {
 
         return ChemicalInterpretationReport(
             distributionByCarbonNumber = distributionBuckets,
-            likelyCompoundClass = if (hasCompoundAssignments) {
+            likelyCompoundClass = if (knowledge.likelyCompoundClass.value != null) {
+                knowledge.likelyCompoundClass
+            } else if (hasCompoundAssignments) {
                 inferredText("compound assignments present in CalculationRun", 0.5, ReportValueSource.LOCAL_KNOWLEDGE)
             } else {
                 ReportTextValue.notCalculated()
             },
             domainContextNotes = notes,
             unresolvedAssignments = if (hasCompoundAssignments) {
-                emptyList()
+                knowledge.assignmentCautions
             } else {
-                listOf("No compound assignment source is attached to this CalculationRun.")
+                (knowledge.assignmentCautions + "No compound assignment source is attached to this CalculationRun.").distinct()
             },
         )
     }
@@ -293,6 +329,7 @@ object CalculationRunReportMapper {
     private fun buildSectionStatus(
         run: CalculationRun,
         peaks: List<PeakResult>,
+        knowledge: ReportKnowledgeContext,
     ): ReportSectionStatus =
         ReportSectionStatus(
             overview = ReportValueStatus.INFERRED,
@@ -302,7 +339,7 @@ object CalculationRunReportMapper {
             graphOverlay = if (run.signals.raw.isNotEmpty()) ReportValueStatus.CALCULATED else ReportValueStatus.FAILED,
             chromatographicQuality = if (peaks.isNotEmpty()) ReportValueStatus.CALCULATED else ReportValueStatus.FAILED,
             kovatsAnalysis = ReportValueStatus.NOT_CALCULATED,
-            chemicalInterpretation = if (run.geochemistry != null || peaks.any { !it.compoundName.isNullOrBlank() }) {
+            chemicalInterpretation = if (run.geochemistry != null || peaks.any { !it.compoundName.isNullOrBlank() } || knowledge.hasEvidence) {
                 ReportValueStatus.INFERRED
             } else {
                 ReportValueStatus.NOT_CALCULATED

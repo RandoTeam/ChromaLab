@@ -183,6 +183,12 @@ contract for graph order and visual evidence placement, and HTML export renders 
 from the structured UI contract instead of parsing Markdown. Trace-artifact and raw
 warning-code data remain secondary appendix material.
 
+Phase 7.4 is implemented: report interpretation now reads the local knowledge pack for
+GC-MS TIC/EIC/XIC/SIM mode labels, current fixture ion channels, conservative
+compound-class hypotheses, provenance notes, and assignment cautions. Kovats output
+keeps measured reference retention times empty until same-method references are supplied;
+the local n-paraffin RI scale is context only, not fabricated RT data.
+
 ## Sources
 
 - WebPlotDigitizer: https://github.com/automeris-io/WebPlotDigitizer

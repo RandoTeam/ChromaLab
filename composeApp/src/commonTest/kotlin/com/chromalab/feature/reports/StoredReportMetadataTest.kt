@@ -269,6 +269,68 @@ class StoredReportMetadataTest {
         assertEquals(2, graph.warnings.first { it.code == "legacy.graph.warning" }.graphIndex)
     }
 
+    @Test
+    fun reportMapperUsesLocalKnowledgeWithoutInventingKovatsRetentionTimes() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = listOf(
+                    peakResult(
+                        peakId = 0,
+                        rtApex = 5.0,
+                        warning = "fixture peak",
+                    ),
+                ),
+            ),
+            options = CalculationRunReportOptions(
+                identification = ChromatogramIdentification(
+                    chromatogramTitle = ReportTextValue(
+                        value = "Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\\data.ms",
+                        status = ReportValueStatus.DETECTED,
+                        confidence = 0.9,
+                        source = ReportValueSource.OCR,
+                    ),
+                    analysisType = ReportTextValue(
+                        value = "GC-MS",
+                        status = ReportValueStatus.DETECTED,
+                        confidence = 0.9,
+                        source = ReportValueSource.OCR,
+                    ),
+                    chromatogramMode = ReportTextValue(
+                        value = "EIC",
+                        status = ReportValueStatus.DETECTED,
+                        confidence = 0.9,
+                        source = ReportValueSource.OCR,
+                    ),
+                    ionOrChannel = ReportTextValue(
+                        value = "m/z 92.00",
+                        status = ReportValueStatus.DETECTED,
+                        confidence = 0.9,
+                        source = ReportValueSource.OCR,
+                    ),
+                    ionRange = ReportTextValue(
+                        value = "91.70 to 92.70",
+                        status = ReportValueStatus.DETECTED,
+                        confidence = 0.9,
+                        source = ReportValueSource.OCR,
+                    ),
+                ),
+            ),
+        )
+
+        val graph = report.graphs.single()
+
+        assertEquals("Monocyclic alkylbenzenes", graph.interpretation.likelyCompoundClass.value)
+        assertEquals(ReportValueStatus.INFERRED, graph.interpretation.likelyCompoundClass.status)
+        assertEquals(ReportValueSource.LOCAL_KNOWLEDGE, graph.interpretation.likelyCompoundClass.source)
+        assertTrue(graph.interpretation.domainContextNotes.any { it.contains("m/z 92") })
+        assertTrue(graph.interpretation.unresolvedAssignments.any { it.contains("retention-index") })
+        assertEquals(ReportValueStatus.INFERRED, graph.sectionStatus.chemicalInterpretation)
+        assertEquals(ReportValueStatus.NOT_CALCULATED, graph.kovats.status)
+        assertEquals("I = 100*z + 100*(RT(x)-RT(z))/(RT(z+1)-RT(z))", graph.kovats.formula)
+        assertTrue(graph.kovats.referenceRetentionTimes.isEmpty())
+        assertTrue(graph.kovats.missingDataNotes.any { it.contains("Measured n-paraffin reference retention times") })
+    }
+
     private fun chromatogramEntity(
         sourceType: SourceType,
         filePath: String?,
