@@ -77,7 +77,7 @@ artifact summary; it is not the primary plan.
 | Phase 6.1 | Done | `c54fbb3` | Validate the structured report contract against calibrated fixture audits. |
 | Phase 6.2 | Done | `e28aecf` | Add missing peak-table report columns to the calibrated audit contract. |
 | Phase 6.3 | Done | `e642368` | Render calibrated audit report sections from the structured contract. |
-| Phase 6.4 | Done | Pending | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
+| Phase 6.4 | Done | `178b9c9` | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
 | Phase 6.5 | Next | Pending | Prepare calibrated report contract for mobile/export UI wiring. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
