@@ -82,7 +82,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.1 | Done | `6bd442f` | Define local knowledge pack schema. |
 | Phase 7.2 | Done | `4707498` | Add m/z 92 alkylbenzene knowledge data. |
 | Phase 7.3 | Done | `30df15d` | Add n-paraffin Kovats reference support. |
-| Phase 7.4 | Done | `TBD` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
+| Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
