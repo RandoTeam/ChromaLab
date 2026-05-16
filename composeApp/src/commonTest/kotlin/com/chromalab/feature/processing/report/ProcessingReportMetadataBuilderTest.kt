@@ -75,6 +75,7 @@ class ProcessingReportMetadataBuilderTest {
             deviceName = "Pixel Test",
             stageTimings = listOf(
                 ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
+                ReportStageTiming("GRAPH_SELECTION", "GRAPH_SELECTION", 900L),
                 ReportStageTiming("OCR_SUGGESTION", "OCR_SUGGESTION", 450L),
             ),
             graphWarnings = listOf(
@@ -99,8 +100,11 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(ExecutedRuntime.LITERT, metadata.executedRuntime)
         assertEquals("Pixel Test", metadata.deviceName)
         assertEquals(ProcessingMode.FULL_ANALYSIS, metadata.processingMode)
-        assertEquals(2, metadata.stageTimings.size)
-        assertEquals(450L, metadata.stageTimings.last().durationMillis)
+        assertEquals(5, metadata.stageTimings.size)
+        assertEquals(450L, metadata.stageTimings.single { it.stageId == "OCR_SUGGESTION" }.durationMillis)
+        assertEquals(900L, metadata.stageTimings.single { it.stageId == "model.graph_region" }.durationMillis)
+        assertEquals(900L, metadata.stageTimings.single { it.stageId == "model.title_ion_axis" }.durationMillis)
+        assertEquals(emptyList(), metadata.warnings)
 
         val graph = metadata.graphs.single()
         assertEquals(2, graph.graphIndex)
@@ -152,6 +156,38 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(ExecutedRuntime.GGUF, metadata.selectedModel?.runtime)
         assertNull(metadata.executedModel)
         assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
+    }
+
+    @Test
+    fun processingMetadataRecordsRequiredModelStageFailuresWhenExecutedModelMissing() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = null,
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 256,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+            selectedModel = ModelExecutionInfo(
+                modelId = "tiny-gguf-vlm",
+                modelName = "Tiny GGUF VLM",
+                runtime = ExecutedRuntime.GGUF,
+            ),
+            executedModel = null,
+            stageTimings = listOf(
+                ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
+            ),
+        )
+
+        val metadata = StoredReportMetadataCodec.decodeOrNull(config)
+
+        assertNotNull(metadata)
+        assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
+        assertTrue(metadata.warnings.any { it.code == "model.execution_missing" })
+        assertTrue(metadata.warnings.any { it.code == "model.graph_region.required_vision_failed" })
+        assertTrue(metadata.warnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
+        assertTrue(metadata.warnings.all { it.graphIndex == 1 })
     }
 
     @Test

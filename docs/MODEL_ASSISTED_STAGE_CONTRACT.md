@@ -39,5 +39,20 @@ compound assignments.
   failures.
 - `ProcessingFlowScreen` uses the shared missing-VLM message when photo analysis cannot
   load a strict chromatogram vision model.
+- `ProcessingReportMetadataBuilder` augments saved report metadata with model-stage
+  timing entries for strict VLM contracts when a vision runtime is executed.
+- Full-analysis metadata records failed required VLM stages as structured report
+  warnings when no executed vision model/runtime is present.
 - Report metadata already records selected/executed model, runtime, backend, device,
   and stage timings; those fields remain required evidence for Phase 8 validation.
+
+## Audit Entries
+
+Saved reports can now contain these model-stage timing IDs:
+
+- `model.graph_region`;
+- `model.title_ion_axis`.
+
+If a full photo analysis has no executed LiteRT/GGUF/MIXED vision runtime, the same
+required stages are stored as `FAILED` report warnings. This keeps failed model stages
+visible in the final report audit instead of only in runtime logs.

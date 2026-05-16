@@ -446,8 +446,17 @@ Phase 8.1 defines the strict model-assisted stage contract:
 - GGUF VLM analysis requires base + `mmproj`, and OCR/document-only model families are
   excluded from strict chromatogram VLM selection.
 
+Phase 8.2 routes model-stage outcomes into saved report metadata:
+
+- strict VLM contract timings can appear as `model.graph_region` and
+  `model.title_ion_axis`;
+- selected/executed model metadata, runtime, backend, device, and timings stay in the
+  same evidence chain used by report export;
+- if full photo analysis has no executed vision runtime, required VLM stages are
+  stored as `FAILED` report warnings instead of being hidden in logs.
+
 ## Next Phase
 
-Phase 8.2 should route model-stage outcomes into the analysis/report audit so required
-VLM failures, selected/executed model, runtime, backend, and timings are visible in the
-same structured evidence chain as deterministic calculation results.
+Phase 8.3 should validate the model-stage audit behavior on saved reports and device
+runs, especially LiteRT success, GGUF success/failure, and selected-model/runtime
+mismatch cases.

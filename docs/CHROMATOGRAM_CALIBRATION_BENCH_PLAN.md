@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.1 - define strict model-assisted stage contract`.
-- Next work slice: `Phase 8.2 - route model-stage outcomes into analysis/report audit`.
+- Latest completed work slice: `Phase 8.2 - route model-stage outcomes into analysis/report audit`.
+- Next work slice: `Phase 8.3 - validate model-assisted audit behavior on saved reports and device runs`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -85,6 +85,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.3 | Done | `30df15d` | Add n-paraffin Kovats reference support. |
 | Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
+| Phase 8.2 | Done | `TBD` | Route model-stage outcomes into processing metadata and final report audit. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -925,7 +926,7 @@ Goal: add models only where they improve recognition without replacing calculati
 - [x] Require base GGUF plus matching `mmproj` for GGUF image analysis.
 - [x] Keep OCR/document-only models out of strict chromatogram analysis unless a
   validated adapter exists.
-- [ ] Fail clearly when a required neural vision stage fails.
+- [x] Fail clearly when a required neural vision stage fails.
 
 Completed Phase 8.1 work slice:
 
@@ -939,6 +940,16 @@ Completed Phase 8.1 work slice:
    chromatogram VLM analysis.
 4. Reuse the same contract markers for non-skippable full-analysis failures.
 5. Document the contract in `docs/MODEL_ASSISTED_STAGE_CONTRACT.md`.
+
+Completed Phase 8.2 work slice:
+
+1. Add model-stage audit augmentation to stored processing metadata.
+2. Record strict VLM contract timings (`model.graph_region`, `model.title_ion_axis`)
+   from the processing sweep envelope when a LiteRT/GGUF/MIXED vision runtime executes.
+3. Record failed required VLM stages as structured `FAILED` report warnings when full
+   analysis has no executed vision model/runtime.
+4. Preserve selected/executed model metadata and route model-stage warnings through the
+   same stored metadata path used by final report export.
 
 Exit criteria:
 

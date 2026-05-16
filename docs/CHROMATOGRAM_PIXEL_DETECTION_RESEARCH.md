@@ -194,6 +194,11 @@ Models can help graph-region and title/ION/axis recognition, but numeric peak re
 remain deterministic-only. GGUF image analysis requires the base model plus `mmproj`,
 and OCR/document-only families are excluded from strict chromatogram VLM selection.
 
+Phase 8.2 is implemented: saved processing metadata now carries model-stage audit
+evidence. Successful vision-runtime runs can expose `model.graph_region` and
+`model.title_ion_axis` timings, while missing required VLM execution in full photo
+analysis becomes structured `FAILED` report warnings.
+
 ## Sources
 
 - WebPlotDigitizer: https://github.com/automeris-io/WebPlotDigitizer

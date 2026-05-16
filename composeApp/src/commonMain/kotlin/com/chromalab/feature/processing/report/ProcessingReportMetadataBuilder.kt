@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
@@ -110,6 +111,19 @@ fun buildProcessingStoredReportMetadata(
         .filterNot { it == selectedPreparationVariant }
         .sortedBy { it.rank }
     val ocrExtraction = axisOcrResult.toProcessingOcrReportExtraction(detectedGraphBounds)
+    val processingMode = ProcessingMode.FULL_ANALYSIS
+    val modelStageTimings = ModelAssistedAnalysisContract.augmentStageTimings(
+        stageTimings = stageTimings,
+        executedRuntime = executedRuntime,
+    )
+    val modelWarnings = ModelAssistedAnalysisContract.auditWarnings(
+        processingMode = processingMode,
+        selectedModel = selectedModel,
+        executedModel = executedModel,
+        executedRuntime = executedRuntime,
+        stageTimings = modelStageTimings,
+        graphIndex = graphIndex.coerceAtLeast(1),
+    )
 
     return StoredReportMetadata(
         inputSourceType = sourceType.toReportInputSourceType(),
@@ -122,10 +136,9 @@ fun buildProcessingStoredReportMetadata(
         executedModel = executedModel,
         executedRuntime = executedRuntime,
         deviceName = deviceName?.takeIf { it.isNotBlank() },
-        processingMode = ProcessingMode.FULL_ANALYSIS,
-        stageTimings = stageTimings
-            .filter { it.stageId.isNotBlank() && it.durationMillis >= 0L }
-            .distinctBy { it.stageId },
+        processingMode = processingMode,
+        stageTimings = modelStageTimings,
+        warnings = modelWarnings,
         graphs = listOf(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),

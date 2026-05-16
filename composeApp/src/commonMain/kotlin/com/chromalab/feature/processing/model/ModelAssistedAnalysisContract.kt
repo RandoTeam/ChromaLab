@@ -1,7 +1,11 @@
 package com.chromalab.feature.processing.model
 
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.ModelExecutionInfo
+import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportSeverity
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.ReportValueSource
 import com.chromalab.feature.reports.ReportWarning
 
@@ -128,6 +132,94 @@ object ModelAssistedAnalysisContract {
             graphIndex = graphIndex,
         )
 
+    fun augmentStageTimings(
+        stageTimings: List<ReportStageTiming>,
+        executedRuntime: ExecutedRuntime,
+    ): List<ReportStageTiming> {
+        val normalized = stageTimings
+            .filter { it.stageId.isNotBlank() && it.durationMillis >= 0L }
+            .distinctBy { it.stageId }
+        if (!executedRuntime.isVisionRuntime()) return normalized
+
+        val existingIds = normalized.map { it.stageId }.toSet()
+        val timingsById = normalized.associateBy { it.stageId.uppercase() }
+        val additions = requiredVisionStages().mapNotNull { stage ->
+            if (stage.stageId in existingIds) return@mapNotNull null
+            val sourceDuration = when (stage.role) {
+                ModelAssistedStageRole.GRAPH_REGION -> timingsById.firstDuration("GRAPH_SELECTION", "GRAPH_ROI")
+                ModelAssistedStageRole.TITLE_ION_AXIS -> timingsById.firstDuration(
+                    "GRAPH_SELECTION",
+                    "GRAPH_ROI",
+                    "OCR_SUGGESTION",
+                )
+                else -> null
+            } ?: return@mapNotNull null
+
+            ReportStageTiming(
+                stageId = stage.stageId,
+                stageName = stage.stageId.modelStageName(),
+                durationMillis = sourceDuration,
+            )
+        }
+
+        return (normalized + additions).distinctBy { it.stageId }
+    }
+
+    fun auditWarnings(
+        processingMode: ProcessingMode,
+        selectedModel: ModelExecutionInfo?,
+        executedModel: ModelExecutionInfo?,
+        executedRuntime: ExecutedRuntime,
+        stageTimings: List<ReportStageTiming>,
+        graphIndex: Int? = null,
+    ): List<ReportWarning> {
+        if (processingMode != ProcessingMode.FULL_ANALYSIS) return emptyList()
+
+        val resolvedRuntime = executedModel?.runtime?.takeIf { it != ExecutedRuntime.UNKNOWN } ?: executedRuntime
+        val stageIds = stageTimings.map { it.stageId }.toSet()
+
+        return buildList {
+            if (selectedModel != null && executedModel == null) {
+                add(
+                    ReportWarning(
+                        code = "model.execution_missing",
+                        message = "A model was selected (${selectedModel.modelName ?: selectedModel.modelId}), but no executed model is recorded for this full analysis.",
+                        severity = ReportSeverity.SERIOUS,
+                        stage = "model_runtime",
+                        graphIndex = graphIndex,
+                    ),
+                )
+            }
+
+            if (!resolvedRuntime.isVisionRuntime()) {
+                requiredVisionStages().forEach { stage ->
+                    add(
+                        failureWarning(
+                            stage = stage,
+                            detail = "Required VLM stage '${stage.stageId}' did not execute because the recorded runtime is ${resolvedRuntime.name}.",
+                            graphIndex = graphIndex,
+                        ),
+                    )
+                }
+                return@buildList
+            }
+
+            requiredVisionStages()
+                .filterNot { it.stageId in stageIds }
+                .forEach { stage ->
+                    add(
+                        ReportWarning(
+                            code = "${stage.stageId}.timing_missing",
+                            message = "Required VLM stage '${stage.stageId}' has no recorded timing/outcome entry in the report audit.",
+                            severity = ReportSeverity.SERIOUS,
+                            stage = stage.stageId,
+                            graphIndex = graphIndex,
+                        ),
+                    )
+                }
+        }
+    }
+
     fun evaluateChromatogramVisionEligibility(model: ModelInfo): ModelEligibility {
         val reasons = buildList {
             if (!model.supportsVision) {
@@ -166,4 +258,17 @@ object ModelAssistedAnalysisContract {
         "dots-mocr",
         "deepseek-ocr",
     )
+
+    private fun ExecutedRuntime.isVisionRuntime(): Boolean =
+        this == ExecutedRuntime.LITERT || this == ExecutedRuntime.GGUF || this == ExecutedRuntime.MIXED
+
+    private fun Map<String, ReportStageTiming>.firstDuration(vararg stageIds: String): Long? =
+        stageIds.firstNotNullOfOrNull { id -> this[id]?.durationMillis }
+
+    private fun String.modelStageName(): String =
+        when (this) {
+            "model.graph_region" -> "Model graph-region contract"
+            "model.title_ion_axis" -> "Model title/ION/axis contract"
+            else -> this
+        }
 }
