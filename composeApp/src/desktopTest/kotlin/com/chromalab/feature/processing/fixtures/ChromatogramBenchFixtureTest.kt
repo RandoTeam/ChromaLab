@@ -248,6 +248,10 @@ class ChromatogramBenchFixtureTest {
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
+            assertTrue(
+                Files.size(outputDir.resolve("calibrated_report.md")) > 0L,
+                "${fixture.id} calibrated report artifact must be written",
+            )
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
             audit.graphs.forEach { graph ->
                 assertTrue(
@@ -487,6 +491,7 @@ class ChromatogramBenchFixtureTest {
         assertSparseStackedIonSignalScope(auditsById)
         assertSparseStackedIonPeakQualityScope(auditsById)
         auditsById.values.forEach { assertReportContractAudit(it) }
+        auditsById.values.forEach { assertCalibratedReportArtifact(it) }
     }
 
     private suspend fun runWithPlotManualCalibration(
@@ -630,6 +635,7 @@ class ChromatogramBenchFixtureTest {
             "${audit.sourceId} must record peak_sanity success stages",
         )
         assertReportContractAudit(audit)
+        assertCalibratedReportArtifact(audit)
         assertTrue(audit.blockedAtStage != "peak_detection", "${audit.sourceId} must pass peak detection gate")
         assertTrue(audit.blockedAtStage != "peak_metrics", "${audit.sourceId} must pass peak metrics gate")
         if (expectPeakSanityReady) {
@@ -747,6 +753,59 @@ class ChromatogramBenchFixtureTest {
                 .all { it.section in allowedBlockedSections },
             "${audit.sourceId} must only block report validation in sections explained by current pipeline state",
         )
+    }
+
+    private fun assertCalibratedReportArtifact(audit: OfflineAnalysisAudit) {
+        val reportPath = Path.of(audit.outputDir).resolve("calibrated_report.md")
+        assertTrue(Files.size(reportPath) > 0L, "${audit.sourceId} calibrated report artifact must be non-empty")
+        val report = Files.readString(reportPath)
+
+        assertTrue(
+            report.contains("# ChromaLab Calibrated Chromatogram Report"),
+            "${audit.sourceId} calibrated report must use the user-facing report title",
+        )
+        assertTrue(report.contains("## Overview"), "${audit.sourceId} calibrated report must include overview")
+        assertTrue(report.contains("## Key Warnings"), "${audit.sourceId} calibrated report must include key warnings")
+        assertTrue(report.contains("## Technical Appendix"), "${audit.sourceId} calibrated report must include appendix")
+        assertTrue(
+            report.contains("| # | RT apex | Left | Right | Height | Area | Area % | FWHM | W base | S/N |"),
+            "${audit.sourceId} calibrated report must render the full peak-table columns",
+        )
+        assertTrue(
+            report.contains("not calculated"),
+            "${audit.sourceId} calibrated report must show missing chemistry explicitly",
+        )
+
+        var previousGraphIndex = -1
+        audit.graphs.sortedBy { it.graphIndex }.forEach { graph ->
+            val marker = "## Graph ${graph.graphIndex} Report"
+            val currentGraphIndex = report.indexOf(marker)
+            assertTrue(currentGraphIndex >= 0, "${audit.sourceId} calibrated report must include $marker")
+            assertTrue(
+                currentGraphIndex > previousGraphIndex,
+                "${audit.sourceId} calibrated report must preserve graph/report ordering",
+            )
+            previousGraphIndex = currentGraphIndex
+        }
+
+        val appendixIndex = report.indexOf("## Technical Appendix")
+        assertTrue(appendixIndex > 0, "${audit.sourceId} calibrated report must place appendix after main sections")
+        val mainReport = report.substring(0, appendixIndex)
+        val appendix = report.substring(appendixIndex)
+        assertFalse(
+            mainReport.contains("peak_detection.sparse_trace_report_confidence_required"),
+            "${audit.sourceId} main report must keep raw sparse warning codes out of the user-facing warning surface",
+        )
+        if (audit.graphs.any { "peak_detection.sparse_trace_report_confidence_required" in it.peakDetection.warnings }) {
+            assertTrue(
+                mainReport.contains("Sparse trace report confidence required"),
+                "${audit.sourceId} main report must include human sparse trace confidence wording",
+            )
+            assertTrue(
+                appendix.contains("peak_detection.sparse_trace_report_confidence_required"),
+                "${audit.sourceId} appendix must keep the raw sparse warning code",
+            )
+        }
     }
 
     private fun allowedReportBlockedSections(blockedAtStage: String?): Set<String> =
@@ -1407,6 +1466,7 @@ private fun writeAuditArtifacts(
     Files.createDirectories(outputDir)
     Files.writeString(outputDir.resolve("audit.json"), OfflineAnalysisAuditArtifacts.toJson(audit))
     Files.writeString(outputDir.resolve("audit_summary.md"), OfflineAnalysisAuditArtifacts.toSummaryMarkdown(audit))
+    Files.writeString(outputDir.resolve("calibrated_report.md"), OfflineAnalysisAuditArtifacts.toCalibratedReportMarkdown(audit))
     val overlayImagePath = audit.orientationCorrection?.imagePath?.let { Path.of(it) } ?: imagePath
     writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
     writeSelectedPreprocessingCrops(audit, outputDir)

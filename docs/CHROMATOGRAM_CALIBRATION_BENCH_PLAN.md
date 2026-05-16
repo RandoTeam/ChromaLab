@@ -14,11 +14,11 @@ Current execution point:
 
 - Main roadmap item: `Stabilize Chromatography Core`.
 - Active plan: this document.
-- Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
-  audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
-  stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 6.2 - add missing peak-table report columns to the calibrated audit contract`.
-- Next work slice: `Phase 6.3 - render calibrated audit report sections from the structured contract`.
+- Active phase: `Phase 6 - Structured Report Validation`, using the calibrated
+  desktop/emulator bench artifacts produced by the earlier preparation, calibration,
+  signal, and peak-detection gates.
+- Latest completed work slice: `Phase 6.3 - render calibrated audit report sections from the structured contract`.
+- Next work slice: `Phase 6.4 - connect rendered report artifacts to visual graph evidence and export/UI planning`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -76,7 +76,8 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.8 | Done | `4053c22` | Review sparse stacked ion peak quality before report validation. |
 | Phase 6.1 | Done | `c54fbb3` | Validate the structured report contract against calibrated fixture audits. |
 | Phase 6.2 | Done | `e28aecf` | Add missing peak-table report columns to the calibrated audit contract. |
-| Phase 6.3 | Next | Pending | Render calibrated audit report sections from the structured contract. |
+| Phase 6.3 | Done | Pending | Render calibrated audit report sections from the structured contract. |
+| Phase 6.4 | Next | Pending | Connect rendered report artifacts to visual graph evidence and export/UI planning. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -800,14 +801,30 @@ Completed Phase 6.2 work slice:
    two-graph, guarded/sparse fixtures that are calculation-ready. `bench_02` remains
    blocked only by source/crop boundary clearance, not by peak-table structure.
 
-Next Phase 6.3 work slice:
+Completed Phase 6.3 work slice:
 
 1. Render calibrated offline-audit results into report-section artifacts, preserving
-   graph/report ordering.
+   graph/report ordering through `calibrated_report.md`.
 2. Keep warnings human-readable in the main report surface and raw warning codes in
    the technical appendix.
-3. Preserve the Belyi Tigr reference shape/depth without claiming final mobile UI
-   completion yet.
+3. Render per-graph preparation, axis calibration, peak table, chromatographic quality,
+   Kovats/interpretation, and report-section readiness from the structured contract.
+4. Require the calibrated report artifact in desktop fixture tests, including graph
+   ordering, full peak-table columns, explicit not-calculated chemistry, and sparse
+   warning code separation.
+5. Preserve the Belyi Tigr reference shape/depth without claiming final mobile UI
+   completion yet. The Markdown artifact is a contract artifact, not the finished
+   phone report UI.
+
+Next Phase 6.4 work slice:
+
+1. Connect the rendered calibrated report artifact to the available visual evidence:
+   graph candidate overlay, manual calibration focus image, curve overlay, and peak
+   overlay.
+2. Decide which report elements become mobile UI sections versus technical appendix
+   details.
+3. Keep graph/report ordering and raw-code separation locked while preparing export/UI
+   integration.
 
 Exit criteria:
 

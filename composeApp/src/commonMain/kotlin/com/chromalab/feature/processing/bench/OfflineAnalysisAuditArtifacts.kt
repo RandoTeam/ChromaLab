@@ -12,6 +12,50 @@ object OfflineAnalysisAuditArtifacts {
     fun toJson(audit: OfflineAnalysisAudit): String =
         json.encodeToString(audit)
 
+    fun toCalibratedReportMarkdown(audit: OfflineAnalysisAudit): String = buildString {
+        appendLine("# ChromaLab Calibrated Chromatogram Report")
+        appendLine()
+        appendLine("## Overview")
+        appendLine()
+        appendLine("| Field | Value |")
+        appendLine("| --- | --- |")
+        reportRow("Source", audit.sourceId)
+        reportRow("Image size", audit.imageWidth?.let { width -> "${width} x ${audit.imageHeight ?: "unknown"}" } ?: "unknown")
+        reportRow("Detected graphs", audit.detectedGraphCount.toString())
+        reportRow("Expected graphs", audit.expectedGraphCount?.toString() ?: "not specified")
+        reportRow("Report readiness", if (audit.reportContract.ready) "ready" else "not ready")
+        reportRow("Blocked stage", audit.blockedAtStage?.humanizeCode() ?: "not blocked")
+        reportRow("Orientation correction", if (audit.orientationCorrection?.wasRotated == true) {
+            "${audit.orientationCorrection.rotationDegrees} deg"
+        } else {
+            "not required"
+        })
+        reportRow("Stage duration", "${audit.stages.sumOf { it.durationMillis }} ms")
+        appendLine()
+
+        appendLine("## Key Warnings")
+        appendLine()
+        renderHumanWarningList((audit.reportContract.warnings + audit.warnings).distinct())
+        appendLine()
+
+        audit.graphs.sortedBy { it.graphIndex }.forEach { graph ->
+            appendLine("## Graph ${graph.graphIndex} Report")
+            appendLine()
+            renderGraphPreparation(graph)
+            renderAxisCalibration(graph)
+            renderPeakTable(graph)
+            renderChromatographicQuality(graph)
+            renderKovatsAndInterpretation(graph)
+            renderSectionReadiness(audit, graph)
+        }
+
+        appendLine("## Technical Appendix")
+        appendLine()
+        renderRawWarningCodes(audit)
+        renderStageTimeline(audit)
+        renderRawReportSections(audit)
+    }
+
     fun toSummaryMarkdown(audit: OfflineAnalysisAudit): String = buildString {
         appendLine("# ChromaLab Offline Analysis Audit")
         appendLine()
@@ -297,6 +341,228 @@ object OfflineAnalysisAuditArtifacts {
             }
         }
     }
+
+    private fun StringBuilder.renderGraphPreparation(graph: OfflineGraphAudit) {
+        appendLine("### Source And Graph Preparation")
+        appendLine()
+        appendLine("| Field | Value |")
+        appendLine("| --- | --- |")
+        reportRow("Graph panel bounds", graph.region.renderRegion())
+        reportRow("Plot area bounds", graph.plotArea.region?.renderRegion() ?: "not detected")
+        reportRow("Crop accepted", if (graph.cropQuality.acceptedForCalculation) "yes" else "no")
+        reportRow("Boundary accepted", if (graph.cropBoundaryRisk.acceptedForCalculation) "yes" else "no")
+        reportRow("Selected preprocessing", graph.selectedPreprocessingVariant ?: "not selected")
+        reportRow("OCR status", graph.ocrStatus.name.humanizeCode())
+        reportRow("Curve points", graph.curvePointCount.toString())
+        reportRow("Curve coverage", graph.curveCoverage.renderPercent())
+        appendLine()
+        renderHumanWarningList(
+            (
+                graph.refinement.warnings +
+                    graph.cropQuality.warnings +
+                    graph.cropBoundaryRisk.warnings +
+                    graph.plotArea.warnings +
+                    graph.warnings
+                ).distinct(),
+        )
+        appendLine()
+    }
+
+    private fun StringBuilder.renderAxisCalibration(graph: OfflineGraphAudit) {
+        val calibration = graph.axisCalibration
+        appendLine("### Axis Calibration")
+        appendLine()
+        appendLine("| Axis | Unit | Pixel span | Value span | Tick candidates |")
+        appendLine("| --- | --- | ---: | ---: | ---: |")
+        appendLine(
+            "| X | ${(calibration.xUnit ?: "not detected").escapeTable()} | ${calibration.xPixelSpan.renderNumber()} | ${calibration.xValueSpan.renderNumber()} | ${calibration.xCandidateCount} |",
+        )
+        appendLine(
+            "| Y | ${(calibration.yUnit ?: "not detected").escapeTable()} | ${calibration.yPixelSpan.renderNumber()} | ${calibration.yValueSpan.renderNumber()} | ${calibration.yCandidateCount} |",
+        )
+        appendLine()
+        appendLine("- Calibration source: ${calibration.source.name.humanizeCode()}")
+        appendLine("- Calibration ready: ${if (calibration.ready) "yes" else "no"}")
+        appendLine("- Geometry confidence: ${graph.axisConfidence.renderPercent()}")
+        appendLine()
+        renderHumanWarningList(calibration.warnings)
+        appendLine()
+    }
+
+    private fun StringBuilder.renderPeakTable(graph: OfflineGraphAudit) {
+        appendLine("### Peak Table")
+        appendLine()
+        if (graph.peakDetection.peaks.isEmpty()) {
+            appendLine("No calculated peak rows are available.")
+            appendLine()
+            return
+        }
+
+        appendLine("| # | RT apex | Left | Right | Height | Area | Area % | FWHM | W base | S/N | Tailing | Asymmetry | Compound | Formula | C# | Kovats | Confidence | Flags |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |")
+        graph.peakDetection.peaks.sortedBy { it.rtApex }.forEach { peak ->
+            appendLine(
+                listOf(
+                    peak.peakNumber.toString(),
+                    peak.rtApex.renderNumber(),
+                    peak.leftBoundaryTime.renderNumber(),
+                    peak.rightBoundaryTime.renderNumber(),
+                    peak.height.renderNumber(),
+                    peak.area.renderNumber(),
+                    peak.areaPercent.renderNumber(),
+                    peak.widthHalfHeight?.renderNumber() ?: "not calculated",
+                    peak.widthBase.renderNumber(),
+                    peak.snr.renderNumber(),
+                    peak.tailingFactor.renderNumber(),
+                    peak.asymmetryFactor.renderNumber(),
+                    peak.assignment.probableCompoundName ?: peak.assignment.probableCompoundStatus.renderReportValueStatus(),
+                    peak.assignment.formula ?: peak.assignment.formulaStatus.renderReportValueStatus(),
+                    peak.assignment.carbonNumber ?: peak.assignment.carbonNumberStatus.renderReportValueStatus(),
+                    peak.assignment.kovatsIndex?.renderNumber() ?: peak.assignment.kovatsIndexStatus.renderReportValueStatus(),
+                    peak.confidence.humanizeCode(),
+                    peak.qualityFlags.joinToString("; ") { it.humanizeCode() }.ifBlank { "none" },
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+        appendLine()
+        renderHumanWarningList(
+            (
+                graph.peakDetection.warnings +
+                    graph.peakMetrics.warnings +
+                    graph.peakSanity.warnings
+                ).distinct(),
+        )
+        appendLine()
+    }
+
+    private fun StringBuilder.renderChromatographicQuality(graph: OfflineGraphAudit) {
+        val peaks = graph.peakDetection
+        val metrics = graph.peakMetrics
+        appendLine("### Chromatographic Quality")
+        appendLine()
+        appendLine("| Metric | Value |")
+        appendLine("| --- | --- |")
+        reportRow("Peak count", peaks.peakCount.toString())
+        reportRow("Significant peaks", peaks.significantPeakCount.toString())
+        reportRow("Dominant peak RT", peaks.dominantPeakTime?.renderNumber() ?: "not calculated")
+        reportRow("Dominant peak height", peaks.dominantPeakHeight?.renderNumber() ?: "not calculated")
+        reportRow("Dominant peak area share", peaks.dominantPeakAreaPercent?.renderNumber() ?: "not calculated")
+        reportRow("Total integrated area", metrics.totalAbsArea.renderNumber())
+        reportRow("Area percent sum", metrics.areaPercentSum.renderNumber())
+        reportRow("Noise estimate", peaks.noiseLevel?.renderNumber() ?: "not calculated")
+        reportRow("Noise method", peaks.noiseMethod ?: "not calculated")
+        reportRow("Baseline method", peaks.baselineMethod ?: "not calculated")
+        reportRow("Boundary method", peaks.boundaryMethod ?: "not calculated")
+        reportRow("Integration method", peaks.integrationMethod ?: "not calculated")
+        reportRow("Clamp negative", peaks.clampNegative?.toString() ?: "not calculated")
+        reportRow("Max peak width", peaks.maxPeakWidth?.toString() ?: "not calculated")
+        reportRow("Minimum S/N", peaks.minSnr?.renderNumber() ?: "not calculated")
+        appendLine()
+    }
+
+    private fun StringBuilder.renderKovatsAndInterpretation(graph: OfflineGraphAudit) {
+        appendLine("### Kovats And Interpretation")
+        appendLine()
+        appendLine("- Kovats index values are not calculated yet because no local reference series is attached to this audit.")
+        appendLine("- Compound names, formulas, carbon numbers, and interpretation remain explicit not-calculated fields unless supported by local knowledge, library evidence, or user data.")
+        if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
+            appendLine("- Sparse ion trace evidence limits interpretation confidence and requires visual/report review.")
+        }
+        if (graph.peakDetection.controlledTuningApplied) {
+            appendLine("- Guarded completeness recovered additional visible peaks; review lower-confidence rows before chemical interpretation.")
+        }
+        appendLine()
+    }
+
+    private fun StringBuilder.renderSectionReadiness(
+        audit: OfflineAnalysisAudit,
+        graph: OfflineGraphAudit,
+    ) {
+        val sections = audit.reportContract.sections.filter { it.graphIndex == graph.graphIndex }
+        appendLine("### Report Section Readiness")
+        appendLine()
+        appendLine("| Section | Status | Notes |")
+        appendLine("| --- | --- | --- |")
+        sections.forEach { section ->
+            val notes = (section.missingFields + section.warnings)
+                .distinct()
+                .joinToString("; ") { it.humanizeCode() }
+                .ifBlank { "none" }
+            appendLine(
+                "| ${section.section.humanizeCode().escapeTable()} | ${section.status.name.humanizeCode()} | ${notes.escapeTable()} |",
+            )
+        }
+        if (sections.isEmpty()) {
+            appendLine("| none | not calculated | report validation is not available |")
+        }
+        appendLine()
+    }
+
+    private fun StringBuilder.renderHumanWarningList(warnings: List<String>) {
+        if (warnings.isEmpty()) {
+            appendLine("- No report warnings.")
+            return
+        }
+        warnings.forEach { warning -> appendLine("- ${warning.humanizeCode().escapeTable()}") }
+    }
+
+    private fun StringBuilder.renderRawWarningCodes(audit: OfflineAnalysisAudit) {
+        appendLine("### Raw Warning Codes")
+        appendLine()
+        appendLine("| Scope | Graph | Code |")
+        appendLine("| --- | ---: | --- |")
+        val rows = buildList {
+            audit.warnings.forEach { add(Triple("pipeline", null, it)) }
+            audit.reportContract.warnings.forEach { add(Triple("report_contract", null, it)) }
+            audit.graphs.forEach { graph ->
+                graph.warnings.forEach { add(Triple("graph", graph.graphIndex, it)) }
+                graph.axisCalibration.warnings.forEach { add(Triple("axis_calibration", graph.graphIndex, it)) }
+                graph.peakDetection.warnings.forEach { add(Triple("peak_detection", graph.graphIndex, it)) }
+                graph.peakMetrics.warnings.forEach { add(Triple("peak_metrics", graph.graphIndex, it)) }
+                graph.peakSanity.warnings.forEach { add(Triple("peak_sanity", graph.graphIndex, it)) }
+            }
+        }.distinct()
+        if (rows.isEmpty()) {
+            appendLine("| none |  | none |")
+        } else {
+            rows.forEach { (scope, graph, code) ->
+                appendLine("| ${scope.escapeTable()} | ${graph ?: ""} | `${code.escapeTable()}` |")
+            }
+        }
+        appendLine()
+    }
+
+    private fun StringBuilder.renderStageTimeline(audit: OfflineAnalysisAudit) {
+        appendLine("### Stage Timeline")
+        appendLine()
+        appendLine("| Stage | Graph | Status | Duration | Message |")
+        appendLine("| --- | ---: | --- | ---: | --- |")
+        audit.stages.forEach { stage ->
+            appendLine(
+                "| `${stage.stage.escapeTable()}` | ${stage.graphIndex ?: ""} | ${stage.status} | ${stage.durationMillis} ms | ${stage.message.escapeTable()} |",
+            )
+        }
+        appendLine()
+    }
+
+    private fun StringBuilder.renderRawReportSections(audit: OfflineAnalysisAudit) {
+        appendLine("### Raw Report Contract Sections")
+        appendLine()
+        appendLine("| Graph | Section | Status | Missing fields | Warnings |")
+        appendLine("| ---: | --- | --- | --- | --- |")
+        audit.reportContract.sections.forEach { section ->
+            appendLine(
+                "| ${section.graphIndex ?: ""} | `${section.section}` | ${section.status} | ${section.missingFields.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${section.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        if (audit.reportContract.sections.isEmpty()) {
+            appendLine("|  | none | BLOCKED | report_validation_not_available | none |")
+        }
+    }
+
+    private fun StringBuilder.reportRow(label: String, value: String) {
+        appendLine("| ${label.escapeTable()} | ${value.escapeTable()} |")
+    }
 }
 
 private fun com.chromalab.feature.processing.graph.GraphRegion.renderRegion(): String =
@@ -323,6 +589,72 @@ private fun Double.renderNumber(): String =
 
 private fun List<OfflinePeakRejectionAudit>.renderRejectionReasons(): String =
     joinToString("; ") { "${it.reason}:${it.count}" }.ifBlank { "none" }
+
+private fun String.renderReportValueStatus(): String =
+    when (this) {
+        "CALCULATED" -> "calculated"
+        "DETECTED" -> "detected"
+        "INFERRED" -> "inferred"
+        "NOT_DETECTED" -> "not detected"
+        "INSUFFICIENT_CONFIDENCE" -> "insufficient confidence"
+        "FAILED" -> "failed"
+        "NOT_CALCULATED" -> "not calculated"
+        else -> humanizeCode()
+    }
+
+private fun String.humanizeCode(): String {
+    when (this) {
+        "peak_detection.sparse_trace_report_confidence_required",
+        "report.peak_table.sparse_trace_confidence_text_required",
+        "report.graph_overlay.sparse_trace_visual_review_required",
+        "report.quality.sparse_trace_quality_text_required" ->
+            return "Sparse trace report confidence required"
+
+        "peak_detection.sparse_trace_localized_review_required",
+        "curve_extract.sparse_trace_localized_review_required" ->
+            return "Localized sparse trace requires visual review"
+
+        "peak_detection.sparse_trace_low_area_share_peaks" ->
+            return "Sparse trace contains low-area peaks that need review"
+
+        "peak_detection.sparse_trace_overlap_review_required" ->
+            return "Sparse trace contains overlapping peaks that need review"
+
+        "report.peak_table.compound_assignments_not_calculated",
+        "report.interpretation.compound_assignments_missing" ->
+            return "Compound assignments are not calculated"
+
+        "report.peak_table.kovats_values_not_calculated",
+        "report.kovats.reference_series_missing",
+        "report.kovats.must_render_not_calculated_state" ->
+            return "Kovats values are not calculated because the reference series is missing"
+
+        "report.interpretation.local_knowledge_pack_required" ->
+            return "Local domain knowledge pack is required before chemical interpretation"
+
+        "report.overview.pipeline_warnings_present" ->
+            return "Pipeline warnings are available in the technical appendix"
+    }
+    val words = replace('.', ' ')
+        .replace('_', ' ')
+        .replace('-', ' ')
+        .trim()
+        .split(Regex("\\s+"))
+        .filter { it.isNotBlank() }
+    if (words.isEmpty()) return this
+    return words.joinToString(" ") { word ->
+        when {
+            word.equals("rt", ignoreCase = true) -> "RT"
+            word.equals("snr", ignoreCase = true) -> "S/N"
+            word.equals("ocr", ignoreCase = true) -> "OCR"
+            word.equals("xic", ignoreCase = true) -> "XIC"
+            word.equals("tic", ignoreCase = true) -> "TIC"
+            word.equals("fwhm", ignoreCase = true) -> "FWHM"
+            word.length <= 2 -> word.uppercase()
+            else -> word.lowercase()
+        }
+    }.replaceFirstChar { char -> char.uppercase() }
+}
 
 private fun String.escapeTable(): String =
     replace("|", "\\|").replace("\n", " ")

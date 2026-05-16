@@ -365,7 +365,22 @@ assignment evidence is absent. Calculation-ready fixture reports no longer block
 peak-table structure; missing chemistry remains a warning and future interpretation
 task.
 
+Phase 6.3 adds the first calibrated report artifact for fixture runs:
+
+- `calibrated_report.md` - graph-first report artifact rendered from the structured
+  offline audit contract.
+
+The artifact includes overview, human-readable warnings, per-graph preparation, axis
+calibration, peak table, chromatographic quality, Kovats/interpretation, section
+readiness, and a technical appendix. The main report surface keeps raw warning codes
+out of user-facing text; raw codes remain in the appendix for audit/debug work.
+Executable checks require the artifact to be written, preserve graph/report order, keep
+full peak-table columns, show missing chemistry as not calculated, and keep sparse
+trace warning codes in the appendix. This is still a contract artifact, not the final
+mobile report UI.
+
 ## Next Phase
 
-Phase 6.3 should render calibrated offline-audit results into report-section artifacts
-that preserve graph/report ordering and keep raw debug codes in the appendix.
+Phase 6.4 should connect the rendered report artifact to visual graph evidence such as
+graph overlays, manual calibration focus images, curve overlays, and peak overlays
+before mobile report/export wiring is treated as complete.

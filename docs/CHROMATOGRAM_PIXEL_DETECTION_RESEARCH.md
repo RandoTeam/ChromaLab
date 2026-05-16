@@ -160,9 +160,14 @@ asymmetry factor, and explicit compound/Kovats `NOT_CALCULATED` statuses when lo
 assignment evidence is absent. Calculation-ready fixture audits no longer block on
 peak-table structure.
 
-Phase 6.3 should render calibrated offline-audit results into report-section artifacts,
-keeping human-readable warnings near the main sections and raw diagnostic codes in the
-technical appendix.
+Phase 6.3 is implemented: calibrated fixture runs now write `calibrated_report.md`
+beside the JSON and audit summary artifacts. The report preserves graph/report order,
+renders preparation, calibration, peak table, quality, Kovats/interpretation, and
+section readiness, keeps sparse/guarded warning wording human-readable in the main
+sections, and keeps raw diagnostic codes in the technical appendix.
+
+Phase 6.4 should attach the rendered report artifact to visual evidence artifacts
+before mobile report/export wiring is treated as complete.
 
 ## Sources
 
