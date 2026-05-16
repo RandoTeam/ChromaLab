@@ -191,6 +191,43 @@ class ProcessingReportMetadataBuilderTest {
     }
 
     @Test
+    fun processingMetadataAuditLineExposesDeviceValidationFields() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\normalized_photo.jpg""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 256,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+            selectedModel = ModelExecutionInfo(
+                modelId = "tiny-gguf-vlm",
+                modelName = "Tiny GGUF VLM",
+                runtime = ExecutedRuntime.GGUF,
+            ),
+            executedModel = null,
+            deviceName = "Xiaomi Mi 8",
+            stageTimings = listOf(
+                ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 125L),
+            ),
+        )
+
+        val line = buildProcessingReportMetadataAuditLine(config, chromatogramId = 42L)
+
+        assertTrue(line.startsWith("REPORT_AUDIT"))
+        assertTrue(line.contains("chromatogramId=42"))
+        assertTrue(line.contains("source=normalized_photo.jpg"))
+        assertTrue(line.contains("selected=tiny-gguf-vlm/GGUF/none"))
+        assertTrue(line.contains("executed=none"))
+        assertTrue(line.contains("runtime=UNKNOWN"))
+        assertTrue(line.contains("device=Xiaomi_Mi_8"))
+        assertTrue(line.contains("timings=IMAGE_QUALITY:125"))
+        assertTrue(line.contains("model.graph_region.required_vision_failed:FAILED"))
+        assertTrue(line.contains("model.title_ion_axis.required_vision_failed:FAILED"))
+    }
+
+    @Test
     fun processingMetadataExtractsOcrIdentificationAndAxisLabels() {
         val title = """Ion 92.00 (91.70 to 92.70): BELIY TIGR_1.D\data.ms"""
         val config = buildProcessingReportMetadataConfig(

@@ -46,6 +46,10 @@ compound assignments.
 - Saved processing metadata is covered by a regression test through
   `algorithmConfig`, `buildCalculationReportOptions`, and `CalculationRunReportMapper`
   so model-stage audit failures remain visible in final reports.
+- The user-flow save path emits a compact `PIPELINE[REPORT_AUDIT] REPORT_AUDIT ...`
+  line after each chromatogram graph is inserted. This is the primary logcat marker
+  for Android/device validation because it shows selected model, executed model,
+  runtime, device, stage timings, and warning codes in one line.
 - Report metadata already records selected/executed model, runtime, backend, device,
   and stage timings; those fields remain required evidence for Phase 8 validation.
 
@@ -62,4 +66,11 @@ visible in the final report audit instead of only in runtime logs.
 
 Phase 8.3a validates this saved-report path on desktop tests. Android/device validation
 remains a separate required step because it must prove that the runtime metadata written
-by an actual device run matches the same contract.
+by an actual device run matches the same contract. Capture:
+
+```text
+adb logcat -s System.out | findstr REPORT_AUDIT
+```
+
+The accepted device-run evidence must include the expected model/runtime fields and
+must not hide required VLM failures.

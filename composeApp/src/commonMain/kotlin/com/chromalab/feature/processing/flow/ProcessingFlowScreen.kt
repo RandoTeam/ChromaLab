@@ -75,6 +75,7 @@ import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.calibration.PixelCalibration
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
+import com.chromalab.feature.processing.report.buildProcessingReportMetadataAuditLine
 import com.chromalab.feature.processing.report.currentReportDeviceName
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
@@ -692,6 +693,31 @@ fun ProcessingFlowScreen(
                                         preprocessingResult = entry.preprocessingResult,
                                         bestSweepConfig = entry.bestSweepConfig,
                                     )
+                                    val algorithmConfig = buildProcessingReportMetadataConfig(
+                                        sourcePath = imagePath,
+                                        processedPath = currentImagePath,
+                                        sourceType = SourceType.PHOTO,
+                                        graphIndex = entry.graphIndex,
+                                        detectedGraphCount = detectedGraphCount,
+                                        signalPointCount = signal.points.size,
+                                        analysisStartedAtEpochMillis = flowStartedAt,
+                                        analysisCompletedAtEpochMillis = now,
+                                        sourceImageBounds = sourceImageBounds,
+                                        detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
+                                        cropConfidence = cropConfidence,
+                                        preprocessingSteps = preprocessingSteps,
+                                        preparationVariants = entry.preparationVariants,
+                                        axisOcrResult = entry.ocrResult,
+                                        titleOcrConfidence = null,
+                                        axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
+                                        tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
+                                        selectedModel = selectedReportModel,
+                                        executedModel = executedReportModel,
+                                        executedRuntime = executedRuntime,
+                                        deviceName = reportDeviceName,
+                                        stageTimings = reportStageTimings,
+                                        graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
+                                    )
                                     val entity = ChromatogramEntity(
                                         sampleId = sId,
                                         sourceType = SourceType.PHOTO,
@@ -706,36 +732,16 @@ fun ProcessingFlowScreen(
                                             ),
                                             signal.points,
                                         ),
-                                        algorithmConfig = buildProcessingReportMetadataConfig(
-                                            sourcePath = imagePath,
-                                            processedPath = currentImagePath,
-                                            sourceType = SourceType.PHOTO,
-                                            graphIndex = entry.graphIndex,
-                                            detectedGraphCount = detectedGraphCount,
-                                            signalPointCount = signal.points.size,
-                                            analysisStartedAtEpochMillis = flowStartedAt,
-                                            analysisCompletedAtEpochMillis = now,
-                                            sourceImageBounds = sourceImageBounds,
-                                            detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
-                                            cropConfidence = cropConfidence,
-                                            preprocessingSteps = preprocessingSteps,
-                                            preparationVariants = entry.preparationVariants,
-                                            axisOcrResult = entry.ocrResult,
-                                            titleOcrConfidence = null,
-                                            axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
-                                            tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
-                                            selectedModel = selectedReportModel,
-                                            executedModel = executedReportModel,
-                                            executedRuntime = executedRuntime,
-                                            deviceName = reportDeviceName,
-                                            stageTimings = reportStageTimings,
-                                            graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
-                                        ),
+                                        algorithmConfig = algorithmConfig,
                                         createdAt = now,
                                         updatedAt = now,
                                     )
                                     val id = db.chromatogramDao().insert(entity)
                                     if (firstId == null) firstId = id
+                                    println(
+                                        "PIPELINE[REPORT_AUDIT] " +
+                                            buildProcessingReportMetadataAuditLine(algorithmConfig, id),
+                                    )
                                     println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${graphsToSave.size} saved, id=$id, points=${signal.points.size}")
                                 }
                                 firstId
@@ -850,6 +856,31 @@ fun ProcessingFlowScreen(
                                     preprocessingResult = entry.preprocessingResult,
                                     bestSweepConfig = entry.bestSweepConfig,
                                 )
+                                val algorithmConfig = buildProcessingReportMetadataConfig(
+                                    sourcePath = imagePath,
+                                    processedPath = currentImagePath,
+                                    sourceType = SourceType.PHOTO,
+                                    graphIndex = entry.graphIndex,
+                                    detectedGraphCount = detectedGraphCount,
+                                    signalPointCount = signal.points.size,
+                                    analysisStartedAtEpochMillis = flowStartedAt,
+                                    analysisCompletedAtEpochMillis = now,
+                                    sourceImageBounds = sourceImageBounds,
+                                    detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
+                                    cropConfidence = cropConfidence,
+                                    preprocessingSteps = preprocessingSteps,
+                                    preparationVariants = entry.preparationVariants,
+                                    axisOcrResult = entry.ocrResult,
+                                    titleOcrConfidence = null,
+                                    axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
+                                    tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
+                                    selectedModel = selectedReportModel,
+                                    executedModel = executedReportModel,
+                                    executedRuntime = executedRuntime,
+                                    deviceName = reportDeviceName,
+                                    stageTimings = reportStageTimings,
+                                    graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
+                                )
                                 val entity = ChromatogramEntity(
                                     sampleId = sampleId,
                                     sourceType = SourceType.PHOTO,
@@ -864,36 +895,16 @@ fun ProcessingFlowScreen(
                                         ),
                                         signal.points,
                                     ),
-                                    algorithmConfig = buildProcessingReportMetadataConfig(
-                                        sourcePath = imagePath,
-                                        processedPath = currentImagePath,
-                                        sourceType = SourceType.PHOTO,
-                                        graphIndex = entry.graphIndex,
-                                        detectedGraphCount = detectedGraphCount,
-                                        signalPointCount = signal.points.size,
-                                        analysisStartedAtEpochMillis = flowStartedAt,
-                                        analysisCompletedAtEpochMillis = now,
-                                        sourceImageBounds = sourceImageBounds,
-                                        detectedGraphBounds = entry.selectedRegion.toReportPixelRect(),
-                                        cropConfidence = cropConfidence,
-                                        preprocessingSteps = preprocessingSteps,
-                                        preparationVariants = entry.preparationVariants,
-                                        axisOcrResult = entry.ocrResult,
-                                        titleOcrConfidence = null,
-                                        axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
-                                        tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
-                                        selectedModel = selectedReportModel,
-                                        executedModel = executedReportModel,
-                                        executedRuntime = executedRuntime,
-                                        deviceName = reportDeviceName,
-                                        stageTimings = reportStageTimings,
-                                        graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
-                                    ),
+                                    algorithmConfig = algorithmConfig,
                                     createdAt = now,
                                     updatedAt = now,
                                 )
                                 val id = db.chromatogramDao().insert(entity)
                                 if (firstId == null) firstId = id
+                                println(
+                                    "PIPELINE[REPORT_AUDIT] " +
+                                        buildProcessingReportMetadataAuditLine(algorithmConfig, id),
+                                )
                                 println("PIPELINE[AUTO-SAVE] graph ${idx + 1}/${graphsToSave.size} saved, id=$id, points=${signal.points.size}")
                             }
                             firstId

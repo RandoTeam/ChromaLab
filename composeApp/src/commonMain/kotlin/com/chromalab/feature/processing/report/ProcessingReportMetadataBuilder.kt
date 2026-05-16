@@ -71,6 +71,40 @@ fun buildProcessingReportMetadataConfig(
         ),
     )
 
+fun buildProcessingReportMetadataAuditLine(
+    config: String,
+    chromatogramId: Long? = null,
+): String {
+    val metadata = StoredReportMetadataCodec.decodeOrNull(config)
+        ?: return "REPORT_AUDIT metadata=invalid chromatogramId=${chromatogramId ?: "pending"}"
+    val graphIndexes = metadata.graphs
+        .map { it.graphIndex }
+        .takeIf { it.isNotEmpty() }
+        ?.joinToString(",")
+        ?: "none"
+    val timings = metadata.stageTimings
+        .joinToString(",") { "${it.stageId}:${it.durationMillis}" }
+        .ifBlank { "none" }
+    val warnings = metadata.warnings
+        .joinToString(",") { "${it.code}:${it.severity.name}" }
+        .ifBlank { "none" }
+
+    return listOf(
+        "REPORT_AUDIT",
+        "chromatogramId=${chromatogramId ?: "pending"}",
+        "source=${metadata.sourceName.safeAuditValue()}",
+        "graphs=${metadata.detectedGraphCount ?: metadata.graphs.size}",
+        "graphIndexes=$graphIndexes",
+        "mode=${metadata.processingMode?.name ?: "unknown"}",
+        "selected=${metadata.selectedModel.auditModelLabel()}",
+        "executed=${metadata.executedModel.auditModelLabel()}",
+        "runtime=${metadata.executedRuntime?.name ?: "unknown"}",
+        "device=${metadata.deviceName.safeAuditValue()}",
+        "timings=$timings",
+        "warnings=$warnings",
+    ).joinToString(" ")
+}
+
 fun buildProcessingStoredReportMetadata(
     sourcePath: String,
     processedPath: String?,
@@ -211,3 +245,18 @@ private fun displayName(path: String?): String? =
         ?.substringAfterLast('/')
         ?.substringAfterLast('\\')
         ?.takeIf { it.isNotBlank() }
+
+private fun ModelExecutionInfo?.auditModelLabel(): String {
+    val model = this ?: return "none"
+    val id = model.modelId.safeAuditValue()
+    val runtime = model.runtime.name
+    val backend = model.backendLabel.safeAuditValue()
+    return "$id/$runtime/$backend"
+}
+
+private fun String?.safeAuditValue(): String =
+    this
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?.replace(Regex("\\s+"), "_")
+        ?: "none"

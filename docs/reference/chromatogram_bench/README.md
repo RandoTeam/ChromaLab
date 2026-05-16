@@ -464,8 +464,15 @@ Phase 8.3a validates saved-report propagation:
 - a selected GGUF/VLM with no executed runtime remains visibly blocked in the report
   through failed model-stage warnings plus `runtime.executed_unknown`.
 
+Phase 8.3b.1 prepares Android/device validation:
+
+- each user-flow chromatogram auto-save now emits a compact `PIPELINE[REPORT_AUDIT]`
+  logcat line;
+- the marker includes selected/executed model, runtime, device, timings, and warning
+  codes so LiteRT/GGUF device runs can be checked without manually decoding Room data.
+
 ## Next Phase
 
-Phase 8.3b should validate the same model-stage audit behavior on Android/device runs,
-especially LiteRT success, GGUF success/failure, and selected-model/runtime mismatch
-cases.
+Phase 8.3b.2 should run Android model-assisted analysis and capture the emitted
+`REPORT_AUDIT` evidence, especially LiteRT success, GGUF success/failure, and
+selected-model/runtime mismatch cases.

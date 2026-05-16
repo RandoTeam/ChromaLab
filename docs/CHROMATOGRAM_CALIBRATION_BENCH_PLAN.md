@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3a - validate saved-report model audit propagation`.
-- Next work slice: `Phase 8.3b - validate model-assisted audit behavior on Android/device runs`.
+- Latest completed work slice: `Phase 8.3b.1 - add Android report-audit log marker`.
+- Next work slice: `Phase 8.3b.2 - run model-assisted Android analysis and capture audit evidence`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -87,6 +87,7 @@ artifact summary; it is not the primary plan.
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
 | Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
 | Phase 8.3a | Done | `2412a84` | Validate saved-report model audit propagation through options builder and final report mapper. |
+| Phase 8.3b.1 | Done | `TBD` | Add logcat-visible report-audit marker for Android device runs. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -929,6 +930,7 @@ Goal: add models only where they improve recognition without replacing calculati
   validated adapter exists.
 - [x] Fail clearly when a required neural vision stage fails.
 - [x] Validate saved-report propagation for model-stage warnings and timings.
+- [x] Emit a compact Android/logcat marker for saved report audit evidence.
 - [ ] Validate the same audit behavior on Android/device runs.
 
 Completed Phase 8.1 work slice:
@@ -967,6 +969,17 @@ Completed Phase 8.3a work slice:
    `model.title_ion_axis.required_vision_failed`, and `runtime.executed_unknown`.
 4. Keep Android/device model-run validation as Phase 8.3b instead of marking it done
    without a real device execution.
+
+Completed Phase 8.3b.1 work slice:
+
+1. Add a compact `REPORT_AUDIT` summary builder for saved processing report metadata.
+2. Log `PIPELINE[REPORT_AUDIT] REPORT_AUDIT ...` after each chromatogram graph is
+   inserted on Android/user-flow auto-save.
+3. Include chromatogram id, source, graph indexes, processing mode, selected model,
+   executed model, executed runtime, device, stage timings, and warning codes in one
+   logcat-visible line.
+4. Keep actual Android model-run validation as Phase 8.3b.2 because it still requires
+   running LiteRT/GGUF analysis on a device and capturing the emitted audit line.
 
 Exit criteria:
 
