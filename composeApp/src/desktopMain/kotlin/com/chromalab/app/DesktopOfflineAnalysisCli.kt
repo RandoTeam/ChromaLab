@@ -6,6 +6,7 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
 import com.chromalab.feature.processing.graph.GraphRegion
+import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -138,6 +139,7 @@ private object DesktopOfflineAnalysisArtifactWriter {
         writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
         writeSelectedPreprocessingCrops(audit, outputDir)
         writeGraphFocusArtifacts(audit, overlayImagePath, outputDir)
+        writeAxisCalibrationDiagnostics(audit, overlayImagePath, outputDir)
         writePeakOverlayArtifacts(audit, outputDir)
     }
 
@@ -269,6 +271,130 @@ private object DesktopOfflineAnalysisArtifactWriter {
         }
     }
 
+    private fun writeAxisCalibrationDiagnostics(
+        audit: OfflineAnalysisAudit,
+        imagePath: Path,
+        outputDir: Path,
+    ) {
+        val source = ImageIO.read(imagePath.toFile()) ?: return
+        try {
+            audit.graphs.forEach { graph ->
+                val panel = graph.region.clampedTo(source.width, source.height)
+                val plot = graph.plotArea.region?.clampedTo(source.width, source.height) ?: panel
+                val expanded = panel.expandForAxisContext(source.width, source.height)
+                val bands = AxisDiagnosticBands.from(expanded, plot)
+
+                writeAxisDiagnosticOverlay(
+                    source = source,
+                    outputPath = outputDir.resolve("axis_calibration_diagnostics_graph_${graph.graphIndex}.png"),
+                    panel = panel,
+                    plot = plot,
+                    expanded = expanded,
+                    bands = bands,
+                )
+                writeRegionCrop(
+                    source = source,
+                    region = bands.xLabels,
+                    outputPath = outputDir.resolve("axis_x_label_band_graph_${graph.graphIndex}.png"),
+                )
+                writeRegionCrop(
+                    source = source,
+                    region = bands.yLabels,
+                    outputPath = outputDir.resolve("axis_y_label_band_graph_${graph.graphIndex}.png"),
+                )
+                writeRegionCrop(
+                    source = source,
+                    region = bands.title,
+                    outputPath = outputDir.resolve("axis_title_band_graph_${graph.graphIndex}.png"),
+                )
+            }
+        } finally {
+            source.flush()
+        }
+    }
+
+    private fun writeAxisDiagnosticOverlay(
+        source: BufferedImage,
+        outputPath: Path,
+        panel: GraphRegion,
+        plot: GraphRegion,
+        expanded: GraphRegion,
+        bands: AxisDiagnosticBands,
+    ) {
+        val focus = BufferedImage(expanded.width, expanded.height, BufferedImage.TYPE_INT_ARGB)
+        val graphics = focus.createGraphics()
+        try {
+            graphics.drawImage(
+                source,
+                0,
+                0,
+                expanded.width,
+                expanded.height,
+                expanded.x,
+                expanded.y,
+                expanded.x + expanded.width,
+                expanded.y + expanded.height,
+                null,
+            )
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            graphics.stroke = BasicStroke((expanded.width.coerceAtLeast(expanded.height) / 180f).coerceAtLeast(2f))
+            graphics.font = Font(Font.SANS_SERIF, Font.BOLD, (expanded.width / 42).coerceIn(10, 18))
+
+            graphics.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.18f)
+            graphics.color = Color(0x4C, 0xAF, 0x50)
+            graphics.fillRegion(bands.xLabels, expanded)
+            graphics.color = Color(0x9C, 0x27, 0xB0)
+            graphics.fillRegion(bands.yLabels, expanded)
+            graphics.color = Color(0x00, 0x96, 0x88)
+            graphics.fillRegion(bands.title, expanded)
+
+            graphics.composite = AlphaComposite.SrcOver
+            graphics.color = Color(0x15, 0x65, 0xC0, 230)
+            graphics.drawRegion(panel, expanded)
+            graphics.color = Color(0xFF, 0x8F, 0x00, 230)
+            graphics.drawRegion(plot, expanded)
+            graphics.color = Color(0x4C, 0xAF, 0x50, 230)
+            graphics.drawRegion(bands.xLabels, expanded)
+            graphics.color = Color(0x9C, 0x27, 0xB0, 230)
+            graphics.drawRegion(bands.yLabels, expanded)
+            graphics.color = Color(0x00, 0x96, 0x88, 230)
+            graphics.drawRegion(bands.title, expanded)
+            graphics.drawString("green: X labels  magenta: Y labels  teal: title/ion", 8, 20)
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(focus, "png", outputPath.toFile())
+        focus.flush()
+    }
+
+    private fun writeRegionCrop(
+        source: BufferedImage,
+        region: GraphRegion,
+        outputPath: Path,
+    ) {
+        val cropRegion = region.clampedTo(source.width, source.height)
+        val crop = BufferedImage(cropRegion.width, cropRegion.height, BufferedImage.TYPE_INT_ARGB)
+        val graphics = crop.createGraphics()
+        try {
+            graphics.drawImage(
+                source,
+                0,
+                0,
+                cropRegion.width,
+                cropRegion.height,
+                cropRegion.x,
+                cropRegion.y,
+                cropRegion.x + cropRegion.width,
+                cropRegion.y + cropRegion.height,
+                null,
+            )
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(crop, "png", outputPath.toFile())
+        crop.flush()
+    }
+
     private fun writePeakOverlayArtifacts(audit: OfflineAnalysisAudit, outputDir: Path) {
         audit.graphs
             .filter { it.peakMetrics.ready && it.peakDetection.peaks.isNotEmpty() }
@@ -332,6 +458,91 @@ private fun GraphRegion.clampedTo(imageWidth: Int, imageHeight: Int): GraphRegio
     return GraphRegion(x = x, y = y, width = width, height = height, label = label)
 }
 
+private fun GraphRegion.expandForAxisContext(imageWidth: Int, imageHeight: Int): GraphRegion {
+    val horizontal = (width * 0.08f).roundToInt().coerceAtLeast(12)
+    val vertical = (height * 0.16f).roundToInt().coerceAtLeast(24)
+    val expandedX = (x - horizontal).coerceAtLeast(0)
+    val expandedY = (y - vertical).coerceAtLeast(0)
+    val expandedRight = (x + width + horizontal).coerceAtMost(imageWidth)
+    val expandedBottom = (y + height + vertical).coerceAtMost(imageHeight)
+    return GraphRegion(
+        x = expandedX,
+        y = expandedY,
+        width = (expandedRight - expandedX).coerceAtLeast(1),
+        height = (expandedBottom - expandedY).coerceAtLeast(1),
+        label = label,
+    )
+}
+
+private data class AxisDiagnosticBands(
+    val xLabels: GraphRegion,
+    val yLabels: GraphRegion,
+    val title: GraphRegion,
+) {
+    companion object {
+        fun from(expandedPanel: GraphRegion, plot: GraphRegion): AxisDiagnosticBands {
+            val plotBottom = plot.y + plot.height
+            val expandedBottom = expandedPanel.y + expandedPanel.height
+            val plotRight = plot.x + plot.width
+            val expandedRight = expandedPanel.x + expandedPanel.width
+
+            val xTop = (plotBottom - (plot.height * 0.04f).roundToInt().coerceAtLeast(6))
+                .coerceIn(expandedPanel.y, expandedBottom - 1)
+            val xBottom = expandedBottom
+            val yLeft = expandedPanel.x
+            val yRight = (plot.x + (plot.width * 0.04f).roundToInt().coerceAtLeast(8))
+                .coerceIn(expandedPanel.x + 1, expandedRight)
+            val titleTop = expandedPanel.y
+            val titleBottom = (plot.y + (plot.height * 0.08f).roundToInt().coerceAtLeast(12))
+                .coerceIn(expandedPanel.y + 1, expandedBottom)
+
+            return AxisDiagnosticBands(
+                xLabels = GraphRegion(
+                    x = plot.x.coerceIn(expandedPanel.x, expandedRight - 1),
+                    y = xTop,
+                    width = (plotRight.coerceAtMost(expandedRight) - plot.x.coerceIn(expandedPanel.x, expandedRight - 1))
+                        .coerceAtLeast(1),
+                    height = (xBottom - xTop).coerceAtLeast(1),
+                    label = "X axis label/tick band",
+                ),
+                yLabels = GraphRegion(
+                    x = yLeft,
+                    y = plot.y.coerceIn(expandedPanel.y, expandedBottom - 1),
+                    width = (yRight - yLeft).coerceAtLeast(1),
+                    height = (plotBottom.coerceAtMost(expandedBottom) - plot.y.coerceIn(expandedPanel.y, expandedBottom - 1))
+                        .coerceAtLeast(1),
+                    label = "Y axis label/tick band",
+                ),
+                title = GraphRegion(
+                    x = expandedPanel.x,
+                    y = titleTop,
+                    width = expandedPanel.width,
+                    height = (titleBottom - titleTop).coerceAtLeast(1),
+                    label = "Title and ion band",
+                ),
+            )
+        }
+    }
+}
+
+private fun java.awt.Graphics2D.drawRegion(region: GraphRegion, origin: GraphRegion) {
+    drawRect(
+        region.x - origin.x,
+        region.y - origin.y,
+        region.width.coerceAtLeast(1),
+        region.height.coerceAtLeast(1),
+    )
+}
+
+private fun java.awt.Graphics2D.fillRegion(region: GraphRegion, origin: GraphRegion) {
+    fillRect(
+        region.x - origin.x,
+        region.y - origin.y,
+        region.width.coerceAtLeast(1),
+        region.height.coerceAtLeast(1),
+    )
+}
+
 private fun List<OfflineAxisCalibrationPointAudit>.maxPixelSpanPair():
     Pair<OfflineAxisCalibrationPointAudit, OfflineAxisCalibrationPointAudit>? {
     if (size < 2) return null
@@ -360,6 +571,10 @@ private fun printDesktopOfflineAnalysisUsage() {
           calibrated_report_ui_contract.json
           calibrated_report.md
           graph_candidates.png
+          axis_calibration_diagnostics_graph_N.png
+          axis_x_label_band_graph_N.png
+          axis_y_label_band_graph_N.png
+          axis_title_band_graph_N.png
           graph_focus_graph_N.png
           selected_preprocessing_graph_N.png
           peak_overlay_graph_N.png when calculation reaches peak metrics

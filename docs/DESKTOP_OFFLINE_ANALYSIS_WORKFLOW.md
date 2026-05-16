@@ -32,6 +32,13 @@ Each run writes:
 - `calibrated_report.md` - current report draft or blocked report skeleton.
 - `graph_candidates.png` - accepted/rejected graph candidates, final graph panel,
   and plot-area overlay.
+- `axis_calibration_diagnostics_graph_N.png` - graph-panel context with X-label,
+  Y-label, title/ION, plot-area, and graph-panel zones overlaid.
+- `axis_x_label_band_graph_N.png` - crop containing the X-axis tick labels and
+  time scale area.
+- `axis_y_label_band_graph_N.png` - crop containing the Y-axis tick labels and
+  abundance/intensity scale area.
+- `axis_title_band_graph_N.png` - crop containing the chromatogram title/ION line.
 - `graph_focus_graph_N.png` - selected graph panel crop with plot area and axes
   overlaid.
 - `selected_preprocessing_graph_N.png` - selected preprocessing variant crop.
@@ -53,6 +60,11 @@ Initial validation on 2026-05-16:
 - `bench_06_photo_two_graphs_page`: detects the expected 2 graph panels and writes
   multi-graph overlays, then blocks at `axis_calibration` for the same desktop OCR
   gap.
+
+Phase 8.3c.2 adds axis-calibration diagnostic artifacts for each detected graph.
+Those artifacts isolate the exact OCR target bands before any desktop OCR/model
+integration is attempted. This prevents the desktop path from sending whole-page
+photos to OCR/VLM stages when only axis labels and title/ION text are needed.
 
 These are expected blockers for the next desktop-first slices. They prove the
 computer workflow can reproduce the exact failure chain without phone testing.
