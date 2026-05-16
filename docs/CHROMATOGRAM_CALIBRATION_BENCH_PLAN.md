@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3b.2a - block manual axis calibration in normal Android analysis`.
-- Next work slice: `Phase 8.3b.2b - restore and validate automatic crop/perspective/axis recovery on device screenshots`.
+- Latest completed work slice: `Phase 8.3c.1 - add desktop offline analysis CLI`.
+- Next work slice: `Phase 8.3c.2 - implement desktop automatic OCR/axis calibration diagnostics`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -88,7 +88,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
 | Phase 8.3a | Done | `2412a84` | Validate saved-report model audit propagation through options builder and final report mapper. |
 | Phase 8.3b.1 | Done | `145fbf5` | Add logcat-visible report-audit marker for Android device runs. |
-| Phase 8.3b.2a | Done | `this commit` | Block normal Android analysis from opening manual X/Y calibration screens; failed auto-axis calibration now blocks report saving. |
+| Phase 8.3b.2a | Done | `a3c1750` | Block normal Android analysis from opening manual X/Y calibration screens; failed auto-axis calibration now blocks report saving. |
+| Phase 8.3c.1 | Done | `this commit` | Add desktop offline analysis CLI and artifact writer for reproducible local image-to-audit runs. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
