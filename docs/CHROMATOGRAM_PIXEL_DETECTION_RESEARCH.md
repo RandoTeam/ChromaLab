@@ -166,8 +166,14 @@ renders preparation, calibration, peak table, quality, Kovats/interpretation, an
 section readiness, keeps sparse/guarded warning wording human-readable in the main
 sections, and keeps raw diagnostic codes in the technical appendix.
 
-Phase 6.4 should attach the rendered report artifact to visual evidence artifacts
-before mobile report/export wiring is treated as complete.
+Phase 6.4 is implemented: calibrated reports now include a per-graph visual-evidence
+section that references generated overlays and masks. Main report evidence points to
+graph focus, curve, and peak overlays; trace-artifact masks stay in the technical
+appendix path. Fixture tests verify that referenced artifacts exist for calibrated
+reports.
+
+Phase 6.5 should prepare this report/evidence contract for mobile/export UI wiring
+without treating raw Markdown as the final phone presentation.
 
 ## Sources
 

@@ -379,8 +379,23 @@ full peak-table columns, show missing chemistry as not calculated, and keep spar
 trace warning codes in the appendix. This is still a contract artifact, not the final
 mobile report UI.
 
+Phase 6.4 connects that report artifact to generated visual evidence. Each per-graph
+report section now includes a `Visual Evidence` table with stable artifact paths for:
+
+- `graph_candidates.png`;
+- `selected_preprocessing_graph_N.png`;
+- `manual_calibration_graph_N.png`;
+- `graph_N/curve_overlay.png`;
+- `peak_overlay_graph_N.png` when peak metrics are available;
+- trace-artifact masks for the technical appendix.
+
+The fixture tests verify that the referenced artifacts exist for calibrated reports.
+The table also records whether each artifact belongs near the main report section or
+the technical appendix, which is the first bridge toward the future mobile/export UI
+without treating raw Markdown as the final phone presentation.
+
 ## Next Phase
 
-Phase 6.4 should connect the rendered report artifact to visual graph evidence such as
-graph overlays, manual calibration focus images, curve overlays, and peak overlays
-before mobile report/export wiring is treated as complete.
+Phase 6.5 should prepare the calibrated report contract for mobile/export UI wiring
+while preserving graph/report ordering, nearby visual evidence, and secondary technical
+appendix details.

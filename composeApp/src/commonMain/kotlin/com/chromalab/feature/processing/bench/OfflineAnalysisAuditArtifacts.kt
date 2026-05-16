@@ -42,6 +42,7 @@ object OfflineAnalysisAuditArtifacts {
             appendLine("## Graph ${graph.graphIndex} Report")
             appendLine()
             renderGraphPreparation(graph)
+            renderVisualEvidence(graph)
             renderAxisCalibration(graph)
             renderPeakTable(graph)
             renderChromatographicQuality(graph)
@@ -389,6 +390,60 @@ object OfflineAnalysisAuditArtifacts {
         appendLine()
     }
 
+    private fun StringBuilder.renderVisualEvidence(graph: OfflineGraphAudit) {
+        appendLine("### Visual Evidence")
+        appendLine()
+        appendLine("| Evidence | Artifact | Report placement | Status |")
+        appendLine("| --- | --- | --- | --- |")
+        visualEvidenceRow(
+            label = "Graph candidates and selected panel",
+            path = "graph_candidates.png",
+            placement = "Preparation review and technical appendix",
+            status = "generated",
+        )
+        visualEvidenceRow(
+            label = "Selected preprocessing crop",
+            path = "selected_preprocessing_graph_${graph.graphIndex}.png",
+            placement = "Preparation section",
+            status = if (graph.selectedPreprocessingImagePath != null) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Manual calibration focus",
+            path = "manual_calibration_graph_${graph.graphIndex}.png",
+            placement = "Axis calibration section",
+            status = if (graph.plotArea.region != null) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Curve extraction overlay",
+            path = "graph_${graph.graphIndex}/curve_overlay.png",
+            placement = "Rendered graph section",
+            status = if (graph.curveUsable || graph.curvePointCount > 0) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Peak integration overlay",
+            path = "peak_overlay_graph_${graph.graphIndex}.png",
+            placement = "Peak table cross-check",
+            status = if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
+                "generated"
+            } else {
+                "not available until peak metrics pass"
+            },
+        )
+        visualEvidenceRow(
+            label = "Trace artifact mask",
+            path = "graph_${graph.graphIndex}/trace_artifacts.png",
+            placement = "Technical appendix",
+            status = if (graph.traceArtifacts.available) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Trace cleanup hypothesis",
+            path = "graph_${graph.graphIndex}/trace_artifact_suppressed_mask.png",
+            placement = "Technical appendix",
+            status = if (graph.traceArtifacts.cleanupHypothesisMaskPath != null) "generated" else "not available",
+        )
+        appendLine()
+    }
+
     private fun StringBuilder.renderPeakTable(graph: OfflineGraphAudit) {
         appendLine("### Peak Table")
         appendLine()
@@ -562,6 +617,15 @@ object OfflineAnalysisAuditArtifacts {
 
     private fun StringBuilder.reportRow(label: String, value: String) {
         appendLine("| ${label.escapeTable()} | ${value.escapeTable()} |")
+    }
+
+    private fun StringBuilder.visualEvidenceRow(
+        label: String,
+        path: String,
+        placement: String,
+        status: String,
+    ) {
+        appendLine("| ${label.escapeTable()} | `${path.escapeTable()}` | ${placement.escapeTable()} | ${status.escapeTable()} |")
     }
 }
 

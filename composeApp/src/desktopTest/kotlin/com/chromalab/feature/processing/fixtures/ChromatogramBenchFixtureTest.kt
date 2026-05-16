@@ -767,6 +767,15 @@ class ChromatogramBenchFixtureTest {
         assertTrue(report.contains("## Overview"), "${audit.sourceId} calibrated report must include overview")
         assertTrue(report.contains("## Key Warnings"), "${audit.sourceId} calibrated report must include key warnings")
         assertTrue(report.contains("## Technical Appendix"), "${audit.sourceId} calibrated report must include appendix")
+        assertTrue(report.contains("### Visual Evidence"), "${audit.sourceId} calibrated report must include visual evidence")
+        assertTrue(
+            report.contains("graph_candidates.png"),
+            "${audit.sourceId} calibrated report must reference the graph-candidate overlay",
+        )
+        assertTrue(
+            Files.size(Path.of(audit.outputDir).resolve("graph_candidates.png")) > 0L,
+            "${audit.sourceId} graph-candidate overlay must exist for report evidence",
+        )
         assertTrue(
             report.contains("| # | RT apex | Left | Right | Height | Area | Area % | FWHM | W base | S/N |"),
             "${audit.sourceId} calibrated report must render the full peak-table columns",
@@ -785,6 +794,7 @@ class ChromatogramBenchFixtureTest {
                 currentGraphIndex > previousGraphIndex,
                 "${audit.sourceId} calibrated report must preserve graph/report ordering",
             )
+            assertVisualEvidenceArtifact(audit, graph, report)
             previousGraphIndex = currentGraphIndex
         }
 
@@ -804,6 +814,35 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 appendix.contains("peak_detection.sparse_trace_report_confidence_required"),
                 "${audit.sourceId} appendix must keep the raw sparse warning code",
+            )
+        }
+    }
+
+    private fun assertVisualEvidenceArtifact(
+        audit: OfflineAnalysisAudit,
+        graph: OfflineGraphAudit,
+        report: String,
+    ) {
+        val outputDir = Path.of(audit.outputDir)
+        val requiredArtifacts = buildList {
+            add("selected_preprocessing_graph_${graph.graphIndex}.png")
+            add("manual_calibration_graph_${graph.graphIndex}.png")
+            add("graph_${graph.graphIndex}/curve_overlay.png")
+            add("graph_${graph.graphIndex}/trace_artifacts.png")
+            add("graph_${graph.graphIndex}/trace_artifact_suppressed_mask.png")
+            if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
+                add("peak_overlay_graph_${graph.graphIndex}.png")
+            }
+        }
+
+        requiredArtifacts.forEach { relativePath ->
+            assertTrue(
+                report.contains(relativePath),
+                "${audit.sourceId} graph ${graph.graphIndex} calibrated report must reference $relativePath",
+            )
+            assertTrue(
+                Files.size(outputDir.resolve(relativePath)) > 0L,
+                "${audit.sourceId} graph ${graph.graphIndex} visual evidence artifact $relativePath must exist",
             )
         }
     }
