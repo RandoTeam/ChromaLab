@@ -87,7 +87,7 @@ artifact summary; it is not the primary plan.
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
 | Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
 | Phase 8.3a | Done | `2412a84` | Validate saved-report model audit propagation through options builder and final report mapper. |
-| Phase 8.3b.1 | Done | `TBD` | Add logcat-visible report-audit marker for Android device runs. |
+| Phase 8.3b.1 | Done | `145fbf5` | Add logcat-visible report-audit marker for Android device runs. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
