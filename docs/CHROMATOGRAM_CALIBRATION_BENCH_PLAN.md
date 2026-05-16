@@ -86,7 +86,7 @@ artifact summary; it is not the primary plan.
 | Phase 7.4 | Done | `2fd439f` | Expand common chromatogram/ion coverage and wire local knowledge into report interpretation. |
 | Phase 8.1 | Done | `d9b32dc` | Define strict model-assisted stage contract and model eligibility rules. |
 | Phase 8.2 | Done | `839db7b` | Route model-stage outcomes into processing metadata and final report audit. |
-| Phase 8.3a | Done | `TBD` | Validate saved-report model audit propagation through options builder and final report mapper. |
+| Phase 8.3a | Done | `2412a84` | Validate saved-report model audit propagation through options builder and final report mapper. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
