@@ -356,12 +356,16 @@ overlap flags where the recovered weak ion traces are most ambiguous.
 Phase 6.1 adds structured report-contract validation to each calibrated offline audit.
 The audit now records `report_validation` and a `reportContract` section matrix for
 overview, preparation, axis calibration, peak table, graph rendering, chromatographic
-quality, Kovats, interpretation, warnings, and appendix. The current honest blockers
-are peak-table report fields that are not yet exposed by the offline peak audit:
-FWHM, asymmetry/tailing, and compound candidate columns.
+quality, Kovats, interpretation, warnings, and appendix.
+
+Phase 6.2 fills the peak-table contract fields that are already available from
+calculation output. Offline peak rows now include FWHM, USP tailing factor, EP
+asymmetry factor, and explicit compound/Kovats `NOT_CALCULATED` statuses when local
+assignment evidence is absent. Calculation-ready fixture reports no longer block on
+peak-table structure; missing chemistry remains a warning and future interpretation
+task.
 
 ## Next Phase
 
-Phase 6.2 should add the missing peak-table report columns that can already be derived
-from `PeakResult`, while keeping compound/Kovats assignments explicit as missing until
-the local knowledge pack is implemented.
+Phase 6.3 should render calibrated offline-audit results into report-section artifacts
+that preserve graph/report ordering and keep raw debug codes in the appendix.

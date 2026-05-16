@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 2 - Image Preparation And Graph Detection`, extended into
   audited `plot_area`, `curve_extract`, and `axis_calibration` gates because those
   stages are required before calculation can honestly start.
-- Latest completed work slice: `Phase 6.1 - validate the structured report contract against calibrated fixture audits`.
-- Next work slice: `Phase 6.2 - add missing peak-table report columns to the calibrated audit contract`.
+- Latest completed work slice: `Phase 6.2 - add missing peak-table report columns to the calibrated audit contract`.
+- Next work slice: `Phase 6.3 - render calibrated audit report sections from the structured contract`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -74,8 +74,9 @@ artifact summary; it is not the primary plan.
 | Phase 5.8b.6 | Done | `e26cffc` | Broaden guarded completeness review to additional hard fixtures only after quality gates pass. |
 | Phase 5.8b.7 | Done | `db56d9b` | Restore curve/signal readiness for weak stacked ion panels before report validation. |
 | Phase 5.8b.8 | Done | `4053c22` | Review sparse stacked ion peak quality before report validation. |
-| Phase 6.1 | Done | `a8fde0b` | Validate the structured report contract against calibrated fixture audits. |
-| Phase 6.2 | Next | Pending | Add missing peak-table report columns to the calibrated audit contract. |
+| Phase 6.1 | Done | `c54fbb3` | Validate the structured report contract against calibrated fixture audits. |
+| Phase 6.2 | Done | `c409d12` | Add missing peak-table report columns to the calibrated audit contract. |
+| Phase 6.3 | Next | Pending | Render calibrated audit report sections from the structured contract. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -783,14 +784,30 @@ Completed Phase 6.1 work slice:
 6. Kovats and chemical interpretation remain warning-level sections for now: they
    must render as not calculated / missing local knowledge instead of inventing values.
 
-Next Phase 6.2 work slice:
+Completed Phase 6.2 work slice:
 
-1. Add FWHM and asymmetry/tailing data to the calibrated offline peak audit from
-   `PeakResult`.
-2. Keep compound/Kovats fields explicit as missing or not calculated until the local
-   knowledge pack and assignment logic are implemented.
-3. Update the report-contract tests so the peak table only blocks on fields that are
-   still genuinely unavailable.
+1. `OfflinePeakAudit` now exposes FWHM (`widthHalfHeight`), USP tailing factor, and
+   EP asymmetry factor directly from `PeakResult`.
+2. Peak rows now carry explicit assignment/Kovats statuses. When the app has no
+   compound, formula, carbon-number, or Kovats evidence, the audit records
+   `NOT_CALCULATED` instead of leaving the report-table columns structurally absent.
+3. The audit summary peak table now includes FWHM, tailing, asymmetry, compound status,
+   formula status, carbon status, and Kovats status.
+4. The report-contract peak table no longer blocks on FWHM, asymmetry/tailing, or
+   compound/Kovats columns for calculation-ready fixtures. Missing chemistry remains
+   warning-level and must render as not calculated.
+5. Fresh fixture audits show `reportContract.ready=true` for the clean TIC, rotated,
+   two-graph, guarded/sparse fixtures that are calculation-ready. `bench_02` remains
+   blocked only by source/crop boundary clearance, not by peak-table structure.
+
+Next Phase 6.3 work slice:
+
+1. Render calibrated offline-audit results into report-section artifacts, preserving
+   graph/report ordering.
+2. Keep warnings human-readable in the main report surface and raw warning codes in
+   the technical appendix.
+3. Preserve the Belyi Tigr reference shape/depth without claiming final mobile UI
+   completion yet.
 
 Exit criteria:
 

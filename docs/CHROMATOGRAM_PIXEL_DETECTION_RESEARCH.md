@@ -155,9 +155,14 @@ matrix and a `report_validation` stage. Sparse-trace confidence requirements are
 propagated into report sections, while missing peak-table fields are blocked instead
 of being hidden.
 
-Phase 6.2 should add the missing peak-table fields that are already available from
-`PeakResult`, especially FWHM and asymmetry/tailing, while keeping compound and Kovats
-assignment fields explicit as missing until the local knowledge pack is implemented.
+Phase 6.2 is implemented: offline peak rows now include FWHM, USP tailing factor, EP
+asymmetry factor, and explicit compound/Kovats `NOT_CALCULATED` statuses when local
+assignment evidence is absent. Calculation-ready fixture audits no longer block on
+peak-table structure.
+
+Phase 6.3 should render calibrated offline-audit results into report-section artifacts,
+keeping human-readable warnings near the main sections and raw diagnostic codes in the
+technical appendix.
 
 ## Sources
 

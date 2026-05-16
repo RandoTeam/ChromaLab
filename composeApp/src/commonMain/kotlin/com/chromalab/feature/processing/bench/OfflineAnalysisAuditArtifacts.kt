@@ -209,17 +209,17 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Peak Table Snapshot")
         appendLine()
-        appendLine("| Graph | Peak | RT apex | Left | Right | Width | Height | Area | Area % | S/N | Confidence | Overlap | Quality flags | Warnings |")
-        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | ---: |")
+        appendLine("| Graph | Peak | RT apex | Left | Right | Width | FWHM | Tailing | Asymmetry | Height | Area | Area % | S/N | Confidence | Overlap | Compound status | Compound | Formula status | Carbon status | Kovats status | Quality flags | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- | ---: |")
         audit.graphs.forEach { graph ->
             graph.peakDetection.peaks.forEach { peak ->
                 appendLine(
-                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rtApex.renderNumber()} | ${peak.leftBoundaryTime.renderNumber()} | ${peak.rightBoundaryTime.renderNumber()} | ${peak.widthBase.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.areaPercent.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.confidence} | ${peak.overlapStatus} | ${peak.qualityFlags.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${peak.warningCount} |",
+                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rtApex.renderNumber()} | ${peak.leftBoundaryTime.renderNumber()} | ${peak.rightBoundaryTime.renderNumber()} | ${peak.widthBase.renderNumber()} | ${peak.widthHalfHeight?.renderNumber() ?: "not calculated"} | ${peak.tailingFactor.renderNumber()} | ${peak.asymmetryFactor.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.areaPercent.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.confidence} | ${peak.overlapStatus} | ${peak.assignment.probableCompoundStatus} | ${(peak.assignment.probableCompoundName ?: "not calculated").escapeTable()} | ${peak.assignment.formulaStatus} | ${peak.assignment.carbonNumberStatus} | ${peak.assignment.kovatsIndexStatus} | ${peak.qualityFlags.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${peak.warningCount} |",
                 )
             }
         }
         if (audit.graphs.all { it.peakDetection.peaks.isEmpty() }) {
-            appendLine("|  |  |  |  |  |  |  |  |  | none | none |  |")
+            appendLine("|  |  |  |  |  |  |  |  |  |  |  |  |  | none | none | NOT_CALCULATED | not calculated | NOT_CALCULATED | NOT_CALCULATED | NOT_CALCULATED | none |  |")
         }
         appendLine()
 

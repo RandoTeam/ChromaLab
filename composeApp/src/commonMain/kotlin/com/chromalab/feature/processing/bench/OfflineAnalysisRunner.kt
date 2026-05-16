@@ -277,11 +277,30 @@ data class OfflinePeakAudit(
     val area: Double,
     val areaPercent: Double,
     val widthBase: Double,
+    val widthHalfHeight: Double?,
+    val tailingFactor: Double,
+    val asymmetryFactor: Double,
     val snr: Double,
     val confidence: String,
     val overlapStatus: String,
+    val assignment: OfflinePeakAssignmentAudit = OfflinePeakAssignmentAudit(),
     val warningCount: Int,
     val qualityFlags: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakAssignmentAudit(
+    val probableCompoundName: String? = null,
+    val probableCompoundStatus: String = REPORT_VALUE_NOT_CALCULATED,
+    val formula: String? = null,
+    val formulaStatus: String = REPORT_VALUE_NOT_CALCULATED,
+    val compoundClass: String? = null,
+    val compoundClassStatus: String = REPORT_VALUE_NOT_CALCULATED,
+    val carbonNumber: String? = null,
+    val carbonNumberStatus: String = REPORT_VALUE_NOT_CALCULATED,
+    val kovatsIndex: Double? = null,
+    val kovatsIndexStatus: String = REPORT_VALUE_NOT_CALCULATED,
+    val assignmentSource: String? = null,
 )
 
 @Serializable
@@ -1504,9 +1523,13 @@ private fun buildPeakDetectionAudit(
                 area = peak.area,
                 areaPercent = peak.areaPercent,
                 widthBase = peak.widthBase,
+                widthHalfHeight = peak.widthHalfHeight,
+                tailingFactor = peak.tailingFactor,
+                asymmetryFactor = peak.asymmetryFactor,
                 snr = peak.snr,
                 confidence = peak.confidence.name,
                 overlapStatus = peak.overlapStatus.name,
+                assignment = peak.toOfflinePeakAssignmentAudit(),
                 warningCount = peak.warnings.size,
                 qualityFlags = guardedPeakQualityFlags(
                     peak = peak,
@@ -1735,6 +1758,15 @@ private fun sparseTracePeakQualityFlags(
     }
 }
 
+private fun PeakResult.toOfflinePeakAssignmentAudit(): OfflinePeakAssignmentAudit {
+    val compound = compoundName?.takeIf { it.isNotBlank() }
+    return OfflinePeakAssignmentAudit(
+        probableCompoundName = compound,
+        probableCompoundStatus = if (compound != null) REPORT_VALUE_INFERRED else REPORT_VALUE_NOT_CALCULATED,
+        assignmentSource = if (compound != null) compoundSource.name else null,
+    )
+}
+
 private fun maxAllowedGuardedReviewCount(peakCount: Int): Int =
     maxOf(2, (peakCount * CONTROLLED_TUNING_MAX_REVIEW_FRACTION).toInt())
 
@@ -1900,13 +1932,26 @@ private fun buildReportPeakTableSection(graph: OfflineGraphAudit): OfflineReport
             if (!graph.peakMetrics.ready) add("peak_metrics")
             if (graph.peakDetection.peaks.isEmpty()) add("peak_rows")
             if (!graph.peakMetrics.orderedByRetentionTime) add("retention_time_order")
-            if (graph.peakDetection.peaks.isNotEmpty()) {
+            if (graph.peakDetection.peaks.any { it.widthHalfHeight == null || !it.widthHalfHeight.isUsableNumber() || it.widthHalfHeight <= 0.0 }) {
                 add("peak_fwhm_column")
+            }
+            if (graph.peakDetection.peaks.any { !it.tailingFactor.isUsableNumber() || it.tailingFactor <= 0.0 }) {
+                add("peak_tailing_column")
+            }
+            if (graph.peakDetection.peaks.any { !it.asymmetryFactor.isUsableNumber() || it.asymmetryFactor <= 0.0 }) {
                 add("peak_asymmetry_column")
+            }
+            if (graph.peakDetection.peaks.any { !it.assignment.hasExplicitReportStatuses() }) {
                 add("compound_candidate_columns")
             }
         },
         warnings = buildList {
+            if (graph.peakDetection.peaks.any { it.assignment.probableCompoundStatus == REPORT_VALUE_NOT_CALCULATED }) {
+                add("report.peak_table.compound_assignments_not_calculated")
+            }
+            if (graph.peakDetection.peaks.any { it.assignment.kovatsIndexStatus == REPORT_VALUE_NOT_CALCULATED }) {
+                add("report.peak_table.kovats_values_not_calculated")
+            }
             if (graph.peakDetection.sparseTraceQualityReview.requiresReportConfidenceText) {
                 add("report.peak_table.sparse_trace_confidence_text_required")
             }
@@ -2011,6 +2056,13 @@ private fun reportContractSection(
         missingFields = missingFields.distinct(),
         warnings = warnings.distinct(),
     )
+
+private fun OfflinePeakAssignmentAudit.hasExplicitReportStatuses(): Boolean =
+    probableCompoundStatus.isNotBlank() &&
+        formulaStatus.isNotBlank() &&
+        compoundClassStatus.isNotBlank() &&
+        carbonNumberStatus.isNotBlank() &&
+        kovatsIndexStatus.isNotBlank()
 
 private fun offlineNoiseMethod(value: String): NoiseMethod =
     when (value.trim().lowercase()) {
@@ -2382,6 +2434,8 @@ private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
 private const val CONTROLLED_TUNING_MAX_EXTRA_PEAKS = 20
 private const val CONTROLLED_TUNING_MAX_TOTAL_PEAKS = 32
 private const val REPORT_AXIS_CONFIDENCE_REVIEW_THRESHOLD = 0.55f
+private const val REPORT_VALUE_INFERRED = "INFERRED"
+private const val REPORT_VALUE_NOT_CALCULATED = "NOT_CALCULATED"
 
 private fun emptyAxes(): AxesResult =
     AxesResult(

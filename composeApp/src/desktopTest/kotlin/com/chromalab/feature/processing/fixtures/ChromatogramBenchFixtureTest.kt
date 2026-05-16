@@ -690,28 +690,54 @@ class ChromatogramBenchFixtureTest {
                         "${audit.sourceId} graph ${graph.graphIndex} must include report section $section",
                     )
                 }
+            graph.peakDetection.peaks.forEach { peak ->
+                val fwhm = assertNotNull(
+                    peak.widthHalfHeight,
+                    "${audit.sourceId} graph ${graph.graphIndex} peak ${peak.peakNumber} must expose FWHM",
+                )
+                assertTrue(fwhm > 0.0, "${audit.sourceId} graph ${graph.graphIndex} peak ${peak.peakNumber} FWHM")
+                assertTrue(
+                    peak.tailingFactor > 0.0,
+                    "${audit.sourceId} graph ${graph.graphIndex} peak ${peak.peakNumber} must expose positive tailing factor",
+                )
+                assertTrue(
+                    peak.asymmetryFactor > 0.0,
+                    "${audit.sourceId} graph ${graph.graphIndex} peak ${peak.peakNumber} must expose positive asymmetry factor",
+                )
+                assertTrue(
+                    peak.assignment.probableCompoundStatus.isNotBlank() &&
+                        peak.assignment.formulaStatus.isNotBlank() &&
+                        peak.assignment.compoundClassStatus.isNotBlank() &&
+                        peak.assignment.carbonNumberStatus.isNotBlank() &&
+                        peak.assignment.kovatsIndexStatus.isNotBlank(),
+                    "${audit.sourceId} graph ${graph.graphIndex} peak ${peak.peakNumber} must expose explicit assignment statuses",
+                )
+            }
         }
 
-        val blockedPeakSections = report.sections.filter {
-            it.status == OfflineReportContractSectionStatus.BLOCKED && it.section == "peak_table"
-        }
-        assertEquals(
-            audit.graphs.size,
-            blockedPeakSections.size,
-            "${audit.sourceId} must expose the current report-contract peak-table gaps per graph",
-        )
-        blockedPeakSections.forEach { section ->
-            assertTrue(
+        val peakTableSections = report.sections.filter { it.section == "peak_table" }
+        peakTableSections.forEach { section ->
+            assertFalse(
                 "peak_fwhm_column" in section.missingFields,
-                "${audit.sourceId} graph ${section.graphIndex} must mark FWHM as a report-contract gap",
+                "${audit.sourceId} graph ${section.graphIndex} must no longer mark FWHM as a report-contract gap",
             )
-            assertTrue(
+            assertFalse(
+                "peak_tailing_column" in section.missingFields,
+                "${audit.sourceId} graph ${section.graphIndex} must no longer mark tailing as a report-contract gap",
+            )
+            assertFalse(
                 "peak_asymmetry_column" in section.missingFields,
-                "${audit.sourceId} graph ${section.graphIndex} must mark asymmetry as a report-contract gap",
+                "${audit.sourceId} graph ${section.graphIndex} must no longer mark asymmetry as a report-contract gap",
             )
-            assertTrue(
+            assertFalse(
                 "compound_candidate_columns" in section.missingFields,
-                "${audit.sourceId} graph ${section.graphIndex} must mark compound columns as a report-contract gap",
+                "${audit.sourceId} graph ${section.graphIndex} must expose compound/Kovats columns as explicit not-calculated statuses",
+            )
+        }
+        if (audit.blockedAtStage == null) {
+            assertTrue(
+                report.ready,
+                "${audit.sourceId} report contract must become ready once peak-table columns are explicit",
             )
         }
         val allowedBlockedSections = allowedReportBlockedSections(audit.blockedAtStage)
@@ -725,7 +751,6 @@ class ChromatogramBenchFixtureTest {
 
     private fun allowedReportBlockedSections(blockedAtStage: String?): Set<String> =
         buildSet {
-            add("peak_table")
             when (blockedAtStage) {
                 "crop_quality",
                 "plot_area" -> add("source_and_graph_preparation")
