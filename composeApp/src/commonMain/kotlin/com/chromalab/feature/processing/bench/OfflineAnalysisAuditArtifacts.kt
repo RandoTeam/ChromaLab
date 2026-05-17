@@ -265,6 +265,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Fragment Reconstruction Review")
+        appendLine()
+        appendLine("| Graph | Available | Method | Decision | Overlay | Selected | Components | Retained | Discarded | Raw columns | Interpolated columns | Columns | Coverage | Max gap | Matched | Match ratio | Median delta | P95 delta | Max delta | Large deltas | Large delta ratio | P95 improvement | Large reduction |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+        audit.graphs.forEach { graph ->
+            val centerline = graph.curveCenterline
+            appendLine(
+                "| ${graph.graphIndex} | ${centerline.fragmentReconstructionAvailable} | ${centerline.fragmentReconstructionMethod.escapeTable()} | ${centerline.fragmentReconstructionDecision.escapeTable()} | ${centerline.fragmentReconstructionOverlayGenerated} | ${centerline.fragmentReconstructionSelectedForSignal} | ${centerline.fragmentReconstructionComponentCount} | ${centerline.fragmentReconstructionRetainedComponentCount} | ${centerline.fragmentReconstructionDiscardedComponentCount} | ${centerline.fragmentReconstructionRawColumnCount} | ${centerline.fragmentReconstructionInterpolatedColumnCount} | ${centerline.fragmentReconstructionColumnCount} | ${centerline.fragmentReconstructionCoverage.renderPercent()} | ${centerline.fragmentReconstructionMaxInterpolatedGapPx} | ${centerline.fragmentReconstructionMatchedColumnCount} | ${centerline.fragmentReconstructionMatchedColumnRatio.renderPercent()} | ${centerline.fragmentReconstructionMedianAbsDeltaPx.renderNumber()} | ${centerline.fragmentReconstructionP95AbsDeltaPx.renderNumber()} | ${centerline.fragmentReconstructionMaxAbsDeltaPx.renderNumber()} | ${centerline.fragmentReconstructionLargeDeltaColumnCount} | ${centerline.fragmentReconstructionLargeDeltaColumnRatio.renderPercent()} | ${centerline.fragmentReconstructionP95DeltaImprovementPx.renderNumber()} | ${centerline.fragmentReconstructionLargeDeltaReductionCount} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Signal Conversion")
         appendLine()
         appendLine("| Graph | Ready | Points | Time start | Time end | Time range | Intensity min | Intensity max | Intensity range | Duplicates | Gaps | Sort valid | Warnings |")
@@ -445,6 +457,10 @@ object OfflineAnalysisAuditArtifacts {
         reportRow("Trunk-path components", graph.curveCenterline.trunkPathComponentCount.toString())
         reportRow("Trunk-path coverage", graph.curveCenterline.trunkPathCoverage.renderPercent())
         reportRow("Trunk-path P95 delta", "${graph.curveCenterline.trunkPathP95AbsDeltaPx.renderNumber()} px")
+        reportRow("Fragment reconstruction decision", graph.curveCenterline.fragmentReconstructionDecision.humanizeCode())
+        reportRow("Fragment reconstruction retained components", graph.curveCenterline.fragmentReconstructionRetainedComponentCount.toString())
+        reportRow("Fragment reconstruction coverage", graph.curveCenterline.fragmentReconstructionCoverage.renderPercent())
+        reportRow("Fragment reconstruction P95 delta", "${graph.curveCenterline.fragmentReconstructionP95AbsDeltaPx.renderNumber()} px")
         appendLine()
         renderHumanWarningList(
             (
@@ -526,6 +542,12 @@ object OfflineAnalysisAuditArtifacts {
             path = "graph_${graph.graphIndex}/centerline_trunk_path_overlay.png",
             placement = "Technical appendix and trace acceptance review",
             status = if (graph.curveCenterline.trunkPathOverlayGenerated) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Fragment reconstruction overlay",
+            path = "graph_${graph.graphIndex}/centerline_fragment_reconstruction_overlay.png",
+            placement = "Technical appendix and trace acceptance review",
+            status = if (graph.curveCenterline.fragmentReconstructionOverlayGenerated) "generated" else "not available",
         )
         visualEvidenceRow(
             label = "Peak integration overlay",

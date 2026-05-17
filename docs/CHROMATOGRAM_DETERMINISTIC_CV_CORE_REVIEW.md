@@ -386,11 +386,26 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.16 - Fragmentation-Aware Trace Reconstruction And Acceptance Review
 
-- Review trunk-path overlays and component counts on clean, two-graph photographed,
-  and rotated fixtures.
-- Add a fragmentation-aware reconstruction candidate only if visual evidence shows
-  that short endpoint bridges are scientifically safe.
-- Keep calculation input unchanged until the reconstructed trace passes overlap,
+- Done: add an audit-only fragmentation-aware reconstruction candidate over the
+  skeleton components.
+- Done: keep small skeleton fragments available for review, generate a top-envelope
+  candidate by column, and interpolate only short horizontal gaps.
+- Done: write `centerline_fragment_reconstruction_overlay.png` artifacts and expose
+  component, retained/discarded, raw/interpolated column, coverage, P95, and
+  large-delta metrics in JSON, Markdown, and the report evidence contract.
+- Result: real fixture CLI runs show the candidate can raise column coverage sharply
+  on hard photographed traces, but P95/large-delta quality is not yet acceptable
+  (`bench_06`/`bench_07` remain `fragment_reconstruction_no_metric_improvement`).
+- Done: keep `fragmentReconstructionSelectedForSignal=false`; this phase adds
+  evidence for acceptance review, not a silent calculation-signal switch.
+
+### Phase 8.3c.5c.17 - Fragment Reconstruction Visual Review And Guard Tuning
+
+- Review fragment reconstruction overlays and metrics on clean, two-graph
+  photographed, and rotated fixtures.
+- Decide whether the reconstructed candidate improves real hard-fixture coverage
+  without adding false upper-envelope artifacts.
+- Keep calculation input unchanged until reconstructed traces pass overlap,
   P95/large-delta, and visual acceptance gates.
 
 ## Bottom Line

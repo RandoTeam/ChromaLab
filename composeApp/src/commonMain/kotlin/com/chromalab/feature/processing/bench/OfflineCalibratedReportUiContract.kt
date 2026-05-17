@@ -274,6 +274,19 @@ object OfflineCalibratedReportUiContractBuilder {
                 requiredForMobile = false,
             ),
             visualEvidence(
+                evidenceId = "centerline_fragment_reconstruction_overlay",
+                label = "Fragment reconstruction overlay",
+                artifactPath = "graph_${graphIndex}/centerline_fragment_reconstruction_overlay.png",
+                placement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                nearSectionId = "trace_centerline_review",
+                generatedStatus = if (curveCenterline.fragmentReconstructionOverlayGenerated) {
+                    "generated"
+                } else {
+                    "not_available"
+                },
+                requiredForMobile = false,
+            ),
+            visualEvidence(
                 evidenceId = "peak_overlay",
                 label = "Peak integration overlay",
                 artifactPath = "peak_overlay_graph_${graphIndex}.png",

@@ -87,6 +87,11 @@ actual class CurveExtractor actual constructor() {
             width = width,
             height = height,
         )
+        val fragmentReconstruction = FragmentedTraceReconstructionExtractor.extract(
+            skeletonMask = skeletonMask,
+            width = width,
+            height = height,
+        )
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = width,
@@ -99,6 +104,7 @@ actual class CurveExtractor actual constructor() {
             centerlineCandidateByX = centerlineCandidateByX,
             branchPrunedCenterline = branchPrunedCenterline,
             trunkPathCenterline = trunkPathCenterline,
+            fragmentReconstruction = fragmentReconstruction,
             branchCandidateColumns = branchCandidateColumns,
         )
         val overlayPath = File(outputDir).also { it.mkdirs() }
@@ -145,10 +151,25 @@ actual class CurveExtractor actual constructor() {
             height = height,
             path = trunkPathOverlayPath,
         )
+        val fragmentReconstructionOverlayPath = File(outputDir)
+            .resolve("centerline_fragment_reconstruction_overlay.png")
+            .absolutePath
+        saveFragmentReconstructionOverlay(
+            mask = mask,
+            skeletonMask = skeletonMask,
+            signalPoints = rawPoints,
+            branchPrunedCenterlineByX = branchPrunedCenterline.pointsByX,
+            trunkPathCenterlineByX = trunkPathCenterline.pointsByX,
+            fragmentReconstructionByX = fragmentReconstruction.pointsByX,
+            width = width,
+            height = height,
+            path = fragmentReconstructionOverlayPath,
+        )
         val centerlineAudit = initialCenterlineAudit.copy(
             parityOverlayGenerated = true,
             branchPrunedOverlayGenerated = true,
             trunkPathOverlayGenerated = true,
+            fragmentReconstructionOverlayGenerated = true,
         )
 
         val result = CurveExtractionResult(
@@ -226,6 +247,7 @@ actual class CurveExtractor actual constructor() {
         centerlineCandidateByX: Map<Int, Float>,
         branchPrunedCenterline: BranchPrunedCenterline,
         trunkPathCenterline: SkeletonGraphTrunkPath,
+        fragmentReconstruction: FragmentedTraceReconstruction,
         branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
@@ -247,6 +269,10 @@ actual class CurveExtractor actual constructor() {
         val parity = signalPoints.centerlineParity(centerlineCandidateByX, branchCandidateColumns)
         val branchPrunedParity = signalPoints.centerlineParity(branchPrunedCenterline.pointsByX, branchCandidateColumns)
         val trunkPathParity = signalPoints.centerlineParity(trunkPathCenterline.pointsByX, branchCandidateColumns)
+        val fragmentReconstructionParity = signalPoints.centerlineParity(
+            fragmentReconstruction.pointsByX,
+            branchCandidateColumns,
+        )
         val branchPrunedDecision = branchPrunedDecision(
             original = parity,
             pruned = branchPrunedParity,
@@ -255,6 +281,12 @@ actual class CurveExtractor actual constructor() {
             original = parity,
             branchPruned = branchPrunedParity,
             trunkPath = trunkPathParity,
+        )
+        val fragmentReconstructionDecision = fragmentReconstructionDecision(
+            original = parity,
+            branchPruned = branchPrunedParity,
+            trunkPath = trunkPathParity,
+            fragmentReconstruction = fragmentReconstructionParity,
         )
         val branchRatio = if (centerlineColumns > 0) {
             branchColumnCount.toFloat() / centerlineColumns.toFloat()
@@ -282,6 +314,9 @@ actual class CurveExtractor actual constructor() {
             }
             if (trunkPathCenterline.available && trunkPathParity.matchedColumnRatio < 0.45f) {
                 add("curve_centerline.trunk_path_low_overlap")
+            }
+            if (fragmentReconstruction.available && fragmentReconstructionParity.matchedColumnRatio < 0.45f) {
+                add("curve_centerline.fragment_reconstruction_low_overlap")
             }
         }
         return CurveCenterlineAudit(
@@ -346,6 +381,33 @@ actual class CurveExtractor actual constructor() {
             trunkPathLargeDeltaColumnRatio = trunkPathParity.largeDeltaColumnRatio,
             trunkPathP95DeltaImprovementPx = (parity.p95AbsDeltaPx - trunkPathParity.p95AbsDeltaPx).coerceAtLeast(0f),
             trunkPathLargeDeltaReductionCount = (parity.largeDeltaColumnCount - trunkPathParity.largeDeltaColumnCount)
+                .coerceAtLeast(0),
+            fragmentReconstructionAvailable = fragmentReconstruction.available,
+            fragmentReconstructionMethod = fragmentReconstruction.method,
+            fragmentReconstructionDecision = fragmentReconstructionDecision,
+            fragmentReconstructionSelectedForSignal = false,
+            fragmentReconstructionComponentCount = fragmentReconstruction.componentCount,
+            fragmentReconstructionRetainedComponentCount = fragmentReconstruction.retainedComponentCount,
+            fragmentReconstructionDiscardedComponentCount = fragmentReconstruction.discardedComponentCount,
+            fragmentReconstructionRawColumnCount = fragmentReconstruction.rawColumnCount,
+            fragmentReconstructionInterpolatedColumnCount = fragmentReconstruction.interpolatedColumnCount,
+            fragmentReconstructionColumnCount = fragmentReconstruction.pointsByX.size,
+            fragmentReconstructionCoverage = if (totalColumns > 0) {
+                fragmentReconstruction.pointsByX.size.toFloat() / totalColumns.toFloat()
+            } else {
+                0f
+            },
+            fragmentReconstructionMaxInterpolatedGapPx = fragmentReconstruction.maxInterpolatedGapPx,
+            fragmentReconstructionMatchedColumnCount = fragmentReconstructionParity.matchedColumnCount,
+            fragmentReconstructionMatchedColumnRatio = fragmentReconstructionParity.matchedColumnRatio,
+            fragmentReconstructionMedianAbsDeltaPx = fragmentReconstructionParity.medianAbsDeltaPx,
+            fragmentReconstructionP95AbsDeltaPx = fragmentReconstructionParity.p95AbsDeltaPx,
+            fragmentReconstructionMaxAbsDeltaPx = fragmentReconstructionParity.maxAbsDeltaPx,
+            fragmentReconstructionLargeDeltaColumnCount = fragmentReconstructionParity.largeDeltaColumnCount,
+            fragmentReconstructionLargeDeltaColumnRatio = fragmentReconstructionParity.largeDeltaColumnRatio,
+            fragmentReconstructionP95DeltaImprovementPx = (parity.p95AbsDeltaPx - fragmentReconstructionParity.p95AbsDeltaPx)
+                .coerceAtLeast(0f),
+            fragmentReconstructionLargeDeltaReductionCount = (parity.largeDeltaColumnCount - fragmentReconstructionParity.largeDeltaColumnCount)
                 .coerceAtLeast(0),
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
@@ -534,6 +596,34 @@ actual class CurveExtractor actual constructor() {
                 trunkPath.largeDeltaColumnCount >= referenceLargeDeltas -> "trunk_path_no_metric_improvement"
             trunkPath.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX -> "trunk_path_improved_but_large_delta"
             else -> "trunk_path_candidate_ready_for_visual_review"
+        }
+    }
+
+    private fun fragmentReconstructionDecision(
+        original: CenterlineParity,
+        branchPruned: CenterlineParity,
+        trunkPath: CenterlineParity,
+        fragmentReconstruction: CenterlineParity,
+    ): String {
+        if (!fragmentReconstruction.compared) return "fragment_reconstruction_not_available"
+        if (fragmentReconstruction.matchedColumnRatio < 0.45f) return "fragment_reconstruction_low_overlap"
+        val referenceP95 = listOfNotNull(
+            original.takeIf { it.compared }?.p95AbsDeltaPx,
+            branchPruned.takeIf { it.compared }?.p95AbsDeltaPx,
+            trunkPath.takeIf { it.compared }?.p95AbsDeltaPx,
+        ).minOrNull() ?: Float.MAX_VALUE
+        val referenceLargeDeltas = listOfNotNull(
+            original.takeIf { it.compared }?.largeDeltaColumnCount,
+            branchPruned.takeIf { it.compared }?.largeDeltaColumnCount,
+            trunkPath.takeIf { it.compared }?.largeDeltaColumnCount,
+        ).minOrNull() ?: Int.MAX_VALUE
+        return when {
+            fragmentReconstruction.p95AbsDeltaPx >= referenceP95 &&
+                fragmentReconstruction.largeDeltaColumnCount >= referenceLargeDeltas ->
+                "fragment_reconstruction_no_metric_improvement"
+            fragmentReconstruction.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX ->
+                "fragment_reconstruction_improved_but_large_delta"
+            else -> "fragment_reconstruction_candidate_ready_for_visual_review"
         }
     }
 
@@ -827,6 +917,47 @@ actual class CurveExtractor actual constructor() {
             drawFloatPolyline(graphics, signalPoints.associate { it.pixelX to it.pixelY }, Color(0xE5, 0x39, 0x35), 2f)
             drawFloatPolyline(graphics, branchPrunedCenterlineByX, Color(0x43, 0xA0, 0x47, 0xA0), 1.8f)
             drawFloatPolyline(graphics, trunkPathCenterlineByX, Color(0x1E, 0x88, 0xE5), 2.8f)
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(overlay, "png", File(path))
+        overlay.flush()
+    }
+
+    private fun saveFragmentReconstructionOverlay(
+        mask: BooleanArray,
+        skeletonMask: BooleanArray,
+        signalPoints: List<CurvePoint>,
+        branchPrunedCenterlineByX: Map<Int, Float>,
+        trunkPathCenterlineByX: Map<Int, Float>,
+        fragmentReconstructionByX: Map<Int, Float>,
+        width: Int,
+        height: Int,
+        path: String,
+    ) {
+        val overlay = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                overlay.setRGB(
+                    x,
+                    y,
+                    when {
+                        skeletonMask[index] -> PARITY_SKELETON_RGB
+                        mask[index] -> PARITY_MASK_RGB
+                        else -> PARITY_BACKGROUND_RGB
+                    },
+                )
+            }
+        }
+
+        val graphics = overlay.createGraphics()
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            drawFloatPolyline(graphics, signalPoints.associate { it.pixelX to it.pixelY }, Color(0xE5, 0x39, 0x35), 2f)
+            drawFloatPolyline(graphics, branchPrunedCenterlineByX, Color(0x43, 0xA0, 0x47, 0x70), 1.4f)
+            drawFloatPolyline(graphics, trunkPathCenterlineByX, Color(0x1E, 0x88, 0xE5, 0x90), 1.8f)
+            drawFloatPolyline(graphics, fragmentReconstructionByX, Color(0x8E, 0x24, 0xAA), 2.8f)
         } finally {
             graphics.dispose()
         }

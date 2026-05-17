@@ -735,7 +735,14 @@ candidate with node/edge/endpoint/junction/component metrics and per-graph
 `centerline_trunk_path_overlay.png` evidence. The real fixture result is important:
 hard photographed and rotated traces are not merely branched, they are fragmented
 into many skeleton components, so the next step must review fragmentation-aware
-trace reconstruction before any centerline candidate can drive calculations.
+trace reconstruction before any centerline candidate can drive calculations. Phase
+8.3c.5c.16 adds that reconstruction as audit-only evidence: retained skeleton
+components are converted to a top-envelope candidate, short column gaps are
+interpolated under a fixed cap, and `centerline_fragment_reconstruction_overlay.png`
+plus parity metrics are emitted for review while the calculation signal stays
+unchanged. First CLI review shows the reconstructed candidate improves apparent
+coverage on hard photographed fixtures but still fails P95/large-delta acceptance,
+so the next slice is visual guard tuning rather than signal switching.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -757,6 +764,7 @@ input fixture
   -> branch-pruned continuity and visual acceptance tuning
   -> skeleton graph trunk-path centerline candidate
   -> fragmentation-aware trace reconstruction and acceptance review
+  -> fragment reconstruction visual review and guard tuning
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android

@@ -467,6 +467,22 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} graph ${graph.graphIndex} skeleton graph trunk-path overlay must be written",
                 )
                 assertTrue(
+                    graph.curveCenterline.fragmentReconstructionOverlayGenerated,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction overlay must be marked generated",
+                )
+                assertTrue(
+                    !graph.curveCenterline.fragmentReconstructionSelectedForSignal,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction must stay audit-only",
+                )
+                assertTrue(
+                    graph.curveCenterline.fragmentReconstructionComponentCount >= 0,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction component count must be audited",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_fragment_reconstruction_overlay.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction overlay must be written",
+                )
+                assertTrue(
                     Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
                 )
@@ -1017,6 +1033,7 @@ class ChromatogramBenchFixtureTest {
             add("graph_${graph.graphIndex}/centerline_parity_overlay.png")
             add("graph_${graph.graphIndex}/centerline_branch_pruned_overlay.png")
             add("graph_${graph.graphIndex}/centerline_trunk_path_overlay.png")
+            add("graph_${graph.graphIndex}/centerline_fragment_reconstruction_overlay.png")
             add("graph_${graph.graphIndex}/trace_artifacts.png")
             add("graph_${graph.graphIndex}/trace_artifact_suppressed_mask.png")
             if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
@@ -1135,6 +1152,16 @@ class ChromatogramBenchFixtureTest {
                 contract = contract,
                 evidenceId = "centerline_trunk_path_overlay",
                 expectedPath = "graph_${graph.graphIndex}/centerline_trunk_path_overlay.png",
+                expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                expectedNearSection = "trace_centerline_review",
+                requiredForMobile = false,
+            )
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "centerline_fragment_reconstruction_overlay",
+                expectedPath = "graph_${graph.graphIndex}/centerline_fragment_reconstruction_overlay.png",
                 expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
                 expectedNearSection = "trace_centerline_review",
                 requiredForMobile = false,

@@ -471,8 +471,17 @@ Phase 8.3b.1 prepares Android/device validation:
 - the marker includes selected/executed model, runtime, device, timings, and warning
   codes so LiteRT/GGUF device runs can be checked without manually decoding Room data.
 
+Phase 8.3c.5c.16 adds audit-only fragment reconstruction evidence:
+
+- fixture runs now write `graph_N/centerline_fragment_reconstruction_overlay.png`;
+- `curveCenterline` records retained/discarded skeleton components, raw/interpolated
+  reconstructed columns, coverage, P95, large-delta, and decision metrics;
+- the candidate remains `selectedForSignal=false` because clean and hard-photo CLI
+  checks still do not satisfy visual/P95/large-delta acceptance.
+
 ## Next Phase
 
-Phase 8.3b.2 should run Android model-assisted analysis and capture the emitted
-`REPORT_AUDIT` evidence, especially LiteRT success, GGUF success/failure, and
-selected-model/runtime mismatch cases.
+Phase 8.3c.5c.17 should visually review the fragment reconstruction overlays and tune
+guards before any centerline or reconstructed path is allowed to drive signal
+conversion. Android model-assisted report-audit validation remains a separate device
+parity track.

@@ -312,7 +312,24 @@ Accepted result:
   fragmented, so trunk-path extraction remains evidence only and must not replace
   the calculation signal.
 
-Next slice: `Phase 8.3c.5c.16 - Fragmentation-Aware Trace Reconstruction And Acceptance Review`.
+Completed next slice: `Phase 8.3c.5c.16 - Fragmentation-Aware Trace Reconstruction And Acceptance Review`.
+
+Accepted result:
+
+- The curve extractor now emits an audit-only fragmentation-aware reconstruction
+  candidate from retained skeleton components with short-gap interpolation.
+- Each graph writes `centerline_fragment_reconstruction_overlay.png` with preserved
+  signal, branch-pruned candidate, trunk-path candidate, and reconstructed fragment
+  path for visual acceptance review.
+- JSON, Markdown, calibrated-report, and UI-contract evidence now expose component,
+  retained/discarded, raw/interpolated column, coverage, P95, and large-delta
+  metrics.
+- CLI review on `bench_03`, `bench_06`, and `bench_07` shows high reconstructed
+  coverage on hard photos, but no acceptable P95/large-delta improvement yet.
+- Calculation input remains unchanged; the reconstructed path is not allowed to
+  drive signal conversion until a separate visual/metric acceptance slice approves it.
+
+Next slice: `Phase 8.3c.5c.17 - Fragment Reconstruction Visual Review And Guard Tuning`.
 
 ## Source Links
 

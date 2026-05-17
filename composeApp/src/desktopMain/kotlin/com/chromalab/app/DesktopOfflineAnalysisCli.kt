@@ -600,6 +600,7 @@ private fun printDesktopOfflineAnalysisUsage() {
   graph_N/centerline_parity_overlay.png
   graph_N/centerline_branch_pruned_overlay.png
   graph_N/centerline_trunk_path_overlay.png
+  graph_N/centerline_fragment_reconstruction_overlay.png
   peak_overlay_graph_N.png when calculation reaches peak metrics
         """.trimIndent(),
     )
