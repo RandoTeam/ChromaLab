@@ -147,18 +147,21 @@ The production adapter must not do these things:
 
 ## Next Work Slice
 
-Next slice: `Phase 8.3c.5c.4 - Real Shared Perspective And Plot Geometry Contract`.
+Completed next slice: `Phase 8.3c.5c.4 - Real Shared Perspective And Plot Geometry Contract`.
 
-Acceptance target:
+Accepted result:
 
-- Add a real shared audit contract for page/plot geometry.
-- Replace the desktop identity perspective behavior with a measurable perspective
-  stage.
-- Preserve Android parity by keeping the contract platform-neutral.
-- Verify on:
+- Added an audit-visible `perspectiveGeometry` contract for document confidence,
+  graph-panel count, plot-area count, perspective requirement, skew/corner metrics,
+  and residual-metric gating.
+- Replaced the desktop perspective identity-copy with measured homography warp output.
+- Preserved Android parity by keeping the contract platform-neutral.
+- Verified on:
   - clean `bench_03_small_tic_export`;
   - two-graph photographed `bench_06_photo_two_graphs_page`;
   - rotated photographed `bench_07_rotated_page_photo`.
+
+Next slice: `Phase 8.3c.5c.5 - Production CV Document/Plot Quadrilateral Candidates And Residual Metrics`.
 
 ## Source Links
 

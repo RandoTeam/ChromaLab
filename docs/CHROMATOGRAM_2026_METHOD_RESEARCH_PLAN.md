@@ -707,24 +707,25 @@ Deliverables:
 
 ## Immediate Next Slice
 
-Phase 8.3c.5c.3c completed the R2 diagnostic spike and Phase 8.3c.5c.3d reviewed
-the generated artifacts on clean, photographed two-graph, and rotated examples. The
-next code slice should not tune prompts or thresholds. It should start the production
-geometry contract from the spike findings:
+Phase 8.3c.5c.3c completed the R2 diagnostic spike, Phase 8.3c.5c.3d reviewed
+the generated artifacts on clean, photographed two-graph, and rotated examples, and
+Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract.
+The next code slice should not tune prompts or thresholds. It should add real
+production CV quadrilateral candidates and residual metrics behind that contract:
 
 ```text
 input fixture
   -> grayscale/threshold variants
   -> page/plot quadrilateral evidence
-  -> perspective/homography audit
+  -> perspective/homography audit with residual metrics
   -> graph-panel candidates
   -> artifact-separated plot-frame and axis candidates
   -> tick geometry positions
   -> residual metrics
 ```
 
-The CV geometry spike remains diagnostic evidence. Production work should now add a
-platform-neutral geometry contract and benchmark OpenCV first, keeping BoofCV as a
+The CV geometry spike remains diagnostic evidence. Production work now has a
+platform-neutral contract to fill. Benchmark OpenCV first, keeping BoofCV as a
 fallback candidate if native packaging or Android integration blocks the OpenCV path.
 
 ## Source Links

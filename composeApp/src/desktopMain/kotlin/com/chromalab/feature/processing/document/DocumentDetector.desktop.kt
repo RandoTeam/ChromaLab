@@ -1,19 +1,25 @@
 package com.chromalab.feature.processing.document
 
 import com.chromalab.feature.processing.pipeline.DetectionMethod
+import java.io.File
+import javax.imageio.ImageIO
 
 actual class DocumentDetector actual constructor() {
     actual fun detect(imagePath: String): DocumentBounds? {
-        // Desktop stub — returns full image as document
+        val image = ImageIO.read(File(imagePath)) ?: return null
+        val width = image.width.toFloat()
+        val height = image.height.toFloat()
+        image.flush()
+
         return DocumentBounds(
             corners = DocumentCorners(
                 topLeft = ImagePoint(0f, 0f),
-                topRight = ImagePoint(1f, 0f),
-                bottomRight = ImagePoint(1f, 1f),
-                bottomLeft = ImagePoint(0f, 1f),
+                topRight = ImagePoint(width, 0f),
+                bottomRight = ImagePoint(width, height),
+                bottomLeft = ImagePoint(0f, height),
             ),
             areaRatio = 1f,
-            aspectRatio = 1f,
+            aspectRatio = width / height.coerceAtLeast(1f),
             isQuadrilateral = true,
             detectionMethod = DetectionMethod.AUTO,
             confidence = 0f,

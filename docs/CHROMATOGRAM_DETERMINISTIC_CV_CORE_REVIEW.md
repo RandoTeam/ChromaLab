@@ -248,23 +248,34 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.4 - Real Shared Perspective Contract
 
-- Replace desktop identity perspective correction with real homography.
-- Align Android and desktop outputs through the same audit fields.
-- Verify `bench_06` and `bench_07` with visual artifacts.
+- Done: replace desktop identity perspective correction with measured homography
+  output.
+- Done: add platform-neutral `perspectiveGeometry` audit fields for document trust,
+  graph-panel count, plot-area count, corner displacement, skew, and residual-metric
+  gating.
+- Done: verify `bench_03`, `bench_06`, and `bench_07` through executable fixture
+  tests and persistent desktop artifacts.
 
-### Phase 8.3c.5c.5 - Deterministic Axis And Tick Geometry
+### Phase 8.3c.5c.5 - Production CV Document/Plot Quadrilateral Candidates
 
-- Detect axes and ticks through CV geometry.
+- Fill the `perspectiveGeometry` contract with real document/plot quadrilateral
+  candidates.
+- Add residual metrics for homography, skew, straightness, and plot-frame fit.
+- Keep OpenCV as the first benchmark target and BoofCV as the fallback candidate.
+
+### Phase 8.3c.5c.6 - Deterministic Axis And Tick Geometry
+
+- Detect axes and ticks through CV geometry after plot geometry is trusted.
 - Persist tick-position overlays.
 - Stop asking VLM for tick positions.
 
-### Phase 8.3c.5c.6 - OCR Values Only
+### Phase 8.3c.5c.7 - OCR Values Only
 
 - OCR only small tick-label crops.
 - Match values to CV tick positions.
 - Fit robust calibration and block on residual failures.
 
-### Phase 8.3c.5c.7 - Skeleton Trace Extraction
+### Phase 8.3c.5c.8 - Skeleton Trace Extraction
 
 - Add skeleton/thinning or equivalent trace-centerline extraction.
 - Add distortion-aware signal conversion.

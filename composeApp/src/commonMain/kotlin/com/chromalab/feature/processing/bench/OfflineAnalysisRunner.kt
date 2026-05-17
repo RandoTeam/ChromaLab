@@ -19,7 +19,10 @@ import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.curve.CurveTraceArtifactAudit
+import com.chromalab.feature.processing.document.DocumentBounds
+import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.DocumentDetector
+import com.chromalab.feature.processing.document.ImagePoint
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
 import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
 import com.chromalab.feature.processing.graph.GraphPlotAreaDetector
@@ -48,7 +51,9 @@ import com.chromalab.feature.processing.signal.DigitalSignal
 import com.chromalab.feature.processing.signal.SignalConverter
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 @Serializable
 data class OfflineAnalysisInput(
@@ -92,6 +97,7 @@ data class OfflineAnalysisAudit(
     val outputDir: String,
     val normalizedImagePath: String?,
     val orientationCorrection: OfflineOrientationCorrectionAudit?,
+    val perspectiveGeometry: OfflinePerspectiveGeometryAudit = OfflinePerspectiveGeometryAudit(),
     val imageWidth: Int?,
     val imageHeight: Int?,
     val expectedGraphCount: Int?,
@@ -140,6 +146,31 @@ data class OfflineOrientationCorrectionAudit(
     val rotationDegrees: Int,
     val horizontalRunCount: Int,
     val verticalRunCount: Int,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePerspectiveGeometryAudit(
+    val ready: Boolean = false,
+    val imageWidth: Int? = null,
+    val imageHeight: Int? = null,
+    val documentDetected: Boolean = false,
+    val documentTrusted: Boolean = false,
+    val documentMethod: String? = null,
+    val documentConfidence: Float = 0f,
+    val documentAreaRatio: Float = 0f,
+    val documentAspectRatio: Float = 0f,
+    val documentQuadrilateral: Boolean = false,
+    val documentCorners: DocumentCorners? = null,
+    val correctedCorners: DocumentCorners? = null,
+    val graphPanelCount: Int = 0,
+    val plotAreaCount: Int = 0,
+    val plotGeometryReady: Boolean = false,
+    val perspectiveTransformRequired: Boolean = false,
+    val perspectiveApplied: Boolean = false,
+    val normalizedCornerDisplacement: Float = 0f,
+    val maxSkewAngleDegrees: Float = 0f,
+    val residualMetricsRequired: Boolean = true,
     val warnings: List<String> = emptyList(),
 )
 
@@ -629,6 +660,27 @@ class OfflineAnalysisRunner(
             )
         }
 
+        val perspectiveGeometry = runStage(
+            stage = "perspective_geometry",
+            stages = stages,
+            successMessage = { result ->
+                "ready=${result.ready}, trustedDocument=${result.documentTrusted}, graphs=${result.graphPanelCount}, plots=${result.plotAreaCount}."
+            },
+        ) {
+            buildPerspectiveGeometryAudit(
+                documentBounds = documentDetector.detect(orientation.imagePath),
+                imageWidth = orientation.width,
+                imageHeight = orientation.height,
+                graphAudits = graphAudits,
+            )
+        } ?: OfflinePerspectiveGeometryAudit(
+            imageWidth = orientation.width,
+            imageHeight = orientation.height,
+            graphPanelCount = graphAudits.size,
+            plotAreaCount = graphAudits.count { it.plotArea.detected && it.plotArea.region != null },
+            warnings = listOf("perspective_geometry.stage_failed"),
+        )
+
         val cropReady = graphAudits.isNotEmpty() &&
             graphAudits.all { it.cropQuality.acceptedForCalculation && it.cropBoundaryRisk.acceptedForCalculation }
         val plotAreaReady = graphAudits.isNotEmpty() && graphAudits.all { it.plotArea.detected && it.plotArea.region != null }
@@ -709,6 +761,7 @@ class OfflineAnalysisRunner(
             outputDir = input.outputDir,
             normalizedImagePath = normalized.normalizedPath,
             orientationCorrection = orientation.toAudit(),
+            perspectiveGeometry = perspectiveGeometry,
             imageWidth = orientation.width,
             imageHeight = orientation.height,
             expectedGraphCount = input.expectedGraphCount,
@@ -2303,6 +2356,66 @@ private fun GraphRegionQuality.toAudit(graphIndex: Int): OfflineGraphCandidateAu
         rejectionReasons = rejectionReasons,
     )
 
+private fun buildPerspectiveGeometryAudit(
+    documentBounds: DocumentBounds?,
+    imageWidth: Int,
+    imageHeight: Int,
+    graphAudits: List<OfflineGraphAudit>,
+): OfflinePerspectiveGeometryAudit {
+    val documentTrusted = documentBounds != null &&
+        documentBounds.isQuadrilateral &&
+        documentBounds.confidence > 0.15f &&
+        documentBounds.areaRatio in 0.10f..0.98f
+    val plotAreaCount = graphAudits.count { it.plotArea.detected && it.plotArea.region != null }
+    val plotGeometryReady = graphAudits.isNotEmpty() && plotAreaCount == graphAudits.size
+    val normalizedCornerDisplacement = documentBounds?.let { bounds ->
+        normalizedCornerDisplacement(
+            corners = bounds.effectiveCorners,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+        )
+    } ?: 0f
+    val maxSkewAngle = documentBounds?.effectiveCorners?.maxSkewAngleDegrees() ?: 0f
+    val perspectiveRequired = documentTrusted &&
+        (normalizedCornerDisplacement > 0.025f || maxSkewAngle > 1.5f)
+    val warnings = buildList {
+        if (documentBounds == null) add("perspective_geometry.document_bounds_missing")
+        if (documentBounds != null && documentBounds.confidence <= 0.15f) {
+            add("perspective_geometry.document_bounds_not_trusted")
+        }
+        if (documentBounds != null && !documentBounds.isQuadrilateral) {
+            add("perspective_geometry.document_not_quadrilateral")
+        }
+        if (!plotGeometryReady) add("perspective_geometry.plot_geometry_incomplete")
+        if (perspectiveRequired) add("perspective_geometry.perspective_transform_required")
+        add("perspective_geometry.residual_metrics_required_before_production_acceptance")
+    }
+
+    return OfflinePerspectiveGeometryAudit(
+        ready = documentTrusted && plotGeometryReady && !perspectiveRequired,
+        imageWidth = imageWidth,
+        imageHeight = imageHeight,
+        documentDetected = documentBounds != null,
+        documentTrusted = documentTrusted,
+        documentMethod = documentBounds?.detectionMethod?.name,
+        documentConfidence = documentBounds?.confidence ?: 0f,
+        documentAreaRatio = documentBounds?.areaRatio ?: 0f,
+        documentAspectRatio = documentBounds?.aspectRatio ?: 0f,
+        documentQuadrilateral = documentBounds?.isQuadrilateral ?: false,
+        documentCorners = documentBounds?.corners,
+        correctedCorners = documentBounds?.correctedCorners,
+        graphPanelCount = graphAudits.size,
+        plotAreaCount = plotAreaCount,
+        plotGeometryReady = plotGeometryReady,
+        perspectiveTransformRequired = perspectiveRequired,
+        perspectiveApplied = false,
+        normalizedCornerDisplacement = normalizedCornerDisplacement,
+        maxSkewAngleDegrees = maxSkewAngle,
+        residualMetricsRequired = true,
+        warnings = warnings,
+    )
+}
+
 private fun GraphRegionRefinementResult.toAudit(): OfflineGraphRefinementAudit =
     OfflineGraphRefinementAudit(
         changed = changed,
@@ -2426,6 +2539,48 @@ private fun GraphRegionRefinementResult.cropQualityAudit(
 
 private fun GraphRegion.edgeContactCount(imageWidth: Int, imageHeight: Int): Int =
     listOf(y <= 0, right >= imageWidth, bottom >= imageHeight, x <= 0).count { it }
+
+private fun normalizedCornerDisplacement(
+    corners: DocumentCorners,
+    imageWidth: Int,
+    imageHeight: Int,
+): Float {
+    val diagonal = sqrt((imageWidth * imageWidth + imageHeight * imageHeight).toFloat()).coerceAtLeast(1f)
+    val expected = listOf(
+        0f to 0f,
+        imageWidth.toFloat() to 0f,
+        imageWidth.toFloat() to imageHeight.toFloat(),
+        0f to imageHeight.toFloat(),
+    )
+    val actual = listOf(corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft)
+    return actual.zip(expected)
+        .maxOf { (point, expectedPoint) ->
+            val dx = point.x - expectedPoint.first
+            val dy = point.y - expectedPoint.second
+            sqrt(dx * dx + dy * dy)
+        } / diagonal
+}
+
+private fun DocumentCorners.maxSkewAngleDegrees(): Float {
+    val horizontalAngles = listOf(
+        lineAngleDegrees(topLeft, topRight),
+        lineAngleDegrees(bottomLeft, bottomRight),
+    ).map { normalizeAngleDistance(it, 0f) }
+    val verticalAngles = listOf(
+        lineAngleDegrees(topLeft, bottomLeft),
+        lineAngleDegrees(topRight, bottomRight),
+    ).map { normalizeAngleDistance(it, 90f) }
+    return (horizontalAngles + verticalAngles).maxOrNull() ?: 0f
+}
+
+private fun lineAngleDegrees(a: ImagePoint, b: ImagePoint): Float =
+    (atan2((b.y - a.y).toDouble(), (b.x - a.x).toDouble()) * 180.0 / kotlin.math.PI).toFloat()
+
+private fun normalizeAngleDistance(angle: Float, target: Float): Float {
+    var delta = abs(angle - target) % 180f
+    if (delta > 90f) delta = 180f - delta
+    return delta
+}
 
 private const val CONTROLLED_TUNING_MIN_SNR = 2.0
 private const val CONTROLLED_TUNING_REFERENCE_MIN_SNR = 3.0

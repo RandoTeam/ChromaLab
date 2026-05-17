@@ -14,9 +14,12 @@ import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
 import com.chromalab.feature.processing.bench.OfflineReportContractSectionStatus
 import com.chromalab.feature.processing.bench.OfflineReportUiPlacement
 import com.chromalab.feature.processing.bench.OfflineStageStatus
+import com.chromalab.feature.processing.document.DocumentCorners
+import com.chromalab.feature.processing.document.ImagePoint
 import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
 import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.perspective.PerspectiveWarper
 import java.awt.BasicStroke
 import java.awt.Color
 import java.awt.Font
@@ -83,6 +86,39 @@ class ChromatogramBenchFixtureTest {
     }
 
     @Test
+    fun desktopPerspectiveWarperProducesMeasuredOutput() {
+        val fixture = ChromatogramBenchFixtures.all.first { it.id == "bench_06_photo_two_graphs_page" }
+        val root = Files.createTempDirectory("chromalab-perspective-warper")
+        val inputPath = root.resolve("${fixture.id}.${fixture.extension}")
+        Files.write(inputPath, fixture.resourceBytes())
+
+        val result = PerspectiveWarper().warp(
+            imagePath = inputPath.toAbsolutePath().toString(),
+            corners = DocumentCorners(
+                topLeft = ImagePoint(84f, 40f),
+                topRight = ImagePoint(914f, 0f),
+                bottomRight = ImagePoint(890f, 1230f),
+                bottomLeft = ImagePoint(74f, 1270f),
+            ),
+            outputDir = root.resolve("perspective").toAbsolutePath().toString(),
+        )
+
+        assertNotNull(result, "desktop perspective warper must return a measured result")
+        assertTrue(result.outputWidth > 0, "desktop perspective output width must be measured")
+        assertTrue(result.outputHeight > 0, "desktop perspective output height must be measured")
+        assertTrue(result.maxWarpDistance > 0f, "desktop perspective warp distance must be measured")
+        assertFalse(
+            result.homography.values.contentEquals(floatArrayOf(1f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 1f)),
+            "desktop perspective warper must not return the identity matrix for skewed corners",
+        )
+        val warped = ImageIO.read(Path.of(result.correctedPath).toFile())
+        assertNotNull(warped, "desktop perspective output image must be readable")
+        assertEquals(result.outputWidth, warped.width)
+        assertEquals(result.outputHeight, warped.height)
+        warped.flush()
+    }
+
+    @Test
     fun offlineRunnerProducesStageAuditForEveryBenchFixture() = runBlocking {
         val runner = OfflineAnalysisRunner()
         val root = Files.createTempDirectory("chromalab-bench-runner")
@@ -106,6 +142,7 @@ class ChromatogramBenchFixtureTest {
             assertEquals(fixture.expectedAnalysisHeight, audit.imageHeight, "${fixture.id} analysis height")
             assertTrue(audit.stages.any { it.stage == "normalize" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "orientation_correct" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "perspective_geometry" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_region" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
@@ -115,6 +152,12 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "curve_extract" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.graphCandidates.isNotEmpty(), "${fixture.id} must expose graph candidate audit")
             assertTrue(audit.graphs.isNotEmpty(), "${fixture.id} must expose per-graph audit")
+            assertEquals(fixture.expectedAnalysisWidth, audit.perspectiveGeometry.imageWidth, "${fixture.id} perspective geometry width")
+            assertEquals(fixture.expectedAnalysisHeight, audit.perspectiveGeometry.imageHeight, "${fixture.id} perspective geometry height")
+            assertEquals(audit.graphs.size, audit.perspectiveGeometry.graphPanelCount, "${fixture.id} perspective geometry graph count")
+            assertEquals(audit.graphs.size, audit.perspectiveGeometry.plotAreaCount, "${fixture.id} perspective geometry plot count")
+            assertTrue(audit.perspectiveGeometry.plotGeometryReady, "${fixture.id} perspective geometry must see all plot areas")
+            assertTrue(audit.perspectiveGeometry.residualMetricsRequired, "${fixture.id} must keep residual metrics in the geometry contract")
             assertTrue(
                 audit.graphs.all { it.preprocessingVariantScores.isNotEmpty() },
                 "${fixture.id} must rank preprocessing variants",
@@ -257,6 +300,10 @@ class ChromatogramBenchFixtureTest {
             }
 
             assertTrue(Files.size(outputDir.resolve("audit.json")) > 0L, "${fixture.id} audit JSON must be written")
+            assertTrue(
+                Files.readString(outputDir.resolve("audit.json")).contains("\"perspectiveGeometry\""),
+                "${fixture.id} audit JSON must expose the perspective geometry contract",
+            )
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
             assertTrue(
                 Files.size(outputDir.resolve("calibrated_report.md")) > 0L,
