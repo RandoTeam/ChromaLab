@@ -5,6 +5,8 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
+import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
+import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
@@ -140,6 +142,7 @@ private object DesktopOfflineAnalysisArtifactWriter {
         writeSelectedPreprocessingCrops(audit, outputDir)
         writeGraphFocusArtifacts(audit, overlayImagePath, outputDir)
         writeAxisCalibrationDiagnostics(audit, overlayImagePath, outputDir)
+        writeCvGeometryArtifacts(audit, overlayImagePath, outputDir)
         writePeakOverlayArtifacts(audit, outputDir)
     }
 
@@ -311,6 +314,23 @@ private object DesktopOfflineAnalysisArtifactWriter {
         } finally {
             source.flush()
         }
+    }
+
+    private fun writeCvGeometryArtifacts(
+        audit: OfflineAnalysisAudit,
+        imagePath: Path,
+        outputDir: Path,
+    ) {
+        CvGeometryAuditWriter.write(
+            imagePath = imagePath,
+            graphRegions = audit.graphs.map { graph ->
+                CvGeometryInputGraph(
+                    graphIndex = graph.graphIndex,
+                    region = graph.region,
+                )
+            },
+            outputDir = outputDir,
+        )
     }
 
     private fun writeAxisDiagnosticOverlay(

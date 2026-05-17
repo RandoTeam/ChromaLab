@@ -14,6 +14,8 @@ import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
 import com.chromalab.feature.processing.bench.OfflineReportContractSectionStatus
 import com.chromalab.feature.processing.bench.OfflineReportUiPlacement
 import com.chromalab.feature.processing.bench.OfflineStageStatus
+import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
+import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
 import java.awt.BasicStroke
 import java.awt.Color
@@ -265,6 +267,12 @@ class ChromatogramBenchFixtureTest {
                 "${fixture.id} calibrated report UI contract must be written",
             )
             assertTrue(Files.size(outputDir.resolve("graph_candidates.png")) > 0L, "${fixture.id} graph overlay must be written")
+            assertTrue(Files.size(outputDir.resolve("cv_geometry_audit.json")) > 0L, "${fixture.id} CV geometry JSON must be written")
+            assertTrue(Files.size(outputDir.resolve("cv_geometry_overlay.png")) > 0L, "${fixture.id} CV geometry overlay must be written")
+            assertTrue(
+                Files.readString(outputDir.resolve("cv_geometry_audit.json")).contains("\"graphs\""),
+                "${fixture.id} CV geometry JSON must expose graph audits",
+            )
             audit.graphs.forEach { graph ->
                 assertTrue(
                     Files.size(outputDir.resolve("selected_preprocessing_graph_${graph.graphIndex}.png")) > 0L,
@@ -1662,6 +1670,16 @@ private fun writeAuditArtifacts(
     writeGraphCandidateOverlay(audit, overlayImagePath, outputDir.resolve("graph_candidates.png"))
     writeSelectedPreprocessingCrops(audit, outputDir)
     writeManualCalibrationFocusArtifacts(audit, overlayImagePath, outputDir)
+    CvGeometryAuditWriter.write(
+        imagePath = overlayImagePath,
+        graphRegions = audit.graphs.map { graph ->
+            CvGeometryInputGraph(
+                graphIndex = graph.graphIndex,
+                region = graph.region,
+            )
+        },
+        outputDir = outputDir,
+    )
     writePeakOverlayArtifacts(audit, outputDir)
 }
 
