@@ -707,21 +707,25 @@ Deliverables:
 
 ## Immediate Next Slice
 
-The next code slice should not tune prompts or thresholds. It should start R2 with a
-small CV geometry adapter spike:
+Phase 8.3c.5c.3c completed the R2 diagnostic spike and Phase 8.3c.5c.3d reviewed
+the generated artifacts on clean, photographed two-graph, and rotated examples. The
+next code slice should not tune prompts or thresholds. It should start the production
+geometry contract from the spike findings:
 
 ```text
 input fixture
   -> grayscale/threshold variants
-  -> line segments
-  -> connected components with stats
-  -> contours/quadrilateral candidates
-  -> axis/frame candidate overlay PNGs
-  -> JSON audit
+  -> page/plot quadrilateral evidence
+  -> perspective/homography audit
+  -> graph-panel candidates
+  -> artifact-separated plot-frame and axis candidates
+  -> tick geometry positions
+  -> residual metrics
 ```
 
-This gives us evidence to decide whether OpenCV/BoofCV should replace or augment the
-current Kotlin geometry before touching the production runtime.
+The CV geometry spike remains diagnostic evidence. Production work should now add a
+platform-neutral geometry contract and benchmark OpenCV first, keeping BoofCV as a
+fallback candidate if native packaging or Android integration blocks the OpenCV path.
 
 ## Source Links
 

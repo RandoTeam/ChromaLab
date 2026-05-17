@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.3c - add a desktop CV geometry adapter spike with line, component, contour, and frame overlays`.
-- Next work slice: `Phase 8.3c.5c.3d - review CV geometry spike artifacts on clean, two-graph, and rotated fixtures, then decide OpenCV/BoofCV production adapter scope`.
+- Latest completed work slice: `Phase 8.3c.5c.3d - review CV geometry spike artifacts on clean, two-graph, and rotated fixtures, then decide OpenCV/BoofCV production adapter scope`.
+- Next work slice: `Phase 8.3c.5c.4 - real shared perspective and plot geometry contract`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -101,7 +101,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.2 | Done | `525a12f` | Review current code and current CV/plot-digitizer/OCR options, document that VLM must not own pixel positions, and set the next slice to a deterministic CV geometry adapter spike. |
 | Phase 8.3c.5c.3a | Done | `5d04bf7` | Audit the real image-selection-to-report path, compare Android runtime with desktop/offline bench order, and document critical geometry, calibration, persistence, and report-gating gaps before the CV adapter spike. |
 | Phase 8.3c.5c.3b | Done | `354af27` | Research 2026 CV, OCR, plot-digitizer, chromatogram calculation, report, and device-runtime methods; document what is inaccurate, slow, outdated, or missing in ChromaLab before the CV adapter spike. |
-| Phase 8.3c.5c.3c | Done | `this commit` | Add desktop CV geometry spike artifacts (`cv_geometry_audit.json`, `cv_geometry_overlay.png`) with line segment, connected-component, contour, and frame candidates for fixture review before production OpenCV/BoofCV integration. |
+| Phase 8.3c.5c.3c | Done | `f007b8f` | Add desktop CV geometry spike artifacts (`cv_geometry_audit.json`, `cv_geometry_overlay.png`) with line segment, connected-component, contour, and frame candidates for fixture review before production OpenCV/BoofCV integration. |
+| Phase 8.3c.5c.3d | Done | `this commit` | Review the generated CV geometry spike artifacts on `bench_03`, `bench_06`, and `bench_07`; accept the spike as diagnostic evidence only; define the production OpenCV/BoofCV scope around perspective, graph-panel, plot-frame, axis, tick, OCR-value, and residual metrics. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
