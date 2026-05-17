@@ -70,6 +70,17 @@ sections. Important warning codes include:
   instead of a live model call.
 - `desktop_axis_vlm.replay_file_read_failed` - the configured replay response file
   could not be read.
+- `desktop_axis_vlm.auth_required` - LM Studio rejected the `/models` preflight
+  with `401` or `403`; provide `CHROMALAB_DESKTOP_VLM_API_TOKEN` or disable auth.
+- `desktop_axis_vlm.models_http_status_N` - `/models` preflight replied with a
+  non-success status.
+- `desktop_axis_vlm.models_request_timeout` - `/models` preflight did not answer
+  within the short diagnostic timeout.
+- `desktop_axis_vlm.model_auto_selected` - no model id was configured, so the first
+  model from `/models` was used.
+- `desktop_axis_vlm.model_not_listed` - configured model id was not present in
+  `/models`.
+- `desktop_axis_vlm.model_not_discovered` - no usable model id was available.
 - `desktop_axis_vlm.http_status_N` - endpoint replied with a non-success status.
 - `desktop_axis_vlm.response_content_missing` - endpoint response had no message
   content.

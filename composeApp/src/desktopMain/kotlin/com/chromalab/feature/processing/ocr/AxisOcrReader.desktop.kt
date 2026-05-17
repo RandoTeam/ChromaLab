@@ -8,6 +8,7 @@ import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
 import java.time.Duration
 import java.util.Base64
 import javax.imageio.ImageIO
@@ -39,11 +40,19 @@ actual class AxisOcrReader actual constructor() {
                 return@runCatching unavailableAxisOcrResult("desktop_axis_vlm.axis_bands_unusable")
             }
 
-            val rawResponse = config.readReplayResponse() ?: DesktopOpenAiVisionClient(config).readAxisBands(
-                xBandImage = image.crop(bands.xBand),
-                yBandImage = image.crop(bands.yBand),
-                titleBandImage = image.crop(bands.titleBand),
-            )
+            val rawResponse = config.readReplayResponse() ?: run {
+                val client = DesktopOpenAiVisionClient(config)
+                val preflight = client.checkEndpoint()
+                if (!preflight.ready || preflight.model == null) {
+                    return@runCatching unavailableAxisOcrResult(preflight.warnings)
+                }
+                client.readAxisBands(
+                    model = preflight.model,
+                    xBandImage = image.crop(bands.xBand),
+                    yBandImage = image.crop(bands.yBand),
+                    titleBandImage = image.crop(bands.titleBand),
+                ).withWarnings(preflight.warnings)
+            }
             if (rawResponse.content == null) {
                 return@runCatching unavailableAxisOcrResult(rawResponse.warnings)
             }
@@ -80,7 +89,7 @@ private fun DesktopAxisVlmConfig.readReplayResponse(): DesktopVlmTextResult? {
 
 private data class DesktopAxisVlmConfig(
     val baseUrl: String?,
-    val model: String,
+    val model: String?,
     val timeoutMs: Long,
     val minConfidence: Float,
     val responseFile: String?,
@@ -105,7 +114,6 @@ private data class DesktopAxisVlmConfig(
             val model = System.getenv("CHROMALAB_DESKTOP_VLM_MODEL")
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
-                ?: "local-model"
             val timeoutMs = System.getenv("CHROMALAB_DESKTOP_VLM_TIMEOUT_MS")
                 ?.toLongOrNull()
                 ?.coerceIn(5_000L, 180_000L)
@@ -127,7 +135,70 @@ private class DesktopOpenAiVisionClient(
         .connectTimeout(Duration.ofMillis(config.timeoutMs))
         .build()
 
+    fun checkEndpoint(): DesktopVlmPreflightResult {
+        val baseUrl = config.baseUrl ?: return DesktopVlmPreflightResult(
+            ready = false,
+            model = null,
+            warnings = listOf("desktop_axis_vlm.endpoint_not_configured"),
+        )
+        return runCatching {
+            val requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create("$baseUrl/models"))
+                .timeout(Duration.ofMillis(config.timeoutMs.coerceIn(1_000L, 3_000L)))
+                .header("Accept", "application/json")
+                .GET()
+            config.apiToken?.let { token ->
+                requestBuilder.header("Authorization", "Bearer $token")
+            }
+            val response = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() !in 200..299) {
+                val warnings = buildList {
+                    if (response.statusCode() == 401 || response.statusCode() == 403) {
+                        add("desktop_axis_vlm.auth_required")
+                    }
+                    add("desktop_axis_vlm.models_http_status_${response.statusCode()}")
+                }
+                return DesktopVlmPreflightResult(ready = false, model = null, warnings = warnings)
+            }
+            val modelIds = response.modelIds(json)
+            val configuredModel = config.model
+            val resolvedModel = when {
+                configuredModel != null -> configuredModel
+                modelIds.isNotEmpty() -> modelIds.first()
+                else -> null
+            }
+            val warnings = buildList {
+                if (configuredModel == null && resolvedModel != null) {
+                    add("desktop_axis_vlm.model_auto_selected")
+                }
+                if (configuredModel != null && modelIds.isNotEmpty() && configuredModel !in modelIds) {
+                    add("desktop_axis_vlm.model_not_listed")
+                }
+                if (resolvedModel == null) {
+                    add("desktop_axis_vlm.model_not_discovered")
+                }
+            }
+            DesktopVlmPreflightResult(
+                ready = resolvedModel != null,
+                model = resolvedModel,
+                warnings = warnings,
+            )
+        }.getOrElse {
+            val warning = if (it is HttpTimeoutException) {
+                "desktop_axis_vlm.models_request_timeout"
+            } else {
+                "desktop_axis_vlm.models_request_failed"
+            }
+            DesktopVlmPreflightResult(
+                ready = false,
+                model = null,
+                warnings = listOf(warning),
+            )
+        }
+    }
+
     fun readAxisBands(
+        model: String,
         xBandImage: BufferedImage,
         yBandImage: BufferedImage,
         titleBandImage: BufferedImage,
@@ -137,7 +208,7 @@ private class DesktopOpenAiVisionClient(
             warnings = listOf("desktop_axis_vlm.endpoint_not_configured"),
         )
         val payload = buildJsonObject {
-            put("model", config.model)
+            put("model", model)
             put("temperature", 0)
             put("max_tokens", 900)
             put(
@@ -243,10 +314,27 @@ private class DesktopOpenAiVisionClient(
         val message = first["message"]?.asObject() ?: return null
         return message["content"]?.jsonPrimitive?.contentOrNull
     }
+
+    private fun HttpResponse<String>.modelIds(json: Json): List<String> {
+        val root = runCatching { json.parseToJsonElement(body()).jsonObject }.getOrNull() ?: return emptyList()
+        return root["data"]
+            ?.asArray()
+            ?.mapNotNull { item -> item.asObject()?.stringOrNull("id") }
+            .orEmpty()
+    }
 }
 
 private data class DesktopVlmTextResult(
     val content: String?,
+    val warnings: List<String>,
+)
+
+private fun DesktopVlmTextResult.withWarnings(upstreamWarnings: List<String>): DesktopVlmTextResult =
+    copy(warnings = (upstreamWarnings + warnings).distinct())
+
+private data class DesktopVlmPreflightResult(
+    val ready: Boolean,
+    val model: String?,
     val warnings: List<String>,
 )
 
