@@ -411,6 +411,16 @@ class ChromatogramBenchFixtureTest {
                 "${fixture.id} graph ${graph.graphIndex} centerline parity threshold must be audited",
             )
             assertTrue(
+                graph.curveCenterline.largeDeltaNearBranchColumnCount <= graph.curveCenterline.largeDeltaColumnCount,
+                "${fixture.id} graph ${graph.graphIndex} branch-near large deltas must be a subset of large deltas",
+            )
+            assertEquals(
+                graph.curveCenterline.largeDeltaColumnCount,
+                graph.curveCenterline.largeDeltaSignalAboveCenterlineColumnCount +
+                    graph.curveCenterline.largeDeltaSignalBelowCenterlineColumnCount,
+                "${fixture.id} graph ${graph.graphIndex} large deltas must be direction-classified",
+            )
+            assertTrue(
                 Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_parity_overlay.png")) > 0L,
                 "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be written",
             )

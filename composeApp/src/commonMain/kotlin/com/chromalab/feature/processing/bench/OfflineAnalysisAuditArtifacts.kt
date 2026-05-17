@@ -255,12 +255,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Trace Centerline")
         appendLine()
-        appendLine("| Graph | Available | Method | Selected | Decision | Overlay | Matched | Match ratio | Median delta | P95 delta | Max delta | Large delta threshold | Large delta columns | Large delta ratio | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Available | Method | Selected | Decision | Overlay | Matched | Match ratio | Median delta | P95 delta | Max delta | Large delta threshold | Large delta columns | Large delta ratio | Branch-near large | Signal above centerline | Signal below centerline | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val centerline = graph.curveCenterline
             appendLine(
-                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.selectedForSignal} | ${centerline.selectionDecision.escapeTable()} | ${centerline.parityOverlayGenerated} | ${centerline.matchedColumnCount} | ${centerline.matchedColumnRatio.renderPercent()} | ${centerline.medianAbsDeltaPx.renderNumber()} | ${centerline.p95AbsDeltaPx.renderNumber()} | ${centerline.maxAbsDeltaPx.renderNumber()} | ${centerline.largeDeltaThresholdPx.renderNumber()} | ${centerline.largeDeltaColumnCount} | ${centerline.largeDeltaColumnRatio.renderPercent()} | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.selectedForSignal} | ${centerline.selectionDecision.escapeTable()} | ${centerline.parityOverlayGenerated} | ${centerline.matchedColumnCount} | ${centerline.matchedColumnRatio.renderPercent()} | ${centerline.medianAbsDeltaPx.renderNumber()} | ${centerline.p95AbsDeltaPx.renderNumber()} | ${centerline.maxAbsDeltaPx.renderNumber()} | ${centerline.largeDeltaThresholdPx.renderNumber()} | ${centerline.largeDeltaColumnCount} | ${centerline.largeDeltaColumnRatio.renderPercent()} | ${centerline.largeDeltaNearBranchColumnCount} (${centerline.largeDeltaNearBranchColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalAboveCenterlineColumnCount} (${centerline.largeDeltaSignalAboveCenterlineColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalBelowCenterlineColumnCount} (${centerline.largeDeltaSignalBelowCenterlineColumnRatio.renderPercent()}) | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -434,6 +434,9 @@ object OfflineAnalysisAuditArtifacts {
         reportRow("Centerline signal decision", graph.curveCenterline.selectionDecision.humanizeCode())
         reportRow("Centerline P95 delta", "${graph.curveCenterline.p95AbsDeltaPx.renderNumber()} px")
         reportRow("Centerline large-delta columns", graph.curveCenterline.largeDeltaColumnCount.toString())
+        reportRow("Large deltas near branches", graph.curveCenterline.largeDeltaNearBranchColumnCount.toString())
+        reportRow("Large deltas with signal above centerline", graph.curveCenterline.largeDeltaSignalAboveCenterlineColumnCount.toString())
+        reportRow("Large deltas with signal below centerline", graph.curveCenterline.largeDeltaSignalBelowCenterlineColumnCount.toString())
         appendLine()
         renderHumanWarningList(
             (

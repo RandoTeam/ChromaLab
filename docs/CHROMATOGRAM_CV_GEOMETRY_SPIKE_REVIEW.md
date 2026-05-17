@@ -263,7 +263,19 @@ Accepted result:
   photographed, and rotated examples; centerline still must not replace the
   calculation signal.
 
-Next slice: `Phase 8.3c.5c.12 - Centerline Branch And Peak-Edge Correction Review`.
+Completed next slice: `Phase 8.3c.5c.12 - Centerline Branch And Peak-Edge Correction Review`.
+
+Accepted result:
+
+- Centerline parity failures are now classified by branch-near columns and signed
+  signal-vs-centerline direction.
+- Parity overlays color branch-near large deltas differently from top-edge/peak-edge
+  directional deltas.
+- Real fixture artifacts show that branch-near columns dominate the worst failures,
+  especially on photographed and rotated examples, so the next work must evaluate a
+  branch-pruned centerline candidate before any calculation-signal switch.
+
+Next slice: `Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis`.
 
 ## Source Links
 

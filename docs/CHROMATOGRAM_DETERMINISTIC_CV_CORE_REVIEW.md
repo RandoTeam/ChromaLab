@@ -333,10 +333,22 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.12 - Centerline Branch And Peak-Edge Correction Review
 
-- Review generated parity overlays on best and worst fixtures.
-- Add targeted branch/peak-edge diagnostics before changing the accepted signal.
-- Keep peak-count/report changes blocked until corrected centerline candidates pass
-  visual and numeric parity.
+- Done: review generated parity overlays on clean, stacked, TIC-plus-ion,
+  photographed two-graph, and rotated fixtures.
+- Done: add targeted large-delta diagnostics for branch-near columns, signal-above-
+  centerline columns, and signal-below-centerline columns.
+- Done: color-code large-delta classes in the parity overlay without changing the
+  accepted calculation signal.
+- Result: the hard fixtures show branch-near large deltas as the dominant failure
+  class, with a strong signal-above-centerline/top-edge bias on many peaks.
+
+### Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis
+
+- Add an audit-only branch-pruned centerline candidate using the classified failure
+  metrics from Phase 8.3c.5c.12.
+- Compare pruned candidate parity against preserved signal on best and worst fixtures.
+- Keep `selectedForSignal=false` until pruned candidates pass visual and numeric
+  acceptance.
 
 ## Bottom Line
 

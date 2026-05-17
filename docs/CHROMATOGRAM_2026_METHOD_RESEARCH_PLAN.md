@@ -721,6 +721,10 @@ centerline-vs-preserved-signal parity metrics and confirmed on real fixtures tha
 centerline must remain audit-only until visual acceptance explains the large pixel
 deltas. Phase 8.3c.5c.11 added per-graph centerline parity overlays and exposed
 large-delta counts so the next correction step can be driven by visual evidence.
+Phase 8.3c.5c.12 classified those large deltas into branch-near, signal-above-
+centerline, and signal-below-centerline groups, confirming that branch pruning and
+peak-edge/top-edge handling must be audit-first before centerline can drive signal
+conversion.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -738,6 +742,7 @@ input fixture
   -> centerline-vs-signal parity metrics
   -> visual parity overlays before centerline drives signal conversion
   -> branch/peak-edge correction review
+  -> branch-pruned centerline hypothesis
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android

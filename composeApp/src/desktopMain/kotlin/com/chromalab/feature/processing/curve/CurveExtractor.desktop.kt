@@ -36,6 +36,7 @@ actual class CurveExtractor actual constructor() {
         var wideClusterColumnCount = 0
         var branchColumnCount = 0
         val centerlineCandidateByX = mutableMapOf<Int, Float>()
+        val branchCandidateColumns = mutableSetOf<Int>()
         for (x in 0 until width) {
             val skeletonCandidates = mutableListOf<Int>()
             val candidates = mutableListOf<Int>()
@@ -46,8 +47,10 @@ actual class CurveExtractor actual constructor() {
 
             val skeletonCluster = skeletonCandidates.bestSignalCluster(height)
             if (skeletonCluster != null) {
-                if (skeletonCandidates.clusters(maxGap = 2).size > 1 || skeletonCluster.size > 2) {
+                val branchCandidate = skeletonCandidates.clusters(maxGap = 2).size > 1 || skeletonCluster.size > 2
+                if (branchCandidate) {
                     branchColumnCount++
+                    branchCandidateColumns += x
                 }
                 centerlineCandidateByX[x] = skeletonCluster.centerY()
                 skeletonPointCount++
@@ -84,6 +87,7 @@ actual class CurveExtractor actual constructor() {
             branchColumnCount = branchColumnCount,
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
+            branchCandidateColumns = branchCandidateColumns,
         )
         val overlayPath = File(outputDir).also { it.mkdirs() }
             .resolve("curve_overlay.png")
@@ -97,6 +101,7 @@ actual class CurveExtractor actual constructor() {
             skeletonMask = skeletonMask,
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
+            branchCandidateColumns = branchCandidateColumns,
             width = width,
             height = height,
             path = parityOverlayPath,
@@ -176,6 +181,7 @@ actual class CurveExtractor actual constructor() {
         branchColumnCount: Int,
         signalPoints: List<CurvePoint>,
         centerlineCandidateByX: Map<Int, Float>,
+        branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
         val skeletonColumns = if (totalColumns > 0) {
@@ -193,7 +199,7 @@ actual class CurveExtractor actual constructor() {
         }
         val centerlineCoverage = if (totalColumns > 0) centerlineColumns.toFloat() / totalColumns else 0f
         val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
-        val parity = signalPoints.centerlineParity(centerlineCandidateByX)
+        val parity = signalPoints.centerlineParity(centerlineCandidateByX, branchCandidateColumns)
         val branchRatio = if (centerlineColumns > 0) {
             branchColumnCount.toFloat() / centerlineColumns.toFloat()
         } else {
@@ -233,6 +239,12 @@ actual class CurveExtractor actual constructor() {
             largeDeltaThresholdPx = CENTERLINE_LARGE_DELTA_THRESHOLD_PX,
             largeDeltaColumnCount = parity.largeDeltaColumnCount,
             largeDeltaColumnRatio = parity.largeDeltaColumnRatio,
+            largeDeltaNearBranchColumnCount = parity.largeDeltaNearBranchColumnCount,
+            largeDeltaNearBranchColumnRatio = parity.largeDeltaNearBranchColumnRatio,
+            largeDeltaSignalAboveCenterlineColumnCount = parity.largeDeltaSignalAboveCenterlineColumnCount,
+            largeDeltaSignalAboveCenterlineColumnRatio = parity.largeDeltaSignalAboveCenterlineColumnRatio,
+            largeDeltaSignalBelowCenterlineColumnCount = parity.largeDeltaSignalBelowCenterlineColumnCount,
+            largeDeltaSignalBelowCenterlineColumnRatio = parity.largeDeltaSignalBelowCenterlineColumnRatio,
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
             centerlineColumnCount = centerlineColumns,
@@ -248,12 +260,25 @@ actual class CurveExtractor actual constructor() {
 
     private fun List<CurvePoint>.centerlineParity(
         centerlineCandidateByX: Map<Int, Float>,
+        branchCandidateColumns: Set<Int>,
     ): CenterlineParity {
         if (isEmpty() || centerlineCandidateByX.isEmpty()) return CenterlineParity()
-        val deltas = mapNotNull { point ->
-            centerlineCandidateByX[point.pixelX]?.let { centerlineY -> abs(centerlineY - point.pixelY) }
-        }.sorted()
-        if (deltas.isEmpty()) return CenterlineParity()
+        val comparisons = mapNotNull { point ->
+            centerlineCandidateByX[point.pixelX]?.let { centerlineY ->
+                CenterlineDelta(
+                    x = point.pixelX,
+                    signedDeltaPx = centerlineY - point.pixelY,
+                    absDeltaPx = abs(centerlineY - point.pixelY),
+                    nearBranch = branchCandidateColumns.hasNear(point.pixelX, radius = 2),
+                )
+            }
+        }
+        if (comparisons.isEmpty()) return CenterlineParity()
+        val deltas = comparisons.map { it.absDeltaPx }.sorted()
+        val largeDeltas = comparisons.filter { it.absDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX }
+        val nearBranchCount = largeDeltas.count { it.nearBranch }
+        val signalAboveCount = largeDeltas.count { it.signedDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX }
+        val signalBelowCount = largeDeltas.count { it.signedDeltaPx < -CENTERLINE_LARGE_DELTA_THRESHOLD_PX }
         return CenterlineParity(
             compared = true,
             matchedColumnCount = deltas.size,
@@ -261,10 +286,19 @@ actual class CurveExtractor actual constructor() {
             medianAbsDeltaPx = deltas.percentile(0.50f),
             p95AbsDeltaPx = deltas.percentile(0.95f),
             maxAbsDeltaPx = deltas.last(),
-            largeDeltaColumnCount = deltas.count { it > CENTERLINE_LARGE_DELTA_THRESHOLD_PX },
-            largeDeltaColumnRatio = deltas.count { it > CENTERLINE_LARGE_DELTA_THRESHOLD_PX }.toFloat() / deltas.size.toFloat(),
+            largeDeltaColumnCount = largeDeltas.size,
+            largeDeltaColumnRatio = largeDeltas.size.toFloat() / deltas.size.toFloat(),
+            largeDeltaNearBranchColumnCount = nearBranchCount,
+            largeDeltaNearBranchColumnRatio = nearBranchCount.toFloat() / largeDeltas.size.coerceAtLeast(1).toFloat(),
+            largeDeltaSignalAboveCenterlineColumnCount = signalAboveCount,
+            largeDeltaSignalAboveCenterlineColumnRatio = signalAboveCount.toFloat() / largeDeltas.size.coerceAtLeast(1).toFloat(),
+            largeDeltaSignalBelowCenterlineColumnCount = signalBelowCount,
+            largeDeltaSignalBelowCenterlineColumnRatio = signalBelowCount.toFloat() / largeDeltas.size.coerceAtLeast(1).toFloat(),
         )
     }
+
+    private fun Set<Int>.hasNear(value: Int, radius: Int): Boolean =
+        (value - radius..value + radius).any { it in this }
 
     private fun List<Float>.percentile(fraction: Float): Float {
         if (isEmpty()) return 0f
@@ -429,6 +463,7 @@ actual class CurveExtractor actual constructor() {
         skeletonMask: BooleanArray,
         signalPoints: List<CurvePoint>,
         centerlineCandidateByX: Map<Int, Float>,
+        branchCandidateColumns: Set<Int>,
         width: Int,
         height: Int,
         path: String,
@@ -460,7 +495,11 @@ actual class CurveExtractor actual constructor() {
                 val centerlineY = centerlineCandidateByX[x] ?: return@forEach
                 val delta = abs(centerlineY - point.pixelY)
                 if (delta > CENTERLINE_LARGE_DELTA_THRESHOLD_PX) {
-                    graphics.color = Color(0xFB, 0x8C, 0x00, 0xD8)
+                    graphics.color = when {
+                        branchCandidateColumns.hasNear(x, radius = 2) -> Color(0xAB, 0x47, 0xBC, 0xD8)
+                        centerlineY > point.pixelY -> Color(0xFB, 0x8C, 0x00, 0xD8)
+                        else -> Color(0xFF, 0xD5, 0x4F, 0xD8)
+                    }
                     graphics.drawLine(x, point.pixelY.roundToInt(), x, centerlineY.roundToInt())
                     graphics.fillOval(x - 2, centerlineY.roundToInt() - 2, 5, 5)
                 }
@@ -523,6 +562,19 @@ private data class CenterlineParity(
     val maxAbsDeltaPx: Float = 0f,
     val largeDeltaColumnCount: Int = 0,
     val largeDeltaColumnRatio: Float = 0f,
+    val largeDeltaNearBranchColumnCount: Int = 0,
+    val largeDeltaNearBranchColumnRatio: Float = 0f,
+    val largeDeltaSignalAboveCenterlineColumnCount: Int = 0,
+    val largeDeltaSignalAboveCenterlineColumnRatio: Float = 0f,
+    val largeDeltaSignalBelowCenterlineColumnCount: Int = 0,
+    val largeDeltaSignalBelowCenterlineColumnRatio: Float = 0f,
+)
+
+private data class CenterlineDelta(
+    val x: Int,
+    val signedDeltaPx: Float,
+    val absDeltaPx: Float,
+    val nearBranch: Boolean,
 )
 
 private fun Int.isWhiteMaskPixel(): Boolean =
