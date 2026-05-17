@@ -372,11 +372,26 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.15 - Skeleton Graph Trunk-Path Centerline Candidate
 
-- Build the skeleton as a graph of nodes/edges instead of one column at a time.
-- Prefer a continuous trunk path through the chromatogram trace, then treat short
-  branches as removable spur evidence.
-- Compare the graph-path candidate against preserved signal and branch-pruned
-  overlays before any calculation-signal switch.
+- Done: build the skeleton as a graph of nodes/edges instead of one column at a
+  time, including endpoint, junction, edge, component, trunk-pixel, and spur-pixel
+  diagnostics.
+- Done: add a gap-bridged left-to-right trunk-path candidate plus an explicit
+  component top-envelope fallback when real photographed traces are too fragmented
+  to form a connected path.
+- Done: write per-graph `centerline_trunk_path_overlay.png` artifacts and expose
+  trunk-path parity metrics in JSON, Markdown, and the calibrated report UI contract.
+- Result: clean/compact traces can produce a comparable candidate, but hard
+  photographed and rotated traces remain highly fragmented and low-overlap, so the
+  trunk-path candidate remains audit-only and must not drive calculation signal.
+
+### Phase 8.3c.5c.16 - Fragmentation-Aware Trace Reconstruction And Acceptance Review
+
+- Review trunk-path overlays and component counts on clean, two-graph photographed,
+  and rotated fixtures.
+- Add a fragmentation-aware reconstruction candidate only if visual evidence shows
+  that short endpoint bridges are scientifically safe.
+- Keep calculation input unchanged until the reconstructed trace passes overlap,
+  P95/large-delta, and visual acceptance gates.
 
 ## Bottom Line
 

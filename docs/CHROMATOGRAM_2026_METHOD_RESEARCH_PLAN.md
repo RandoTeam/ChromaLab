@@ -730,7 +730,12 @@ loses too much overlap on hard photographed/rotated fixtures to drive calculatio
 Phase 8.3c.5c.14 added continuity-interpolated pruning behind metric-safe
 selection; it is accepted only where it preserves P95/large-delta quality, so hard
 photo cases still require graph-path trunk extraction rather than broader
-interpolation.
+interpolation. Phase 8.3c.5c.15 added an audit-only skeleton graph trunk-path
+candidate with node/edge/endpoint/junction/component metrics and per-graph
+`centerline_trunk_path_overlay.png` evidence. The real fixture result is important:
+hard photographed and rotated traces are not merely branched, they are fragmented
+into many skeleton components, so the next step must review fragmentation-aware
+trace reconstruction before any centerline candidate can drive calculations.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -751,12 +756,14 @@ input fixture
   -> branch-pruned centerline hypothesis
   -> branch-pruned continuity and visual acceptance tuning
   -> skeleton graph trunk-path centerline candidate
+  -> fragmentation-aware trace reconstruction and acceptance review
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
 fill with branch-aware centerline correction, continuity-safe pruning, skeleton
-graph trunk-path extraction, and distortion-aware signal conversion.
+graph trunk-path extraction, fragmentation-aware trace reconstruction, and
+distortion-aware signal conversion.
 Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
 loading blocks the OpenCV path.
 

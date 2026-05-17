@@ -299,7 +299,20 @@ Accepted result:
   on drop-only pruning.
 - Calculation input remains unchanged.
 
-Next slice: `Phase 8.3c.5c.15 - Skeleton Graph Trunk-Path Centerline Candidate`.
+Completed next slice: `Phase 8.3c.5c.15 - Skeleton Graph Trunk-Path Centerline Candidate`.
+
+Accepted result:
+
+- The curve extractor now emits an audit-only skeleton graph trunk-path candidate
+  with component, node, edge, endpoint, junction, trunk-pixel, trunk-column, and
+  spur-pixel diagnostics.
+- Each graph writes `centerline_trunk_path_overlay.png` with preserved signal,
+  branch-pruned candidate, and trunk-path candidate for visual acceptance review.
+- The real fixtures show that hard photographed/rotated traces are heavily
+  fragmented, so trunk-path extraction remains evidence only and must not replace
+  the calculation signal.
+
+Next slice: `Phase 8.3c.5c.16 - Fragmentation-Aware Trace Reconstruction And Acceptance Review`.
 
 ## Source Links
 

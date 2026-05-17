@@ -82,6 +82,11 @@ actual class CurveExtractor actual constructor() {
             branchCandidateColumns = branchCandidateColumns,
             signalPoints = rawPoints,
         )
+        val trunkPathCenterline = SkeletonGraphTrunkPathExtractor.extract(
+            skeletonMask = skeletonMask,
+            width = width,
+            height = height,
+        )
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = width,
@@ -93,6 +98,7 @@ actual class CurveExtractor actual constructor() {
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
             branchPrunedCenterline = branchPrunedCenterline,
+            trunkPathCenterline = trunkPathCenterline,
             branchCandidateColumns = branchCandidateColumns,
         )
         val overlayPath = File(outputDir).also { it.mkdirs() }
@@ -126,9 +132,23 @@ actual class CurveExtractor actual constructor() {
             height = height,
             path = prunedOverlayPath,
         )
+        val trunkPathOverlayPath = File(outputDir)
+            .resolve("centerline_trunk_path_overlay.png")
+            .absolutePath
+        saveTrunkPathCenterlineOverlay(
+            mask = mask,
+            skeletonMask = skeletonMask,
+            signalPoints = rawPoints,
+            branchPrunedCenterlineByX = branchPrunedCenterline.pointsByX,
+            trunkPathCenterlineByX = trunkPathCenterline.pointsByX,
+            width = width,
+            height = height,
+            path = trunkPathOverlayPath,
+        )
         val centerlineAudit = initialCenterlineAudit.copy(
             parityOverlayGenerated = true,
             branchPrunedOverlayGenerated = true,
+            trunkPathOverlayGenerated = true,
         )
 
         val result = CurveExtractionResult(
@@ -205,6 +225,7 @@ actual class CurveExtractor actual constructor() {
         signalPoints: List<CurvePoint>,
         centerlineCandidateByX: Map<Int, Float>,
         branchPrunedCenterline: BranchPrunedCenterline,
+        trunkPathCenterline: SkeletonGraphTrunkPath,
         branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
@@ -225,9 +246,15 @@ actual class CurveExtractor actual constructor() {
         val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
         val parity = signalPoints.centerlineParity(centerlineCandidateByX, branchCandidateColumns)
         val branchPrunedParity = signalPoints.centerlineParity(branchPrunedCenterline.pointsByX, branchCandidateColumns)
+        val trunkPathParity = signalPoints.centerlineParity(trunkPathCenterline.pointsByX, branchCandidateColumns)
         val branchPrunedDecision = branchPrunedDecision(
             original = parity,
             pruned = branchPrunedParity,
+        )
+        val trunkPathDecision = trunkPathDecision(
+            original = parity,
+            branchPruned = branchPrunedParity,
+            trunkPath = trunkPathParity,
         )
         val branchRatio = if (centerlineColumns > 0) {
             branchColumnCount.toFloat() / centerlineColumns.toFloat()
@@ -252,6 +279,9 @@ actual class CurveExtractor actual constructor() {
             }
             if (branchColumnCount > centerlineColumns * 0.20f && branchColumnCount > 8) {
                 add("curve_centerline.many_branch_columns")
+            }
+            if (trunkPathCenterline.available && trunkPathParity.matchedColumnRatio < 0.45f) {
+                add("curve_centerline.trunk_path_low_overlap")
             }
         }
         return CurveCenterlineAudit(
@@ -289,6 +319,33 @@ actual class CurveExtractor actual constructor() {
             branchPrunedLargeDeltaColumnRatio = branchPrunedParity.largeDeltaColumnRatio,
             branchPrunedP95DeltaImprovementPx = (parity.p95AbsDeltaPx - branchPrunedParity.p95AbsDeltaPx).coerceAtLeast(0f),
             branchPrunedLargeDeltaReductionCount = (parity.largeDeltaColumnCount - branchPrunedParity.largeDeltaColumnCount)
+                .coerceAtLeast(0),
+            trunkPathAvailable = trunkPathCenterline.available,
+            trunkPathMethod = trunkPathCenterline.method,
+            trunkPathDecision = trunkPathDecision,
+            trunkPathSelectedForSignal = false,
+            trunkPathComponentCount = trunkPathCenterline.componentCount,
+            trunkPathNodeCount = trunkPathCenterline.nodeCount,
+            trunkPathEdgeCount = trunkPathCenterline.edgeCount,
+            trunkPathEndpointCount = trunkPathCenterline.endpointCount,
+            trunkPathJunctionCount = trunkPathCenterline.junctionCount,
+            trunkPathPixelCount = trunkPathCenterline.trunkPixelCount,
+            trunkPathColumnCount = trunkPathCenterline.trunkColumnCount,
+            trunkPathCoverage = if (totalColumns > 0) {
+                trunkPathCenterline.trunkColumnCount.toFloat() / totalColumns.toFloat()
+            } else {
+                0f
+            },
+            trunkPathSpurPixelCount = trunkPathCenterline.spurPixelCount,
+            trunkPathMatchedColumnCount = trunkPathParity.matchedColumnCount,
+            trunkPathMatchedColumnRatio = trunkPathParity.matchedColumnRatio,
+            trunkPathMedianAbsDeltaPx = trunkPathParity.medianAbsDeltaPx,
+            trunkPathP95AbsDeltaPx = trunkPathParity.p95AbsDeltaPx,
+            trunkPathMaxAbsDeltaPx = trunkPathParity.maxAbsDeltaPx,
+            trunkPathLargeDeltaColumnCount = trunkPathParity.largeDeltaColumnCount,
+            trunkPathLargeDeltaColumnRatio = trunkPathParity.largeDeltaColumnRatio,
+            trunkPathP95DeltaImprovementPx = (parity.p95AbsDeltaPx - trunkPathParity.p95AbsDeltaPx).coerceAtLeast(0f),
+            trunkPathLargeDeltaReductionCount = (parity.largeDeltaColumnCount - trunkPathParity.largeDeltaColumnCount)
                 .coerceAtLeast(0),
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
@@ -456,6 +513,29 @@ actual class CurveExtractor actual constructor() {
             pruned.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX -> "branch_pruned_improved_but_large_delta"
             else -> "branch_pruned_candidate_ready_for_visual_review"
         }
+
+    private fun trunkPathDecision(
+        original: CenterlineParity,
+        branchPruned: CenterlineParity,
+        trunkPath: CenterlineParity,
+    ): String {
+        if (!trunkPath.compared) return "trunk_path_not_available"
+        if (trunkPath.matchedColumnRatio < 0.45f) return "trunk_path_low_overlap"
+        val referenceP95 = listOfNotNull(
+            original.takeIf { it.compared }?.p95AbsDeltaPx,
+            branchPruned.takeIf { it.compared }?.p95AbsDeltaPx,
+        ).minOrNull() ?: Float.MAX_VALUE
+        val referenceLargeDeltas = listOfNotNull(
+            original.takeIf { it.compared }?.largeDeltaColumnCount,
+            branchPruned.takeIf { it.compared }?.largeDeltaColumnCount,
+        ).minOrNull() ?: Int.MAX_VALUE
+        return when {
+            trunkPath.p95AbsDeltaPx >= referenceP95 &&
+                trunkPath.largeDeltaColumnCount >= referenceLargeDeltas -> "trunk_path_no_metric_improvement"
+            trunkPath.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX -> "trunk_path_improved_but_large_delta"
+            else -> "trunk_path_candidate_ready_for_visual_review"
+        }
+    }
 
     private fun List<Float>.percentile(fraction: Float): Float {
         if (isEmpty()) return 0f
@@ -708,6 +788,45 @@ actual class CurveExtractor actual constructor() {
                 graphics.drawLine(x, 0, x, height - 1)
                 graphics.fillOval(x - 2, y - 2, 5, 5)
             }
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(overlay, "png", File(path))
+        overlay.flush()
+    }
+
+    private fun saveTrunkPathCenterlineOverlay(
+        mask: BooleanArray,
+        skeletonMask: BooleanArray,
+        signalPoints: List<CurvePoint>,
+        branchPrunedCenterlineByX: Map<Int, Float>,
+        trunkPathCenterlineByX: Map<Int, Float>,
+        width: Int,
+        height: Int,
+        path: String,
+    ) {
+        val overlay = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                overlay.setRGB(
+                    x,
+                    y,
+                    when {
+                        skeletonMask[index] -> PARITY_SKELETON_RGB
+                        mask[index] -> PARITY_MASK_RGB
+                        else -> PARITY_BACKGROUND_RGB
+                    },
+                )
+            }
+        }
+
+        val graphics = overlay.createGraphics()
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            drawFloatPolyline(graphics, signalPoints.associate { it.pixelX to it.pixelY }, Color(0xE5, 0x39, 0x35), 2f)
+            drawFloatPolyline(graphics, branchPrunedCenterlineByX, Color(0x43, 0xA0, 0x47, 0xA0), 1.8f)
+            drawFloatPolyline(graphics, trunkPathCenterlineByX, Color(0x1E, 0x88, 0xE5), 2.8f)
         } finally {
             graphics.dispose()
         }

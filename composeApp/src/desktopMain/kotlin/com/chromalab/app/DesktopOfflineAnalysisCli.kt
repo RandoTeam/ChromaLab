@@ -595,9 +595,12 @@ private fun printDesktopOfflineAnalysisUsage() {
           axis_x_label_band_graph_N.png
           axis_y_label_band_graph_N.png
           axis_title_band_graph_N.png
-          graph_focus_graph_N.png
-          selected_preprocessing_graph_N.png
-          peak_overlay_graph_N.png when calculation reaches peak metrics
+  graph_focus_graph_N.png
+  selected_preprocessing_graph_N.png
+  graph_N/centerline_parity_overlay.png
+  graph_N/centerline_branch_pruned_overlay.png
+  graph_N/centerline_trunk_path_overlay.png
+  peak_overlay_graph_N.png when calculation reaches peak metrics
         """.trimIndent(),
     )
 }
