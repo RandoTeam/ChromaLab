@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.17 - fragment reconstruction visual review and guard tuning`.
-- Next work slice: `Phase 8.3c.5c.18 - reconstructed trace residual taxonomy and acceptance gate`.
+- Latest completed work slice: `Phase 8.3c.5c.18 - reconstructed trace residual taxonomy and acceptance gate`.
+- Next work slice: `Phase 8.3c.5c.19 - branch-edge residual reduction review`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -116,7 +116,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.14 | Done | `6b709b9` | Add continuity-interpolated branch-pruned candidates behind metric-safe selection, expose interpolated-column counts in audits/reports, verify real fixture overlays, and keep the candidate audit-only because hard photographed/rotated graphs still fail overlap acceptance. |
 | Phase 8.3c.5c.15 | Done | `0241a4b` | Add an audit-only skeleton graph trunk-path candidate with node/edge/endpoint/junction/fragmentation metrics, write per-graph trunk-path overlays, expose parity metrics in JSON/Markdown/report evidence, and verify that fragmented photographed/rotated traces still cannot safely drive calculation signal. |
 | Phase 8.3c.5c.16 | Done | `8afbcf7` | Add an audit-only fragmentation-aware reconstruction candidate over skeleton components, interpolate only short column gaps, write per-graph fragment reconstruction overlays, expose parity/coverage/component metrics in JSON/Markdown/report evidence, and keep calculation input unchanged. |
-| Phase 8.3c.5c.17 | Done | `this commit` | Add signal-guided guard tuning for fragment reconstruction components and short-gap interpolation, expose guide match/rejection metrics in JSON/Markdown/report evidence, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because hard fixtures still have too many large-delta columns. |
+| Phase 8.3c.5c.17 | Done | `a429250` | Add signal-guided guard tuning for fragment reconstruction components and short-gap interpolation, expose guide match/rejection metrics in JSON/Markdown/report evidence, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because hard fixtures still have too many large-delta columns. |
+| Phase 8.3c.5c.18 | Done | `this commit` | Add reconstructed-trace residual taxonomy and acceptance gate fields, color residual classes in fragment reconstruction overlays, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because residuals are dominated by branch/edge ambiguity plus crop/frame-text blockers. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final

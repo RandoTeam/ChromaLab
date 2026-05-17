@@ -486,6 +486,26 @@ class ChromatogramBenchFixtureTest {
                     graph.curveCenterline.fragmentReconstructionGuideMaxDistancePx > 0,
                     "${fixture.id} graph ${graph.graphIndex} fragment reconstruction must record signal-guide distance",
                 )
+                assertEquals(
+                    graph.curveCenterline.fragmentReconstructionLargeDeltaColumnCount,
+                    graph.curveCenterline.fragmentReconstructionResidualColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} fragment residual review must classify every large delta",
+                )
+                assertEquals(
+                    graph.curveCenterline.fragmentReconstructionResidualColumnCount,
+                    graph.curveCenterline.fragmentReconstructionResidualPeakTopCandidateColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualBranchEdgeAmbiguityColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualBaselineGapColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualFrameTextArtifactColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualCropBoundaryColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualSignalGuideMismatchColumnCount +
+                        graph.curveCenterline.fragmentReconstructionResidualUnclassifiedColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} fragment residual classes must sum to residual count",
+                )
+                assertTrue(
+                    graph.curveCenterline.fragmentReconstructionResidualAcceptanceGate != "not_available",
+                    "${fixture.id} graph ${graph.graphIndex} fragment residual review must expose an acceptance gate",
+                )
                 assertTrue(
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_fragment_reconstruction_overlay.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} fragment reconstruction overlay must be written",

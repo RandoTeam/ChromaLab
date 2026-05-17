@@ -490,9 +490,19 @@ Phase 8.3c.5c.17 adds signal-guided guard tuning:
   constrained, but hard fixtures still have enough large-delta columns that
   `selectedForSignal=false` remains required.
 
+Phase 8.3c.5c.18 adds reconstructed-trace residual taxonomy:
+
+- every fragment-reconstruction large-delta column is classified as peak-top
+  candidate, branch/edge ambiguity, baseline gap, frame/text artifact, crop
+  boundary, signal-guide mismatch, or unclassified;
+- `curveCenterline` records the residual acceptance gate and per-class counts;
+- `centerline_fragment_reconstruction_overlay.png` colors residual classes for
+  visual review;
+- clean, two-graph, and rotated CLI runs confirm residual counts sum exactly to
+  large-delta counts, and the candidate remains `selectedForSignal=false`.
+
 ## Next Phase
 
-Phase 8.3c.5c.18 should classify remaining reconstructed-trace residuals by source
-before any centerline or reconstructed path is allowed to drive signal conversion.
-Android model-assisted report-audit validation remains a separate device parity
-track.
+Phase 8.3c.5c.19 should reduce branch/edge residual ambiguity before any centerline
+or reconstructed path is allowed to drive signal conversion. Android model-assisted
+report-audit validation remains a separate device parity track.

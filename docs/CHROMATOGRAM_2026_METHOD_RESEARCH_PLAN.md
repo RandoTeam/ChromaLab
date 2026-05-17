@@ -766,13 +766,15 @@ input fixture
   -> fragmentation-aware trace reconstruction and acceptance review
   -> fragment reconstruction visual review and guard tuning
   -> reconstructed trace residual taxonomy and acceptance gate
+  -> branch-edge residual reduction review
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
 fill with branch-aware centerline correction, continuity-safe pruning, skeleton
 graph trunk-path extraction, fragmentation-aware trace reconstruction, and
-signal-guided residual classification before distortion-aware signal conversion.
+signal-guided residual classification before branch-edge correction and
+distortion-aware signal conversion.
 Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
 loading blocks the OpenCV path.
 

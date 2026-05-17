@@ -344,7 +344,21 @@ Accepted result:
 - Calculation input remains unchanged; the reconstructed path is not allowed to
   drive signal conversion until residual classes are reviewed and accepted.
 
-Next slice: `Phase 8.3c.5c.18 - Reconstructed Trace Residual Taxonomy And Acceptance Gate`.
+Completed next slice: `Phase 8.3c.5c.18 - Reconstructed Trace Residual Taxonomy And Acceptance Gate`.
+
+Accepted result:
+
+- Fragment reconstruction large-delta columns are now classified into auditable
+  residual classes with a separate acceptance gate.
+- The fragment reconstruction overlay draws class-colored residual markers over
+  the preserved signal and reconstructed path.
+- CLI review on `bench_03`, `bench_06`, and `bench_07` shows residuals are mostly
+  branch/edge ambiguity, with crop-boundary and frame/text blockers still present
+  on hard photographed fixtures.
+- Calculation input remains unchanged; residual taxonomy is diagnostic evidence
+  only until branch-edge ambiguity is reduced.
+
+Next slice: `Phase 8.3c.5c.19 - Branch-Edge Residual Reduction Review`.
 
 ## Source Links
 

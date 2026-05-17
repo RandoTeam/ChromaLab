@@ -98,6 +98,15 @@ actual class CurveExtractor actual constructor() {
             height = h,
             signalGuideByX = rawPoints.associate { it.pixelX to it.pixelY },
         )
+        val fragmentReconstructionResidualReview = ReconstructedTraceResidualClassifier.classify(
+            signalPoints = rawPoints,
+            reconstructedByX = fragmentReconstruction.pointsByX,
+            branchCandidateColumns = branchCandidateColumns,
+            width = w,
+            height = h,
+            largeDeltaThresholdPx = CENTERLINE_LARGE_DELTA_THRESHOLD_PX,
+            guideMaxDistancePx = fragmentReconstruction.guideMaxDistancePx,
+        )
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = w,
@@ -111,6 +120,7 @@ actual class CurveExtractor actual constructor() {
             branchPrunedCenterline = branchPrunedCenterline,
             trunkPathCenterline = trunkPathCenterline,
             fragmentReconstruction = fragmentReconstruction,
+            fragmentReconstructionResidualReview = fragmentReconstructionResidualReview,
             branchCandidateColumns = branchCandidateColumns,
         )
 
@@ -163,6 +173,7 @@ actual class CurveExtractor actual constructor() {
             branchPrunedCenterlineByX = branchPrunedCenterline.pointsByX,
             trunkPathCenterlineByX = trunkPathCenterline.pointsByX,
             fragmentReconstructionByX = fragmentReconstruction.pointsByX,
+            residualReview = fragmentReconstructionResidualReview,
             w = w,
             h = h,
             path = fragmentReconstructionOverlayPath,
@@ -291,6 +302,7 @@ actual class CurveExtractor actual constructor() {
         branchPrunedCenterline: BranchPrunedCenterline,
         trunkPathCenterline: SkeletonGraphTrunkPath,
         fragmentReconstruction: FragmentedTraceReconstruction,
+        fragmentReconstructionResidualReview: ReconstructedTraceResidualReview,
         branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
@@ -459,6 +471,22 @@ actual class CurveExtractor actual constructor() {
                 .coerceAtLeast(0f),
             fragmentReconstructionLargeDeltaReductionCount = (parity.largeDeltaColumnCount - fragmentReconstructionParity.largeDeltaColumnCount)
                 .coerceAtLeast(0),
+            fragmentReconstructionResidualAcceptanceGate = fragmentReconstructionResidualReview.acceptanceGate,
+            fragmentReconstructionResidualColumnCount = fragmentReconstructionResidualReview.residualColumnCount,
+            fragmentReconstructionResidualPeakTopCandidateColumnCount =
+                fragmentReconstructionResidualReview.peakTopCandidateColumnCount,
+            fragmentReconstructionResidualBranchEdgeAmbiguityColumnCount =
+                fragmentReconstructionResidualReview.branchEdgeAmbiguityColumnCount,
+            fragmentReconstructionResidualBaselineGapColumnCount =
+                fragmentReconstructionResidualReview.baselineGapColumnCount,
+            fragmentReconstructionResidualFrameTextArtifactColumnCount =
+                fragmentReconstructionResidualReview.frameTextArtifactColumnCount,
+            fragmentReconstructionResidualCropBoundaryColumnCount =
+                fragmentReconstructionResidualReview.cropBoundaryColumnCount,
+            fragmentReconstructionResidualSignalGuideMismatchColumnCount =
+                fragmentReconstructionResidualReview.signalGuideMismatchColumnCount,
+            fragmentReconstructionResidualUnclassifiedColumnCount =
+                fragmentReconstructionResidualReview.unclassifiedColumnCount,
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
             centerlineColumnCount = centerlineColumns,
@@ -952,6 +980,7 @@ actual class CurveExtractor actual constructor() {
         branchPrunedCenterlineByX: Map<Int, Float>,
         trunkPathCenterlineByX: Map<Int, Float>,
         fragmentReconstructionByX: Map<Int, Float>,
+        residualReview: ReconstructedTraceResidualReview,
         w: Int,
         h: Int,
         path: String,
@@ -971,12 +1000,54 @@ actual class CurveExtractor actual constructor() {
         drawFloatPolyline(canvas, branchPrunedCenterlineByX, Color.rgb(67, 160, 71), 1.4f)
         drawFloatPolyline(canvas, trunkPathCenterlineByX, Color.rgb(30, 136, 229), 1.8f)
         drawFloatPolyline(canvas, fragmentReconstructionByX, Color.rgb(142, 36, 170), 2.8f)
+        drawResidualMarkers(canvas, residualReview.residuals)
 
         FileOutputStream(path).use { out ->
             bmp.compress(Bitmap.CompressFormat.PNG, 90, out)
         }
         bmp.recycle()
     }
+
+    private fun drawResidualMarkers(
+        canvas: Canvas,
+        residuals: List<ReconstructedTraceResidual>,
+    ) {
+        val linePaint = Paint().apply {
+            strokeWidth = 1.2f
+            alpha = 230
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+        }
+        val markerPaint = Paint().apply {
+            alpha = 230
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+        residuals.forEach { residual ->
+            val color = residual.classification.androidColor()
+            linePaint.color = color
+            markerPaint.color = color
+            canvas.drawLine(
+                residual.x.toFloat(),
+                residual.signalY,
+                residual.x.toFloat(),
+                residual.reconstructedY,
+                linePaint,
+            )
+            canvas.drawCircle(residual.x.toFloat(), residual.reconstructedY, 2f, markerPaint)
+        }
+    }
+
+    private fun ReconstructedTraceResidualClass.androidColor(): Int =
+        when (this) {
+            ReconstructedTraceResidualClass.PEAK_TOP_CANDIDATE -> Color.rgb(0, 150, 136)
+            ReconstructedTraceResidualClass.BRANCH_EDGE_AMBIGUITY -> Color.rgb(171, 71, 188)
+            ReconstructedTraceResidualClass.BASELINE_GAP -> Color.rgb(255, 179, 0)
+            ReconstructedTraceResidualClass.FRAME_TEXT_ARTIFACT -> Color.rgb(216, 27, 96)
+            ReconstructedTraceResidualClass.CROP_BOUNDARY -> Color.rgb(94, 53, 177)
+            ReconstructedTraceResidualClass.SIGNAL_GUIDE_MISMATCH -> Color.rgb(244, 81, 30)
+            ReconstructedTraceResidualClass.UNCLASSIFIED -> Color.rgb(84, 96, 104)
+        }
 
     private fun drawFloatPolyline(
         canvas: Canvas,

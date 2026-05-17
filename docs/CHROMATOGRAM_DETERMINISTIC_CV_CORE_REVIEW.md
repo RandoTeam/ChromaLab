@@ -418,13 +418,29 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.18 - Reconstructed Trace Residual Taxonomy And Acceptance Gate
 
-- Classify remaining large-delta columns by source: true vertical peak top,
-  branch/edge ambiguity, baseline gap, frame/text artifact, crop boundary, or
-  signal-guide mismatch.
-- Add per-class audit counts and overlay colors before any reconstructed trace can
-  become a calculation candidate.
-- Keep calculation input unchanged until residual classes prove that the candidate
-  improves scientific peak geometry rather than only matching a previous heuristic.
+- Done: classify every fragment-reconstruction large-delta column into a mutually
+  exclusive residual class: peak-top candidate, branch/edge ambiguity, baseline gap,
+  frame/text artifact, crop boundary, signal-guide mismatch, or unclassified.
+- Done: add an explicit residual acceptance gate and expose per-class counts in
+  JSON, Markdown, and report evidence.
+- Done: color residual classes in `centerline_fragment_reconstruction_overlay.png`
+  so the audit is visually reviewable, not only numeric.
+- Result: clean, two-graph, and rotated CLI runs confirm that residual counts equal
+  large-delta counts. Hard fixtures remain blocked: `bench_06` is dominated by
+  branch/edge ambiguity with crop-boundary blockers, and `bench_07` still has a
+  frame/text artifact blocker.
+- Done: keep `fragmentReconstructionSelectedForSignal=false`; residual taxonomy is
+  evidence for the next correction slice, not an acceptance to use reconstructed
+  traces for calculation.
+
+### Phase 8.3c.5c.19 - Branch-Edge Residual Reduction Review
+
+- Use the residual taxonomy to isolate branch/edge ambiguity columns before tuning
+  any peak or baseline logic.
+- Compare whether branch-edge residuals come from vertical peak strokes, edge
+  skeleton branches, duplicated line components, or legacy top-envelope mismatch.
+- Do not change peak detection or report calculations until branch-edge residuals
+  are reduced and verified on clean, two-graph, and rotated fixtures.
 
 ## Bottom Line
 
@@ -455,5 +471,8 @@ full or semi-full chromatogram image.
 - PaddleOCR on-device deployment: https://www.paddleocr.ai/main/en/version3.x/deployment/on_device_deployment.html
 - WebPlotDigitizer GitHub: https://github.com/automeris-io/WebPlotDigitizer
 - WebPlotDigitizer digitizing and automatic extraction docs: https://automeris.io/docs/digitize/
+- PlotDigitizer automatic extraction and skeleton/curve algorithms: https://plotdigitizer.com/docs
+- hplc-py peak-detection methodology: https://cremerlab.github.io/hplc-py/methodology/peak_detection.html
+- SciPy `find_peaks` reference: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
 - BoofCV main page: https://boofcv.org/
 - BoofCV Android support: https://boofcv.org/index.php?title=Android_support
