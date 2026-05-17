@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.13 - branch-pruned centerline hypothesis`.
-- Next work slice: `Phase 8.3c.5c.14 - branch-pruned continuity and visual acceptance tuning`.
+- Latest completed work slice: `Phase 8.3c.5c.14 - branch-pruned continuity and visual acceptance tuning`.
+- Next work slice: `Phase 8.3c.5c.15 - skeleton graph trunk-path centerline candidate`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -112,7 +112,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.10 | Done | `8036cd7` | Compare skeleton centerline candidates against the preserved calculation signal; record selection decision, matched-column ratio, median/P95/max pixel deltas, and warnings in JSON/Markdown audits; keep `selectedForSignal=false` because real fixture parity still needs visual acceptance. |
 | Phase 8.3c.5c.11 | Done | `7e23f7e` | Add per-graph centerline parity overlay artifacts on desktop and Android, expose large-delta threshold/count/ratio in the audit and report evidence contract, and verify overlays on clean, stacked, TIC-plus-ion, photographed two-graph, and rotated fixtures without switching calculation input. |
 | Phase 8.3c.5c.12 | Done | `3221c9e` | Classify centerline parity failures by branch-near columns and signed peak-edge/top-edge direction, color-code those classes in parity overlays, expose counts/ratios in JSON/Markdown audits, and verify that calculation input still remains unchanged. |
-| Phase 8.3c.5c.13 | Done | `this commit` | Add an audit-only branch-pruned centerline hypothesis, generate per-graph branch-pruned overlays, expose pruned parity/improvement metrics in JSON/Markdown/report evidence, and verify on clean, stacked, TIC-plus-ion, photographed two-graph, and rotated fixtures without switching the calculation signal. |
+| Phase 8.3c.5c.13 | Done | `e8bff9f` | Add an audit-only branch-pruned centerline hypothesis, generate per-graph branch-pruned overlays, expose pruned parity/improvement metrics in JSON/Markdown/report evidence, and verify on clean, stacked, TIC-plus-ion, photographed two-graph, and rotated fixtures without switching the calculation signal. |
+| Phase 8.3c.5c.14 | Done | `this commit` | Add continuity-interpolated branch-pruned candidates behind metric-safe selection, expose interpolated-column counts in audits/reports, verify real fixture overlays, and keep the candidate audit-only because hard photographed/rotated graphs still fail overlap acceptance. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final

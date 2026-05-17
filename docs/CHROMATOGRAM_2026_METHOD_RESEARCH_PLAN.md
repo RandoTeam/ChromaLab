@@ -727,6 +727,10 @@ peak-edge/top-edge handling must be audit-first before centerline can drive sign
 conversion. Phase 8.3c.5c.13 added an audit-only branch-pruned centerline
 hypothesis and overlay evidence; it reduces many large-delta failures but currently
 loses too much overlap on hard photographed/rotated fixtures to drive calculations.
+Phase 8.3c.5c.14 added continuity-interpolated pruning behind metric-safe
+selection; it is accepted only where it preserves P95/large-delta quality, so hard
+photo cases still require graph-path trunk extraction rather than broader
+interpolation.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -746,12 +750,13 @@ input fixture
   -> branch/peak-edge correction review
   -> branch-pruned centerline hypothesis
   -> branch-pruned continuity and visual acceptance tuning
+  -> skeleton graph trunk-path centerline candidate
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with branch-aware centerline correction, continuity-safe pruning, and
-distortion-aware signal conversion.
+fill with branch-aware centerline correction, continuity-safe pruning, skeleton
+graph trunk-path extraction, and distortion-aware signal conversion.
 Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
 loading blocks the OpenCV path.
 
@@ -771,6 +776,8 @@ loading blocks the OpenCV path.
   https://porespy.org/autoapi/porespy/filters/prune_branches.html
 - PlantCV morphology pruning and branch-point diagnostics:
   https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
+- Skan skeleton graph representation and branch statistics:
+  https://skeleton-analysis.org/stable/api/skan.csr.html
 - Plot2Spectra automatic spectra extraction:
   https://arxiv.org/abs/2107.02827
 - MatGD graph digitizer architecture:

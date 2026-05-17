@@ -358,12 +358,25 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance Tuning
 
-- Tune branch pruning around continuity, peak-top preservation, and minimum overlap
+- Done: tune branch pruning around continuity, peak-top preservation, and minimum overlap
   instead of removing every branch-near column uniformly.
-- Compare tuned candidates against current preserved signal and branch-pruned
-  overlays on the best and worst fixtures.
+- Done: compare tuned candidates against current preserved signal and branch-pruned
+  overlays on clean, stacked, TIC-plus-ion, photographed two-graph, and rotated
+  fixtures.
+- Done: add a metric-safe selector so continuity interpolation is used only when it
+  improves overlap or deltas without worsening P95/large-delta acceptance.
+- Result: continuity interpolation is accepted only on narrow stacked weak panels;
+  hard photographed and rotated examples still need a graph-path trunk extractor.
 - Keep the tuned centerline audit-only until it passes visual evidence review and
   numeric acceptance thresholds.
+
+### Phase 8.3c.5c.15 - Skeleton Graph Trunk-Path Centerline Candidate
+
+- Build the skeleton as a graph of nodes/edges instead of one column at a time.
+- Prefer a continuous trunk path through the chromatogram trace, then treat short
+  branches as removable spur evidence.
+- Compare the graph-path candidate against preserved signal and branch-pruned
+  overlays before any calculation-signal switch.
 
 ## Bottom Line
 
@@ -388,6 +401,7 @@ full or semi-full chromatogram image.
 - OpenCV Java `Imgproc` connected components, morphology, adaptive threshold, contours: https://docs.opencv.org/master/javadoc/org/opencv/imgproc/Imgproc.html
 - PoreSpy skeleton branch pruning: https://porespy.org/autoapi/porespy/filters/prune_branches.html
 - PlantCV morphology pruning and branch-point diagnostics: https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
+- Skan skeleton graph representation and branch statistics: https://skeleton-analysis.org/stable/api/skan.csr.html
 - ML Kit Text Recognition on Android: https://developers.google.com/ml-kit/vision/text-recognition/v2/android
 - PaddleOCR on-device deployment: https://www.paddleocr.ai/main/en/version3.x/deployment/on_device_deployment.html
 - WebPlotDigitizer GitHub: https://github.com/automeris-io/WebPlotDigitizer

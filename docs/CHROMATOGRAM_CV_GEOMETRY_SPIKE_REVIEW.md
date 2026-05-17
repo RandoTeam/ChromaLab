@@ -287,7 +287,19 @@ Accepted result:
 - Real fixture artifacts show useful large-delta reduction but insufficient overlap
   on hard photographed/rotated graphs, so the candidate must not drive calculation.
 
-Next slice: `Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance Tuning`.
+Completed next slice: `Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance Tuning`.
+
+Accepted result:
+
+- Branch-pruned candidates now include a continuity-interpolated option, but it is
+  selected only when metric gates preserve P95 and large-delta quality.
+- The audit records interpolated-column counts beside removed-column counts.
+- Real fixture artifacts show continuity interpolation is useful on narrow stacked
+  weak panels, but hard photographed and rotated examples still reject it and stay
+  on drop-only pruning.
+- Calculation input remains unchanged.
+
+Next slice: `Phase 8.3c.5c.15 - Skeleton Graph Trunk-Path Centerline Candidate`.
 
 ## Source Links
 
@@ -299,6 +311,7 @@ Next slice: `Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance T
 - OpenCV ximgproc thinning: https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
 - PoreSpy skeleton branch pruning: https://porespy.org/autoapi/porespy/filters/prune_branches.html
 - PlantCV morphology pruning and branch-point diagnostics: https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
+- Skan skeleton graph representation and branch statistics: https://skeleton-analysis.org/stable/api/skan.csr.html
 - scikit-image morphology skeletonize/medial axis: https://scikit-image.org/docs/stable/api/skimage.morphology.html
 - OpenPnP OpenCV Java packaging: https://github.com/openpnp/opencv
 - BoofCV line detection example: https://boofcv.org/index.php?title=Example_Detect_Lines

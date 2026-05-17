@@ -87,6 +87,7 @@ data class CurveCenterlineAudit(
     val branchPrunedSelectedForSignal: Boolean = false,
     val branchPrunedOverlayGenerated: Boolean = false,
     val branchPrunedRemovedColumnCount: Int = 0,
+    val branchPrunedInterpolatedColumnCount: Int = 0,
     val branchPrunedMatchedColumnCount: Int = 0,
     val branchPrunedMatchedColumnRatio: Float = 0f,
     val branchPrunedMedianAbsDeltaPx: Float = 0f,

@@ -433,6 +433,16 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} graph ${graph.graphIndex} branch-pruned removal must not exceed centerline columns",
                 )
                 assertTrue(
+                    graph.curveCenterline.branchPrunedInterpolatedColumnCount <= graph.curveCenterline.centerlineColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned interpolation must not exceed centerline columns",
+                )
+                assertTrue(
+                    graph.curveCenterline.branchPrunedMethod.startsWith("continuity_interpolated_branch_neighborhood") ||
+                        graph.curveCenterline.branchPrunedMethod == "drop_branch_neighborhood_columns_radius_2" ||
+                        graph.curveCenterline.branchPrunedMethod == "branch_pruned_continuity_no_branch_columns",
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned method must be an audited safe candidate",
+                )
+                assertTrue(
                     !graph.curveCenterline.branchPrunedSelectedForSignal,
                     "${fixture.id} graph ${graph.graphIndex} branch-pruned hypothesis must stay audit-only",
                 )

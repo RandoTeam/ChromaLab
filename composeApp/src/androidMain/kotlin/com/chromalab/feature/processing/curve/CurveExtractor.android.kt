@@ -82,7 +82,11 @@ actual class CurveExtractor actual constructor() {
         val outlierCount = removeOutliers(rawPoints, windowSize = 15, threshold = 3.0f)
         val allPoints = interpolateGaps(rawPoints, gapColumns, w)
         val interpolatedCount = allPoints.count { it.confidence == CurvePoint.INTERPOLATED }
-        val branchPrunedCenterlineByX = centerlineCandidateByX.withoutBranchColumns(branchCandidateColumns)
+        val branchPrunedCenterline = selectBranchPrunedCenterline(
+            centerlineCandidateByX = centerlineCandidateByX,
+            branchCandidateColumns = branchCandidateColumns,
+            signalPoints = rawPoints,
+        )
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = w,
@@ -93,7 +97,7 @@ actual class CurveExtractor actual constructor() {
             branchColumnCount = branchColumnCount,
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
-            branchPrunedCenterlineByX = branchPrunedCenterlineByX,
+            branchPrunedCenterline = branchPrunedCenterline,
             branchCandidateColumns = branchCandidateColumns,
         )
 
@@ -119,7 +123,7 @@ actual class CurveExtractor actual constructor() {
             skeletonMask = skeletonMask,
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
-            branchPrunedCenterlineByX = branchPrunedCenterlineByX,
+            branchPrunedCenterlineByX = branchPrunedCenterline.pointsByX,
             branchCandidateColumns = branchCandidateColumns,
             w = w,
             h = h,
@@ -244,7 +248,7 @@ actual class CurveExtractor actual constructor() {
         branchColumnCount: Int,
         signalPoints: List<CurvePoint>,
         centerlineCandidateByX: Map<Int, Float>,
-        branchPrunedCenterlineByX: Map<Int, Float>,
+        branchPrunedCenterline: BranchPrunedCenterline,
         branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
@@ -264,7 +268,7 @@ actual class CurveExtractor actual constructor() {
         val centerlineCoverage = if (totalColumns > 0) centerlineColumns.toFloat() / totalColumns else 0f
         val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
         val parity = signalPoints.centerlineParity(centerlineCandidateByX, branchCandidateColumns)
-        val branchPrunedParity = signalPoints.centerlineParity(branchPrunedCenterlineByX, branchCandidateColumns)
+        val branchPrunedParity = signalPoints.centerlineParity(branchPrunedCenterline.pointsByX, branchCandidateColumns)
         val branchPrunedDecision = branchPrunedDecision(
             original = parity,
             pruned = branchPrunedParity,
@@ -317,10 +321,11 @@ actual class CurveExtractor actual constructor() {
             largeDeltaSignalBelowCenterlineColumnCount = parity.largeDeltaSignalBelowCenterlineColumnCount,
             largeDeltaSignalBelowCenterlineColumnRatio = parity.largeDeltaSignalBelowCenterlineColumnRatio,
             branchPrunedAvailable = branchPrunedParity.compared,
-            branchPrunedMethod = "drop_branch_neighborhood_columns_radius_2",
+            branchPrunedMethod = branchPrunedCenterline.method,
             branchPrunedDecision = branchPrunedDecision,
             branchPrunedSelectedForSignal = false,
-            branchPrunedRemovedColumnCount = centerlineCandidateByX.size - branchPrunedCenterlineByX.size,
+            branchPrunedRemovedColumnCount = branchPrunedCenterline.removedColumnCount,
+            branchPrunedInterpolatedColumnCount = branchPrunedCenterline.interpolatedColumnCount,
             branchPrunedMatchedColumnCount = branchPrunedParity.matchedColumnCount,
             branchPrunedMatchedColumnRatio = branchPrunedParity.matchedColumnRatio,
             branchPrunedMedianAbsDeltaPx = branchPrunedParity.medianAbsDeltaPx,
@@ -386,8 +391,105 @@ actual class CurveExtractor actual constructor() {
     private fun Set<Int>.hasNear(value: Int, radius: Int): Boolean =
         (value - radius..value + radius).any { it in this }
 
-    private fun Map<Int, Float>.withoutBranchColumns(branchCandidateColumns: Set<Int>): Map<Int, Float> =
-        filterKeys { x -> !branchCandidateColumns.hasNear(x, radius = 2) }
+    private fun selectBranchPrunedCenterline(
+        centerlineCandidateByX: Map<Int, Float>,
+        branchCandidateColumns: Set<Int>,
+        signalPoints: List<CurvePoint>,
+    ): BranchPrunedCenterline {
+        val dropped = centerlineCandidateByX.branchDroppedCandidate(branchCandidateColumns)
+        val continuity = centerlineCandidateByX.branchPrunedContinuityCandidate(branchCandidateColumns)
+        val droppedParity = signalPoints.centerlineParity(dropped.pointsByX, branchCandidateColumns)
+        val continuityParity = signalPoints.centerlineParity(continuity.pointsByX, branchCandidateColumns)
+        return if (continuityParity.isMetricSafeComparedTo(droppedParity)) continuity else dropped
+    }
+
+    private fun Map<Int, Float>.branchDroppedCandidate(
+        branchCandidateColumns: Set<Int>,
+    ): BranchPrunedCenterline {
+        if (isEmpty()) return BranchPrunedCenterline(pointsByX = emptyMap())
+        val branchNearColumns = keys
+            .filter { x -> branchCandidateColumns.hasNear(x, radius = CENTERLINE_BRANCH_NEAR_RADIUS) }
+            .toSet()
+        return BranchPrunedCenterline(
+            pointsByX = filterKeys { it !in branchNearColumns }.toSortedMap(),
+            method = "drop_branch_neighborhood_columns_radius_2",
+            removedColumnCount = branchNearColumns.size,
+        )
+    }
+
+    private fun Map<Int, Float>.branchPrunedContinuityCandidate(
+        branchCandidateColumns: Set<Int>,
+    ): BranchPrunedCenterline {
+        if (isEmpty()) return BranchPrunedCenterline(pointsByX = emptyMap())
+        val sortedKeys = keys.sorted()
+        val branchNearColumns = sortedKeys
+            .filter { x -> branchCandidateColumns.hasNear(x, radius = CENTERLINE_BRANCH_NEAR_RADIUS) }
+            .toSet()
+        if (branchNearColumns.isEmpty()) {
+            return BranchPrunedCenterline(
+                pointsByX = toSortedMap(),
+                method = "branch_pruned_continuity_no_branch_columns",
+            )
+        }
+
+        val stableKeys = sortedKeys.filter { it !in branchNearColumns }
+        if (stableKeys.size < 2) {
+            return BranchPrunedCenterline(
+                pointsByX = filterKeys { it !in branchNearColumns }.toSortedMap(),
+                method = BRANCH_PRUNED_CONTINUITY_METHOD,
+                removedColumnCount = branchNearColumns.size,
+            )
+        }
+
+        val stableSet = stableKeys.toSet()
+        val result = mutableMapOf<Int, Float>()
+        var interpolatedColumnCount = 0
+        var removedColumnCount = 0
+        sortedKeys.forEach { x ->
+            val originalY = this[x] ?: return@forEach
+            if (x !in branchNearColumns) {
+                result[x] = originalY
+                return@forEach
+            }
+
+            val left = stableKeys.lastOrNull { it < x }
+            val right = stableKeys.firstOrNull { it > x }
+            val gap = if (left != null && right != null) right - left else Int.MAX_VALUE
+            if (
+                left != null &&
+                right != null &&
+                left in stableSet &&
+                right in stableSet &&
+                gap <= CENTERLINE_BRANCH_INTERPOLATION_MAX_GAP
+            ) {
+                val leftY = this[left] ?: originalY
+                val rightY = this[right] ?: originalY
+                val ratio = (x - left).toFloat() / gap.toFloat()
+                result[x] = leftY + (rightY - leftY) * ratio
+                interpolatedColumnCount++
+            } else {
+                removedColumnCount++
+            }
+        }
+
+        return BranchPrunedCenterline(
+            pointsByX = result.toSortedMap(),
+            method = BRANCH_PRUNED_CONTINUITY_METHOD,
+            removedColumnCount = removedColumnCount,
+            interpolatedColumnCount = interpolatedColumnCount,
+        )
+    }
+
+    private fun CenterlineParity.isMetricSafeComparedTo(previous: CenterlineParity): Boolean {
+        if (!compared) return false
+        if (!previous.compared) return true
+        val overlapImproved = matchedColumnRatio >= previous.matchedColumnRatio + 0.05f
+        val p95Improved = p95AbsDeltaPx + 1f < previous.p95AbsDeltaPx
+        val largeDeltaReduced = largeDeltaColumnCount + 5 < previous.largeDeltaColumnCount
+        val p95Preserved = p95AbsDeltaPx <= previous.p95AbsDeltaPx + 1f
+        val largeDeltaPreserved = largeDeltaColumnCount <= previous.largeDeltaColumnCount + 5
+        return (overlapImproved || p95Improved || largeDeltaReduced) && p95Preserved && largeDeltaPreserved
+    }
 
     private fun branchPrunedDecision(
         original: CenterlineParity,
@@ -676,6 +778,13 @@ actual class CurveExtractor actual constructor() {
     )
 }
 
+private data class BranchPrunedCenterline(
+    val pointsByX: Map<Int, Float>,
+    val method: String = "not_available",
+    val removedColumnCount: Int = 0,
+    val interpolatedColumnCount: Int = 0,
+)
+
 private data class CenterlineParity(
     val compared: Boolean = false,
     val matchedColumnCount: Int = 0,
@@ -701,3 +810,7 @@ private data class CenterlineDelta(
 )
 
 private const val CENTERLINE_LARGE_DELTA_THRESHOLD_PX = 6f
+private const val CENTERLINE_BRANCH_NEAR_RADIUS = 2
+private const val CENTERLINE_BRANCH_INTERPOLATION_MAX_GAP = 18
+private const val BRANCH_PRUNED_CONTINUITY_METHOD =
+    "continuity_interpolated_branch_neighborhood_radius_2_max_gap_18"
