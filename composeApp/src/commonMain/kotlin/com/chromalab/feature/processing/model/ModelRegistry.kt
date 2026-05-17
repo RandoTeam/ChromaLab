@@ -63,13 +63,15 @@ data class ModelGroup(
 /**
  * Registry of all known built-in models.
  *
- * URLs verified against HuggingFace API on 2026-05-13.
+ * URLs verified against HuggingFace API/range probes on 2026-05-18.
  *
  * Available models:
- *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (12.9 GB),
+ *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (3.66 GB),
  *               FastVLM 0.5B (1.08 GB), Qwen3.5 0.8B VLM (1.08 GB)
  *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
  *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M),
+ *               Qwen3.5 MTP 4B/9B chat (Q4_K_M, UD-Q4_K_XL),
+ *               GPT-OSS 20B chat test (Q4_K_M),
  *               PaddleOCR-VL-1.5 (Q8_0, BF16),
  *               dots.mocr (Q5_K_M, Q8_0, BF16),
  *               DeepSeek-OCR (Q8_0),
@@ -136,15 +138,15 @@ object ModelRegistry {
         files = listOf(
             ModelFile(
                 fileName = "gemma-4-E4B-it.litertlm",
-                sizeBytes = 13_887_717_376L,
+                sizeBytes = 3_659_530_240L,
                 type = ModelFileType.LITERT_BUNDLE,
                 downloadUrl = "$HF_BASE/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
             ),
         ),
-        minRamMb = 12288,
+        minRamMb = 8192,
         isBuiltin = true,
         supportsVision = true,
-        description = "Высокая точность с NPU/GPU. 12+ GB RAM. ~12.9 GB.",
+        description = "High-accuracy LiteRT-LM VLM. NPU/GPU capable. ~3.66 GB download; 8+ GB RAM recommended.",
     )
 
     private val fastVlm05B = ModelInfo(
@@ -306,6 +308,89 @@ object ModelRegistry {
         isBuiltin = true,
         supportsVision = true,
         description = "Максимальное качество. Только для устройств с 12+ GB RAM.",
+        quantLabel = "Q4_K_M",
+    )
+
+    // ===== Qwen3.5 MTP chat models (Unsloth GGUF) =====
+    // Source: unsloth/Qwen3.5-4B-MTP-GGUF and unsloth/Qwen3.5-9B-MTP-GGUF.
+    // These upstream packages include vision files, but ChromaLab exposes them as
+    // text-only chat models because in-app MTP is a GGUF text generation option.
+
+    private fun qwen35MtpVariant(
+        sizeLabel: String,
+        quant: String,
+        sizeBytes: Long,
+        minRam: Int,
+        desc: String,
+    ) = ModelInfo(
+        id = "qwen35-mtp-${sizeLabel.lowercase()}-${quant.lowercase().replace("_", "")}",
+        displayName = "$sizeLabel MTP · $quant",
+        family = "qwen3.5-mtp",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "Qwen3.5-MTP-$sizeLabel-$quant.gguf",
+                sizeBytes = sizeBytes,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$UNSLOTH/Qwen3.5-$sizeLabel-MTP-GGUF/resolve/main/Qwen3.5-$sizeLabel-$quant.gguf",
+            ),
+        ),
+        minRamMb = minRam,
+        isBuiltin = true,
+        supportsVision = false,
+        description = desc,
+        groupId = "qwen35-mtp-${sizeLabel.lowercase()}",
+        quantLabel = quant,
+    )
+
+    private val qwen35Mtp4B_Q4_K_M = qwen35MtpVariant(
+        sizeLabel = "4B",
+        quant = "Q4_K_M",
+        sizeBytes = 2_834_975_040L,
+        minRam = 6144,
+        desc = "Unsloth Qwen3.5 MTP chat model. Standard Q4_K_M quant; text-only in ChromaLab.",
+    )
+    private val qwen35Mtp4B_UD_Q4_K_XL = qwen35MtpVariant(
+        sizeLabel = "4B",
+        quant = "UD-Q4_K_XL",
+        sizeBytes = 2_990_664_000L,
+        minRam = 6144,
+        desc = "Unsloth Dynamic Q4_K_XL quant recommended by the model card; text-only MTP chat.",
+    )
+    private val qwen35Mtp9B_Q4_K_M = qwen35MtpVariant(
+        sizeLabel = "9B",
+        quant = "Q4_K_M",
+        sizeBytes = 5_868_826_976L,
+        minRam = 12288,
+        desc = "Higher-quality Unsloth Qwen3.5 MTP chat model. Standard Q4_K_M quant; high-end only.",
+    )
+    private val qwen35Mtp9B_UD_Q4_K_XL = qwen35MtpVariant(
+        sizeLabel = "9B",
+        quant = "UD-Q4_K_XL",
+        sizeBytes = 6_135_034_208L,
+        minRam = 12288,
+        desc = "Unsloth Dynamic Q4_K_XL quant for Qwen3.5 9B MTP; high-end text-only chat test.",
+    )
+
+    // ===== GPT-OSS 20B (Unsloth GGUF, chat test) =====
+
+    private val gptOss20B_Q4_K_M = ModelInfo(
+        id = "gpt-oss-20b-q4km",
+        displayName = "GPT-OSS 20B · Q4_K_M",
+        family = "gpt-oss",
+        runtime = ModelRuntime.LLAMA_CPP,
+        files = listOf(
+            ModelFile(
+                fileName = "gpt-oss-20b-Q4_K_M.gguf",
+                sizeBytes = 11_624_759_488L,
+                type = ModelFileType.GGUF_BASE,
+                downloadUrl = "$UNSLOTH/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q4_K_M.gguf",
+            ),
+        ),
+        minRamMb = 16384,
+        isBuiltin = true,
+        supportsVision = false,
+        description = "Experimental Unsloth GPT-OSS 20B GGUF chat model. Requires the model-native chat template; 16+ GB RAM recommended.",
         quantLabel = "Q4_K_M",
     )
 
@@ -519,6 +604,10 @@ object ModelRegistry {
         qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0,
         // Qwen3.5-VL 9B
         qwen35vl9b,
+        // Qwen3.5 MTP chat variants
+        qwen35Mtp4B_Q4_K_M, qwen35Mtp4B_UD_Q4_K_XL, qwen35Mtp9B_Q4_K_M, qwen35Mtp9B_UD_Q4_K_XL,
+        // GPT-OSS chat test
+        gptOss20B_Q4_K_M,
     )
 
     /** Model groups for expandable UI. */
@@ -549,6 +638,24 @@ object ModelRegistry {
             description = "Высокое качество. 8+ GB RAM. 6 квантов.",
             supportsVision = true,
             variants = listOf(qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0),
+        ),
+        ModelGroup(
+            groupId = "qwen35-mtp-4b",
+            displayName = "Qwen3.5 MTP 4B",
+            family = "qwen3.5-mtp",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "Unsloth GGUF MTP chat model. Text-only in ChromaLab.",
+            supportsVision = false,
+            variants = listOf(qwen35Mtp4B_Q4_K_M, qwen35Mtp4B_UD_Q4_K_XL),
+        ),
+        ModelGroup(
+            groupId = "qwen35-mtp-9b",
+            displayName = "Qwen3.5 MTP 9B",
+            family = "qwen3.5-mtp",
+            runtime = ModelRuntime.LLAMA_CPP,
+            description = "Higher-quality Unsloth GGUF MTP chat model for high-end devices.",
+            supportsVision = false,
+            variants = listOf(qwen35Mtp9B_Q4_K_M, qwen35Mtp9B_UD_Q4_K_XL),
         ),
         ModelGroup(
             groupId = "paddleocr-vl",

@@ -1,6 +1,6 @@
 # GGUF Model Capability Audit
 
-Date: 2026-05-13
+Date: 2026-05-18
 
 This document records the current GGUF model capabilities before the next runtime fixes.
 The goal is to avoid treating every `.gguf + mmproj` package as the same product feature.
@@ -44,6 +44,8 @@ Update after external parity check:
 |---|---:|---|---|---|---|---|---|
 | `qwen3-vl` | 2B/4B/8B, Q2-Q8 | Yes | Yes | General capability, not OCR-specialist | General capability | Yes, after runtime validation | Officially a multimodal VLM series with strong text capability. Requires family-correct chat formatting and validated `mmproj` runtime. |
 | `qwen3.5-vl` | 9B Q4_K_M | Yes | Yes | General capability, not OCR-specialist | General capability | Yes, but too heavy for weak/mobile baseline | Model card expects roughly 7-8 GB RAM for full VLM inference. Treat as high-end only. |
+| `qwen3.5-mtp` | 4B/9B Q4_K_M, UD-Q4_K_XL | Yes | Upstream package has mmproj, but disabled in ChromaLab entry | No | No | No | Added as text-only chat/MTP candidates. Do not route into strict chromatogram vision until GGUF MTP + mmproj is validated in-app. |
+| `gpt-oss` | 20B Q4_K_M | Yes | No | No | No | No | Experimental Unsloth chat test. Requires model-native chat template and high-memory devices. |
 | `smolvlm2` | 2.2B Q4_K_M/Q8_0 | Yes | Yes | Moderate OCR | Some chart/image understanding | Candidate, after prompt-template fix and validation | Current app config marks it `RAW`, but the model card exposes a specific chat template. This is a likely cause of bad/empty GGUF chat behavior. |
 | `moondream` | 2B F16 | Limited/general completion; primarily visual query | Yes | OCR/document text transcription supported | Chart understanding improved in newer releases | Candidate for auxiliary VQA, not yet primary | Current F16 package is large. Use as a focused VLM test target only after text and image sanity checks. |
 | `paddleocr-vl` | 0.9B Q8_0/BF16 | No normal assistant chat | Yes, task-triggered | Yes | Chart recognition trigger | No, auxiliary only | Prompt is task-trigger based, e.g. OCR/chart recognition. It should not appear in normal chat. |
@@ -90,6 +92,8 @@ Initial assignments:
 | `gemma-4` | `TEXT_CHAT`, `IMAGE_VQA`, `CHROMATOGRAM_STRICT` after LiteRT reference validation |
 | `qwen3-vl` | `TEXT_CHAT`, `IMAGE_VQA`; `CHROMATOGRAM_STRICT` only after GGUF runtime validation |
 | `qwen3.5-vl` | `TEXT_CHAT`, `IMAGE_VQA`; high-end only |
+| `qwen3.5-mtp` | `TEXT_CHAT`; MTP text-only test until mmproj/MTP validation is complete |
+| `gpt-oss` | `TEXT_CHAT`; experimental high-memory chat test |
 | `smolvlm2` | `TEXT_CHAT`, `IMAGE_VQA`; chromatogram candidate after prompt/runtime tests |
 | `moondream` | `IMAGE_VQA`, possible `TEXT_CHAT`; auxiliary until validated |
 | `paddleocr-vl` | `DOCUMENT_OCR`, `CHART_STRUCTURE`, `AUXILIARY_ONLY` |
@@ -129,6 +133,9 @@ Run the same staged matrix for each downloaded GGUF family before changing the p
 - Qwen3-VL Hugging Face documentation: https://huggingface.co/docs/transformers/model_doc/qwen3_vl
 - Unsloth Qwen3-VL GGUF model card: https://huggingface.co/unsloth/Qwen3-VL-2B-Instruct-GGUF
 - Qwen3.5 9B VLM GGUF model card: https://huggingface.co/jc-builds/Qwen3.5-9B-VLM-Q4_K_M-GGUF
+- Unsloth Qwen3.5 4B MTP GGUF model card: https://huggingface.co/unsloth/Qwen3.5-4B-MTP-GGUF
+- Unsloth Qwen3.5 9B MTP GGUF model card: https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF
+- Unsloth GPT-OSS 20B GGUF model card: https://huggingface.co/unsloth/gpt-oss-20b-GGUF
 - PaddleOCR-VL 1.5 GGUF model card: https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.5-GGUF
 - DeepSeek-OCR model card: https://huggingface.co/deepseek-ai/DeepSeek-OCR
 - SmolVLM2 model card and chat template: https://huggingface.co/HuggingFaceTB/SmolVLM2-2.2B-Instruct

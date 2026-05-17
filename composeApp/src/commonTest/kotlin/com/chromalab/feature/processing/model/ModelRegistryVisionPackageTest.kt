@@ -96,6 +96,62 @@ class ModelRegistryVisionPackageTest {
         assertEquals(1_159_757_824L, model.files.single().sizeBytes)
     }
 
+    @Test
+    fun gemma4E4BUsesCurrentLiteRtBundleSize() {
+        val model = assertNotNull(ModelRegistry.findById("gemma4-e4b"))
+
+        assertEquals(ModelRuntime.LITERT_LM, model.runtime)
+        assertEquals("gemma-4-E4B-it.litertlm", model.files.single().fileName)
+        assertEquals(
+            "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm",
+            model.files.single().downloadUrl,
+        )
+        assertEquals(3_659_530_240L, model.files.single().sizeBytes)
+    }
+
+    @Test
+    fun qwen35MtpModelsAreTextOnlyChatEntries() {
+        val fourB = assertNotNull(ModelRegistry.findById("qwen35-mtp-4b-q4km"))
+        val nineB = assertNotNull(ModelRegistry.findById("qwen35-mtp-9b-ud-q4kxl"))
+
+        listOf(fourB, nineB).forEach { model ->
+            assertEquals(ModelRuntime.LLAMA_CPP, model.runtime)
+            assertTrue(ModelRegistry.isChatModel(model))
+            assertFalse(model.supportsVision)
+            assertFalse(ModelRegistry.isChromatogramVisionModel(model))
+            assertEquals(1, model.files.size)
+            assertEquals(ModelFileType.GGUF_BASE, model.files.single().type)
+        }
+
+        assertEquals(
+            "https://huggingface.co/unsloth/Qwen3.5-4B-MTP-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",
+            fourB.files.single().downloadUrl,
+        )
+        assertEquals(2_834_975_040L, fourB.files.single().sizeBytes)
+
+        assertEquals(
+            "https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF/resolve/main/Qwen3.5-9B-UD-Q4_K_XL.gguf",
+            nineB.files.single().downloadUrl,
+        )
+        assertEquals(6_135_034_208L, nineB.files.single().sizeBytes)
+    }
+
+    @Test
+    fun gptOss20BIsTextOnlyChatTestModel() {
+        val model = assertNotNull(ModelRegistry.findById("gpt-oss-20b-q4km"))
+
+        assertEquals(ModelRuntime.LLAMA_CPP, model.runtime)
+        assertTrue(ModelRegistry.isChatModel(model))
+        assertFalse(model.supportsVision)
+        assertFalse(ModelRegistry.isChromatogramVisionModel(model))
+        assertEquals("gpt-oss-20b-Q4_K_M.gguf", model.files.single().fileName)
+        assertEquals(
+            "https://huggingface.co/unsloth/gpt-oss-20b-GGUF/resolve/main/gpt-oss-20b-Q4_K_M.gguf",
+            model.files.single().downloadUrl,
+        )
+        assertEquals(11_624_759_488L, model.files.single().sizeBytes)
+    }
+
     private fun ggufModel(
         files: List<ModelFile>,
         family: String = "custom",
