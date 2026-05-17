@@ -65,6 +65,7 @@ class LlamaEngine : InferenceEngine {
             backendCode: Int,
             contextSize: Int,
             batchSize: Int,
+            mtpDraftTokens: Int,
         ): Long
         @JvmStatic private external fun nativeUnloadModel(handle: Long)
         @JvmStatic private external fun nativeGetLoadedBackendName(handle: Long): String
@@ -130,6 +131,7 @@ class LlamaEngine : InferenceEngine {
         contextSize: Int? = null,
         batchSize: Int? = null,
         preferAccelerated: Boolean = false,
+        mtpDraftTokens: Int = 0,
     ) = withContext(Dispatchers.IO) {
         nativeLock.withLock {
             if (!nativeLoaded) {
@@ -149,9 +151,17 @@ class LlamaEngine : InferenceEngine {
             val batch = batchSize ?: config.batchSize
             val requestedBackendCode = if (preferAccelerated) 1 else 0
             log("Loading model base=$basePath mmproj=$mmprojPath threads=$threads backendCode=$requestedBackendCode")
-            log("Config maxTokens=${config.maxTokens} repeatPenalty=${config.repeatPenalty} repeatLastN=${config.repeatLastN} ctx=$ctx batch=$batch")
+            log("Config maxTokens=${config.maxTokens} repeatPenalty=${config.repeatPenalty} repeatLastN=${config.repeatLastN} ctx=$ctx batch=$batch mtpDraftTokens=$mtpDraftTokens")
 
-            modelHandle = nativeLoadModel(basePath, mmprojPath, threads, requestedBackendCode, ctx, batch)
+            modelHandle = nativeLoadModel(
+                basePath,
+                mmprojPath,
+                threads,
+                requestedBackendCode,
+                ctx,
+                batch,
+                mtpDraftTokens.coerceIn(0, 16),
+            )
             if (modelHandle == 0L) {
                 loaded = false
                 hasVisionProjector = false

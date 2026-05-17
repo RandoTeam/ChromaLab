@@ -4,8 +4,8 @@ project(llama_bridge LANGUAGES C CXX)
 # ============================================================
 # llama.cpp JNI Bridge for ChromaLab
 # ============================================================
-# Pinned to tag b9101 (2026-05-10).
-# Builds: ggml + llama (text) + mtmd library (vision/audio).
+# Pinned to llama.cpp master b9198+6 (2026-05-18).
+# Builds: ggml + llama + llama-common (text/MTP) + mtmd library (vision/audio).
 # Links statically into llama_bridge.so for Android arm64.
 # ============================================================
 
@@ -55,6 +55,19 @@ if (CMAKE_ANDROID_NDK)
         file(TO_CMAKE_PATH "${CHROMALAB_NDK_GLSLC}" CHROMALAB_NDK_GLSLC_CMAKE)
         set(Vulkan_GLSLC_EXECUTABLE "${CHROMALAB_NDK_GLSLC_CMAKE}" CACHE FILEPATH "" FORCE)
     endif()
+    set(CHROMALAB_NDK_SPIRV_HEADERS_INCLUDE
+        "${CMAKE_ANDROID_NDK}/sources/third_party/shaderc/third_party/spirv-tools/external/spirv-headers/include")
+    if (EXISTS "${CHROMALAB_NDK_SPIRV_HEADERS_INCLUDE}/spirv/unified1/spirv.hpp")
+        set(CHROMALAB_SPIRV_HEADERS_CONFIG_DIR
+            "${CMAKE_BINARY_DIR}/chromalab-spirv-headers-cmake")
+        file(MAKE_DIRECTORY "${CHROMALAB_SPIRV_HEADERS_CONFIG_DIR}")
+        file(WRITE "${CHROMALAB_SPIRV_HEADERS_CONFIG_DIR}/SPIRV-HeadersConfig.cmake"
+            "set(SPIRV-Headers_FOUND TRUE)\n"
+            "set(SPIRV_HEADERS_INCLUDE_DIR \"${CHROMALAB_NDK_SPIRV_HEADERS_INCLUDE}\")\n"
+        )
+        file(TO_CMAKE_PATH "${CHROMALAB_SPIRV_HEADERS_CONFIG_DIR}" CHROMALAB_SPIRV_HEADERS_CONFIG_DIR_CMAKE)
+        set(SPIRV-Headers_DIR "${CHROMALAB_SPIRV_HEADERS_CONFIG_DIR_CMAKE}" CACHE PATH "" FORCE)
+    endif()
 endif()
 
 find_program(CHROMALAB_HOST_C_COMPILER
@@ -95,7 +108,7 @@ configure_file(
     @ONLY
 )
 
-# Build flags — CPU-only for now, no OpenMP on Android
+# Build flags - ggml CPU plus Vulkan when the Android toolchain can provide it.
 set(GGML_OPENMP OFF CACHE BOOL "" FORCE)
 set(GGML_LLAMAFILE OFF CACHE BOOL "" FORCE)
 set(GGML_VULKAN ON CACHE BOOL "" FORCE)
@@ -107,13 +120,14 @@ set(GGML_METAL OFF CACHE BOOL "" FORCE)
 set(GGML_CUDA OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(LLAMA_BUILD_COMMON ON CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
 set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
 
 # Needed by mtmd's set_target_properties(VERSION ...)
-set(LLAMA_INSTALL_VERSION "0.0.9101" CACHE STRING "" FORCE)
+set(LLAMA_INSTALL_VERSION "0.0.9198" CACHE STRING "" FORCE)
 
 # Build llama.cpp core (ggml + llama)
 add_subdirectory(${LLAMA_CPP_DIR} llama.cpp EXCLUDE_FROM_ALL)
@@ -173,6 +187,7 @@ target_link_libraries(llama_bridge
     android
     log
     llama
+    llama-common
     ggml
     mtmd_lib
 )

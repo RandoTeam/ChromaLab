@@ -69,6 +69,8 @@ data class GenerationOptions(
     val topK: Int? = null,
     val repeatPenalty: Float? = null,
     val repeatLastN: Int? = null,
+    /** GGUF text-only MTP draft token budget. 0 disables MTP. */
+    val mtpDraftTokens: Int? = null,
 )
 
 /**

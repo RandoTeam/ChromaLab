@@ -1022,6 +1022,39 @@ private fun ChatSettingsSheet(
                 }
             }
             item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("MTP", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                        Text(
+                            "GGUF text-only draft acceleration",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = local.enableMtp,
+                        onCheckedChange = { local = local.copy(enableMtp = it) },
+                    )
+                }
+            }
+            if (local.enableMtp) {
+                item {
+                    SettingSlider(
+                        label = "MTP draft tokens",
+                        value = local.mtpDraftTokens.toFloat(),
+                        min = 1f,
+                        max = 16f,
+                        valueFormatter = { it.roundToInt().toString() },
+                    ) {
+                        local = local.copy(mtpDraftTokens = it.roundToInt())
+                    }
+                }
+            }
+            item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Отмена") }
                     Spacer(Modifier.width(Spacing.sm))

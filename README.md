@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/RandoTeam/ChromaLab/releases">
-    <img alt="Alpha" src="https://img.shields.io/badge/release-v0.0.3--alpha-2563eb?style=for-the-badge">
+    <img alt="Beta" src="https://img.shields.io/badge/release-v0.0.4--beta-2563eb?style=for-the-badge">
   </a>
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Multiplatform-7f52ff?style=for-the-badge&logo=kotlin&logoColor=white">
   <img alt="Compose" src="https://img.shields.io/badge/Compose-Material%203-0f9d58?style=for-the-badge">
@@ -27,11 +27,11 @@ ChromaLab начинался как мобильное приложение дл
 | Оцифровка графика | Alpha | Поиск области графика, осей, кривой, OCR/VLM-подсказки, fallback-логика |
 | Расчет пиков | Alpha 2 | Baseline, noise, peak detection, boundaries, integration, S/N, area %, resolution |
 | Отчеты | Alpha | Таблицы пиков и параметры расчета уже выводятся, профессиональная интерпретация еще расширяется |
-| Менеджер моделей | Alpha 2 | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
-| Локальный чат | MVP | Чаты, история, Gallery-style UI, выбор модели из общего пула, runtime controls, streaming UI, lazy loading |
+| Менеджер моделей | Beta | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
+| Локальный чат | Beta | Чаты, история, Gallery-style UI, выбор модели из общего пула, runtime controls, streaming UI, lazy loading, GGUF MTP |
 | Интерфейс | Alpha 2 | Настройка темы system/light/dark и портретный режим Android до отдельной landscape-проработки |
 
-## Alpha 2
+## Beta 0.0.4
 
 ### Хроматография
 
@@ -48,7 +48,8 @@ ChromaLab начинался как мобильное приложение дл
 
 - Единый раздел моделей для научного контура и чата.
 - Поддержка `.litertlm` через Google LiteRT-LM.
-- Поддержка `.gguf` через llama.cpp bridge.
+- Поддержка `.gguf` через llama.cpp bridge на актуальном upstream `b9198+6`.
+- GGUF text-only чат поддерживает MTP speculative decoding через `draft-mtp` и настраиваемое число draft tokens.
 - Hugging Face поиск по моделям с сортировкой и compatibility metadata.
 - Локальный import/export остается частью основного model manager.
 - Модели не загружаются в память из менеджера моделей: чат и анализ хроматограмм загружают runtime только в момент работы.
@@ -59,6 +60,7 @@ ChromaLab начинался как мобильное приложение дл
 - Отдельный раздел чатов.
 - Несколько chat sessions.
 - Настройки на уровне чата: system prompt, temperature, top-p, top-k, max tokens, repeat penalty, repeat last N.
+- Для GGUF text-only чата доступен MTP-переключатель и настройка draft tokens.
 - Gallery-style верхняя панель: название чата, model chip, отдельный model picker.
 - Выбор модели из общего downloaded model pool без загрузки модели из менеджера.
 - Capability-gated runtime controls: backend/accelerator выбираются только там, где это реально поддержано.
@@ -80,7 +82,7 @@ flowchart LR
     F --> G["Report / Export"]
 
     M["Model Manager"] --> L["LiteRT-LM"]
-    M --> Q["GGUF / llama.cpp"]
+    M --> Q["GGUF / llama.cpp b9198+"]
     L --> V["VLM helpers"]
     Q --> V
     L --> H["Local chat"]
@@ -138,7 +140,7 @@ androidApp/build/outputs/apk/debug/androidApp-debug.apk
 
 | Этап | Цель |
 |---|---|
-| Alpha 2 | Стабилизировать calculation engine, общий model manager, MVP чата, lifecycle моделей |
+| Beta 0.0.4 | Актуализировать GGUF runtime, добавить text-only MTP для чата, собрать подписанную beta |
 | Alpha 3 | Профессиональный отчет, лучшее объяснение расчетов, больше real-world validation |
 | MVP | Полный цикл: capture/import -> digitization -> calculation -> report -> local AI explanation |
 | Next | Chat attachments, real-world report validation, landscape UI only after dedicated design and QA |
@@ -147,6 +149,7 @@ androidApp/build/outputs/apk/debug/androidApp-debug.apk
 
 - CSV/TXT/PDF/mzML import еще не является production-grade парсером.
 - GGUF image analysis требует подходящий `mmproj`; text-only GGUF модели используются для чата и текстовых задач.
+- MTP включается только для GGUF text-only чата. Для `mmproj`/VLM и строгого анализа хроматограмм MTP пока отключен до отдельной валидации качества.
 - Токены в чате пока считаются локальной оценкой, пока runtime не отдаёт точные tokenizer metrics.
 - Большая валидация на наборе реальных хроматограмм еще впереди.
 

@@ -45,6 +45,7 @@ Needs cleanup before broader alpha testing:
 - [x] LiteRT-LM activation path for stable Android inference.
 - [x] GGUF activation path through llama.cpp JNI.
 - [x] Text-only GGUF inference path for chat.
+- [x] Text-only GGUF MTP speculative decoding through upstream llama.cpp `draft-mtp`.
 - [x] GGUF image inference requires a valid `mmproj`.
 - [x] Hugging Face search UI.
 - [x] Search sorting by downloads, likes, and update time.
@@ -65,6 +66,7 @@ Needs cleanup before broader alpha testing:
 - [x] Capability-gated accelerator controls and thinking toggle.
 - [x] Streaming text output with stop state.
 - [x] Assistant telemetry with model, backend, accelerator, duration, and token stats.
+- [x] Per-chat MTP toggle and draft-token setting for GGUF text-only chat.
 - [ ] Chat title auto-generation.
 - [ ] Attach image/file context to chat.
 - [ ] Search across chat history.
@@ -139,3 +141,4 @@ These should be added as separate modules once the core model/runtime architectu
 - `v0.0.1` - phase 1 preview.
 - `v0.0.2-alpha` - calculation engine alpha.
 - `v0.0.3-alpha` - model platform, chat MVP, calculation-settings fix.
+- `v0.0.4-beta` - updated llama.cpp runtime and GGUF text-only MTP chat acceleration.

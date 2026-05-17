@@ -88,6 +88,7 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
         val loaded = controller.activateForChat(
             modelId = modelId,
             runtimeAccelerator = runtimeAccelerator,
+            mtpDraftTokens = if (settings.enableMtp) settings.mtpDraftTokens.coerceIn(1, 16) else 0,
         )
         if (!loaded) {
             error("Unable to load chat model: ${modelName ?: modelId}")
@@ -139,4 +140,5 @@ private fun ChatSettings.toGenerationOptions(): GenerationOptions =
         topK = topK.coerceIn(1, 256),
         repeatPenalty = repeatPenalty.coerceIn(0.8f, 1.5f),
         repeatLastN = repeatLastN.coerceIn(0, 2048),
+        mtpDraftTokens = if (enableMtp) mtpDraftTokens.coerceIn(1, 16) else 0,
     )

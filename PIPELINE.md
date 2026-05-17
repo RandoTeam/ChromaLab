@@ -164,8 +164,11 @@ Modes:
 
 - text-only GGUF: local chat/text inference;
 - multimodal GGUF: image inference only when a valid `mmproj` is loaded with the base model.
+- text-only MTP: GGUF chat can enable upstream llama.cpp `draft-mtp` speculative decoding with a per-chat draft-token limit.
 
 The app should not silently use a text-only GGUF model for image analysis. If image inference is requested without `mmproj`, it must fail clearly and fall back where possible.
+
+MTP is deliberately scoped to text-only GGUF chat. It is not applied to `mmproj` vision, VLM image chat, or strict chromatogram analysis until those paths have their own quality and memory validation.
 
 For full chromatogram analysis, GGUF models must satisfy the same VLM contract as LiteRT: graph bounds JSON, axis-label JSON, and usable image input. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr stay available as model downloads, but they are not selected automatically for the full chromatogram pipeline until they have a validated adapter for that contract.
 
@@ -193,6 +196,7 @@ Generation settings:
 - max tokens;
 - repeat penalty;
 - repeat last N.
+- GGUF MTP draft tokens.
 
 Chat uses the same model pool as chromatogram analysis. A model can be downloaded/imported once and reused by the analysis pipeline or chat.
 Only chat-capable models are exposed to chat. OCR/document-only GGUF families such as PaddleOCR-VL, DeepSeek-OCR, and dots.mocr remain available for specialized analysis tasks but are hidden from chat selection and are not passed to the chat runtime as normal assistants.

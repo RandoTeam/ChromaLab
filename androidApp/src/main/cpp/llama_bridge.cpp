@@ -1,7 +1,7 @@
 /**
  * llama_bridge.cpp — JNI bridge between Kotlin and llama.cpp + mtmd (multimodal).
  *
- * Uses the current (b9101, May 2026) API:
+ * Uses the current (b9198+6, May 2026) API:
  *   - llama_model_load_from_file / llama_model_free
  *   - llama_init_from_model / llama_free
  *   - mtmd_init_from_file / mtmd_free (vision via mmproj)
@@ -25,6 +25,9 @@
 
 #include "llama.h"
 #include "ggml-backend.h"
+#include "common.h"
+#include "sampling.h"
+#include "speculative.h"
 #include "mtmd.h"
 #include "mtmd-helper.h"
 
@@ -40,9 +43,12 @@
 struct ModelContext {
     llama_model   *model   = nullptr;
     llama_context *ctx     = nullptr;
+    llama_context *ctx_mtp = nullptr;
+    common_speculative *spec = nullptr;
     mtmd_context  *mtmd    = nullptr;   // null if no mmproj provided
     int            n_ctx   = 0;
     int            n_batch = 512;
+    int            mtp_draft_tokens = 0;
     std::string    backend_label = "llama.cpp CPU";
 };
 
@@ -83,6 +89,38 @@ static llama_sampler * create_sampler(
     }
 
     return smpl;
+}
+
+static common_sampler * create_common_sampler(
+    const llama_model *model,
+    float temperature,
+    float topP,
+    int topK,
+    float repeatPenalty,
+    int repeatLastN) {
+
+    common_params_sampling params;
+    params.no_perf = true;
+    params.temp = temperature;
+    params.top_p = (topP > 0.0f) ? topP : 1.0f;
+    params.top_k = topK;
+    params.penalty_repeat = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
+    params.penalty_last_n = (repeatLastN > 0) ? repeatLastN : 64;
+    params.penalty_freq = 0.0f;
+    params.penalty_present = 0.0f;
+    params.dry_multiplier = 0.0f;
+    params.min_p = 0.0f;
+    params.typ_p = 1.0f;
+    params.xtc_probability = 0.0f;
+    params.top_n_sigma = -1.0f;
+    params.samplers = {
+        COMMON_SAMPLER_TYPE_PENALTIES,
+        COMMON_SAMPLER_TYPE_TOP_K,
+        COMMON_SAMPLER_TYPE_TOP_P,
+        COMMON_SAMPLER_TYPE_TEMPERATURE,
+    };
+
+    return common_sampler_init(model, params);
 }
 
 static bool prompt_requests_json(const char *prompt) {
@@ -930,6 +968,353 @@ static std::string run_text_completion(
     return result_text;
 }
 
+static std::string run_text_completion_mtp(
+    ModelContext *mc,
+    const char *prompt,
+    int maxTokens,
+    float temperature,
+    float topP,
+    int topK,
+    float repeatPenalty,
+    int repeatLastN,
+    JNIEnv *env = nullptr,
+    jobject callback = nullptr) {
+
+    if (!mc || !mc->ctx || !mc->ctx_mtp || !mc->spec || !mc->model || !prompt || mc->mtp_draft_tokens <= 0) {
+        return run_text_completion(
+            mc,
+            prompt,
+            maxTokens,
+            temperature,
+            topP,
+            topK,
+            repeatPenalty,
+            repeatLastN,
+            env,
+            callback
+        );
+    }
+
+    jmethodID callback_method = nullptr;
+    if (env && callback) {
+        jclass callback_class = env->GetObjectClass(callback);
+        if (callback_class) {
+            callback_method = env->GetMethodID(callback_class, "onToken", "(Ljava/lang/String;IJ)V");
+            env->DeleteLocalRef(callback_class);
+        }
+        if (!callback_method) {
+            LOGE("Token callback method not found");
+            return "";
+        }
+    }
+
+    int n_predict = (maxTokens > 0) ? maxTokens : 512;
+    if (mc->n_ctx > 0 && n_predict > mc->n_ctx / 2) {
+        n_predict = mc->n_ctx / 2;
+    }
+
+    const llama_vocab *vocab = llama_model_get_vocab(mc->model);
+    const auto total_started = std::chrono::steady_clock::now();
+    const int prompt_len = (int)strlen(prompt);
+
+    std::vector<llama_token> tokens((size_t)prompt_len + 32);
+    int n_tokens = llama_tokenize(
+        vocab,
+        prompt,
+        prompt_len,
+        tokens.data(),
+        (int)tokens.size(),
+        true,
+        true
+    );
+
+    if (n_tokens < 0) {
+        tokens.resize((size_t)-n_tokens);
+        n_tokens = llama_tokenize(
+            vocab,
+            prompt,
+            prompt_len,
+            tokens.data(),
+            (int)tokens.size(),
+            true,
+            true
+        );
+    }
+
+    if (n_tokens <= 0) {
+        LOGE("MTP text tokenization failed: %d", n_tokens);
+        return "";
+    }
+
+    tokens.resize((size_t)n_tokens);
+
+    int max_prompt_tokens = mc->n_ctx - n_predict - mc->mtp_draft_tokens - 4;
+    if (max_prompt_tokens > 0 && n_tokens > max_prompt_tokens) {
+        tokens.erase(tokens.begin(), tokens.end() - max_prompt_tokens);
+        n_tokens = (int)tokens.size();
+        LOGI("MTP prompt truncated to %d tokens", n_tokens);
+    }
+
+    if (n_tokens <= 0) {
+        return "";
+    }
+
+    LOGI("MTP text prompt tokenized: chars=%d tokens=%d n_predict=%d ctx=%d batch=%d draft_n_max=%d preview=%s",
+         prompt_len, n_tokens, n_predict, mc->n_ctx, mc->n_batch, mc->mtp_draft_tokens,
+         one_line_preview(std::string(prompt)).c_str());
+
+    const llama_seq_id seq_id = 0;
+    common_context_seq_rm_type ctx_tgt_seq_rm_type = common_context_can_seq_rm(mc->ctx);
+    common_context_seq_rm_type ctx_dft_seq_rm_type = common_context_can_seq_rm(mc->ctx_mtp);
+    if (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_NO) {
+        LOGE("MTP disabled for this generation: target context cannot remove sequence state");
+        return run_text_completion(
+            mc,
+            prompt,
+            maxTokens,
+            temperature,
+            topP,
+            topK,
+            repeatPenalty,
+            repeatLastN,
+            env,
+            callback
+        );
+    }
+
+    llama_memory_clear(llama_get_memory(mc->ctx), true);
+    llama_memory_clear(llama_get_memory(mc->ctx_mtp), true);
+
+    common_sampler_ptr smpl(create_common_sampler(
+        mc->model,
+        temperature,
+        topP,
+        topK,
+        repeatPenalty,
+        repeatLastN
+    ));
+    if (!smpl) {
+        LOGE("MTP sampler initialization failed");
+        return "";
+    }
+
+    const int batch_capacity = std::max(mc->n_batch, mc->mtp_draft_tokens + 1);
+    llama_batch batch_tgt = llama_batch_init(batch_capacity, 0, 1);
+    llama_tokens prompt_tgt;
+    if (tokens.size() > 1) {
+        prompt_tgt.assign(tokens.begin(), tokens.end() - 1);
+    }
+    prompt_tgt.reserve((size_t)mc->n_ctx);
+
+    int n_past = 0;
+    const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
+    const auto prompt_eval_started = std::chrono::steady_clock::now();
+    for (int offset = 0; offset < (int)prompt_tgt.size(); offset += batch_size) {
+        const int n_chunk = std::min(batch_size, (int)prompt_tgt.size() - offset);
+        common_batch_clear(batch_tgt);
+        for (int i = 0; i < n_chunk; ++i) {
+            common_batch_add(batch_tgt, prompt_tgt[(size_t)offset + i], n_past + i, { seq_id }, false);
+        }
+
+        LOGI("MTP prompt eval batch start: offset=%d count=%d", offset, n_chunk);
+        const auto batch_started = std::chrono::steady_clock::now();
+        int decode_result = 0;
+        {
+            NativeStageWatchdog watchdog("llama_mtp_prompt_eval", 15000, 15000);
+            decode_result = llama_decode(mc->ctx, batch_tgt);
+        }
+        if (decode_result != 0 || !common_speculative_process(mc->spec, batch_tgt)) {
+            LOGE("MTP prompt decode failed at offset %d result=%d", offset, decode_result);
+            llama_batch_free(batch_tgt);
+            return "";
+        }
+        n_past += n_chunk;
+        LOGI("MTP prompt eval batch done: offset=%d count=%d elapsed=%lld ms result=%d",
+             offset,
+             n_chunk,
+             elapsed_ms_since(batch_started),
+             decode_result);
+    }
+    LOGI("MTP prompt eval done: tokens=%zu elapsed=%lld ms",
+         prompt_tgt.size(),
+         elapsed_ms_since(prompt_eval_started));
+
+    llama_token id_last = tokens.back();
+    common_speculative_begin(mc->spec, seq_id, prompt_tgt);
+
+    std::string result_text;
+    std::string pending_callback_text;
+    int generated_tokens = 0;
+    int drafted_tokens = 0;
+    int accepted_draft_tokens = 0;
+    bool callback_failed = false;
+    bool has_eos = false;
+    const bool json_task = prompt_requests_json(prompt);
+    const int decode_limit_ms = json_task ? 90000 : 180000;
+
+    llama_tokens draft;
+    common_prompt_checkpoint ckpt;
+
+    while (generated_tokens < n_predict && !has_eos) {
+        if (draft.empty()) {
+            ckpt.update_pos(
+                prompt_tgt.size(),
+                llama_memory_seq_pos_min(llama_get_memory(mc->ctx), seq_id),
+                llama_memory_seq_pos_max(llama_get_memory(mc->ctx), seq_id)
+            );
+
+            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+                ckpt.update_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+            }
+
+            common_speculative_get_draft_params(mc->spec, seq_id) = {
+                /* .drafting = */ true,
+                /* .n_max    = */ mc->mtp_draft_tokens,
+                /* .n_past   = */ n_past,
+                /* .id_last  = */ id_last,
+                /* .prompt   = */ &prompt_tgt,
+                /* .result   = */ &draft,
+            };
+            common_speculative_draft(mc->spec);
+            drafted_tokens += (int)draft.size();
+
+            if (!draft.empty() && ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+                ckpt.update_tgt(mc->ctx, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+            }
+            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+                ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+                common_context_seq_rm(mc->ctx_mtp, seq_id, ckpt.pos_max + 1, -1);
+            }
+        }
+
+        common_batch_clear(batch_tgt);
+        common_batch_add(batch_tgt, id_last, n_past++, { seq_id }, true);
+        for (size_t i = 0; i < draft.size(); ++i) {
+            common_batch_add(batch_tgt, draft[i], n_past + (int)i, { seq_id }, true);
+        }
+
+        common_sampler_ptr smpl_save;
+        if (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+            smpl_save.reset(common_sampler_clone(smpl.get()));
+        }
+
+        int decode_result = 0;
+        {
+            NativeStageWatchdog watchdog("llama_mtp_decode", 15000, 15000);
+            decode_result = llama_decode(mc->ctx, batch_tgt);
+        }
+        if (decode_result != 0 || !common_speculative_process(mc->spec, batch_tgt)) {
+            LOGE("MTP decode failed at generated=%d result=%d", generated_tokens, decode_result);
+            break;
+        }
+
+        llama_tokens ids = common_sampler_sample_and_accept_n(smpl.get(), mc->ctx, draft);
+        if (ids.empty()) {
+            LOGE("MTP sampler returned no tokens");
+            break;
+        }
+
+        const uint32_t n_rollback = (uint32_t)(draft.size() + 1 - ids.size());
+        const bool use_ckpt_tgt =
+            ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL ||
+            (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS && n_rollback > llama_n_rs_seq(mc->ctx));
+
+        if (n_rollback > 0 && use_ckpt_tgt) {
+            draft = std::move(ids);
+            ckpt.load_tgt(mc->ctx, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+            common_context_seq_rm(mc->ctx, seq_id, ckpt.pos_max + 1, -1);
+            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+                ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+                common_context_seq_rm(mc->ctx_mtp, seq_id, ckpt.pos_max + 1, -1);
+            }
+            prompt_tgt.resize((size_t)ckpt.n_tokens);
+            if (smpl_save) {
+                smpl = std::move(smpl_save);
+            }
+            n_past = (int)prompt_tgt.size();
+            continue;
+        }
+
+        const int accepted_count = std::max<int>(0, (int)ids.size() - 1);
+        accepted_draft_tokens += std::min<int>(accepted_count, (int)draft.size());
+        common_speculative_accept(mc->spec, seq_id, (uint16_t)accepted_count);
+        n_past += accepted_count;
+
+        for (llama_token token_id : ids) {
+            prompt_tgt.push_back(id_last);
+            id_last = token_id;
+
+            if (llama_vocab_is_eog(vocab, id_last)) {
+                has_eos = true;
+                break;
+            }
+
+            char buf[256];
+            int len = llama_token_to_piece(vocab, id_last, buf, sizeof(buf), 0, true);
+            if (len > 0) {
+                result_text.append(buf, len);
+                generated_tokens += 1;
+                if (callback && callback_method) {
+                    pending_callback_text.append(buf, (size_t)len);
+                    const size_t safe_prefix_len = utf8_complete_prefix_length(pending_callback_text);
+                    if (safe_prefix_len > 0) {
+                        std::string token_text = pending_callback_text.substr(0, safe_prefix_len);
+                        pending_callback_text.erase(0, safe_prefix_len);
+                        if (!dispatch_token_callback(env, callback, callback_method, token_text, generated_tokens, elapsed_ms_since(total_started))) {
+                            LOGE("Stopping MTP text decode after callback failure at token %d", generated_tokens);
+                            callback_failed = true;
+                            has_eos = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (generated_tokens == 1) {
+                LOGI("MTP text first token: id=%d elapsed=%lld ms", (int)id_last, elapsed_ms_since(total_started));
+            }
+
+            if (json_task && json_object_complete(result_text)) {
+                LOGI("MTP text JSON complete at token %d", generated_tokens);
+                has_eos = true;
+                break;
+            }
+            if (generated_tokens >= n_predict || elapsed_over(total_started, decode_limit_ms)) {
+                if (elapsed_over(total_started, decode_limit_ms)) {
+                    LOGE("MTP text decode timed out after %d ms", decode_limit_ms);
+                }
+                has_eos = true;
+                break;
+            }
+        }
+
+        draft.clear();
+        common_context_seq_rm(mc->ctx, seq_id, n_past, -1);
+        common_context_seq_rm(mc->ctx_mtp, seq_id, n_past, -1);
+    }
+
+    if (!callback_failed && !pending_callback_text.empty()) {
+        dispatch_token_callback(
+            env,
+            callback,
+            callback_method,
+            pending_callback_text,
+            generated_tokens,
+            elapsed_ms_since(total_started)
+        );
+    }
+
+    common_speculative_print_stats(mc->spec);
+    LOGI("MTP text generated chars=%zu tokens=%d drafted=%d accepted=%d elapsed=%lld ms",
+         result_text.size(),
+         generated_tokens,
+         drafted_tokens,
+         accepted_draft_tokens,
+         elapsed_ms_since(total_started));
+
+    llama_batch_free(batch_tgt);
+    return result_text;
+}
+
 extern "C" {
 
 // ===== nativeGetAvailableBackends =====
@@ -955,13 +1340,13 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     JNIEnv *env, jclass /* clazz */,
     jstring basePath, jstring mmprojPath,
     jint threads, jint backendCode,
-    jint contextSize, jint batchSize) {
+    jint contextSize, jint batchSize, jint mtpDraftTokens) {
 
     const char *base   = env->GetStringUTFChars(basePath, nullptr);
     const char *mmproj = env->GetStringUTFChars(mmprojPath, nullptr);
 
-    LOGI("nativeLoadModel: base=%s, mmproj=%s, threads=%d, ctx=%d, batch=%d",
-         base, mmproj ? mmproj : "", threads, contextSize, batchSize);
+    LOGI("nativeLoadModel: base=%s, mmproj=%s, threads=%d, ctx=%d, batch=%d, mtpDraftTokens=%d",
+         base, mmproj ? mmproj : "", threads, contextSize, batchSize, mtpDraftTokens);
 
     ensure_backend_initialized();
     const bool accelerated_available = has_accelerated_backend();
@@ -973,6 +1358,15 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         return 0;
     }
     const bool use_accelerated = accelerated_requested && accelerated_available;
+    const bool has_mmproj = mmproj && strlen(mmproj) > 0;
+    const int requested_mtp_draft_tokens = std::clamp((int)mtpDraftTokens, 0, 16);
+    const bool use_mtp = requested_mtp_draft_tokens > 0 && !has_mmproj;
+    if (requested_mtp_draft_tokens > 0 && has_mmproj) {
+        LOGE("MTP is currently supported only for text-only GGUF chat; mmproj vision analysis requested");
+        env->ReleaseStringUTFChars(basePath, base);
+        env->ReleaseStringUTFChars(mmprojPath, mmproj);
+        return 0;
+    }
 
     auto *mc = new ModelContext();
     mc->backend_label = use_accelerated ? accelerated_backend_label() : "llama.cpp CPU";
@@ -1026,10 +1420,12 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx     = std::clamp((int)contextSize, 1024, 8192);
     ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
+    ctx_params.n_rs_seq  = use_mtp ? (uint32_t)requested_mtp_draft_tokens : 0u;
     ctx_params.n_threads = (threads > 0) ? threads : 4;
     ctx_params.n_threads_batch = ctx_params.n_threads;
-    LOGI("GGUF context params: n_ctx=%d n_batch=%d n_threads=%d n_threads_batch=%d",
+    LOGI("GGUF context params: n_ctx=%d n_batch=%d n_rs_seq=%d n_threads=%d n_threads_batch=%d",
          (int)ctx_params.n_ctx, (int)ctx_params.n_batch,
+         (int)ctx_params.n_rs_seq,
          (int)ctx_params.n_threads, (int)ctx_params.n_threads_batch);
     {
         NativeStageWatchdog watchdog("llama_context_init", 30000, 30000);
@@ -1047,8 +1443,66 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     mc->n_batch = (int)ctx_params.n_batch;
     LOGI("Context created: n_ctx=%d", mc->n_ctx);
 
+    if (use_mtp) {
+        llama_context_params mtp_params = ctx_params;
+        mtp_params.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
+        mtp_params.n_rs_seq = 0;
+
+        LOGI("MTP draft context params: n_ctx=%d n_batch=%d draft_n_max=%d",
+             (int)mtp_params.n_ctx,
+             (int)mtp_params.n_batch,
+             requested_mtp_draft_tokens);
+        {
+            NativeStageWatchdog watchdog("llama_mtp_context_init", 30000, 30000);
+            mc->ctx_mtp = llama_init_from_model(mc->model, mtp_params);
+        }
+        if (!mc->ctx_mtp) {
+            LOGE("Failed to create MTP draft context; the selected GGUF likely has no NextN/MTP head");
+            llama_free(mc->ctx);
+            llama_model_free(mc->model);
+            env->ReleaseStringUTFChars(basePath, base);
+            env->ReleaseStringUTFChars(mmprojPath, mmproj);
+            delete mc;
+            return 0;
+        }
+
+        common_params_speculative spec_params;
+        spec_params.types = { COMMON_SPECULATIVE_TYPE_DRAFT_MTP };
+        spec_params.draft.n_max = requested_mtp_draft_tokens;
+        spec_params.draft.n_min = 0;
+        spec_params.draft.ctx_tgt = mc->ctx;
+        spec_params.draft.ctx_dft = mc->ctx_mtp;
+        try {
+            mc->spec = common_speculative_init(spec_params, 1);
+        } catch (...) {
+            LOGE("Failed to initialize MTP speculative context");
+            llama_free(mc->ctx_mtp);
+            llama_free(mc->ctx);
+            llama_model_free(mc->model);
+            env->ReleaseStringUTFChars(basePath, base);
+            env->ReleaseStringUTFChars(mmprojPath, mmproj);
+            delete mc;
+            return 0;
+        }
+
+        if (!mc->spec) {
+            LOGE("MTP speculative context unavailable");
+            llama_free(mc->ctx_mtp);
+            llama_free(mc->ctx);
+            llama_model_free(mc->model);
+            env->ReleaseStringUTFChars(basePath, base);
+            env->ReleaseStringUTFChars(mmprojPath, mmproj);
+            delete mc;
+            return 0;
+        }
+
+        mc->mtp_draft_tokens = requested_mtp_draft_tokens;
+        mc->backend_label += " + MTP draft-mtp(n=" + std::to_string(mc->mtp_draft_tokens) + ")";
+        LOGI("MTP draft-mtp initialized: n_max=%d", mc->mtp_draft_tokens);
+    }
+
     // 3) Load vision encoder (mmproj) if provided
-    if (mmproj && strlen(mmproj) > 0) {
+    if (has_mmproj) {
         mtmd_context_params mtmd_params = mtmd_context_params_default();
         mtmd_params.n_threads = ctx_params.n_threads;
         mtmd_params.use_gpu = use_accelerated;
@@ -1098,7 +1552,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeUnloadModel(
 
     LOGI("Unloading model, handle=%p", mc);
 
+    if (mc->spec) { common_speculative_free(mc->spec); mc->spec = nullptr; }
     if (mc->mtmd) { mtmd_free(mc->mtmd); mc->mtmd = nullptr; }
+    if (mc->ctx_mtp) { llama_free(mc->ctx_mtp); mc->ctx_mtp = nullptr; }
     if (mc->ctx)  { llama_free(mc->ctx);  mc->ctx  = nullptr; }
     if (mc->model){ llama_model_free(mc->model); mc->model = nullptr; }
 
@@ -1365,7 +1821,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferText(
     LOGI("Infer text-only: maxTokens=%d, temp=%.2f, topP=%.2f, topK=%d, repeatPenalty=%.2f, repeatLastN=%d",
          n_predict, temperature, topP, topK, rep_penalty, rep_last_n);
 
-    std::string result_text = run_text_completion(
+    std::string result_text = run_text_completion_mtp(
         mc,
         pmt,
         n_predict,
@@ -1408,7 +1864,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChat(
     const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
     const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
 
-    std::string result_text = run_text_completion(
+    std::string result_text = run_text_completion_mtp(
         mc,
         prompt.c_str(),
         n_predict,
@@ -1451,7 +1907,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeInferChatStrea
     const float rep_penalty = (repeatPenalty > 0.0f) ? repeatPenalty : 1.1f;
     const int rep_last_n = (repeatLastN > 0) ? repeatLastN : 64;
 
-    std::string result_text = run_text_completion(
+    std::string result_text = run_text_completion_mtp(
         mc,
         prompt.c_str(),
         n_predict,

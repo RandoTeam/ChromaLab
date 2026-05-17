@@ -53,6 +53,7 @@ class ModelManagerController(
     private var hfSearchJob: Job? = null
     private var unloadTimerJob: Job? = null
     private var activeChatAccelerator: ChatRuntimeAccelerator? = null
+    private var activeChatMtpDraftTokens: Int = 0
 
     init {
         refresh()
@@ -236,12 +237,17 @@ class ModelManagerController(
     suspend fun activateForChat(
         modelId: String,
         runtimeAccelerator: ChatRuntimeAccelerator = ChatRuntimeAccelerator.AUTO,
+        mtpDraftTokens: Int = 0,
     ): Boolean {
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
+        val requestedModel = manager.getDownloadedModels().find { it.info.id == modelId }
+        val requestedMtpDraftTokens =
+            if (requestedModel?.info?.runtime == ModelRuntime.LLAMA_CPP) mtpDraftTokens.coerceIn(0, 16) else 0
         if (
             loadedId == modelId &&
             VlmEngineHolder.activeEngine?.isLoaded() == true &&
-            activeChatAccelerator == runtimeAccelerator
+            activeChatAccelerator == runtimeAccelerator &&
+            activeChatMtpDraftTokens == requestedMtpDraftTokens
         ) {
             cancelAutoUnloadTimer()
             refresh()
@@ -255,7 +261,7 @@ class ModelManagerController(
         }
 
         return try {
-            val model = manager.getDownloadedModels().find { it.info.id == modelId }
+            val model = requestedModel
                 ?: run {
                     _state.update {
                         it.copy(
@@ -276,18 +282,22 @@ class ModelManagerController(
                 return false
             }
 
-            if (VlmEngineHolder.activeEngine?.isLoaded() == true && loadedId != modelId) {
+            if (VlmEngineHolder.activeEngine?.isLoaded() == true) {
                 logModel("Unloading previous model before chat load: ${VlmEngineHolder.activeModelDiagnostics()}")
+                VlmEngineHolder.activeEngine?.unload()
                 VlmEngineHolder.activeEngine = null
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.selectedModel = null
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
+                activeChatMtpDraftTokens = 0
             }
 
             cancelAutoUnloadTimer()
             manager.setActiveModel(modelId)
             val preferAccelerated = model.info.preferAcceleratedForChat(runtimeAccelerator)
+            val effectiveMtpDraftTokens =
+                if (model.info.runtime == ModelRuntime.LLAMA_CPP) requestedMtpDraftTokens else 0
 
             // Create engine based on runtime. Chat loads text-only to keep memory lower than
             // chromatogram vision analysis, which loads its own model/mmproj later.
@@ -303,6 +313,7 @@ class ModelManagerController(
                             contextSize = manager.llamaContextSize(model.info, forVision = false),
                             batchSize = manager.llamaBatchSize(model.info, forVision = false),
                             preferAccelerated = preferAccelerated,
+                            mtpDraftTokens = effectiveMtpDraftTokens,
                         )
                     }
                     if (model.mmprojPath != null) {
@@ -330,6 +341,7 @@ class ModelManagerController(
                 VlmEngineHolder.selectedModel = model.info.toActiveInferenceModel()
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 activeChatAccelerator = runtimeAccelerator
+                activeChatMtpDraftTokens = effectiveMtpDraftTokens
                 logModel("Chat engine loaded: ${model.info.displayName} (family=${model.info.family}, backend=${engine.getBackendName()})")
             }
 
@@ -344,6 +356,7 @@ class ModelManagerController(
             VlmEngineHolder.selectedModel = null
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
+            activeChatMtpDraftTokens = 0
             _state.update {
                 it.copy(
                     activatingModelId = null,
@@ -365,6 +378,7 @@ class ModelManagerController(
             VlmEngineHolder.selectedModel = null
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
+            activeChatMtpDraftTokens = 0
         }
         manager.delete(modelId)
         refresh()
@@ -452,6 +466,7 @@ class ModelManagerController(
                 VlmEngineHolder.selectedModel = null
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
+                activeChatMtpDraftTokens = 0
                 manager.clearActiveModel()
                 refresh()
             }
@@ -499,6 +514,7 @@ class ModelManagerController(
         VlmEngineHolder.selectedModel = null
         VlmEngineHolder.executedModel = null
         activeChatAccelerator = null
+        activeChatMtpDraftTokens = 0
         manager.clearActiveModel()
         refresh()
     }
@@ -529,6 +545,7 @@ class ModelManagerController(
         VlmEngineHolder.selectedModel = null
         VlmEngineHolder.executedModel = null
         activeChatAccelerator = null
+        activeChatMtpDraftTokens = 0
         manager.clearActiveModel()
         refresh()
     }
@@ -591,12 +608,14 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = null
                 VlmEngineHolder.selectedModel = null
                 activeChatAccelerator = null
+                activeChatMtpDraftTokens = 0
             } else {
                 logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
                 VlmEngineHolder.activeEngine = null
                 VlmEngineHolder.activeConfig = null
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
+                activeChatMtpDraftTokens = 0
             }
         }
 
@@ -607,6 +626,7 @@ class ModelManagerController(
             VlmEngineHolder.activeConfig = null
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
+            activeChatMtpDraftTokens = 0
         }
 
         // Find a model to load for chromatogram vision. This path must never
