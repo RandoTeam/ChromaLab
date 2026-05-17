@@ -11,6 +11,8 @@ import com.chromalab.feature.calculation.algorithm.NoiseMethod
 import com.chromalab.feature.calculation.algorithm.OverlapStatus
 import com.chromalab.feature.calculation.algorithm.PeakDetector
 import com.chromalab.feature.processing.axis.AxisDetector
+import com.chromalab.feature.processing.axis.AxisLine
+import com.chromalab.feature.processing.axis.AxisOrigin
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.calibration.CalibrationPoint
 import com.chromalab.feature.processing.calibration.LinearCalibration
@@ -23,6 +25,8 @@ import com.chromalab.feature.processing.document.DocumentBounds
 import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.document.ImagePoint
+import com.chromalab.feature.processing.geometry.AxisTickGeometryDetector
+import com.chromalab.feature.processing.geometry.AxisTickGeometryResult
 import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidate
 import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidateDetector
 import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidateKind
@@ -252,6 +256,7 @@ data class OfflineGraphAudit(
     val axesDetected: Boolean,
     val originDetected: Boolean,
     val axisConfidence: Float,
+    val axisTickGeometry: OfflineAxisTickGeometryAudit = OfflineAxisTickGeometryAudit(),
     val axisCalibration: OfflineAxisCalibrationAudit,
     val curveMaskAvailable: Boolean,
     val curveMaskRawPixelCount: Int,
@@ -440,6 +445,25 @@ data class OfflineAxisCalibrationAudit(
 )
 
 @Serializable
+data class OfflineAxisTickGeometryAudit(
+    val available: Boolean = false,
+    val source: String = "not_available",
+    val plotRegion: GraphRegion? = null,
+    val xAxis: AxisLine? = null,
+    val yAxis: AxisLine? = null,
+    val origin: AxisOrigin? = null,
+    val lineSegmentCount: Int = 0,
+    val horizontalLineCount: Int = 0,
+    val verticalLineCount: Int = 0,
+    val xTickCount: Int = 0,
+    val yTickCount: Int = 0,
+    val xTickPositions: List<Float> = emptyList(),
+    val yTickPositions: List<Float> = emptyList(),
+    val readyForOcrValueMatching: Boolean = false,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 enum class OfflineAxisCalibrationSource {
     CONFIRMED,
     MANUAL_CONFIRMED,
@@ -527,6 +551,7 @@ class OfflineAnalysisRunner(
     private val cropBoundaryAnalyzer: GraphCropBoundaryAnalyzer = GraphCropBoundaryAnalyzer(),
     private val plotAreaDetector: GraphPlotAreaDetector = GraphPlotAreaDetector(),
     private val cvQuadrilateralDetector: CvQuadrilateralCandidateDetector = CvQuadrilateralCandidateDetector(),
+    private val axisTickGeometryDetector: AxisTickGeometryDetector = AxisTickGeometryDetector(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
@@ -925,6 +950,24 @@ class OfflineAnalysisRunner(
         val plotAreaAudit = plotAreaResult.toAudit(region)
         val calculationRegion = plotAreaResult?.plotArea ?: region
 
+        val axisTickGeometry = runStage(
+            stage = "axis_tick_geometry",
+            graphIndex = graphIndex,
+            stages = stages,
+            successMessage = { result ->
+                "available=${result.available}, lines=${result.lineSegmentCount}, xTicks=${result.xTickPositions.size}, yTicks=${result.yTickPositions.size}."
+            },
+        ) {
+            axisTickGeometryDetector.detect(
+                imagePath = analysisImagePath,
+                graphIndex = graphIndex,
+                panelRegion = region,
+                plotRegion = plotAreaResult?.plotArea,
+            )
+        } ?: missingAxisTickGeometry(plotAreaResult?.plotArea, listOf("axis_tick_geometry.stage_failed"))
+        graphWarnings += axisTickGeometry.warnings
+        val axisTickGeometryAudit = axisTickGeometry.toAudit()
+
         val ocrResult = runStage(
             stage = "axis_ocr",
             graphIndex = graphIndex,
@@ -1184,6 +1227,7 @@ class OfflineAnalysisRunner(
             axesDetected = axesResult?.hasAxes == true,
             originDetected = axesResult?.hasOrigin == true,
             axisConfidence = axesResult?.confidence ?: 0f,
+            axisTickGeometry = axisTickGeometryAudit,
             axisCalibration = axisCalibration,
             curveMaskAvailable = maskAvailable,
             curveMaskRawPixelCount = maskResult?.rawPixelCount ?: 0,
@@ -1212,6 +1256,45 @@ private data class OfflinePeakDetectionResult(
     val run: CalculationRun?,
     val params: CalculationParams?,
 )
+
+private fun AxisTickGeometryResult.toAudit(): OfflineAxisTickGeometryAudit =
+    OfflineAxisTickGeometryAudit(
+        available = available,
+        source = source,
+        plotRegion = plotRegion,
+        xAxis = xAxis,
+        yAxis = yAxis,
+        origin = origin,
+        lineSegmentCount = lineSegmentCount,
+        horizontalLineCount = horizontalLineCount,
+        verticalLineCount = verticalLineCount,
+        xTickCount = xTickPositions.size,
+        yTickCount = yTickPositions.size,
+        xTickPositions = xTickPositions,
+        yTickPositions = yTickPositions,
+        readyForOcrValueMatching = readyForOcrValueMatching,
+        warnings = warnings,
+    )
+
+private fun missingAxisTickGeometry(
+    plotRegion: GraphRegion?,
+    warnings: List<String>,
+): AxisTickGeometryResult =
+    AxisTickGeometryResult(
+        available = false,
+        source = "not_available",
+        plotRegion = plotRegion,
+        xAxis = null,
+        yAxis = null,
+        origin = null,
+        lineSegmentCount = 0,
+        horizontalLineCount = 0,
+        verticalLineCount = 0,
+        xTickPositions = emptyList(),
+        yTickPositions = emptyList(),
+        readyForOcrValueMatching = false,
+        warnings = warnings,
+    )
 
 private enum class CalibrationAxis {
     X,

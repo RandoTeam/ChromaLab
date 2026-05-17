@@ -190,7 +190,25 @@ Accepted result:
   - `bench_06_photo_two_graphs_page`: `7` total candidates, `4` accepted plot candidates;
   - `bench_07_rotated_page_photo`: `5` total candidates, `2` accepted plot candidates.
 
-Next slice: `Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry`.
+Completed next slice: `Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry`.
+
+Accepted result:
+
+- Added an audit-visible `axisTickGeometry` block per graph.
+- Desktop now records OpenCV Hough line evidence, axis/origin candidates,
+  projection-derived X/Y tick positions, and whether the geometry is ready for OCR
+  value matching.
+- Android remains an explicit unsupported backend for this benchmark slice so native
+  OpenCV packaging cannot silently change mobile behavior before parity review.
+- Persistent fixture artifacts confirm:
+  - `bench_03_small_tic_export`: axis geometry available, `117` line segments,
+    X/Y tick positions still insufficient, so calibration remains blocked;
+  - `bench_06_photo_two_graphs_page`: both graphs have axis geometry and X tick
+    positions, Y ticks remain insufficient, so calibration remains blocked;
+  - `bench_07_rotated_page_photo`: axis geometry and tick positions are ready for OCR
+    value matching.
+
+Next slice: `Phase 8.3c.5c.8 - OCR Values Only And Residual Calibration Fit`.
 
 ## Source Links
 

@@ -198,6 +198,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Axis And Tick Geometry")
+        appendLine()
+        appendLine("| Graph | Available | Source | Plot region | Lines | H lines | V lines | X ticks | Y ticks | OCR matching-ready | Warnings |")
+        appendLine("| ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            val geometry = graph.axisTickGeometry
+            appendLine(
+                "| ${graph.graphIndex} | ${geometry.available} | ${geometry.source.escapeTable()} | ${geometry.plotRegion?.renderRegion() ?: "not detected"} | ${geometry.lineSegmentCount} | ${geometry.horizontalLineCount} | ${geometry.verticalLineCount} | ${geometry.xTickCount} | ${geometry.yTickCount} | ${geometry.readyForOcrValueMatching} | ${geometry.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Axis Calibration")
         appendLine()
         appendLine("| Graph | Ready | Source | X points | Y points | X pixel span | Y pixel span | X value span | Y value span | Units | Warnings |")

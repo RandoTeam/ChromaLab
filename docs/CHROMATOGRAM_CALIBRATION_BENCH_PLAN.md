@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.6 - OpenCV-backed document/plot quadrilateral detector benchmark`.
-- Next work slice: `Phase 8.3c.5c.7 - deterministic axis and tick geometry`.
+- Latest completed work slice: `Phase 8.3c.5c.7 - deterministic axis and tick geometry`.
+- Next work slice: `Phase 8.3c.5c.8 - OCR values only and residual calibration fit`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -105,7 +105,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.3d | Done | `38ce74c` | Review the generated CV geometry spike artifacts on `bench_03`, `bench_06`, and `bench_07`; accept the spike as diagnostic evidence only; define the production OpenCV/BoofCV scope around perspective, graph-panel, plot-frame, axis, tick, OCR-value, and residual metrics. |
 | Phase 8.3c.5c.4 | Done | `ee67e52` | Add an audit-visible `perspectiveGeometry` contract, replace desktop perspective identity-copy with measured homography warp output, make desktop document fallback expose real image dimensions, and verify the contract on clean, two-graph, and rotated fixtures. |
 | Phase 8.3c.5c.5 | Done | `990cd74` | Extend `perspectiveGeometry` with document, graph-panel, and plot-area quadrilateral candidates plus aggregate residual metrics; verify candidate counts and accepted plot candidates on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
-| Phase 8.3c.5c.6 | Done | `this commit` | Add an OpenCV-backed desktop benchmark candidate source for document contours and plot-frame Hough evidence behind the existing `perspectiveGeometry` contract; keep Android as an explicit no-op backend until native parity is evaluated; verify OpenCV candidates on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
+| Phase 8.3c.5c.6 | Done | `c36b6c2` | Add an OpenCV-backed desktop benchmark candidate source for document contours and plot-frame Hough evidence behind the existing `perspectiveGeometry` contract; keep Android as an explicit no-op backend until native parity is evaluated; verify OpenCV candidates on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
+| Phase 8.3c.5c.7 | Done | `this commit` | Add audit-visible deterministic axis/tick geometry: desktop OpenCV Hough line evidence, projection-derived tick positions, axis/origin candidates, and explicit OCR-matching readiness; keep Android as an explicit no-op backend until native parity is evaluated; verify on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final

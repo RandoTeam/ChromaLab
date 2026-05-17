@@ -277,9 +277,11 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry
 
-- Detect axes and ticks through CV geometry after plot geometry is trusted.
-- Persist tick-position overlays.
-- Stop asking VLM for tick positions.
+- Done: detect axes and ticks through CV geometry after plot geometry is present.
+- Done: persist axis/tick geometry in the offline audit contract and summary.
+- Done: keep VLM/OCR out of tick pixel ownership; OCR matching remains a later
+  values-only stage.
+- Still pending: visual tick-position overlays and Android native parity review.
 
 ### Phase 8.3c.5c.8 - OCR Values Only
 

@@ -711,12 +711,13 @@ Phase 8.3c.5c.3c completed the R2 diagnostic spike, Phase 8.3c.5c.3d reviewed
 the generated artifacts on clean, photographed two-graph, and rotated examples,
 Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract,
 Phase 8.3c.5c.5 added document, graph-panel, and plot-area quadrilateral
-candidates plus aggregate residual metrics, and Phase 8.3c.5c.6 added an
-OpenCV-backed desktop benchmark source behind that contract.
+candidates plus aggregate residual metrics, Phase 8.3c.5c.6 added an
+OpenCV-backed desktop benchmark source behind that contract, and Phase 8.3c.5c.7
+added deterministic axis/tick geometry audit fields.
 
-The next code slice should not tune prompts or thresholds. It should move to
-deterministic axis and tick geometry, using OpenCV/BoofCV-style primitives only after
-the graph/plot quadrilateral evidence is present:
+The next code slice should not tune prompts or ask VLM for pixel positions. It should
+use OCR values only, attaching recognized tick text to deterministic CV tick
+positions and measuring calibration residuals:
 
 ```text
 input fixture
@@ -731,8 +732,9 @@ input fixture
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with axis/tick geometry. Keep BoofCV as a fallback candidate if native OpenCV
-packaging, APK size, or Android loading blocks the OpenCV path.
+fill with OCR-to-tick matching and residual checks. Keep BoofCV as a fallback
+candidate if native OpenCV packaging, APK size, or Android loading blocks the OpenCV
+path.
 
 ## Source Links
 

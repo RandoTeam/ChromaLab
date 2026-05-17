@@ -147,6 +147,7 @@ class ChromatogramBenchFixtureTest {
             assertTrue(audit.stages.any { it.stage == "graph_refine" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "preprocess_rank" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "plot_area" && it.status == OfflineStageStatus.SUCCESS })
+            assertTrue(audit.stages.any { it.stage == "axis_tick_geometry" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "axis_detect" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "axis_calibration" && it.status == OfflineStageStatus.SUCCESS })
             assertTrue(audit.stages.any { it.stage == "curve_extract" && it.status == OfflineStageStatus.SUCCESS })
@@ -205,6 +206,18 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.graphs.all { it.plotArea.detected && it.plotArea.region != null },
                 "${fixture.id} must detect audited plot-area bounds for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.axisTickGeometry.available },
+                "${fixture.id} must expose deterministic axis/tick geometry audit for every graph",
+            )
+            assertTrue(
+                audit.graphs.all { it.axisTickGeometry.lineSegmentCount > 0 },
+                "${fixture.id} must expose OpenCV line evidence for axis/tick geometry",
+            )
+            assertTrue(
+                audit.graphs.all { it.axisTickGeometry.xAxis != null && it.axisTickGeometry.yAxis != null && it.axisTickGeometry.origin != null },
+                "${fixture.id} must expose deterministic axis/origin geometry before OCR value matching",
             )
             assertTrue(
                 audit.graphs.all { it.axesDetected && it.originDetected },
