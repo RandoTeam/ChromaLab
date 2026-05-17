@@ -398,13 +398,25 @@ class ChromatogramBenchFixtureTest {
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("trace_artifact_suppressed_mask.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} trace cleanup hypothesis mask must be written",
                 )
-                assertTrue(
-                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
-                    "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
-                )
-                assertTrue(
-                    Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
-                    "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
+            assertTrue(
+                Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
+                "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
+            )
+            assertTrue(
+                graph.curveCenterline.parityOverlayGenerated,
+                "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be marked generated",
+            )
+            assertTrue(
+                graph.curveCenterline.largeDeltaThresholdPx > 0f,
+                "${fixture.id} graph ${graph.graphIndex} centerline parity threshold must be audited",
+            )
+            assertTrue(
+                Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_parity_overlay.png")) > 0L,
+                "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be written",
+            )
+            assertTrue(
+                Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
+                "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
                 )
                 assertManualCalibrationFocusArtifact(fixture.id, audit, graph, outputDir)
             }
@@ -950,6 +962,7 @@ class ChromatogramBenchFixtureTest {
             add("selected_preprocessing_graph_${graph.graphIndex}.png")
             add("manual_calibration_graph_${graph.graphIndex}.png")
             add("graph_${graph.graphIndex}/curve_overlay.png")
+            add("graph_${graph.graphIndex}/centerline_parity_overlay.png")
             add("graph_${graph.graphIndex}/trace_artifacts.png")
             add("graph_${graph.graphIndex}/trace_artifact_suppressed_mask.png")
             if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
@@ -1041,6 +1054,16 @@ class ChromatogramBenchFixtureTest {
                 expectedPlacement = OfflineReportUiPlacement.MAIN_REPORT,
                 expectedNearSection = "interactive_or_rendered_graph",
                 requiredForMobile = true,
+            )
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "centerline_parity_overlay",
+                expectedPath = "graph_${graph.graphIndex}/centerline_parity_overlay.png",
+                expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                expectedNearSection = "trace_centerline_review",
+                requiredForMobile = false,
             )
             if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
                 assertVisualEvidenceContractEntry(

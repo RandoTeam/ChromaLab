@@ -74,7 +74,7 @@ actual class CurveExtractor actual constructor() {
 
         val interpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
         val points = (rawPoints + interpolatedPoints).sortedBy { it.pixelX }
-        val centerlineAudit = buildCenterlineAudit(
+        val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = width,
             centerlineColumns = rawPoints.size,
@@ -89,6 +89,19 @@ actual class CurveExtractor actual constructor() {
             .resolve("curve_overlay.png")
             .absolutePath
         saveOverlay(mask, skeletonMask, points, width, height, overlayPath)
+        val parityOverlayPath = File(outputDir)
+            .resolve("centerline_parity_overlay.png")
+            .absolutePath
+        saveCenterlineParityOverlay(
+            mask = mask,
+            skeletonMask = skeletonMask,
+            signalPoints = rawPoints,
+            centerlineCandidateByX = centerlineCandidateByX,
+            width = width,
+            height = height,
+            path = parityOverlayPath,
+        )
+        val centerlineAudit = initialCenterlineAudit.copy(parityOverlayGenerated = true)
 
         val result = CurveExtractionResult(
             points = points,
@@ -189,7 +202,7 @@ actual class CurveExtractor actual constructor() {
         val selectionDecision = when {
             !parity.compared -> "preserve_legacy_no_centerline_overlap"
             parity.matchedColumnRatio < 0.45f -> "preserve_legacy_low_centerline_overlap"
-            parity.p95AbsDeltaPx > 6f -> "preserve_legacy_large_centerline_delta"
+            parity.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX -> "preserve_legacy_large_centerline_delta"
             branchRatio > 0.20f && branchColumnCount > 8 -> "preserve_legacy_branching_review_required"
             else -> "centerline_candidate_ready_for_visual_review"
         }
@@ -199,7 +212,9 @@ actual class CurveExtractor actual constructor() {
             if (skeletonPointCount > 0 && fallbackPointCount > skeletonPointCount) add("curve_centerline.low_skeleton_support")
             if (centerlineCoverage < 0.05f) add("curve_centerline.low_centerline_coverage")
             if (!parity.compared) add("curve_centerline.parity_not_available")
-            if (parity.compared && parity.p95AbsDeltaPx > 6f) add("curve_centerline.large_signal_delta")
+            if (parity.compared && parity.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX) {
+                add("curve_centerline.large_signal_delta")
+            }
             if (branchColumnCount > centerlineColumns * 0.20f && branchColumnCount > 8) {
                 add("curve_centerline.many_branch_columns")
             }
@@ -215,6 +230,9 @@ actual class CurveExtractor actual constructor() {
             medianAbsDeltaPx = parity.medianAbsDeltaPx,
             p95AbsDeltaPx = parity.p95AbsDeltaPx,
             maxAbsDeltaPx = parity.maxAbsDeltaPx,
+            largeDeltaThresholdPx = CENTERLINE_LARGE_DELTA_THRESHOLD_PX,
+            largeDeltaColumnCount = parity.largeDeltaColumnCount,
+            largeDeltaColumnRatio = parity.largeDeltaColumnRatio,
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
             centerlineColumnCount = centerlineColumns,
@@ -243,6 +261,8 @@ actual class CurveExtractor actual constructor() {
             medianAbsDeltaPx = deltas.percentile(0.50f),
             p95AbsDeltaPx = deltas.percentile(0.95f),
             maxAbsDeltaPx = deltas.last(),
+            largeDeltaColumnCount = deltas.count { it > CENTERLINE_LARGE_DELTA_THRESHOLD_PX },
+            largeDeltaColumnRatio = deltas.count { it > CENTERLINE_LARGE_DELTA_THRESHOLD_PX }.toFloat() / deltas.size.toFloat(),
         )
     }
 
@@ -404,6 +424,73 @@ actual class CurveExtractor actual constructor() {
         overlay.flush()
     }
 
+    private fun saveCenterlineParityOverlay(
+        mask: BooleanArray,
+        skeletonMask: BooleanArray,
+        signalPoints: List<CurvePoint>,
+        centerlineCandidateByX: Map<Int, Float>,
+        width: Int,
+        height: Int,
+        path: String,
+    ) {
+        val overlay = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                overlay.setRGB(
+                    x,
+                    y,
+                    when {
+                        skeletonMask[index] -> PARITY_SKELETON_RGB
+                        mask[index] -> PARITY_MASK_RGB
+                        else -> PARITY_BACKGROUND_RGB
+                    },
+                )
+            }
+        }
+
+        val signalByX = signalPoints.associateBy { it.pixelX }
+        val graphics = overlay.createGraphics()
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            drawFloatPolyline(graphics, centerlineCandidateByX, Color(0x00, 0xBC, 0xD4), 2f)
+            drawFloatPolyline(graphics, signalByX.mapValues { it.value.pixelY }, Color(0xE5, 0x39, 0x35), 2f)
+            graphics.stroke = BasicStroke(1f)
+            signalByX.forEach { (x, point) ->
+                val centerlineY = centerlineCandidateByX[x] ?: return@forEach
+                val delta = abs(centerlineY - point.pixelY)
+                if (delta > CENTERLINE_LARGE_DELTA_THRESHOLD_PX) {
+                    graphics.color = Color(0xFB, 0x8C, 0x00, 0xD8)
+                    graphics.drawLine(x, point.pixelY.roundToInt(), x, centerlineY.roundToInt())
+                    graphics.fillOval(x - 2, centerlineY.roundToInt() - 2, 5, 5)
+                }
+            }
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(overlay, "png", File(path))
+        overlay.flush()
+    }
+
+    private fun drawFloatPolyline(
+        graphics: java.awt.Graphics2D,
+        pointsByX: Map<Int, Float>,
+        color: Color,
+        strokeWidth: Float,
+    ) {
+        val sorted = pointsByX.toSortedMap()
+        graphics.color = color
+        graphics.stroke = BasicStroke(strokeWidth)
+        var previous: Map.Entry<Int, Float>? = null
+        sorted.forEach { entry ->
+            val last = previous
+            if (last != null && entry.key - last.key <= 3) {
+                graphics.drawLine(last.key, last.value.roundToInt(), entry.key, entry.value.roundToInt())
+            }
+            previous = entry
+        }
+    }
+
     private fun emptyResult(totalColumns: Int): CurveExtractionResult =
         CurveExtractionResult(
             points = emptyList(),
@@ -420,6 +507,10 @@ actual class CurveExtractor actual constructor() {
         private const val BACKGROUND_RGB = -0x00EFEFF0
         private const val MASK_RGB = -0x00BFBFC0
         private const val SKELETON_RGB = -0x00A040A0
+        private const val PARITY_BACKGROUND_RGB = -0x00F8F8F9
+        private const val PARITY_MASK_RGB = -0x00D6D6D7
+        private const val PARITY_SKELETON_RGB = -0x0090D0B0
+        private const val CENTERLINE_LARGE_DELTA_THRESHOLD_PX = 6f
     }
 }
 
@@ -430,6 +521,8 @@ private data class CenterlineParity(
     val medianAbsDeltaPx: Float = 0f,
     val p95AbsDeltaPx: Float = 0f,
     val maxAbsDeltaPx: Float = 0f,
+    val largeDeltaColumnCount: Int = 0,
+    val largeDeltaColumnRatio: Float = 0f,
 )
 
 private fun Int.isWhiteMaskPixel(): Boolean =

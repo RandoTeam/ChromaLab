@@ -322,12 +322,21 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays
 
-- Add per-graph overlays that render preserved signal, centerline candidate, matched
-  columns, and large-delta columns in different colors.
-- Review best and worst fixtures before allowing any centerline candidate to replace
-  the calculation signal.
-- Keep peak-count/report changes blocked until visual evidence and calibrated signal
-  parity are accepted.
+- Done: add per-graph overlays that render preserved signal, centerline candidate,
+  skeleton/mask context, and large-delta columns in different colors.
+- Done: expose large-delta threshold/count/ratio and overlay availability in the
+  serialized centerline audit and report evidence contract.
+- Done: verify clean, stacked, TIC-plus-ion, photographed two-graph, and rotated
+  fixture outputs; the overlays confirm centerline must remain audit-only for now.
+- Still pending: use the overlays to classify whether large deltas come from branch
+  selection, peak-edge/top-edge bias, baseline ambiguity, or plot-area distortion.
+
+### Phase 8.3c.5c.12 - Centerline Branch And Peak-Edge Correction Review
+
+- Review generated parity overlays on best and worst fixtures.
+- Add targeted branch/peak-edge diagnostics before changing the accepted signal.
+- Keep peak-count/report changes blocked until corrected centerline candidates pass
+  visual and numeric parity.
 
 ## Bottom Line
 

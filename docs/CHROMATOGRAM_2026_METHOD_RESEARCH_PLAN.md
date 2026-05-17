@@ -719,7 +719,8 @@ residual-fit gates, and Phase 8.3c.5c.9 added audited skeleton/centerline trace
 candidates without yet changing the calculation signal. Phase 8.3c.5c.10 added
 centerline-vs-preserved-signal parity metrics and confirmed on real fixtures that
 centerline must remain audit-only until visual acceptance explains the large pixel
-deltas.
+deltas. Phase 8.3c.5c.11 added per-graph centerline parity overlays and exposed
+large-delta counts so the next correction step can be driven by visual evidence.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -735,14 +736,15 @@ input fixture
   -> OCR value matching and calibration residual metrics
   -> skeleton/centerline trace extraction candidates
   -> centerline-vs-signal parity metrics
-  -> visual parity review before centerline drives signal conversion
+  -> visual parity overlays before centerline drives signal conversion
+  -> branch/peak-edge correction review
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with visual centerline acceptance overlays and distortion-aware signal
-conversion. Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size,
-or Android loading blocks the OpenCV path.
+fill with branch-aware centerline correction and distortion-aware signal conversion.
+Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
+loading blocks the OpenCV path.
 
 ## Source Links
 
@@ -754,6 +756,8 @@ or Android loading blocks the OpenCV path.
   https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
 - OpenCV ximgproc thinning:
   https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
+- OpenCV drawing functions:
+  https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html
 - OpenCV geometric transforms:
   https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV camera calibration:

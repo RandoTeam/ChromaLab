@@ -251,7 +251,19 @@ Accepted result:
   that centerline remains candidate evidence until visual acceptance overlays explain
   the mismatch.
 
-Next slice: `Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays`.
+Completed next slice: `Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays`.
+
+Accepted result:
+
+- Each graph now writes `centerline_parity_overlay.png` beside `curve_overlay.png`.
+- The overlay shows preserved signal, centerline candidate, mask/skeleton context,
+  and large-delta columns, so centerline errors can be reviewed visually instead of
+  inferred only from aggregate metrics.
+- Real fixture artifacts confirm that large deltas remain common on stacked, TIC,
+  photographed, and rotated examples; centerline still must not replace the
+  calculation signal.
+
+Next slice: `Phase 8.3c.5c.12 - Centerline Branch And Peak-Edge Correction Review`.
 
 ## Source Links
 
@@ -259,6 +271,7 @@ Next slice: `Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays`.
 - OpenCV connected components, contours, and shape descriptors: https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
 - OpenCV geometric transforms: https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV Java API: https://docs.opencv.org/4.x/javadoc/
+- OpenCV drawing functions: https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html
 - OpenCV ximgproc thinning: https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
 - scikit-image morphology skeletonize/medial axis: https://scikit-image.org/docs/stable/api/skimage.morphology.html
 - OpenPnP OpenCV Java packaging: https://github.com/openpnp/opencv

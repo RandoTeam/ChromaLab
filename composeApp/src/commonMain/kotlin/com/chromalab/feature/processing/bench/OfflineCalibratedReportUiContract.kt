@@ -247,6 +247,15 @@ object OfflineCalibratedReportUiContractBuilder {
                 generatedStatus = if (curveUsable || curvePointCount > 0) "generated" else "not_available",
             ),
             visualEvidence(
+                evidenceId = "centerline_parity_overlay",
+                label = "Centerline parity overlay",
+                artifactPath = "graph_${graphIndex}/centerline_parity_overlay.png",
+                placement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                nearSectionId = "trace_centerline_review",
+                generatedStatus = if (curveCenterline.parityOverlayGenerated) "generated" else "not_available",
+                requiredForMobile = false,
+            ),
+            visualEvidence(
                 evidenceId = "peak_overlay",
                 label = "Peak integration overlay",
                 artifactPath = "peak_overlay_graph_${graphIndex}.png",
