@@ -398,35 +398,51 @@ class ChromatogramBenchFixtureTest {
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("trace_artifact_suppressed_mask.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} trace cleanup hypothesis mask must be written",
                 )
-            assertTrue(
-                Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
-                "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
-            )
-            assertTrue(
-                graph.curveCenterline.parityOverlayGenerated,
-                "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be marked generated",
-            )
-            assertTrue(
-                graph.curveCenterline.largeDeltaThresholdPx > 0f,
-                "${fixture.id} graph ${graph.graphIndex} centerline parity threshold must be audited",
-            )
-            assertTrue(
-                graph.curveCenterline.largeDeltaNearBranchColumnCount <= graph.curveCenterline.largeDeltaColumnCount,
-                "${fixture.id} graph ${graph.graphIndex} branch-near large deltas must be a subset of large deltas",
-            )
-            assertEquals(
-                graph.curveCenterline.largeDeltaColumnCount,
-                graph.curveCenterline.largeDeltaSignalAboveCenterlineColumnCount +
-                    graph.curveCenterline.largeDeltaSignalBelowCenterlineColumnCount,
-                "${fixture.id} graph ${graph.graphIndex} large deltas must be direction-classified",
-            )
-            assertTrue(
-                Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_parity_overlay.png")) > 0L,
-                "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be written",
-            )
-            assertTrue(
-                Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
-                "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("curve_overlay.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} curve overlay must be written",
+                )
+                assertTrue(
+                    graph.curveCenterline.parityOverlayGenerated,
+                    "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be marked generated",
+                )
+                assertTrue(
+                    graph.curveCenterline.largeDeltaThresholdPx > 0f,
+                    "${fixture.id} graph ${graph.graphIndex} centerline parity threshold must be audited",
+                )
+                assertTrue(
+                    graph.curveCenterline.largeDeltaNearBranchColumnCount <= graph.curveCenterline.largeDeltaColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} branch-near large deltas must be a subset of large deltas",
+                )
+                assertEquals(
+                    graph.curveCenterline.largeDeltaColumnCount,
+                    graph.curveCenterline.largeDeltaSignalAboveCenterlineColumnCount +
+                        graph.curveCenterline.largeDeltaSignalBelowCenterlineColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} large deltas must be direction-classified",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_parity_overlay.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} centerline parity overlay must be written",
+                )
+                assertTrue(
+                    graph.curveCenterline.branchPrunedOverlayGenerated,
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned centerline overlay must be marked generated",
+                )
+                assertTrue(
+                    graph.curveCenterline.branchPrunedRemovedColumnCount <= graph.curveCenterline.centerlineColumnCount,
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned removal must not exceed centerline columns",
+                )
+                assertTrue(
+                    !graph.curveCenterline.branchPrunedSelectedForSignal,
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned hypothesis must stay audit-only",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_branch_pruned_overlay.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} branch-pruned centerline overlay must be written",
+                )
+                assertTrue(
+                    Files.size(outputDir.resolve("manual_calibration_graph_${graph.graphIndex}.png")) > 0L,
+                    "${fixture.id} graph ${graph.graphIndex} manual calibration focus artifact must be written",
                 )
                 assertManualCalibrationFocusArtifact(fixture.id, audit, graph, outputDir)
             }
@@ -973,6 +989,7 @@ class ChromatogramBenchFixtureTest {
             add("manual_calibration_graph_${graph.graphIndex}.png")
             add("graph_${graph.graphIndex}/curve_overlay.png")
             add("graph_${graph.graphIndex}/centerline_parity_overlay.png")
+            add("graph_${graph.graphIndex}/centerline_branch_pruned_overlay.png")
             add("graph_${graph.graphIndex}/trace_artifacts.png")
             add("graph_${graph.graphIndex}/trace_artifact_suppressed_mask.png")
             if (graph.peakMetrics.ready && graph.peakDetection.peaks.isNotEmpty()) {
@@ -1071,6 +1088,16 @@ class ChromatogramBenchFixtureTest {
                 contract = contract,
                 evidenceId = "centerline_parity_overlay",
                 expectedPath = "graph_${graph.graphIndex}/centerline_parity_overlay.png",
+                expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                expectedNearSection = "trace_centerline_review",
+                requiredForMobile = false,
+            )
+            assertVisualEvidenceContractEntry(
+                audit = audit,
+                graph = graph,
+                contract = contract,
+                evidenceId = "centerline_branch_pruned_overlay",
+                expectedPath = "graph_${graph.graphIndex}/centerline_branch_pruned_overlay.png",
                 expectedPlacement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
                 expectedNearSection = "trace_centerline_review",
                 requiredForMobile = false,

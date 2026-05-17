@@ -724,7 +724,9 @@ large-delta counts so the next correction step can be driven by visual evidence.
 Phase 8.3c.5c.12 classified those large deltas into branch-near, signal-above-
 centerline, and signal-below-centerline groups, confirming that branch pruning and
 peak-edge/top-edge handling must be audit-first before centerline can drive signal
-conversion.
+conversion. Phase 8.3c.5c.13 added an audit-only branch-pruned centerline
+hypothesis and overlay evidence; it reduces many large-delta failures but currently
+loses too much overlap on hard photographed/rotated fixtures to drive calculations.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -743,11 +745,13 @@ input fixture
   -> visual parity overlays before centerline drives signal conversion
   -> branch/peak-edge correction review
   -> branch-pruned centerline hypothesis
+  -> branch-pruned continuity and visual acceptance tuning
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with branch-aware centerline correction and distortion-aware signal conversion.
+fill with branch-aware centerline correction, continuity-safe pruning, and
+distortion-aware signal conversion.
 Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
 loading blocks the OpenCV path.
 
@@ -763,6 +767,16 @@ loading blocks the OpenCV path.
   https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
 - OpenCV drawing functions:
   https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html
+- PoreSpy skeleton branch pruning:
+  https://porespy.org/autoapi/porespy/filters/prune_branches.html
+- PlantCV morphology pruning and branch-point diagnostics:
+  https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
+- Plot2Spectra automatic spectra extraction:
+  https://arxiv.org/abs/2107.02827
+- MatGD graph digitizer architecture:
+  https://arxiv.org/abs/2311.12806
+- PlotPick VLM chart extraction benchmark:
+  https://arxiv.org/abs/2605.06021
 - OpenCV geometric transforms:
   https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV camera calibration:

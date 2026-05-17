@@ -344,11 +344,26 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis
 
-- Add an audit-only branch-pruned centerline candidate using the classified failure
+- Done: add an audit-only branch-pruned centerline candidate using the classified failure
   metrics from Phase 8.3c.5c.12.
-- Compare pruned candidate parity against preserved signal on best and worst fixtures.
+- Done: compare pruned candidate parity against preserved signal on best and worst
+  fixtures, including clean, stacked, TIC-plus-ion, photographed two-graph, and
+  rotated examples.
+- Done: write per-graph `centerline_branch_pruned_overlay.png` artifacts and expose
+  pruned parity/improvement metrics in JSON, Markdown, and report evidence.
+- Result: branch pruning reduces large-delta failures on many graphs, but overlap is
+  too low on hard photographed/rotated cases, so it remains audit-only.
 - Keep `selectedForSignal=false` until pruned candidates pass visual and numeric
   acceptance.
+
+### Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance Tuning
+
+- Tune branch pruning around continuity, peak-top preservation, and minimum overlap
+  instead of removing every branch-near column uniformly.
+- Compare tuned candidates against current preserved signal and branch-pruned
+  overlays on the best and worst fixtures.
+- Keep the tuned centerline audit-only until it passes visual evidence review and
+  numeric acceptance thresholds.
 
 ## Bottom Line
 
@@ -371,6 +386,8 @@ full or semi-full chromatogram image.
 - OpenCV LineSegmentDetector Java API: https://docs.opencv.org/4.x/javadoc/org/opencv/imgproc/LineSegmentDetector.html
 - OpenCV calib3d homography and undistortion APIs: https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
 - OpenCV Java `Imgproc` connected components, morphology, adaptive threshold, contours: https://docs.opencv.org/master/javadoc/org/opencv/imgproc/Imgproc.html
+- PoreSpy skeleton branch pruning: https://porespy.org/autoapi/porespy/filters/prune_branches.html
+- PlantCV morphology pruning and branch-point diagnostics: https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
 - ML Kit Text Recognition on Android: https://developers.google.com/ml-kit/vision/text-recognition/v2/android
 - PaddleOCR on-device deployment: https://www.paddleocr.ai/main/en/version3.x/deployment/on_device_deployment.html
 - WebPlotDigitizer GitHub: https://github.com/automeris-io/WebPlotDigitizer

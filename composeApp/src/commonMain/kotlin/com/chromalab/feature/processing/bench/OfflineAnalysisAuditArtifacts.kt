@@ -255,12 +255,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Trace Centerline")
         appendLine()
-        appendLine("| Graph | Available | Method | Selected | Decision | Overlay | Matched | Match ratio | Median delta | P95 delta | Max delta | Large delta threshold | Large delta columns | Large delta ratio | Branch-near large | Signal above centerline | Signal below centerline | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
-        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Available | Method | Selected | Decision | Overlay | Matched | Match ratio | Median delta | P95 delta | Max delta | Large delta threshold | Large delta columns | Large delta ratio | Branch-near large | Signal above centerline | Signal below centerline | Branch-pruned decision | Branch-pruned overlay | Branch-pruned removed | Branch-pruned matched | Branch-pruned P95 | Branch-pruned large | Branch-pruned P95 improvement | Branch-pruned large reduction | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
+        appendLine("| ---: | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val centerline = graph.curveCenterline
             appendLine(
-                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.selectedForSignal} | ${centerline.selectionDecision.escapeTable()} | ${centerline.parityOverlayGenerated} | ${centerline.matchedColumnCount} | ${centerline.matchedColumnRatio.renderPercent()} | ${centerline.medianAbsDeltaPx.renderNumber()} | ${centerline.p95AbsDeltaPx.renderNumber()} | ${centerline.maxAbsDeltaPx.renderNumber()} | ${centerline.largeDeltaThresholdPx.renderNumber()} | ${centerline.largeDeltaColumnCount} | ${centerline.largeDeltaColumnRatio.renderPercent()} | ${centerline.largeDeltaNearBranchColumnCount} (${centerline.largeDeltaNearBranchColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalAboveCenterlineColumnCount} (${centerline.largeDeltaSignalAboveCenterlineColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalBelowCenterlineColumnCount} (${centerline.largeDeltaSignalBelowCenterlineColumnRatio.renderPercent()}) | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.selectedForSignal} | ${centerline.selectionDecision.escapeTable()} | ${centerline.parityOverlayGenerated} | ${centerline.matchedColumnCount} | ${centerline.matchedColumnRatio.renderPercent()} | ${centerline.medianAbsDeltaPx.renderNumber()} | ${centerline.p95AbsDeltaPx.renderNumber()} | ${centerline.maxAbsDeltaPx.renderNumber()} | ${centerline.largeDeltaThresholdPx.renderNumber()} | ${centerline.largeDeltaColumnCount} | ${centerline.largeDeltaColumnRatio.renderPercent()} | ${centerline.largeDeltaNearBranchColumnCount} (${centerline.largeDeltaNearBranchColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalAboveCenterlineColumnCount} (${centerline.largeDeltaSignalAboveCenterlineColumnRatio.renderPercent()}) | ${centerline.largeDeltaSignalBelowCenterlineColumnCount} (${centerline.largeDeltaSignalBelowCenterlineColumnRatio.renderPercent()}) | ${centerline.branchPrunedDecision.escapeTable()} | ${centerline.branchPrunedOverlayGenerated} | ${centerline.branchPrunedRemovedColumnCount} | ${centerline.branchPrunedMatchedColumnCount} (${centerline.branchPrunedMatchedColumnRatio.renderPercent()}) | ${centerline.branchPrunedP95AbsDeltaPx.renderNumber()} | ${centerline.branchPrunedLargeDeltaColumnCount} (${centerline.branchPrunedLargeDeltaColumnRatio.renderPercent()}) | ${centerline.branchPrunedP95DeltaImprovementPx.renderNumber()} | ${centerline.branchPrunedLargeDeltaReductionCount} | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -437,6 +437,9 @@ object OfflineAnalysisAuditArtifacts {
         reportRow("Large deltas near branches", graph.curveCenterline.largeDeltaNearBranchColumnCount.toString())
         reportRow("Large deltas with signal above centerline", graph.curveCenterline.largeDeltaSignalAboveCenterlineColumnCount.toString())
         reportRow("Large deltas with signal below centerline", graph.curveCenterline.largeDeltaSignalBelowCenterlineColumnCount.toString())
+        reportRow("Branch-pruned centerline decision", graph.curveCenterline.branchPrunedDecision.humanizeCode())
+        reportRow("Branch-pruned centerline P95 delta", "${graph.curveCenterline.branchPrunedP95AbsDeltaPx.renderNumber()} px")
+        reportRow("Branch-pruned P95 improvement", "${graph.curveCenterline.branchPrunedP95DeltaImprovementPx.renderNumber()} px")
         appendLine()
         renderHumanWarningList(
             (
@@ -506,6 +509,12 @@ object OfflineAnalysisAuditArtifacts {
             path = "graph_${graph.graphIndex}/centerline_parity_overlay.png",
             placement = "Technical appendix and trace acceptance review",
             status = if (graph.curveCenterline.parityOverlayGenerated) "generated" else "not available",
+        )
+        visualEvidenceRow(
+            label = "Branch-pruned centerline overlay",
+            path = "graph_${graph.graphIndex}/centerline_branch_pruned_overlay.png",
+            placement = "Technical appendix and trace acceptance review",
+            status = if (graph.curveCenterline.branchPrunedOverlayGenerated) "generated" else "not available",
         )
         visualEvidenceRow(
             label = "Peak integration overlay",

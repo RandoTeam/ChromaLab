@@ -275,7 +275,19 @@ Accepted result:
   especially on photographed and rotated examples, so the next work must evaluate a
   branch-pruned centerline candidate before any calculation-signal switch.
 
-Next slice: `Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis`.
+Completed next slice: `Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis`.
+
+Accepted result:
+
+- A branch-pruned centerline candidate is now generated as audit evidence only.
+- Each graph writes `centerline_branch_pruned_overlay.png` with preserved signal,
+  original centerline, pruned centerline, and removed branch-near columns.
+- The audit records pruned overlap, P95 delta, large-delta counts, P95 improvement,
+  and large-delta reduction.
+- Real fixture artifacts show useful large-delta reduction but insufficient overlap
+  on hard photographed/rotated graphs, so the candidate must not drive calculation.
+
+Next slice: `Phase 8.3c.5c.14 - Branch-Pruned Continuity And Visual Acceptance Tuning`.
 
 ## Source Links
 
@@ -285,6 +297,8 @@ Next slice: `Phase 8.3c.5c.13 - Branch-Pruned Centerline Hypothesis`.
 - OpenCV Java API: https://docs.opencv.org/4.x/javadoc/
 - OpenCV drawing functions: https://docs.opencv.org/4.x/d6/d6e/group__imgproc__draw.html
 - OpenCV ximgproc thinning: https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
+- PoreSpy skeleton branch pruning: https://porespy.org/autoapi/porespy/filters/prune_branches.html
+- PlantCV morphology pruning and branch-point diagnostics: https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
 - scikit-image morphology skeletonize/medial axis: https://scikit-image.org/docs/stable/api/skimage.morphology.html
 - OpenPnP OpenCV Java packaging: https://github.com/openpnp/opencv
 - BoofCV line detection example: https://boofcv.org/index.php?title=Example_Detect_Lines

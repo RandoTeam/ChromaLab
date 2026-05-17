@@ -256,6 +256,15 @@ object OfflineCalibratedReportUiContractBuilder {
                 requiredForMobile = false,
             ),
             visualEvidence(
+                evidenceId = "centerline_branch_pruned_overlay",
+                label = "Branch-pruned centerline overlay",
+                artifactPath = "graph_${graphIndex}/centerline_branch_pruned_overlay.png",
+                placement = OfflineReportUiPlacement.TECHNICAL_APPENDIX,
+                nearSectionId = "trace_centerline_review",
+                generatedStatus = if (curveCenterline.branchPrunedOverlayGenerated) "generated" else "not_available",
+                requiredForMobile = false,
+            ),
+            visualEvidence(
                 evidenceId = "peak_overlay",
                 label = "Peak integration overlay",
                 artifactPath = "peak_overlay_graph_${graphIndex}.png",

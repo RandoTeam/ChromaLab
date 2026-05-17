@@ -77,6 +77,7 @@ actual class CurveExtractor actual constructor() {
 
         val interpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
         val points = (rawPoints + interpolatedPoints).sortedBy { it.pixelX }
+        val branchPrunedCenterlineByX = centerlineCandidateByX.withoutBranchColumns(branchCandidateColumns)
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = width,
@@ -87,6 +88,7 @@ actual class CurveExtractor actual constructor() {
             branchColumnCount = branchColumnCount,
             signalPoints = rawPoints,
             centerlineCandidateByX = centerlineCandidateByX,
+            branchPrunedCenterlineByX = branchPrunedCenterlineByX,
             branchCandidateColumns = branchCandidateColumns,
         )
         val overlayPath = File(outputDir).also { it.mkdirs() }
@@ -106,7 +108,24 @@ actual class CurveExtractor actual constructor() {
             height = height,
             path = parityOverlayPath,
         )
-        val centerlineAudit = initialCenterlineAudit.copy(parityOverlayGenerated = true)
+        val prunedOverlayPath = File(outputDir)
+            .resolve("centerline_branch_pruned_overlay.png")
+            .absolutePath
+        saveBranchPrunedCenterlineOverlay(
+            mask = mask,
+            skeletonMask = skeletonMask,
+            signalPoints = rawPoints,
+            centerlineCandidateByX = centerlineCandidateByX,
+            branchPrunedCenterlineByX = branchPrunedCenterlineByX,
+            branchCandidateColumns = branchCandidateColumns,
+            width = width,
+            height = height,
+            path = prunedOverlayPath,
+        )
+        val centerlineAudit = initialCenterlineAudit.copy(
+            parityOverlayGenerated = true,
+            branchPrunedOverlayGenerated = true,
+        )
 
         val result = CurveExtractionResult(
             points = points,
@@ -181,6 +200,7 @@ actual class CurveExtractor actual constructor() {
         branchColumnCount: Int,
         signalPoints: List<CurvePoint>,
         centerlineCandidateByX: Map<Int, Float>,
+        branchPrunedCenterlineByX: Map<Int, Float>,
         branchCandidateColumns: Set<Int>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
@@ -200,6 +220,11 @@ actual class CurveExtractor actual constructor() {
         val centerlineCoverage = if (totalColumns > 0) centerlineColumns.toFloat() / totalColumns else 0f
         val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
         val parity = signalPoints.centerlineParity(centerlineCandidateByX, branchCandidateColumns)
+        val branchPrunedParity = signalPoints.centerlineParity(branchPrunedCenterlineByX, branchCandidateColumns)
+        val branchPrunedDecision = branchPrunedDecision(
+            original = parity,
+            pruned = branchPrunedParity,
+        )
         val branchRatio = if (centerlineColumns > 0) {
             branchColumnCount.toFloat() / centerlineColumns.toFloat()
         } else {
@@ -245,6 +270,21 @@ actual class CurveExtractor actual constructor() {
             largeDeltaSignalAboveCenterlineColumnRatio = parity.largeDeltaSignalAboveCenterlineColumnRatio,
             largeDeltaSignalBelowCenterlineColumnCount = parity.largeDeltaSignalBelowCenterlineColumnCount,
             largeDeltaSignalBelowCenterlineColumnRatio = parity.largeDeltaSignalBelowCenterlineColumnRatio,
+            branchPrunedAvailable = branchPrunedParity.compared,
+            branchPrunedMethod = "drop_branch_neighborhood_columns_radius_2",
+            branchPrunedDecision = branchPrunedDecision,
+            branchPrunedSelectedForSignal = false,
+            branchPrunedRemovedColumnCount = centerlineCandidateByX.size - branchPrunedCenterlineByX.size,
+            branchPrunedMatchedColumnCount = branchPrunedParity.matchedColumnCount,
+            branchPrunedMatchedColumnRatio = branchPrunedParity.matchedColumnRatio,
+            branchPrunedMedianAbsDeltaPx = branchPrunedParity.medianAbsDeltaPx,
+            branchPrunedP95AbsDeltaPx = branchPrunedParity.p95AbsDeltaPx,
+            branchPrunedMaxAbsDeltaPx = branchPrunedParity.maxAbsDeltaPx,
+            branchPrunedLargeDeltaColumnCount = branchPrunedParity.largeDeltaColumnCount,
+            branchPrunedLargeDeltaColumnRatio = branchPrunedParity.largeDeltaColumnRatio,
+            branchPrunedP95DeltaImprovementPx = (parity.p95AbsDeltaPx - branchPrunedParity.p95AbsDeltaPx).coerceAtLeast(0f),
+            branchPrunedLargeDeltaReductionCount = (parity.largeDeltaColumnCount - branchPrunedParity.largeDeltaColumnCount)
+                .coerceAtLeast(0),
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
             centerlineColumnCount = centerlineColumns,
@@ -299,6 +339,21 @@ actual class CurveExtractor actual constructor() {
 
     private fun Set<Int>.hasNear(value: Int, radius: Int): Boolean =
         (value - radius..value + radius).any { it in this }
+
+    private fun Map<Int, Float>.withoutBranchColumns(branchCandidateColumns: Set<Int>): Map<Int, Float> =
+        filterKeys { x -> !branchCandidateColumns.hasNear(x, radius = 2) }
+
+    private fun branchPrunedDecision(
+        original: CenterlineParity,
+        pruned: CenterlineParity,
+    ): String =
+        when {
+            !pruned.compared -> "branch_pruned_not_available"
+            pruned.matchedColumnRatio < 0.45f -> "branch_pruned_low_overlap"
+            original.compared && pruned.p95AbsDeltaPx >= original.p95AbsDeltaPx -> "branch_pruned_no_p95_improvement"
+            pruned.p95AbsDeltaPx > CENTERLINE_LARGE_DELTA_THRESHOLD_PX -> "branch_pruned_improved_but_large_delta"
+            else -> "branch_pruned_candidate_ready_for_visual_review"
+        }
 
     private fun List<Float>.percentile(fraction: Float): Float {
         if (isEmpty()) return 0f
@@ -503,6 +558,53 @@ actual class CurveExtractor actual constructor() {
                     graphics.drawLine(x, point.pixelY.roundToInt(), x, centerlineY.roundToInt())
                     graphics.fillOval(x - 2, centerlineY.roundToInt() - 2, 5, 5)
                 }
+            }
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(overlay, "png", File(path))
+        overlay.flush()
+    }
+
+    private fun saveBranchPrunedCenterlineOverlay(
+        mask: BooleanArray,
+        skeletonMask: BooleanArray,
+        signalPoints: List<CurvePoint>,
+        centerlineCandidateByX: Map<Int, Float>,
+        branchPrunedCenterlineByX: Map<Int, Float>,
+        branchCandidateColumns: Set<Int>,
+        width: Int,
+        height: Int,
+        path: String,
+    ) {
+        val overlay = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                overlay.setRGB(
+                    x,
+                    y,
+                    when {
+                        skeletonMask[index] -> PARITY_SKELETON_RGB
+                        mask[index] -> PARITY_MASK_RGB
+                        else -> PARITY_BACKGROUND_RGB
+                    },
+                )
+            }
+        }
+
+        val graphics = overlay.createGraphics()
+        try {
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            drawFloatPolyline(graphics, centerlineCandidateByX, Color(0x00, 0xBC, 0xD4, 0x88), 1.5f)
+            drawFloatPolyline(graphics, signalPoints.associate { it.pixelX to it.pixelY }, Color(0xE5, 0x39, 0x35), 2f)
+            drawFloatPolyline(graphics, branchPrunedCenterlineByX, Color(0x43, 0xA0, 0x47), 2.5f)
+            graphics.stroke = BasicStroke(1f)
+            graphics.color = Color(0xAB, 0x47, 0xBC, 0xD8)
+            branchCandidateColumns.forEach { x ->
+                val y = centerlineCandidateByX[x]?.roundToInt() ?: return@forEach
+                graphics.drawLine(x, 0, x, height - 1)
+                graphics.fillOval(x - 2, y - 2, 5, 5)
             }
         } finally {
             graphics.dispose()
