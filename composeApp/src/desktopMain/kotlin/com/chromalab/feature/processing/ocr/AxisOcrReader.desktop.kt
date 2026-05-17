@@ -18,6 +18,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -50,7 +51,6 @@ actual class AxisOcrReader actual constructor() {
                     model = preflight.model,
                     xBandImage = image.crop(bands.xBand),
                     yBandImage = image.crop(bands.yBand),
-                    titleBandImage = image.crop(bands.titleBand),
                 ).withWarnings(preflight.warnings)
             }
             if (rawResponse.content == null) {
@@ -205,7 +205,74 @@ private class DesktopOpenAiVisionClient(
         model: String,
         xBandImage: BufferedImage,
         yBandImage: BufferedImage,
-        titleBandImage: BufferedImage,
+    ): DesktopVlmTextResult {
+        val xResult = readAxisBandSafely(
+            model = model,
+            axis = DesktopAxisBandRequest.X,
+            image = xBandImage,
+        )
+        val yResult = readAxisBandSafely(
+            model = model,
+            axis = DesktopAxisBandRequest.Y,
+            image = yBandImage,
+        )
+        val warnings = (xResult.warnings + yResult.warnings).distinct()
+        val xAxis = xResult.content?.extractFirstJsonObject()?.parseJsonObject(json)
+        val yAxis = yResult.content?.extractFirstJsonObject()?.parseJsonObject(json)
+        val parseWarnings = buildList {
+            if (xResult.content != null && xAxis == null) add("desktop_axis_vlm.x_response_json_unparseable")
+            if (yResult.content != null && yAxis == null) add("desktop_axis_vlm.y_response_json_unparseable")
+        }
+        if (xAxis == null && yAxis == null) {
+            return DesktopVlmTextResult(
+                content = null,
+                warnings = warnings + parseWarnings,
+            )
+        }
+
+        val content = buildJsonObject {
+            put("xAxis", xAxis ?: emptyAxisObject("min"))
+            put("yAxis", yAxis ?: emptyAxisObject("Abundance"))
+            put("title", "null")
+            put("confidence", minOf(xAxis?.floatOrNull("confidence") ?: 0f, yAxis?.floatOrNull("confidence") ?: 0f))
+            put(
+                "warnings",
+                buildJsonArray {
+                    (warnings + parseWarnings).forEach { warning -> add(JsonPrimitive(warning)) }
+                },
+            )
+        }.toString()
+
+        return DesktopVlmTextResult(
+            content = content,
+            warnings = warnings + parseWarnings,
+        )
+    }
+
+    private fun readAxisBandSafely(
+        model: String,
+        axis: DesktopAxisBandRequest,
+        image: BufferedImage,
+    ): DesktopVlmTextResult =
+        runCatching {
+            readAxisBand(model, axis, image)
+        }.getOrElse {
+            DesktopVlmTextResult(
+                content = null,
+                warnings = listOf(
+                    if (it is HttpTimeoutException) {
+                        "desktop_axis_vlm.${axis.warningPrefix}_request_timeout"
+                    } else {
+                        "desktop_axis_vlm.${axis.warningPrefix}_request_failed"
+                    },
+                ),
+            )
+        }
+
+    private fun readAxisBand(
+        model: String,
+        axis: DesktopAxisBandRequest,
+        image: BufferedImage,
     ): DesktopVlmTextResult {
         val baseUrl = config.baseUrl ?: return DesktopVlmTextResult(
             content = null,
@@ -214,7 +281,7 @@ private class DesktopOpenAiVisionClient(
         val payload = buildJsonObject {
             put("model", model)
             put("temperature", 0)
-            put("max_tokens", 900)
+            put("max_tokens", 260)
             put(
                 "messages",
                 buildJsonArray {
@@ -223,14 +290,14 @@ private class DesktopOpenAiVisionClient(
                             put("role", "system")
                             put(
                                 "content",
-                                "You extract chromatogram axis tick labels from cropped axis bands. Return strict JSON only.",
+                                "You extract chromatogram axis tick labels from one cropped axis band. Return strict JSON only.",
                             )
                         },
                     )
                     add(
                         buildJsonObject {
                             put("role", "user")
-                            put("content", buildContentArray(xBandImage, yBandImage, titleBandImage))
+                            put("content", buildContentArray(axis, image))
                         },
                     )
                 },
@@ -248,14 +315,14 @@ private class DesktopOpenAiVisionClient(
         if (response.statusCode() !in 200..299) {
             return DesktopVlmTextResult(
                 content = null,
-                warnings = listOf("desktop_axis_vlm.http_status_${response.statusCode()}"),
+                warnings = listOf("desktop_axis_vlm.${axis.warningPrefix}_http_status_${response.statusCode()}"),
             )
         }
         val content = response.contentText(json)
         return DesktopVlmTextResult(
             content = content,
             warnings = if (content == null) {
-                listOf("desktop_axis_vlm.response_content_missing")
+                listOf("desktop_axis_vlm.${axis.warningPrefix}_response_content_missing")
             } else {
                 emptyList()
             },
@@ -263,42 +330,16 @@ private class DesktopOpenAiVisionClient(
     }
 
     private fun buildContentArray(
-        xBandImage: BufferedImage,
-        yBandImage: BufferedImage,
-        titleBandImage: BufferedImage,
+        axis: DesktopAxisBandRequest,
+        image: BufferedImage,
     ): JsonArray = buildJsonArray {
         add(
             buildJsonObject {
                 put("type", "text")
-                put(
-                    "text",
-                    """
-                    Read the chromatogram scale from three cropped images.
-                    Image 1 is the X-axis label/tick band. Image 2 is the Y-axis label/tick band. Image 3 is the graph title/ion band.
-                    Return only this JSON schema:
-                    {
-                      "xAxis": {
-                        "unit": "min|s|null",
-                        "ticks": [{"text":"5.00","value":5.0,"position":0.0,"confidence":0.0}]
-                      },
-                      "yAxis": {
-                        "unit": "Abundance|Intensity|null",
-                        "ticks": [{"text":"100000","value":100000.0,"position":0.0,"confidence":0.0}]
-                      },
-                      "title": "visible title or null",
-                      "confidence": 0.0,
-                      "warnings": []
-                    }
-                    position is normalized: X ticks left-to-right inside image 1, Y ticks top-to-bottom inside image 2.
-                    Include only numeric tick labels visible in the crops. Do not infer hidden ticks.
-                    Use dot decimals and no thousands separators in numeric values.
-                    """.trimIndent(),
-                )
+                put("text", axis.prompt)
             },
         )
-        add(imageElement(xBandImage))
-        add(imageElement(yBandImage))
-        add(imageElement(titleBandImage))
+        add(imageElement(image))
     }
 
     private fun imageElement(image: BufferedImage): JsonObject = buildJsonObject {
@@ -326,6 +367,34 @@ private class DesktopOpenAiVisionClient(
             ?.mapNotNull { item -> item.asObject()?.stringOrNull("id") }
             .orEmpty()
     }
+}
+
+private enum class DesktopAxisBandRequest(
+    val warningPrefix: String,
+    val prompt: String,
+) {
+    X(
+        warningPrefix = "x",
+        prompt = """
+            Read visible X-axis numeric tick labels from this chromatogram crop.
+            Return only this compact JSON object:
+            {"unit":"min|s|null","ticks":[{"text":"5.00","value":5.0,"position":0.0}],"confidence":0.0,"warnings":[]}
+            Position is normalized left-to-right inside the image.
+            Include only numeric tick labels visible in the crop. Do not infer hidden ticks.
+            Use dot decimals and no thousands separators in numeric values.
+        """.trimIndent(),
+    ),
+    Y(
+        warningPrefix = "y",
+        prompt = """
+            Read visible Y-axis numeric tick labels from this chromatogram crop.
+            Return only this compact JSON object:
+            {"unit":"Abundance|Intensity|null","ticks":[{"text":"100000","value":100000.0,"position":0.0}],"confidence":0.0,"warnings":[]}
+            Position is normalized top-to-bottom inside the image.
+            Include only numeric tick labels visible in the crop. Do not infer hidden ticks.
+            Use dot decimals and no thousands separators in numeric values.
+        """.trimIndent(),
+    ),
 }
 
 private data class DesktopVlmTextResult(
@@ -406,12 +475,12 @@ private data class AxisBandModelResult(
         val xElements = xTicks.map { tick -> tick.toTextElement(bands.xBand, AxisBandDirection.HORIZONTAL) }
         val yElements = yTicks.map { tick -> tick.toTextElement(bands.yBand, AxisBandDirection.VERTICAL) }
         val allTicks = xTicks + yTicks
-        val averageConfidence = allTicks
-            .map { it.confidence ?: 0.5f }
-            .takeIf { it.isNotEmpty() }
-            ?.average()
-            ?.toFloat()
-            ?: confidence
+        val tickConfidences = allTicks.mapNotNull { it.confidence }
+        val averageConfidence = when {
+            tickConfidences.isNotEmpty() -> tickConfidences.average().toFloat()
+            allTicks.isNotEmpty() -> confidence
+            else -> null
+        }
         val accepted = xTicks.distinctValueCount() >= 2 &&
             yTicks.distinctValueCount() >= 2 &&
             (averageConfidence ?: 0f) >= minConfidence
@@ -562,6 +631,16 @@ private fun String.extractFirstJsonObject(): String? {
         }
     }
     return null
+}
+
+private fun String.parseJsonObject(json: Json): JsonObject? =
+    runCatching { json.parseToJsonElement(this).jsonObject }.getOrNull()
+
+private fun emptyAxisObject(unit: String): JsonObject = buildJsonObject {
+    put("unit", unit)
+    put("ticks", buildJsonArray { })
+    put("confidence", 0.0)
+    put("warnings", buildJsonArray { })
 }
 
 private fun JsonElement.asObject(): JsonObject? = this as? JsonObject

@@ -764,6 +764,7 @@ class OfflineAnalysisRunner(
         }.orEmpty()
         val selectedVariant = variantScores.firstOrNull { it.selected } ?: variantScores.firstOrNull()
         val analysisImagePath = selectedVariant?.imagePath ?: preprocessing.contrastEnhancedPath
+        val ocrImagePath = preprocessing.sourcePath
         if (variantScores.isEmpty()) {
             graphWarnings += "preprocess_variant_ranking_not_available"
         }
@@ -816,7 +817,7 @@ class OfflineAnalysisRunner(
                 "OCR status=${result.status}, x=${result.suggestedXValues.size}, y=${result.suggestedYValues.size}."
             },
         ) {
-            ocrReader.readAxisLabels(analysisImagePath, region)
+            ocrReader.readAxisLabels(ocrImagePath, region)
         }
         if (ocrResult == null || ocrResult.status == OcrStatus.NOT_AVAILABLE) {
             graphWarnings += "axis_ocr_not_available"

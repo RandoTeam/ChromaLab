@@ -62,10 +62,10 @@ path as a live model response. It adds the warning
 `desktop_axis_vlm.replay_response_file` so diagnostic replay output is not mistaken
 for a live model result.
 
-The model is asked to read only the isolated X-axis, Y-axis, and title/ION bands.
-It must return numeric tick values plus normalized tick positions. A result is marked
-`AUTO_ACCEPTED` only when both axes have at least two usable tick anchors and the
-confidence gate passes. Otherwise the run remains blocked at axis calibration.
+The model is asked to read isolated X-axis and Y-axis bands through separate live
+requests. It must return numeric tick values plus normalized tick positions. A result
+is marked `AUTO_ACCEPTED` only when both axes have at least two usable tick anchors
+and the confidence gate passes. Otherwise the run remains blocked at axis calibration.
 
 Desktop VLM/OCR warnings are propagated into the stage audit and report warning
 sections. Important warning codes include:
@@ -88,8 +88,14 @@ sections. Important warning codes include:
 - `desktop_axis_vlm.http_status_N` - endpoint replied with a non-success status.
 - `desktop_axis_vlm.request_timeout` - the configured model did not finish the VLM
   image request within `CHROMALAB_DESKTOP_VLM_TIMEOUT_MS`.
+- `desktop_axis_vlm.x_request_timeout` and `desktop_axis_vlm.y_request_timeout` -
+  an isolated live axis-band request timed out. This usually means the crop is still
+  too broad/noisy for the local VLM and should be narrowed before accepting OCR.
 - `desktop_axis_vlm.response_content_missing` - endpoint response had no message
   content.
+- `desktop_axis_vlm.x_response_json_unparseable` and
+  `desktop_axis_vlm.y_response_json_unparseable` - an isolated axis response did not
+  contain the required JSON object.
 - `desktop_axis_vlm.response_json_unparseable` - model output did not contain the
   required JSON object.
 - `desktop_axis_vlm.x_requires_two_ticks` and
