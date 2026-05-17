@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.1 - split live desktop VLM axis extraction and prove crop geometry is the remaining blocker`.
-- Next work slice: `Phase 8.3c.5c.2 - build VLM axis crops from plot-area/tick-label zones, persist exact VLM crop artifacts, then rerun live Qwen3-VL`.
+- Latest completed work slice: `Phase 8.3c.5c.2 - review deterministic CV geometry core and pivot away from VLM-owned pixel positions`.
+- Next work slice: `Phase 8.3c.5c.3 - add a CV geometry adapter spike for line segments, connected components, and axis/frame candidate overlays before further VLM crop tuning`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -97,7 +97,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5b.1 | Done | `2501d75` | Add LM Studio API-token support and document the live endpoint authentication setup. |
 | Phase 8.3c.5b.2 | Done | `9f4d9d9` | Add fast `/models` preflight diagnostics and optional model auto-selection before sending image requests. |
 | Phase 8.3c.5b.3 | Done | `edb2319` | Bypass blocking `/models` discovery when a model id is explicit, expose live VLM request timeouts, and verify that the current three-band Qwen3-VL request times out while smaller one-image requests return. |
-| Phase 8.3c.5c.1 | Done | `this commit` | Split desktop VLM axis OCR into separate X/Y requests with axis-specific warning codes, use the orientation-corrected source image for OCR instead of binary preprocessing, compact the axis JSON contract, and verify live `bench_07` still blocks honestly on X/Y request timeouts. |
+| Phase 8.3c.5c.1 | Done | `ad4ca28` | Split desktop VLM axis OCR into separate X/Y requests with axis-specific warning codes, use the orientation-corrected source image for OCR instead of binary preprocessing, compact the axis JSON contract, and verify live `bench_07` still blocks honestly on X/Y request timeouts. |
+| Phase 8.3c.5c.2 | Done | `this commit` | Review current code and current CV/plot-digitizer/OCR options, document that VLM must not own pixel positions, and set the next slice to a deterministic CV geometry adapter spike. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final

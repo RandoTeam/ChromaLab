@@ -2,6 +2,12 @@
 
 Status: Phase 5.8b.1 research note.
 
+Phase 8.3c.5c.2 follow-up: the active architecture review now lives in
+`docs/CHROMATOGRAM_DETERMINISTIC_CV_CORE_REVIEW.md`. It updates this earlier
+artifact-first research into a stricter deterministic CV geometry direction:
+OpenCV-style graph/axis/tick/trace extraction first, OCR only for small tick-label
+values, and VLM only for semantic assistance.
+
 ## Problem
 
 `bench_06` now exposes the core tradeoff clearly:
