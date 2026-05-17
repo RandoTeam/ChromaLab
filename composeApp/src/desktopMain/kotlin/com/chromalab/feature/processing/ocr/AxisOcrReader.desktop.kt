@@ -62,7 +62,12 @@ actual class AxisOcrReader actual constructor() {
                 )
             modelResult.toAxisOcrResult(bands, config.minConfidence, rawResponse.warnings)
         }.getOrElse {
-            unavailableAxisOcrResult("desktop_axis_vlm.request_failed")
+            val warning = if (it is HttpTimeoutException) {
+                "desktop_axis_vlm.request_timeout"
+            } else {
+                "desktop_axis_vlm.request_failed"
+            }
+            unavailableAxisOcrResult(warning)
         }
     }
 }
@@ -116,8 +121,8 @@ private data class DesktopAxisVlmConfig(
                 ?.takeIf { it.isNotBlank() }
             val timeoutMs = System.getenv("CHROMALAB_DESKTOP_VLM_TIMEOUT_MS")
                 ?.toLongOrNull()
-                ?.coerceIn(5_000L, 180_000L)
-                ?: 90_000L
+                ?.coerceIn(5_000L, 900_000L)
+                ?: 300_000L
             val minConfidence = System.getenv("CHROMALAB_DESKTOP_VLM_MIN_CONFIDENCE")
                 ?.toFloatOrNull()
                 ?.coerceIn(0.1f, 0.99f)
@@ -141,6 +146,13 @@ private class DesktopOpenAiVisionClient(
             model = null,
             warnings = listOf("desktop_axis_vlm.endpoint_not_configured"),
         )
+        config.model?.let { configuredModel ->
+            return DesktopVlmPreflightResult(
+                ready = true,
+                model = configuredModel,
+                warnings = emptyList(),
+            )
+        }
         return runCatching {
             val requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create("$baseUrl/models"))
@@ -161,18 +173,10 @@ private class DesktopOpenAiVisionClient(
                 return DesktopVlmPreflightResult(ready = false, model = null, warnings = warnings)
             }
             val modelIds = response.modelIds(json)
-            val configuredModel = config.model
-            val resolvedModel = when {
-                configuredModel != null -> configuredModel
-                modelIds.isNotEmpty() -> modelIds.first()
-                else -> null
-            }
+            val resolvedModel = modelIds.firstOrNull()
             val warnings = buildList {
-                if (configuredModel == null && resolvedModel != null) {
+                if (resolvedModel != null) {
                     add("desktop_axis_vlm.model_auto_selected")
-                }
-                if (configuredModel != null && modelIds.isNotEmpty() && configuredModel !in modelIds) {
-                    add("desktop_axis_vlm.model_not_listed")
                 }
                 if (resolvedModel == null) {
                     add("desktop_axis_vlm.model_not_discovered")

@@ -34,7 +34,13 @@ Example with LM Studio local server:
 $env:CHROMALAB_DESKTOP_VLM_BASE_URL = "http://127.0.0.1:1234/v1"
 $env:CHROMALAB_DESKTOP_VLM_MODEL = "qwen3-vl-2b-instruct"
 $env:CHROMALAB_DESKTOP_VLM_MIN_CONFIDENCE = "0.65"
+$env:CHROMALAB_DESKTOP_VLM_TIMEOUT_MS = "300000"
 ```
+
+When `CHROMALAB_DESKTOP_VLM_MODEL` is set, the runner uses that model directly for
+the image request. The `/models` endpoint is used only for automatic model discovery
+when no explicit model id is configured, so a slow discovery response cannot block a
+known-good local model.
 
 If LM Studio Server Settings has authentication enabled, create an API token in
 Developer > Server Settings > Manage Tokens and pass it to the desktop runner:
@@ -78,10 +84,10 @@ sections. Important warning codes include:
   within the short diagnostic timeout.
 - `desktop_axis_vlm.model_auto_selected` - no model id was configured, so the first
   model from `/models` was used.
-- `desktop_axis_vlm.model_not_listed` - configured model id was not present in
-  `/models`.
 - `desktop_axis_vlm.model_not_discovered` - no usable model id was available.
 - `desktop_axis_vlm.http_status_N` - endpoint replied with a non-success status.
+- `desktop_axis_vlm.request_timeout` - the configured model did not finish the VLM
+  image request within `CHROMALAB_DESKTOP_VLM_TIMEOUT_MS`.
 - `desktop_axis_vlm.response_content_missing` - endpoint response had no message
   content.
 - `desktop_axis_vlm.response_json_unparseable` - model output did not contain the

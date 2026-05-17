@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5b.2 - add LM Studio preflight diagnostics for desktop VLM`.
-- Next work slice: `Phase 8.3c.5b.3 - run live desktop VLM axis calibration after LM Studio token/network setup`.
+- Latest completed work slice: `Phase 8.3c.5b.3 - diagnose live LM Studio Qwen3-VL axis OCR timeout path`.
+- Next work slice: `Phase 8.3c.5c.1 - split live desktop VLM axis extraction into smaller audited requests and combine with deterministic tick geometry`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -95,7 +95,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.4 | Done | `54ee00e` | Add audit-visible desktop VLM axis-OCR failure and acceptance warnings before live model tuning. |
 | Phase 8.3c.5a | Done | `499e3c4` | Add a desktop VLM response replay harness and fixture response to validate axis parser/gates without a live endpoint. |
 | Phase 8.3c.5b.1 | Done | `2501d75` | Add LM Studio API-token support and document the live endpoint authentication setup. |
-| Phase 8.3c.5b.2 | Done | `this commit` | Add fast `/models` preflight diagnostics and optional model auto-selection before sending image requests. |
+| Phase 8.3c.5b.2 | Done | `9f4d9d9` | Add fast `/models` preflight diagnostics and optional model auto-selection before sending image requests. |
+| Phase 8.3c.5b.3 | Done | `this commit` | Bypass blocking `/models` discovery when a model id is explicit, expose live VLM request timeouts, and verify that the current three-band Qwen3-VL request times out while smaller one-image requests return. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
