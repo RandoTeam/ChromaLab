@@ -111,6 +111,26 @@ object OfflineAnalysisAuditArtifacts {
         appendLine("| Residual metrics required | ${perspective.residualMetricsRequired} |")
         appendLine("| Warnings | ${perspective.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |")
         appendLine()
+        appendLine("| Residual candidate count | ${perspective.residualMetrics.candidateCount} |")
+        appendLine("| Residual accepted candidates | ${perspective.residualMetrics.acceptedCandidateCount} |")
+        appendLine("| Residual accepted plots | ${perspective.residualMetrics.acceptedPlotAreaCandidateCount} |")
+        appendLine("| Residual max corner displacement | ${perspective.residualMetrics.maxNormalizedCornerDisplacement.renderPercent()} |")
+        appendLine("| Residual max skew | ${perspective.residualMetrics.maxSkewAngleDegrees.renderNumber()} deg |")
+        appendLine("| Residual max orthogonality | ${perspective.residualMetrics.maxOrthogonalityResidualDegrees.renderNumber()} deg |")
+        appendLine("| Residual quality ready | ${perspective.residualMetrics.residualQualityReady} |")
+        appendLine("| Residual warnings | ${perspective.residualMetrics.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |")
+        appendLine()
+
+        appendLine("## Perspective Quadrilateral Candidates")
+        appendLine()
+        appendLine("| Kind | Graph | Source | Bounds | Accepted | Area | Aspect | Corner residual | Skew | Orthogonality | Straightness | Score | Warnings |")
+        appendLine("| --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        perspective.candidates.forEach { candidate ->
+            appendLine(
+                "| ${candidate.kind} | ${candidate.graphIndex ?: ""} | ${candidate.source.escapeTable()} | ${candidate.bounds.renderRegion()} | ${candidate.accepted} | ${candidate.areaRatio.renderPercent()} | ${candidate.aspectRatio.renderNumber()} | ${candidate.normalizedCornerDisplacement.renderPercent()} | ${candidate.maxSkewAngleDegrees.renderNumber()} | ${candidate.orthogonalityResidualDegrees.renderNumber()} | ${candidate.maxSideStraightnessResidualPx.renderNumber()} | ${candidate.score.renderNumber()} | ${candidate.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
 
         appendLine("## Graph Candidates")
         appendLine()

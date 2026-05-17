@@ -708,15 +708,18 @@ Deliverables:
 ## Immediate Next Slice
 
 Phase 8.3c.5c.3c completed the R2 diagnostic spike, Phase 8.3c.5c.3d reviewed
-the generated artifacts on clean, photographed two-graph, and rotated examples, and
-Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract.
-The next code slice should not tune prompts or thresholds. It should add real
-production CV quadrilateral candidates and residual metrics behind that contract:
+the generated artifacts on clean, photographed two-graph, and rotated examples,
+Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract,
+and Phase 8.3c.5c.5 added document, graph-panel, and plot-area quadrilateral
+candidates plus aggregate residual metrics. The next code slice should not tune
+prompts or thresholds. It should benchmark a real OpenCV-backed detector behind that
+contract:
 
 ```text
 input fixture
   -> grayscale/threshold variants
-  -> page/plot quadrilateral evidence
+  -> OpenCV contours/approxPolyDP page candidates
+  -> OpenCV Hough/LSD plot-frame candidates
   -> perspective/homography audit with residual metrics
   -> graph-panel candidates
   -> artifact-separated plot-frame and axis candidates

@@ -170,7 +170,52 @@ data class OfflinePerspectiveGeometryAudit(
     val perspectiveApplied: Boolean = false,
     val normalizedCornerDisplacement: Float = 0f,
     val maxSkewAngleDegrees: Float = 0f,
+    val candidates: List<OfflineGeometryQuadrilateralCandidateAudit> = emptyList(),
+    val residualMetrics: OfflinePerspectiveResidualMetricsAudit = OfflinePerspectiveResidualMetricsAudit(),
     val residualMetricsRequired: Boolean = true,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineGeometryCandidateKind {
+    DOCUMENT,
+    GRAPH_PANEL,
+    PLOT_AREA,
+}
+
+@Serializable
+data class OfflineGeometryQuadrilateralCandidateAudit(
+    val kind: OfflineGeometryCandidateKind,
+    val graphIndex: Int? = null,
+    val source: String,
+    val bounds: GraphRegion,
+    val corners: DocumentCorners,
+    val accepted: Boolean,
+    val areaRatio: Float,
+    val aspectRatio: Float,
+    val normalizedCornerDisplacement: Float,
+    val maxSkewAngleDegrees: Float,
+    val maxSideStraightnessResidualPx: Float,
+    val orthogonalityResidualDegrees: Float,
+    val score: Float,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePerspectiveResidualMetricsAudit(
+    val candidateCount: Int = 0,
+    val acceptedCandidateCount: Int = 0,
+    val documentCandidateCount: Int = 0,
+    val graphPanelCandidateCount: Int = 0,
+    val plotAreaCandidateCount: Int = 0,
+    val acceptedPlotAreaCandidateCount: Int = 0,
+    val maxNormalizedCornerDisplacement: Float = 0f,
+    val maxSkewAngleDegrees: Float = 0f,
+    val maxOrthogonalityResidualDegrees: Float = 0f,
+    val maxSideStraightnessResidualPx: Float = 0f,
+    val minAcceptedPlotAreaRatio: Float = 0f,
+    val maxAcceptedPlotAreaRatio: Float = 0f,
+    val residualQualityReady: Boolean = false,
     val warnings: List<String> = emptyList(),
 )
 
@@ -2368,6 +2413,14 @@ private fun buildPerspectiveGeometryAudit(
         documentBounds.areaRatio in 0.10f..0.98f
     val plotAreaCount = graphAudits.count { it.plotArea.detected && it.plotArea.region != null }
     val plotGeometryReady = graphAudits.isNotEmpty() && plotAreaCount == graphAudits.size
+    val candidates = buildGeometryQuadrilateralCandidates(
+        documentBounds = documentBounds,
+        documentTrusted = documentTrusted,
+        imageWidth = imageWidth,
+        imageHeight = imageHeight,
+        graphAudits = graphAudits,
+    )
+    val residualMetrics = buildPerspectiveResidualMetrics(candidates)
     val normalizedCornerDisplacement = documentBounds?.let { bounds ->
         normalizedCornerDisplacement(
             corners = bounds.effectiveCorners,
@@ -2388,11 +2441,12 @@ private fun buildPerspectiveGeometryAudit(
         }
         if (!plotGeometryReady) add("perspective_geometry.plot_geometry_incomplete")
         if (perspectiveRequired) add("perspective_geometry.perspective_transform_required")
+        addAll(residualMetrics.warnings)
         add("perspective_geometry.residual_metrics_required_before_production_acceptance")
-    }
+    }.distinct()
 
     return OfflinePerspectiveGeometryAudit(
-        ready = documentTrusted && plotGeometryReady && !perspectiveRequired,
+        ready = documentTrusted && plotGeometryReady && !perspectiveRequired && residualMetrics.residualQualityReady,
         imageWidth = imageWidth,
         imageHeight = imageHeight,
         documentDetected = documentBounds != null,
@@ -2411,7 +2465,148 @@ private fun buildPerspectiveGeometryAudit(
         perspectiveApplied = false,
         normalizedCornerDisplacement = normalizedCornerDisplacement,
         maxSkewAngleDegrees = maxSkewAngle,
+        candidates = candidates,
+        residualMetrics = residualMetrics,
         residualMetricsRequired = true,
+        warnings = warnings,
+    )
+}
+
+private fun buildGeometryQuadrilateralCandidates(
+    documentBounds: DocumentBounds?,
+    documentTrusted: Boolean,
+    imageWidth: Int,
+    imageHeight: Int,
+    graphAudits: List<OfflineGraphAudit>,
+): List<OfflineGeometryQuadrilateralCandidateAudit> = buildList {
+    if (documentBounds != null) {
+        val corners = documentBounds.effectiveCorners
+        add(
+            quadrilateralCandidate(
+                kind = OfflineGeometryCandidateKind.DOCUMENT,
+                graphIndex = null,
+                source = "document_detector",
+                corners = corners,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                accepted = documentTrusted,
+                score = documentBounds.confidence,
+                warnings = buildList {
+                    if (!documentTrusted) add("quadrilateral.document_not_trusted")
+                    if (documentBounds.confidence <= 0.15f) add("quadrilateral.low_document_confidence")
+                    if (!documentBounds.isQuadrilateral) add("quadrilateral.document_not_four_corners")
+                    if (documentBounds.areaRatio !in 0.10f..0.98f) add("quadrilateral.document_area_out_of_range")
+                },
+            ),
+        )
+    }
+
+    graphAudits.forEach { graph ->
+        add(
+            quadrilateralCandidate(
+                kind = OfflineGeometryCandidateKind.GRAPH_PANEL,
+                graphIndex = graph.graphIndex,
+                source = "graph_region",
+                corners = graph.region.toDocumentCorners(),
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                accepted = graph.cropQuality.acceptedForCalculation && graph.cropBoundaryRisk.acceptedForCalculation,
+                score = (1f - graph.cropQuality.areaRatio.coerceIn(0f, 1f) * 0.15f).coerceIn(0f, 1f),
+                warnings = graph.cropQuality.warnings + graph.cropBoundaryRisk.warnings,
+            ),
+        )
+
+        val plotRegion = graph.plotArea.region
+        add(
+            quadrilateralCandidate(
+                kind = OfflineGeometryCandidateKind.PLOT_AREA,
+                graphIndex = graph.graphIndex,
+                source = "plot_area_detector",
+                corners = (plotRegion ?: graph.region).toDocumentCorners(),
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                accepted = graph.plotArea.detected && plotRegion != null,
+                score = if (graph.plotArea.detected && plotRegion != null) {
+                    graph.plotArea.areaRatioWithinPanel.coerceIn(0f, 1f)
+                } else {
+                    0f
+                },
+                warnings = graph.plotArea.warnings + if (plotRegion == null) {
+                    listOf("quadrilateral.plot_area_missing")
+                } else {
+                    emptyList()
+                },
+            ),
+        )
+    }
+}
+
+private fun quadrilateralCandidate(
+    kind: OfflineGeometryCandidateKind,
+    graphIndex: Int?,
+    source: String,
+    corners: DocumentCorners,
+    imageWidth: Int,
+    imageHeight: Int,
+    accepted: Boolean,
+    score: Float,
+    warnings: List<String>,
+): OfflineGeometryQuadrilateralCandidateAudit {
+    val bounds = corners.toBoundingRegion(kind.name.lowercase())
+    return OfflineGeometryQuadrilateralCandidateAudit(
+        kind = kind,
+        graphIndex = graphIndex,
+        source = source,
+        bounds = bounds,
+        corners = corners,
+        accepted = accepted,
+        areaRatio = corners.polygonAreaRatio(imageWidth, imageHeight),
+        aspectRatio = corners.aspectRatio(),
+        normalizedCornerDisplacement = corners.normalizedCornerDisplacementWithin(bounds),
+        maxSkewAngleDegrees = corners.maxSkewAngleDegrees(),
+        maxSideStraightnessResidualPx = 0f,
+        orthogonalityResidualDegrees = corners.maxOrthogonalityResidualDegrees(),
+        score = score.coerceIn(0f, 1f),
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun buildPerspectiveResidualMetrics(
+    candidates: List<OfflineGeometryQuadrilateralCandidateAudit>,
+): OfflinePerspectiveResidualMetricsAudit {
+    val accepted = candidates.filter { it.accepted }
+    val acceptedPlots = accepted.filter { it.kind == OfflineGeometryCandidateKind.PLOT_AREA }
+    val warnings = buildList {
+        if (candidates.none { it.kind == OfflineGeometryCandidateKind.DOCUMENT }) {
+            add("perspective_residual.document_candidate_missing")
+        }
+        if (acceptedPlots.isEmpty()) {
+            add("perspective_residual.no_accepted_plot_candidates")
+        }
+        if (accepted.any { it.maxSkewAngleDegrees > 2f }) {
+            add("perspective_residual.skew_review_required")
+        }
+        if (accepted.any { it.orthogonalityResidualDegrees > 2f }) {
+            add("perspective_residual.orthogonality_review_required")
+        }
+    }
+    val residualQualityReady = acceptedPlots.isNotEmpty() &&
+        accepted.none { it.maxSkewAngleDegrees > 2f || it.orthogonalityResidualDegrees > 2f }
+
+    return OfflinePerspectiveResidualMetricsAudit(
+        candidateCount = candidates.size,
+        acceptedCandidateCount = accepted.size,
+        documentCandidateCount = candidates.count { it.kind == OfflineGeometryCandidateKind.DOCUMENT },
+        graphPanelCandidateCount = candidates.count { it.kind == OfflineGeometryCandidateKind.GRAPH_PANEL },
+        plotAreaCandidateCount = candidates.count { it.kind == OfflineGeometryCandidateKind.PLOT_AREA },
+        acceptedPlotAreaCandidateCount = acceptedPlots.size,
+        maxNormalizedCornerDisplacement = accepted.maxOfOrNull { it.normalizedCornerDisplacement } ?: 0f,
+        maxSkewAngleDegrees = accepted.maxOfOrNull { it.maxSkewAngleDegrees } ?: 0f,
+        maxOrthogonalityResidualDegrees = accepted.maxOfOrNull { it.orthogonalityResidualDegrees } ?: 0f,
+        maxSideStraightnessResidualPx = accepted.maxOfOrNull { it.maxSideStraightnessResidualPx } ?: 0f,
+        minAcceptedPlotAreaRatio = acceptedPlots.minOfOrNull { it.areaRatio } ?: 0f,
+        maxAcceptedPlotAreaRatio = acceptedPlots.maxOfOrNull { it.areaRatio } ?: 0f,
+        residualQualityReady = residualQualityReady,
         warnings = warnings,
     )
 }
@@ -2540,6 +2735,63 @@ private fun GraphRegionRefinementResult.cropQualityAudit(
 private fun GraphRegion.edgeContactCount(imageWidth: Int, imageHeight: Int): Int =
     listOf(y <= 0, right >= imageWidth, bottom >= imageHeight, x <= 0).count { it }
 
+private fun GraphRegion.toDocumentCorners(): DocumentCorners =
+    DocumentCorners(
+        topLeft = ImagePoint(x.toFloat(), y.toFloat()),
+        topRight = ImagePoint(right.toFloat(), y.toFloat()),
+        bottomRight = ImagePoint(right.toFloat(), bottom.toFloat()),
+        bottomLeft = ImagePoint(x.toFloat(), bottom.toFloat()),
+    )
+
+private fun DocumentCorners.toBoundingRegion(label: String): GraphRegion {
+    val xs = listOf(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x)
+    val ys = listOf(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y)
+    val left = xs.minOrNull()?.roundToInt() ?: 0
+    val top = ys.minOrNull()?.roundToInt() ?: 0
+    val right = xs.maxOrNull()?.roundToInt() ?: left
+    val bottom = ys.maxOrNull()?.roundToInt() ?: top
+    return GraphRegion(
+        x = left,
+        y = top,
+        width = (right - left).coerceAtLeast(1),
+        height = (bottom - top).coerceAtLeast(1),
+        label = label,
+    )
+}
+
+private fun DocumentCorners.polygonAreaRatio(imageWidth: Int, imageHeight: Int): Float {
+    val area = polygonArea(listOf(topLeft, topRight, bottomRight, bottomLeft))
+    val imageArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
+    return area / imageArea
+}
+
+private fun DocumentCorners.aspectRatio(): Float {
+    val topWidth = distance(topLeft, topRight)
+    val bottomWidth = distance(bottomLeft, bottomRight)
+    val leftHeight = distance(topLeft, bottomLeft)
+    val rightHeight = distance(topRight, bottomRight)
+    val width = (topWidth + bottomWidth) / 2f
+    val height = ((leftHeight + rightHeight) / 2f).coerceAtLeast(1f)
+    return width / height
+}
+
+private fun DocumentCorners.normalizedCornerDisplacementWithin(bounds: GraphRegion): Float {
+    val diagonal = sqrt((bounds.width * bounds.width + bounds.height * bounds.height).toFloat()).coerceAtLeast(1f)
+    val expected = listOf(
+        bounds.x.toFloat() to bounds.y.toFloat(),
+        bounds.right.toFloat() to bounds.y.toFloat(),
+        bounds.right.toFloat() to bounds.bottom.toFloat(),
+        bounds.x.toFloat() to bounds.bottom.toFloat(),
+    )
+    val actual = listOf(topLeft, topRight, bottomRight, bottomLeft)
+    return actual.zip(expected)
+        .maxOf { (point, expectedPoint) ->
+            val dx = point.x - expectedPoint.first
+            val dy = point.y - expectedPoint.second
+            sqrt(dx * dx + dy * dy)
+        } / diagonal
+}
+
 private fun normalizedCornerDisplacement(
     corners: DocumentCorners,
     imageWidth: Int,
@@ -2573,6 +2825,21 @@ private fun DocumentCorners.maxSkewAngleDegrees(): Float {
     return (horizontalAngles + verticalAngles).maxOrNull() ?: 0f
 }
 
+private fun DocumentCorners.maxOrthogonalityResidualDegrees(): Float {
+    val sides = listOf(
+        lineAngleDegrees(topLeft, topRight),
+        lineAngleDegrees(topRight, bottomRight),
+        lineAngleDegrees(bottomRight, bottomLeft),
+        lineAngleDegrees(bottomLeft, topLeft),
+    )
+    return listOf(
+        adjacentAngleResidual(sides[0], sides[1]),
+        adjacentAngleResidual(sides[1], sides[2]),
+        adjacentAngleResidual(sides[2], sides[3]),
+        adjacentAngleResidual(sides[3], sides[0]),
+    ).maxOrNull() ?: 0f
+}
+
 private fun lineAngleDegrees(a: ImagePoint, b: ImagePoint): Float =
     (atan2((b.y - a.y).toDouble(), (b.x - a.x).toDouble()) * 180.0 / kotlin.math.PI).toFloat()
 
@@ -2581,6 +2848,26 @@ private fun normalizeAngleDistance(angle: Float, target: Float): Float {
     if (delta > 90f) delta = 180f - delta
     return delta
 }
+
+private fun adjacentAngleResidual(a: Float, b: Float): Float {
+    var delta = abs(a - b) % 180f
+    if (delta > 90f) delta = 180f - delta
+    return abs(90f - delta)
+}
+
+private fun polygonArea(points: List<ImagePoint>): Float {
+    if (points.size < 3) return 0f
+    var area = 0f
+    for (index in points.indices) {
+        val current = points[index]
+        val next = points[(index + 1) % points.size]
+        area += current.x * next.y - next.x * current.y
+    }
+    return abs(area) / 2f
+}
+
+private fun distance(a: ImagePoint, b: ImagePoint): Float =
+    sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y))
 
 private const val CONTROLLED_TUNING_MIN_SNR = 2.0
 private const val CONTROLLED_TUNING_REFERENCE_MIN_SNR = 3.0

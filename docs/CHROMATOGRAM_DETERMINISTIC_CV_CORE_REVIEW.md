@@ -258,24 +258,33 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.5 - Production CV Document/Plot Quadrilateral Candidates
 
-- Fill the `perspectiveGeometry` contract with real document/plot quadrilateral
-  candidates.
-- Add residual metrics for homography, skew, straightness, and plot-frame fit.
-- Keep OpenCV as the first benchmark target and BoofCV as the fallback candidate.
+- Done: fill the `perspectiveGeometry` contract with document, graph-panel, and
+  plot-area quadrilateral candidates.
+- Done: add aggregate residual metrics for candidate counts, accepted plot candidates,
+  corner displacement, skew, orthogonality, straightness, and plot-area ratio.
+- Done: verify the contract on the full fixture gate plus persistent clean,
+  two-graph, and rotated artifacts.
 
-### Phase 8.3c.5c.6 - Deterministic Axis And Tick Geometry
+### Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detector Benchmark
+
+- Implement an OpenCV-backed desktop candidate source for document/page contours and
+  plot-frame line evidence.
+- Compare it against the current platform-neutral quadrilateral contract.
+- Keep BoofCV as the fallback candidate if OpenCV packaging blocks Android parity.
+
+### Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry
 
 - Detect axes and ticks through CV geometry after plot geometry is trusted.
 - Persist tick-position overlays.
 - Stop asking VLM for tick positions.
 
-### Phase 8.3c.5c.7 - OCR Values Only
+### Phase 8.3c.5c.8 - OCR Values Only
 
 - OCR only small tick-label crops.
 - Match values to CV tick positions.
 - Fit robust calibration and block on residual failures.
 
-### Phase 8.3c.5c.8 - Skeleton Trace Extraction
+### Phase 8.3c.5c.9 - Skeleton Trace Extraction
 
 - Add skeleton/thinning or equivalent trace-centerline extraction.
 - Add distortion-aware signal conversion.

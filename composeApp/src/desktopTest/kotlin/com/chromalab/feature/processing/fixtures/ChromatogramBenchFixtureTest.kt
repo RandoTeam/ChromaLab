@@ -157,6 +157,24 @@ class ChromatogramBenchFixtureTest {
             assertEquals(audit.graphs.size, audit.perspectiveGeometry.graphPanelCount, "${fixture.id} perspective geometry graph count")
             assertEquals(audit.graphs.size, audit.perspectiveGeometry.plotAreaCount, "${fixture.id} perspective geometry plot count")
             assertTrue(audit.perspectiveGeometry.plotGeometryReady, "${fixture.id} perspective geometry must see all plot areas")
+            assertEquals(
+                1 + audit.graphs.size * 2,
+                audit.perspectiveGeometry.residualMetrics.candidateCount,
+                "${fixture.id} must expose document, graph-panel, and plot-area quadrilateral candidates",
+            )
+            assertEquals(
+                audit.graphs.size,
+                audit.perspectiveGeometry.residualMetrics.acceptedPlotAreaCandidateCount,
+                "${fixture.id} must accept one plot-area quadrilateral per graph",
+            )
+            assertTrue(
+                audit.perspectiveGeometry.candidates.any { it.kind.name == "DOCUMENT" },
+                "${fixture.id} must expose a document quadrilateral candidate",
+            )
+            assertTrue(
+                audit.perspectiveGeometry.candidates.any { it.kind.name == "PLOT_AREA" && it.accepted },
+                "${fixture.id} must expose accepted plot-area quadrilateral candidates",
+            )
             assertTrue(audit.perspectiveGeometry.residualMetricsRequired, "${fixture.id} must keep residual metrics in the geometry contract")
             assertTrue(
                 audit.graphs.all { it.preprocessingVariantScores.isNotEmpty() },
@@ -303,6 +321,10 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 Files.readString(outputDir.resolve("audit.json")).contains("\"perspectiveGeometry\""),
                 "${fixture.id} audit JSON must expose the perspective geometry contract",
+            )
+            assertTrue(
+                Files.readString(outputDir.resolve("audit.json")).contains("\"residualMetrics\""),
+                "${fixture.id} audit JSON must expose perspective residual metrics",
             )
             assertTrue(Files.size(outputDir.resolve("audit_summary.md")) > 0L, "${fixture.id} audit summary must be written")
             assertTrue(

@@ -161,7 +161,21 @@ Accepted result:
   - two-graph photographed `bench_06_photo_two_graphs_page`;
   - rotated photographed `bench_07_rotated_page_photo`.
 
-Next slice: `Phase 8.3c.5c.5 - Production CV Document/Plot Quadrilateral Candidates And Residual Metrics`.
+Completed next slice: `Phase 8.3c.5c.5 - Production CV Document/Plot Quadrilateral Candidates And Residual Metrics`.
+
+Accepted result:
+
+- `perspectiveGeometry` now exposes document, graph-panel, and plot-area
+  quadrilateral candidates with source, bounds, corners, area/aspect, skew,
+  orthogonality, corner displacement, score, acceptance, and warnings.
+- The contract now exposes aggregate residual metrics so OpenCV and BoofCV candidate
+  backends can be compared without changing the report schema.
+- Persistent fixture artifacts confirm:
+  - `bench_03_small_tic_export`: 3 candidates, 1 accepted plot;
+  - `bench_06_photo_two_graphs_page`: 5 candidates, 2 accepted plots;
+  - `bench_07_rotated_page_photo`: 3 candidates, 1 accepted plot.
+
+Next slice: `Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detector Benchmark`.
 
 ## Source Links
 
