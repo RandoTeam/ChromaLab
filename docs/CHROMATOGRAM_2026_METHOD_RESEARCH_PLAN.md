@@ -710,26 +710,29 @@ Deliverables:
 Phase 8.3c.5c.3c completed the R2 diagnostic spike, Phase 8.3c.5c.3d reviewed
 the generated artifacts on clean, photographed two-graph, and rotated examples,
 Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract,
-and Phase 8.3c.5c.5 added document, graph-panel, and plot-area quadrilateral
-candidates plus aggregate residual metrics. The next code slice should not tune
-prompts or thresholds. It should benchmark a real OpenCV-backed detector behind that
-contract:
+Phase 8.3c.5c.5 added document, graph-panel, and plot-area quadrilateral
+candidates plus aggregate residual metrics, and Phase 8.3c.5c.6 added an
+OpenCV-backed desktop benchmark source behind that contract.
+
+The next code slice should not tune prompts or thresholds. It should move to
+deterministic axis and tick geometry, using OpenCV/BoofCV-style primitives only after
+the graph/plot quadrilateral evidence is present:
 
 ```text
 input fixture
   -> grayscale/threshold variants
-  -> OpenCV contours/approxPolyDP page candidates
-  -> OpenCV Hough/LSD plot-frame candidates
-  -> perspective/homography audit with residual metrics
-  -> graph-panel candidates
-  -> artifact-separated plot-frame and axis candidates
+  -> existing graph-panel and plot-area candidates
+  -> OpenCV contour/Hough benchmark candidates
+  -> artifact-separated axis and frame masks
+  -> deterministic axis-line candidates
   -> tick geometry positions
-  -> residual metrics
+  -> OCR value matching and calibration residual metrics
 ```
 
-The CV geometry spike remains diagnostic evidence. Production work now has a
-platform-neutral contract to fill. Benchmark OpenCV first, keeping BoofCV as a
-fallback candidate if native packaging or Android integration blocks the OpenCV path.
+The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
+native parity is reviewed. Production work now has a platform-neutral contract to
+fill with axis/tick geometry. Keep BoofCV as a fallback candidate if native OpenCV
+packaging, APK size, or Android loading blocks the OpenCV path.
 
 ## Source Links
 
@@ -747,6 +750,8 @@ fallback candidate if native packaging or Android integration blocks the OpenCV 
   https://docs.opencv.org/4.x/d7/dbd/tutorial_android_ocl_intro.html
 - BoofCV:
   https://boofcv.org/
+- OpenPnP OpenCV Java packaging:
+  https://github.com/openpnp/opencv
 - ML Kit Text Recognition v2:
   https://developers.google.com/ml-kit/vision/text-recognition/v2/android
 - ML Kit model installation paths:

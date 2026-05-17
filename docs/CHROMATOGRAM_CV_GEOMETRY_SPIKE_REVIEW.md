@@ -175,7 +175,22 @@ Accepted result:
   - `bench_06_photo_two_graphs_page`: 5 candidates, 2 accepted plots;
   - `bench_07_rotated_page_photo`: 3 candidates, 1 accepted plot.
 
-Next slice: `Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detector Benchmark`.
+Completed next slice: `Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detector Benchmark`.
+
+Accepted result:
+
+- Added a desktop OpenCV benchmark backend behind the existing
+  `perspectiveGeometry` contract.
+- Document candidates use contour approximation; plot-area benchmark candidates use
+  Hough line support inside the already-detected graph panels.
+- Android remains an explicit unsupported backend for this benchmark slice so native
+  OpenCV packaging cannot silently change mobile behavior before parity review.
+- Persistent fixture artifacts confirm OpenCV candidate sources on:
+  - `bench_03_small_tic_export`: `5` total candidates, `2` accepted plot candidates;
+  - `bench_06_photo_two_graphs_page`: `7` total candidates, `4` accepted plot candidates;
+  - `bench_07_rotated_page_photo`: `5` total candidates, `2` accepted plot candidates.
+
+Next slice: `Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry`.
 
 ## Source Links
 
@@ -183,6 +198,7 @@ Next slice: `Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detecto
 - OpenCV connected components, contours, and shape descriptors: https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
 - OpenCV geometric transforms: https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV Java API: https://docs.opencv.org/4.x/javadoc/
+- OpenPnP OpenCV Java packaging: https://github.com/openpnp/opencv
 - BoofCV line detection example: https://boofcv.org/index.php?title=Example_Detect_Lines
 - BoofCV project: https://boofcv.org/
 - PlotDigitizer documentation: https://plotdigitizer.com/docs

@@ -157,15 +157,13 @@ class ChromatogramBenchFixtureTest {
             assertEquals(audit.graphs.size, audit.perspectiveGeometry.graphPanelCount, "${fixture.id} perspective geometry graph count")
             assertEquals(audit.graphs.size, audit.perspectiveGeometry.plotAreaCount, "${fixture.id} perspective geometry plot count")
             assertTrue(audit.perspectiveGeometry.plotGeometryReady, "${fixture.id} perspective geometry must see all plot areas")
-            assertEquals(
-                1 + audit.graphs.size * 2,
-                audit.perspectiveGeometry.residualMetrics.candidateCount,
-                "${fixture.id} must expose document, graph-panel, and plot-area quadrilateral candidates",
+            assertTrue(
+                audit.perspectiveGeometry.residualMetrics.candidateCount >= 1 + audit.graphs.size * 2,
+                "${fixture.id} must expose document, graph-panel, and plot-area quadrilateral candidates; actual=${audit.perspectiveGeometry.residualMetrics.candidateCount}",
             )
-            assertEquals(
-                audit.graphs.size,
-                audit.perspectiveGeometry.residualMetrics.acceptedPlotAreaCandidateCount,
-                "${fixture.id} must accept one plot-area quadrilateral per graph",
+            assertTrue(
+                audit.perspectiveGeometry.residualMetrics.acceptedPlotAreaCandidateCount >= audit.graphs.size,
+                "${fixture.id} must accept one plot-area quadrilateral per graph; actual=${audit.perspectiveGeometry.residualMetrics.acceptedPlotAreaCandidateCount}",
             )
             assertTrue(
                 audit.perspectiveGeometry.candidates.any { it.kind.name == "DOCUMENT" },
@@ -174,6 +172,10 @@ class ChromatogramBenchFixtureTest {
             assertTrue(
                 audit.perspectiveGeometry.candidates.any { it.kind.name == "PLOT_AREA" && it.accepted },
                 "${fixture.id} must expose accepted plot-area quadrilateral candidates",
+            )
+            assertTrue(
+                audit.perspectiveGeometry.candidates.any { it.source.startsWith("opencv_") },
+                "${fixture.id} must expose OpenCV benchmark quadrilateral candidates on desktop",
             )
             assertTrue(audit.perspectiveGeometry.residualMetricsRequired, "${fixture.id} must keep residual metrics in the geometry contract")
             assertTrue(

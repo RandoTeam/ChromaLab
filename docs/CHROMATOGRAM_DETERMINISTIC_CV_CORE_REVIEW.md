@@ -267,9 +267,12 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.6 - OpenCV-backed Document/Plot Quadrilateral Detector Benchmark
 
-- Implement an OpenCV-backed desktop candidate source for document/page contours and
+- Done: add an OpenCV-backed desktop candidate source for document/page contours and
   plot-frame line evidence.
-- Compare it against the current platform-neutral quadrilateral contract.
+- Done: compare it against the current platform-neutral quadrilateral contract through
+  fixture tests and persistent clean, two-graph, and rotated artifacts.
+- Done: keep Android behavior explicit and unchanged through an unsupported benchmark
+  backend warning until native parity is evaluated.
 - Keep BoofCV as the fallback candidate if OpenCV packaging blocks Android parity.
 
 ### Phase 8.3c.5c.7 - Deterministic Axis And Tick Geometry

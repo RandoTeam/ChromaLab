@@ -21,6 +21,7 @@ koin = "4.0.2"
 # ML & Processing
 mlkit-text = "16.0.1"
 mlkit-document-scanner = "16.0.0-beta1"
+openpnp-opencv = "4.9.0-0"
 
 # Utilities
 coil = "3.1.0"
@@ -63,6 +64,7 @@ koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 # ML Kit (Android only)
 mlkit-text = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text" }
 mlkit-document-scanner = { module = "com.google.android.gms:play-services-mlkit-document-scanner", version.ref = "mlkit-document-scanner" }
+openpnp-opencv = { module = "org.openpnp:opencv", version.ref = "openpnp-opencv" }
 
 # Image loading
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }

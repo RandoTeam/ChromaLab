@@ -23,6 +23,11 @@ import com.chromalab.feature.processing.document.DocumentBounds
 import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.DocumentDetector
 import com.chromalab.feature.processing.document.ImagePoint
+import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidate
+import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidateDetector
+import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidateKind
+import com.chromalab.feature.processing.geometry.CvQuadrilateralCandidateResult
+import com.chromalab.feature.processing.geometry.CvQuadrilateralInputRegion
 import com.chromalab.feature.processing.graph.GraphCropBoundaryAnalyzer
 import com.chromalab.feature.processing.graph.GraphCropBoundaryRisk
 import com.chromalab.feature.processing.graph.GraphPlotAreaDetector
@@ -521,6 +526,7 @@ class OfflineAnalysisRunner(
     private val graphBoundaryCorrector: GraphRegionBoundaryCorrector = GraphRegionBoundaryCorrector(),
     private val cropBoundaryAnalyzer: GraphCropBoundaryAnalyzer = GraphCropBoundaryAnalyzer(),
     private val plotAreaDetector: GraphPlotAreaDetector = GraphPlotAreaDetector(),
+    private val cvQuadrilateralDetector: CvQuadrilateralCandidateDetector = CvQuadrilateralCandidateDetector(),
     private val variantRanker: PreprocessingVariantRanker = PreprocessingVariantRanker(),
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
     private val ocrReader: AxisOcrReader = AxisOcrReader(),
@@ -717,6 +723,18 @@ class OfflineAnalysisRunner(
                 imageWidth = orientation.width,
                 imageHeight = orientation.height,
                 graphAudits = graphAudits,
+                cvCandidates = cvQuadrilateralDetector.detect(
+                    imagePath = orientation.imagePath,
+                    imageWidth = orientation.width,
+                    imageHeight = orientation.height,
+                    graphRegions = graphAudits.map { graph ->
+                        CvQuadrilateralInputRegion(
+                            graphIndex = graph.graphIndex,
+                            panelRegion = graph.region,
+                            plotRegion = graph.plotArea.region,
+                        )
+                    },
+                ),
             )
         } ?: OfflinePerspectiveGeometryAudit(
             imageWidth = orientation.width,
@@ -2406,6 +2424,7 @@ private fun buildPerspectiveGeometryAudit(
     imageWidth: Int,
     imageHeight: Int,
     graphAudits: List<OfflineGraphAudit>,
+    cvCandidates: CvQuadrilateralCandidateResult,
 ): OfflinePerspectiveGeometryAudit {
     val documentTrusted = documentBounds != null &&
         documentBounds.isQuadrilateral &&
@@ -2419,6 +2438,7 @@ private fun buildPerspectiveGeometryAudit(
         imageWidth = imageWidth,
         imageHeight = imageHeight,
         graphAudits = graphAudits,
+        cvCandidates = cvCandidates.candidates,
     )
     val residualMetrics = buildPerspectiveResidualMetrics(candidates)
     val normalizedCornerDisplacement = documentBounds?.let { bounds ->
@@ -2441,6 +2461,7 @@ private fun buildPerspectiveGeometryAudit(
         }
         if (!plotGeometryReady) add("perspective_geometry.plot_geometry_incomplete")
         if (perspectiveRequired) add("perspective_geometry.perspective_transform_required")
+        addAll(cvCandidates.warnings)
         addAll(residualMetrics.warnings)
         add("perspective_geometry.residual_metrics_required_before_production_acceptance")
     }.distinct()
@@ -2478,6 +2499,7 @@ private fun buildGeometryQuadrilateralCandidates(
     imageWidth: Int,
     imageHeight: Int,
     graphAudits: List<OfflineGraphAudit>,
+    cvCandidates: List<CvQuadrilateralCandidate>,
 ): List<OfflineGeometryQuadrilateralCandidateAudit> = buildList {
     if (documentBounds != null) {
         val corners = documentBounds.effectiveCorners
@@ -2539,7 +2561,30 @@ private fun buildGeometryQuadrilateralCandidates(
             ),
         )
     }
+
+    cvCandidates.forEach { candidate ->
+        add(candidate.toOfflineGeometryQuadrilateralCandidateAudit(imageWidth, imageHeight))
+    }
 }
+
+private fun CvQuadrilateralCandidate.toOfflineGeometryQuadrilateralCandidateAudit(
+    imageWidth: Int,
+    imageHeight: Int,
+): OfflineGeometryQuadrilateralCandidateAudit =
+    quadrilateralCandidate(
+        kind = when (kind) {
+            CvQuadrilateralCandidateKind.DOCUMENT -> OfflineGeometryCandidateKind.DOCUMENT
+            CvQuadrilateralCandidateKind.PLOT_AREA -> OfflineGeometryCandidateKind.PLOT_AREA
+        },
+        graphIndex = graphIndex,
+        source = source,
+        corners = corners,
+        imageWidth = imageWidth,
+        imageHeight = imageHeight,
+        accepted = accepted,
+        score = score,
+        warnings = warnings,
+    )
 
 private fun quadrilateralCandidate(
     kind: OfflineGeometryCandidateKind,
