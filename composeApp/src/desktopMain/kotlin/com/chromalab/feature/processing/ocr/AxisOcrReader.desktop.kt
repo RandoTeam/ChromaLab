@@ -84,6 +84,7 @@ private data class DesktopAxisVlmConfig(
     val timeoutMs: Long,
     val minConfidence: Float,
     val responseFile: String?,
+    val apiToken: String?,
 ) {
     companion object {
         fun fromEnvironment(): DesktopAxisVlmConfig? {
@@ -95,6 +96,12 @@ private data class DesktopAxisVlmConfig(
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
             if (baseUrl == null && responseFile == null) return null
+            val apiToken = System.getenv("CHROMALAB_DESKTOP_VLM_API_TOKEN")
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?: System.getenv("CHROMALAB_DESKTOP_VLM_API_KEY")
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
             val model = System.getenv("CHROMALAB_DESKTOP_VLM_MODEL")
                 ?.trim()
                 ?.takeIf { it.isNotBlank() }
@@ -107,7 +114,7 @@ private data class DesktopAxisVlmConfig(
                 ?.toFloatOrNull()
                 ?.coerceIn(0.1f, 0.99f)
                 ?: 0.65f
-            return DesktopAxisVlmConfig(baseUrl, model, timeoutMs, minConfidence, responseFile)
+            return DesktopAxisVlmConfig(baseUrl, model, timeoutMs, minConfidence, responseFile, apiToken)
         }
     }
 }
@@ -154,12 +161,14 @@ private class DesktopOpenAiVisionClient(
                 },
             )
         }
-        val request = HttpRequest.newBuilder()
+        val requestBuilder = HttpRequest.newBuilder()
             .uri(URI.create("$baseUrl/chat/completions"))
             .timeout(Duration.ofMillis(config.timeoutMs))
             .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
-            .build()
+        config.apiToken?.let { token ->
+            requestBuilder.header("Authorization", "Bearer $token")
+        }
+        val request = requestBuilder.POST(HttpRequest.BodyPublishers.ofString(payload.toString())).build()
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         if (response.statusCode() !in 200..299) {
             return DesktopVlmTextResult(

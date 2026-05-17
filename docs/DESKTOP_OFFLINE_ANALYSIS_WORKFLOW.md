@@ -36,6 +36,13 @@ $env:CHROMALAB_DESKTOP_VLM_MODEL = "qwen3-vl-2b-instruct"
 $env:CHROMALAB_DESKTOP_VLM_MIN_CONFIDENCE = "0.65"
 ```
 
+If LM Studio Server Settings has authentication enabled, create an API token in
+Developer > Server Settings > Manage Tokens and pass it to the desktop runner:
+
+```powershell
+$env:CHROMALAB_DESKTOP_VLM_API_TOKEN = "<LM Studio API token>"
+```
+
 For deterministic parser/gate debugging without a running model, use a recorded
 response file:
 

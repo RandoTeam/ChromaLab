@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5a - add desktop VLM response replay harness`.
-- Next work slice: `Phase 8.3c.5b - run live desktop VLM axis calibration and tune prompts/gates from model responses`.
+- Latest completed work slice: `Phase 8.3c.5b.1 - add LM Studio API-token support for desktop VLM`.
+- Next work slice: `Phase 8.3c.5b.2 - run live desktop VLM axis calibration after LM Studio token/network setup`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -93,7 +93,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.2 | Done | `a3ad0fc` | Add per-graph desktop axis-label/title diagnostic crops before OCR/model scale reading. |
 | Phase 8.3c.3 | Done | `7c59bea` | Connect desktop axis OCR to isolated axis-label bands through an optional local OpenAI-compatible VLM endpoint. |
 | Phase 8.3c.4 | Done | `54ee00e` | Add audit-visible desktop VLM axis-OCR failure and acceptance warnings before live model tuning. |
-| Phase 8.3c.5a | Done | `this commit` | Add a desktop VLM response replay harness and fixture response to validate axis parser/gates without a live endpoint. |
+| Phase 8.3c.5a | Done | `499e3c4` | Add a desktop VLM response replay harness and fixture response to validate axis parser/gates without a live endpoint. |
+| Phase 8.3c.5b.1 | Done | `this commit` | Add LM Studio API-token support and document the live endpoint authentication setup. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
