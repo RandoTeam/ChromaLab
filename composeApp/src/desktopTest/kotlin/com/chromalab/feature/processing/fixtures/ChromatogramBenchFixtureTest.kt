@@ -479,6 +479,14 @@ class ChromatogramBenchFixtureTest {
                     "${fixture.id} graph ${graph.graphIndex} fragment reconstruction component count must be audited",
                 )
                 assertTrue(
+                    graph.curveCenterline.fragmentReconstructionGuideColumnCount > 0,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction must record signal-guide columns",
+                )
+                assertTrue(
+                    graph.curveCenterline.fragmentReconstructionGuideMaxDistancePx > 0,
+                    "${fixture.id} graph ${graph.graphIndex} fragment reconstruction must record signal-guide distance",
+                )
+                assertTrue(
                     Files.size(outputDir.resolve("graph_${graph.graphIndex}").resolve("centerline_fragment_reconstruction_overlay.png")) > 0L,
                     "${fixture.id} graph ${graph.graphIndex} fragment reconstruction overlay must be written",
                 )

@@ -96,6 +96,7 @@ actual class CurveExtractor actual constructor() {
             skeletonMask = skeletonMask,
             width = w,
             height = h,
+            signalGuideByX = rawPoints.associate { it.pixelX to it.pixelY },
         )
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
@@ -433,6 +434,11 @@ actual class CurveExtractor actual constructor() {
             fragmentReconstructionComponentCount = fragmentReconstruction.componentCount,
             fragmentReconstructionRetainedComponentCount = fragmentReconstruction.retainedComponentCount,
             fragmentReconstructionDiscardedComponentCount = fragmentReconstruction.discardedComponentCount,
+            fragmentReconstructionGuideColumnCount = fragmentReconstruction.guideColumnCount,
+            fragmentReconstructionGuideMaxDistancePx = fragmentReconstruction.guideMaxDistancePx,
+            fragmentReconstructionGuideMatchedPixelCount = fragmentReconstruction.guideMatchedPixelCount,
+            fragmentReconstructionGuideRejectedPixelCount = fragmentReconstruction.guideRejectedPixelCount,
+            fragmentReconstructionGuideRejectedInterpolatedColumnCount = fragmentReconstruction.guideRejectedInterpolatedColumnCount,
             fragmentReconstructionRawColumnCount = fragmentReconstruction.rawColumnCount,
             fragmentReconstructionInterpolatedColumnCount = fragmentReconstruction.interpolatedColumnCount,
             fragmentReconstructionColumnCount = fragmentReconstruction.pointsByX.size,

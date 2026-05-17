@@ -479,9 +479,20 @@ Phase 8.3c.5c.16 adds audit-only fragment reconstruction evidence:
 - the candidate remains `selectedForSignal=false` because clean and hard-photo CLI
   checks still do not satisfy visual/P95/large-delta acceptance.
 
+Phase 8.3c.5c.17 adds signal-guided guard tuning:
+
+- fragment reconstruction now receives the preserved trace as a guide corridor;
+- retained skeleton components and short-gap interpolation are rejected when they
+  drift outside the guide distance;
+- `curveCenterline` records guide columns, guide distance, guide-matched pixels,
+  rejected pixels, and rejected interpolated columns;
+- clean, two-graph, and rotated CLI runs confirm the tuned candidate is more
+  constrained, but hard fixtures still have enough large-delta columns that
+  `selectedForSignal=false` remains required.
+
 ## Next Phase
 
-Phase 8.3c.5c.17 should visually review the fragment reconstruction overlays and tune
-guards before any centerline or reconstructed path is allowed to drive signal
-conversion. Android model-assisted report-audit validation remains a separate device
-parity track.
+Phase 8.3c.5c.18 should classify remaining reconstructed-trace residuals by source
+before any centerline or reconstructed path is allowed to drive signal conversion.
+Android model-assisted report-audit validation remains a separate device parity
+track.

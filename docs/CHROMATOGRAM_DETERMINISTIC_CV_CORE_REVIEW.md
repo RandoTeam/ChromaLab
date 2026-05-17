@@ -401,12 +401,30 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.17 - Fragment Reconstruction Visual Review And Guard Tuning
 
-- Review fragment reconstruction overlays and metrics on clean, two-graph
-  photographed, and rotated fixtures.
-- Decide whether the reconstructed candidate improves real hard-fixture coverage
-  without adding false upper-envelope artifacts.
-- Keep calculation input unchanged until reconstructed traces pass overlap,
-  P95/large-delta, and visual acceptance gates.
+- Done: compare fragment reconstruction overlays and metrics on clean, two-graph
+  photographed, and rotated fixtures against current signal evidence and current
+  CV references for connected-component filtering, skeleton graph review, and
+  plot-digitizer-style automatic extraction.
+- Done: add a signal-guided corridor around the preserved trace so retained
+  skeleton components and short-gap interpolation cannot freely bridge into text,
+  frame, or top-band artifacts.
+- Done: expose guide columns, guide distance, guide-matched pixels, rejected
+  pixels, and rejected interpolated columns in JSON, Markdown, and report evidence.
+- Result: real fixture CLI runs improved hard-photo reconstructed P95 from the
+  previous hundreds-of-pixels range to 34-46 px on `bench_06`/`bench_07`, but
+  large-delta counts remain too high for scientific signal replacement.
+- Done: keep `fragmentReconstructionSelectedForSignal=false`; this phase tunes
+  review evidence only, not the calculation input.
+
+### Phase 8.3c.5c.18 - Reconstructed Trace Residual Taxonomy And Acceptance Gate
+
+- Classify remaining large-delta columns by source: true vertical peak top,
+  branch/edge ambiguity, baseline gap, frame/text artifact, crop boundary, or
+  signal-guide mismatch.
+- Add per-class audit counts and overlay colors before any reconstructed trace can
+  become a calculation candidate.
+- Keep calculation input unchanged until residual classes prove that the candidate
+  improves scientific peak geometry rather than only matching a previous heuristic.
 
 ## Bottom Line
 
@@ -429,6 +447,7 @@ full or semi-full chromatogram image.
 - OpenCV LineSegmentDetector Java API: https://docs.opencv.org/4.x/javadoc/org/opencv/imgproc/LineSegmentDetector.html
 - OpenCV calib3d homography and undistortion APIs: https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html
 - OpenCV Java `Imgproc` connected components, morphology, adaptive threshold, contours: https://docs.opencv.org/master/javadoc/org/opencv/imgproc/Imgproc.html
+- OpenCV connected components, contours, and shape descriptors: https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
 - PoreSpy skeleton branch pruning: https://porespy.org/autoapi/porespy/filters/prune_branches.html
 - PlantCV morphology pruning and branch-point diagnostics: https://docs.plantcv.org/en/v3.10.1/morphology_tutorial/
 - Skan skeleton graph representation and branch statistics: https://skeleton-analysis.org/stable/api/skan.csr.html

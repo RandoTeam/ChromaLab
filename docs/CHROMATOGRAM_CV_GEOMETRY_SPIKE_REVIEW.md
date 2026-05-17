@@ -329,7 +329,22 @@ Accepted result:
 - Calculation input remains unchanged; the reconstructed path is not allowed to
   drive signal conversion until a separate visual/metric acceptance slice approves it.
 
-Next slice: `Phase 8.3c.5c.17 - Fragment Reconstruction Visual Review And Guard Tuning`.
+Completed next slice: `Phase 8.3c.5c.17 - Fragment Reconstruction Visual Review And Guard Tuning`.
+
+Accepted result:
+
+- Fragment reconstruction now uses the preserved trace as an audit-only signal
+  guide corridor when retaining skeleton components and interpolating short gaps.
+- JSON, Markdown, calibrated-report, and UI-contract evidence expose guide columns,
+  guide distance, guide-matched pixels, rejected pixels, and rejected interpolated
+  columns.
+- CLI review on `bench_03`, `bench_06`, and `bench_07` shows lower hard-photo P95
+  deltas than the previous unrestricted interpolation, but remaining large-delta
+  columns still make the candidate unsafe for calculation.
+- Calculation input remains unchanged; the reconstructed path is not allowed to
+  drive signal conversion until residual classes are reviewed and accepted.
+
+Next slice: `Phase 8.3c.5c.18 - Reconstructed Trace Residual Taxonomy And Acceptance Gate`.
 
 ## Source Links
 
