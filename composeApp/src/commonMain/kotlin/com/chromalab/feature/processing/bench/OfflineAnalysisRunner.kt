@@ -437,6 +437,11 @@ data class OfflineAxisCalibrationAudit(
     val yPixelSpan: Float,
     val xValueSpan: Float,
     val yValueSpan: Float,
+    val xFitResidual: Float = 0f,
+    val yFitResidual: Float = 0f,
+    val xFitResidualRatio: Float = 0f,
+    val yFitResidualRatio: Float = 0f,
+    val residualFitReady: Boolean = false,
     val xUnit: String?,
     val yUnit: String?,
     val xCandidates: List<OfflineAxisCalibrationPointAudit>,
@@ -1010,6 +1015,7 @@ class OfflineAnalysisRunner(
                 manualCalibration = manualCalibration,
                 ocrResult = ocrResult,
                 axesResult = axesResult,
+                axisTickGeometry = axisTickGeometryAudit,
                 panelRegion = region,
                 plotRegion = calculationRegion,
             )
@@ -1305,6 +1311,7 @@ private fun buildAxisCalibrationAudit(
     manualCalibration: OfflineManualAxisCalibrationInput?,
     ocrResult: AxisOcrResult?,
     axesResult: AxesResult?,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
     panelRegion: GraphRegion,
     plotRegion: GraphRegion,
 ): OfflineAxisCalibrationAudit {
@@ -1319,21 +1326,27 @@ private fun buildAxisCalibrationAudit(
     if (axesResult?.hasAxes != true || axesResult.origin == null) {
         warnings += "axis_calibration.axis_geometry_missing"
     }
+    if (!axisTickGeometry.available) {
+        warnings += "axis_calibration.tick_geometry_not_available"
+    }
+    if (!axisTickGeometry.readyForOcrValueMatching) {
+        warnings += "axis_calibration.tick_geometry_not_ready_for_ocr_matching"
+    }
 
-    val xCandidates = if (ocrResult != null && axesResult?.hasAxes == true && axesResult.origin != null) {
-        ocrResult.rawElements.toCalibrationCandidates(
+    val xCandidates = if (ocrResult != null && axisTickGeometry.available) {
+        ocrResult.rawElements.toTickMatchedCalibrationCandidates(
             axis = CalibrationAxis.X,
-            axesResult = axesResult,
+            axisTickGeometry = axisTickGeometry,
             panelRegion = panelRegion,
             plotRegion = plotRegion,
         )
     } else {
         emptyList()
     }
-    val yCandidates = if (ocrResult != null && axesResult?.hasAxes == true && axesResult.origin != null) {
-        ocrResult.rawElements.toCalibrationCandidates(
+    val yCandidates = if (ocrResult != null && axisTickGeometry.available) {
+        ocrResult.rawElements.toTickMatchedCalibrationCandidates(
             axis = CalibrationAxis.Y,
-            axesResult = axesResult,
+            axisTickGeometry = axisTickGeometry,
             panelRegion = panelRegion,
             plotRegion = plotRegion,
         )
@@ -1345,13 +1358,18 @@ private fun buildAxisCalibrationAudit(
     val yStats = yCandidates.axisStats()
     val xReady = xStats.ready
     val yReady = yStats.ready
+    val residualFitReady = xStats.residualReady && yStats.residualReady
     val calibrationAccepted = ocrResult?.status == OcrStatus.ACCEPTED ||
         ocrResult?.status == OcrStatus.CORRECTED ||
         ocrResult?.status == OcrStatus.AUTO_ACCEPTED
-    val ready = xReady && yReady && calibrationAccepted
+    val ready = xReady && yReady && residualFitReady && calibrationAccepted
 
     if (!xReady) warnings += "axis_calibration.x_requires_two_pixel_value_points"
     if (!yReady) warnings += "axis_calibration.y_requires_two_pixel_value_points"
+    if (xCandidates.size == 2) warnings += "axis_calibration.x_two_point_fit_reduced_confidence"
+    if (yCandidates.size == 2) warnings += "axis_calibration.y_two_point_fit_reduced_confidence"
+    if (!xStats.residualReady) warnings += "axis_calibration.x_residual_fit_failed"
+    if (!yStats.residualReady) warnings += "axis_calibration.y_residual_fit_failed"
     if (xReady && yReady && !calibrationAccepted) warnings += "axis_calibration.auto_acceptance_required"
     if (!ready) warnings += "axis_calibration.manual_required"
 
@@ -1372,6 +1390,11 @@ private fun buildAxisCalibrationAudit(
         yPixelSpan = yStats.pixelSpan,
         xValueSpan = xStats.valueSpan,
         yValueSpan = yStats.valueSpan,
+        xFitResidual = xStats.fitResidual,
+        yFitResidual = yStats.fitResidual,
+        xFitResidualRatio = xStats.fitResidualRatio,
+        yFitResidualRatio = yStats.fitResidualRatio,
+        residualFitReady = residualFitReady,
         xUnit = ocrResult?.xUnit,
         yUnit = ocrResult?.yUnit,
         xCandidates = xCandidates,
@@ -1389,10 +1412,13 @@ private fun buildManualAxisCalibrationAudit(
     val yStats = yCandidates.axisStats()
     val xReady = xStats.ready
     val yReady = yStats.ready
-    val ready = xReady && yReady
+    val residualFitReady = xStats.residualReady && yStats.residualReady
+    val ready = xReady && yReady && residualFitReady
     val warnings = buildList {
         if (!xReady) add("axis_calibration.x_requires_two_pixel_value_points")
         if (!yReady) add("axis_calibration.y_requires_two_pixel_value_points")
+        if (!xStats.residualReady) add("axis_calibration.x_residual_fit_failed")
+        if (!yStats.residualReady) add("axis_calibration.y_residual_fit_failed")
         if (!ready) add("axis_calibration.manual_required")
     }
 
@@ -1411,6 +1437,11 @@ private fun buildManualAxisCalibrationAudit(
         yPixelSpan = yStats.pixelSpan,
         xValueSpan = xStats.valueSpan,
         yValueSpan = yStats.valueSpan,
+        xFitResidual = xStats.fitResidual,
+        yFitResidual = yStats.fitResidual,
+        xFitResidualRatio = xStats.fitResidualRatio,
+        yFitResidualRatio = yStats.fitResidualRatio,
+        residualFitReady = residualFitReady,
         xUnit = manualCalibration.xUnit,
         yUnit = manualCalibration.yUnit,
         xCandidates = xCandidates,
@@ -1436,25 +1467,35 @@ private fun List<OfflineManualAxisCalibrationPointInput>.toAuditPoints(): List<O
         .map { group -> group.maxBy { it.confidence } }
         .sortedBy { it.pixel }
 
-private fun List<OcrTextElement>.toCalibrationCandidates(
+private fun List<OcrTextElement>.toTickMatchedCalibrationCandidates(
     axis: CalibrationAxis,
-    axesResult: AxesResult,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
     panelRegion: GraphRegion,
     plotRegion: GraphRegion,
 ): List<OfflineAxisCalibrationPointAudit> {
-    val origin = axesResult.origin ?: return emptyList()
-    val xAxis = axesResult.xAxis ?: return emptyList()
-    val yAxis = axesResult.yAxis ?: return emptyList()
+    val origin = axisTickGeometry.origin ?: return emptyList()
+    val xAxis = axisTickGeometry.xAxis ?: return emptyList()
+    val yAxis = axisTickGeometry.yAxis ?: return emptyList()
+    val tickPositions = when (axis) {
+        CalibrationAxis.X -> axisTickGeometry.xTickPositions
+        CalibrationAxis.Y -> axisTickGeometry.yTickPositions
+    }
+    if (tickPositions.size < 2) return emptyList()
+
     val xAxisY = xAxis.y1
     val yAxisX = yAxis.x1
-    val xLeft = minOf(xAxis.x1, xAxis.x2) - plotRegion.width * 0.06f
-    val xRight = maxOf(xAxis.x1, xAxis.x2) + plotRegion.width * 0.06f
-    val xTop = xAxisY - plotRegion.height * 0.10f
+    val xLeft = plotRegion.x - plotRegion.width * 0.08f
+    val xRight = plotRegion.right + plotRegion.width * 0.08f
+    val xTop = xAxisY - plotRegion.height * 0.12f
     val xBottom = panelRegion.bottom + panelRegion.height * 0.08f
     val yLeft = panelRegion.x - panelRegion.width * 0.08f
     val yRight = yAxisX + plotRegion.width * 0.12f
-    val yTop = minOf(yAxis.y1, yAxis.y2) - plotRegion.height * 0.06f
+    val yTop = plotRegion.y - plotRegion.height * 0.08f
     val yBottom = origin.y + plotRegion.height * 0.08f
+    val maxMatchDistance = when (axis) {
+        CalibrationAxis.X -> maxOf(18f, plotRegion.width * 0.045f)
+        CalibrationAxis.Y -> maxOf(18f, plotRegion.height * 0.055f)
+    }
 
     return mapNotNull { element ->
         val value = element.numericValue ?: return@mapNotNull null
@@ -1466,9 +1507,15 @@ private fun List<OcrTextElement>.toCalibrationCandidates(
         }
         if (!accepted) return@mapNotNull null
 
+        val labelPosition = when (axis) {
+            CalibrationAxis.X -> centerX
+            CalibrationAxis.Y -> centerY
+        }
+        val tickPosition = tickPositions.minBy { tick -> abs(tick - labelPosition) }
+        if (abs(tickPosition - labelPosition) > maxMatchDistance) return@mapNotNull null
         val pixel = when (axis) {
-            CalibrationAxis.X -> centerX - origin.x
-            CalibrationAxis.Y -> origin.y - centerY
+            CalibrationAxis.X -> tickPosition - origin.x
+            CalibrationAxis.Y -> origin.y - tickPosition
         }
         if (pixel < 0f) return@mapNotNull null
 
@@ -1491,19 +1538,61 @@ private data class AxisCalibrationStats(
     val ready: Boolean,
     val pixelSpan: Float,
     val valueSpan: Float,
+    val fitResidual: Float,
+    val fitResidualRatio: Float,
+    val residualReady: Boolean,
 )
 
 private fun List<OfflineAxisCalibrationPointAudit>.axisStats(): AxisCalibrationStats {
-    if (size < 2) return AxisCalibrationStats(ready = false, pixelSpan = 0f, valueSpan = 0f)
+    if (size < 2) {
+        return AxisCalibrationStats(
+            ready = false,
+            pixelSpan = 0f,
+            valueSpan = 0f,
+            fitResidual = 0f,
+            fitResidualRatio = 0f,
+            residualReady = false,
+        )
+    }
     val sorted = sortedBy { it.pixel }
     val pixelSpan = sorted.last().pixel - sorted.first().pixel
     val valueSpan = sorted.last().value - sorted.first().value
     val minPixelSpan = maxOf(24f, pixelSpan * 0.05f)
+    val fit = sorted.linearFitResidual()
+    val residualRatio = if (abs(valueSpan) > 0f && fit.isFinite()) {
+        fit / abs(valueSpan)
+    } else {
+        0f
+    }
+    val residualReady = fit.isFinite() && pixelSpan > 0f && abs(valueSpan) > 0f && residualRatio <= 0.035f
     return AxisCalibrationStats(
-        ready = pixelSpan >= minPixelSpan && abs(valueSpan) > 0f,
+        ready = pixelSpan >= minPixelSpan && abs(valueSpan) > 0f && residualReady,
         pixelSpan = pixelSpan.coerceAtLeast(0f),
         valueSpan = valueSpan,
+        fitResidual = fit,
+        fitResidualRatio = residualRatio,
+        residualReady = residualReady,
     )
+}
+
+private fun List<OfflineAxisCalibrationPointAudit>.linearFitResidual(): Float {
+    if (size <= 2) return 0f
+    val meanPixel = map { it.pixel }.average()
+    val meanValue = map { it.value }.average()
+    val denominator = sumOf { point ->
+        val dx = point.pixel - meanPixel
+        dx * dx
+    }
+    if (denominator == 0.0) return 0f
+    val slope = sumOf { point ->
+        (point.pixel - meanPixel) * (point.value - meanValue)
+    } / denominator
+    val intercept = meanValue - slope * meanPixel
+    val mse = sumOf { point ->
+        val residual = point.value - (slope * point.pixel + intercept)
+        residual * residual
+    } / size
+    return sqrt(mse).toFloat()
 }
 
 private fun Float.roundToBucket(): Int =
@@ -1521,6 +1610,11 @@ private fun missingAxisCalibration(): OfflineAxisCalibrationAudit =
         yPixelSpan = 0f,
         xValueSpan = 0f,
         yValueSpan = 0f,
+        xFitResidual = 0f,
+        yFitResidual = 0f,
+        xFitResidualRatio = 0f,
+        yFitResidualRatio = 0f,
+        residualFitReady = false,
         xUnit = null,
         yUnit = null,
         xCandidates = emptyList(),
@@ -2119,6 +2213,7 @@ private fun buildReportAxisCalibrationSection(graph: OfflineGraphAudit): Offline
             if (graph.axisCalibration.yPixelSpan <= 0f || abs(graph.axisCalibration.yValueSpan) <= 0f) {
                 add("y_pixel_to_unit_transform")
             }
+            if (!graph.axisCalibration.residualFitReady) add("axis_calibration_residual_fit")
         },
         warnings = buildList {
             addAll(graph.axisCalibration.warnings)

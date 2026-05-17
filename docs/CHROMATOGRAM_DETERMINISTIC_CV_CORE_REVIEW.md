@@ -285,9 +285,14 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.8 - OCR Values Only
 
-- OCR only small tick-label crops.
-- Match values to CV tick positions.
-- Fit robust calibration and block on residual failures.
+- Done: OCR-derived numbers are now matched to deterministic CV tick positions.
+- Done: OCR bounding-box centers are no longer used as calibration pixel anchors.
+- Done: axis calibration records X/Y fit residuals, residual ratios, and a residual
+  readiness gate before signal conversion or report generation.
+- Done: missing OCR or failed residual fit blocks the report with explicit audit
+  warnings instead of fabricating a pixel-to-unit transform.
+- Still pending: visual OCR-to-tick residual overlays and Android native parity
+  review.
 
 ### Phase 8.3c.5c.9 - Skeleton Trace Extraction
 

@@ -208,7 +208,25 @@ Accepted result:
   - `bench_07_rotated_page_photo`: axis geometry and tick positions are ready for OCR
     value matching.
 
-Next slice: `Phase 8.3c.5c.8 - OCR Values Only And Residual Calibration Fit`.
+Completed next slice: `Phase 8.3c.5c.8 - OCR Values Only And Residual Calibration Fit`.
+
+Accepted result:
+
+- Axis calibration no longer treats OCR label bounding-box centers as pixel anchors.
+- OCR output is scoped to numeric values and is matched against deterministic CV tick
+  positions from `axisTickGeometry`.
+- The audit now records finite X/Y fit residuals, residual ratios, and residual-fit
+  readiness, so JSON/Markdown artifacts can diagnose poor calibration without
+  crashing serialization.
+- Persistent fixture artifacts confirm:
+  - `bench_03_small_tic_export`: calibration remains blocked because tick/OCR evidence
+    is insufficient;
+  - `bench_06_photo_two_graphs_page`: both graphs remain blocked because Y tick/OCR
+    evidence is insufficient;
+  - `bench_07_rotated_page_photo`: tick geometry is ready, but calibration remains
+    blocked until OCR values are available.
+
+Next slice: `Phase 8.3c.5c.9 - Skeleton Trace Extraction`.
 
 ## Source Links
 

@@ -212,15 +212,15 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Axis Calibration")
         appendLine()
-        appendLine("| Graph | Ready | Source | X points | Y points | X pixel span | Y pixel span | X value span | Y value span | Units | Warnings |")
-        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+        appendLine("| Graph | Ready | Source | X points | Y points | X pixel span | Y pixel span | X value span | Y value span | X residual | Y residual | Residual fit | Units | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             val calibration = graph.axisCalibration
             val units = listOfNotNull(calibration.xUnit?.let { "X=$it" }, calibration.yUnit?.let { "Y=$it" })
                 .joinToString("; ")
                 .ifBlank { "unknown" }
             appendLine(
-                "| ${graph.graphIndex} | ${calibration.ready} | ${calibration.source} | ${calibration.xCandidateCount} | ${calibration.yCandidateCount} | ${calibration.xPixelSpan.renderNumber()} | ${calibration.yPixelSpan.renderNumber()} | ${calibration.xValueSpan.renderNumber()} | ${calibration.yValueSpan.renderNumber()} | ${units.escapeTable()} | ${calibration.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${calibration.ready} | ${calibration.source} | ${calibration.xCandidateCount} | ${calibration.yCandidateCount} | ${calibration.xPixelSpan.renderNumber()} | ${calibration.yPixelSpan.renderNumber()} | ${calibration.xValueSpan.renderNumber()} | ${calibration.yValueSpan.renderNumber()} | ${calibration.xFitResidual.renderNumber()} | ${calibration.yFitResidual.renderNumber()} | ${calibration.residualFitReady} | ${units.escapeTable()} | ${calibration.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -434,17 +434,18 @@ object OfflineAnalysisAuditArtifacts {
         val calibration = graph.axisCalibration
         appendLine("### Axis Calibration")
         appendLine()
-        appendLine("| Axis | Unit | Pixel span | Value span | Tick candidates |")
-        appendLine("| --- | --- | ---: | ---: | ---: |")
+        appendLine("| Axis | Unit | Pixel span | Value span | Tick candidates | Fit residual | Residual ratio |")
+        appendLine("| --- | --- | ---: | ---: | ---: | ---: | ---: |")
         appendLine(
-            "| X | ${(calibration.xUnit ?: "not detected").escapeTable()} | ${calibration.xPixelSpan.renderNumber()} | ${calibration.xValueSpan.renderNumber()} | ${calibration.xCandidateCount} |",
+            "| X | ${(calibration.xUnit ?: "not detected").escapeTable()} | ${calibration.xPixelSpan.renderNumber()} | ${calibration.xValueSpan.renderNumber()} | ${calibration.xCandidateCount} | ${calibration.xFitResidual.renderNumber()} | ${calibration.xFitResidualRatio.renderPercent()} |",
         )
         appendLine(
-            "| Y | ${(calibration.yUnit ?: "not detected").escapeTable()} | ${calibration.yPixelSpan.renderNumber()} | ${calibration.yValueSpan.renderNumber()} | ${calibration.yCandidateCount} |",
+            "| Y | ${(calibration.yUnit ?: "not detected").escapeTable()} | ${calibration.yPixelSpan.renderNumber()} | ${calibration.yValueSpan.renderNumber()} | ${calibration.yCandidateCount} | ${calibration.yFitResidual.renderNumber()} | ${calibration.yFitResidualRatio.renderPercent()} |",
         )
         appendLine()
         appendLine("- Calibration source: ${calibration.source.name.humanizeCode()}")
         appendLine("- Calibration ready: ${if (calibration.ready) "yes" else "no"}")
+        appendLine("- Residual fit ready: ${if (calibration.residualFitReady) "yes" else "no"}")
         appendLine("- Geometry confidence: ${graph.axisConfidence.renderPercent()}")
         appendLine()
         renderHumanWarningList(calibration.warnings)
