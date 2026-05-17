@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.9 - skeleton trace extraction candidates`.
-- Next work slice: `Phase 8.3c.5c.10 - centerline selection and signal parity review`.
+- Latest completed work slice: `Phase 8.3c.5c.10 - centerline selection and signal parity review`.
+- Next work slice: `Phase 8.3c.5c.11 - centerline visual acceptance overlays`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -108,7 +108,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.6 | Done | `c36b6c2` | Add an OpenCV-backed desktop benchmark candidate source for document contours and plot-frame Hough evidence behind the existing `perspectiveGeometry` contract; keep Android as an explicit no-op backend until native parity is evaluated; verify OpenCV candidates on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
 | Phase 8.3c.5c.7 | Done | `38eca4c` | Add audit-visible deterministic axis/tick geometry: desktop OpenCV Hough line evidence, projection-derived tick positions, axis/origin candidates, and explicit OCR-matching readiness; keep Android as an explicit no-op backend until native parity is evaluated; verify on the full fixture gate and persistent clean/two-graph/rotated artifacts. |
 | Phase 8.3c.5c.8 | Done | `59cca15` | Replace OCR-owned pixel anchors with values-only OCR matched to deterministic CV tick positions; add finite X/Y calibration residual metrics and report gates; verify on the full fixture gate plus persistent clean/two-graph/rotated artifacts. |
-| Phase 8.3c.5c.9 | Done | `this commit` | Add audited skeleton/centerline trace candidates with Zhang-Suen thinning, centerline coverage, skeleton support, branch/wide-cluster diagnostics, and overlay evidence on desktop and Android while preserving the existing calculation signal until visual parity review. |
+| Phase 8.3c.5c.9 | Done | `d153e8b` | Add audited skeleton/centerline trace candidates with Zhang-Suen thinning, centerline coverage, skeleton support, branch/wide-cluster diagnostics, and overlay evidence on desktop and Android while preserving the existing calculation signal until visual parity review. |
+| Phase 8.3c.5c.10 | Done | `this commit` | Compare skeleton centerline candidates against the preserved calculation signal; record selection decision, matched-column ratio, median/P95/max pixel deltas, and warnings in JSON/Markdown audits; keep `selectedForSignal=false` because real fixture parity still needs visual acceptance. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final

@@ -264,6 +264,14 @@ class ChromatogramBenchFixtureTest {
                 "${fixture.id} must expose non-zero curve centerline coverage",
             )
             assertTrue(
+                audit.graphs.all { it.curveCenterline.parityCompared && it.curveCenterline.matchedColumnCount > 0 },
+                "${fixture.id} must compare centerline candidates against the preserved signal path",
+            )
+            assertTrue(
+                audit.graphs.none { it.curveCenterline.selectedForSignal },
+                "${fixture.id} must not switch calculation signal to centerline before visual parity review",
+            )
+            assertTrue(
                 audit.graphs.all { !it.signal.ready },
                 "${fixture.id} must not convert a calibrated signal before axis calibration is confirmed",
             )

@@ -310,11 +310,24 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review
 
-- Compare legacy signal points against skeleton/centerline candidates on best and
-  worst fixtures.
-- Decide when centerline replaces legacy top-edge/cluster extraction.
-- Keep peak-count and report changes blocked until visual evidence and calibrated
-  signal parity are accepted.
+- Done: compare preserved signal points against skeleton/centerline candidates on
+  clean, stacked, TIC-plus-ion, photographed two-graph, and rotated fixtures.
+- Done: persist `selectionDecision`, `selectedForSignal`, matched-column count/ratio,
+  and median/P95/max pixel deltas in the centerline audit.
+- Done: keep `selectedForSignal=false`; real fixture P95 deltas are still too large
+  for a silent switch to centerline-driven signal conversion.
+- Still pending: visual side-by-side acceptance overlays that explain whether large
+  deltas come from branch selection, baseline/peak-edge ambiguity, or plot-area
+  distortion.
+
+### Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays
+
+- Add per-graph overlays that render preserved signal, centerline candidate, matched
+  columns, and large-delta columns in different colors.
+- Review best and worst fixtures before allowing any centerline candidate to replace
+  the calculation signal.
+- Keep peak-count/report changes blocked until visual evidence and calibrated signal
+  parity are accepted.
 
 ## Bottom Line
 

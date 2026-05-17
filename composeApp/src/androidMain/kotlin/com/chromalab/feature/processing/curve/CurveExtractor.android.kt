@@ -8,13 +8,13 @@ import android.graphics.Paint
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Android curve extractor.
  *
- * The extractor keeps the public point-per-column contract, but derives those points
- * from a one-pixel centerline first and only falls back to cluster centers when the
- * skeleton does not carry enough evidence in a column.
+ * The extractor keeps the public point-per-column signal contract and audits a
+ * skeleton centerline candidate separately until parity review accepts a switch.
  */
 actual class CurveExtractor actual constructor() {
 
@@ -45,6 +45,7 @@ actual class CurveExtractor actual constructor() {
         var fallbackPointCount = 0
         var wideClusterColumnCount = 0
         var branchColumnCount = 0
+        val centerlineCandidateByX = mutableMapOf<Int, Float>()
 
         for (x in 0 until w) {
             val skeletonCandidates = mutableListOf<Int>()
@@ -59,6 +60,7 @@ actual class CurveExtractor actual constructor() {
                 if (clusters(skeletonCandidates).size > 1 || skeletonCluster.size > 2) {
                     branchColumnCount++
                 }
+                centerlineCandidateByX[x] = skeletonCluster.average().toFloat()
                 skeletonPointCount++
             }
 
@@ -85,6 +87,8 @@ actual class CurveExtractor actual constructor() {
             fallbackPointCount = fallbackPointCount,
             wideClusterColumnCount = wideClusterColumnCount,
             branchColumnCount = branchColumnCount,
+            signalPoints = rawPoints,
+            centerlineCandidateByX = centerlineCandidateByX,
         )
 
         val overlayPath = File(outputDir).also { it.mkdirs() }
@@ -203,6 +207,8 @@ actual class CurveExtractor actual constructor() {
         fallbackPointCount: Int,
         wideClusterColumnCount: Int,
         branchColumnCount: Int,
+        signalPoints: List<CurvePoint>,
+        centerlineCandidateByX: Map<Int, Float>,
     ): CurveCenterlineAudit {
         val skeletonPixelCount = skeletonMask.count { it }
         val skeletonColumns = if (totalColumns > 0) {
@@ -220,6 +226,19 @@ actual class CurveExtractor actual constructor() {
         }
         val centerlineCoverage = if (totalColumns > 0) centerlineColumns.toFloat() / totalColumns else 0f
         val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
+        val parity = signalPoints.centerlineParity(centerlineCandidateByX)
+        val branchRatio = if (centerlineColumns > 0) {
+            branchColumnCount.toFloat() / centerlineColumns.toFloat()
+        } else {
+            0f
+        }
+        val selectionDecision = when {
+            !parity.compared -> "preserve_legacy_no_centerline_overlap"
+            parity.matchedColumnRatio < 0.45f -> "preserve_legacy_low_centerline_overlap"
+            parity.p95AbsDeltaPx > 6f -> "preserve_legacy_large_centerline_delta"
+            branchRatio > 0.20f && branchColumnCount > 8 -> "preserve_legacy_branching_review_required"
+            else -> "centerline_candidate_ready_for_visual_review"
+        }
         val warnings = buildList {
             if (skeletonPixelCount == 0) add("curve_centerline.no_skeleton_pixels")
             if (skeletonPointCount == 0 && fallbackPointCount > 0) add("curve_centerline.cluster_center_fallback_only")
@@ -227,6 +246,8 @@ actual class CurveExtractor actual constructor() {
                 add("curve_centerline.low_skeleton_support")
             }
             if (centerlineCoverage < 0.05f) add("curve_centerline.low_centerline_coverage")
+            if (!parity.compared) add("curve_centerline.parity_not_available")
+            if (parity.compared && parity.p95AbsDeltaPx > 6f) add("curve_centerline.large_signal_delta")
             if (branchColumnCount > centerlineColumns * 0.20f && branchColumnCount > 8) {
                 add("curve_centerline.many_branch_columns")
             }
@@ -234,6 +255,14 @@ actual class CurveExtractor actual constructor() {
         return CurveCenterlineAudit(
             available = centerlineColumns > 0,
             method = "zhang_suen_centerline_candidate_signal_preserved",
+            selectionDecision = selectionDecision,
+            selectedForSignal = false,
+            parityCompared = parity.compared,
+            matchedColumnCount = parity.matchedColumnCount,
+            matchedColumnRatio = parity.matchedColumnRatio,
+            medianAbsDeltaPx = parity.medianAbsDeltaPx,
+            p95AbsDeltaPx = parity.p95AbsDeltaPx,
+            maxAbsDeltaPx = parity.maxAbsDeltaPx,
             skeletonPixelCount = skeletonPixelCount,
             skeletonColumnCount = skeletonColumns,
             centerlineColumnCount = centerlineColumns,
@@ -245,6 +274,30 @@ actual class CurveExtractor actual constructor() {
             skeletonCoverage = skeletonCoverage,
             warnings = warnings,
         )
+    }
+
+    private fun List<CurvePoint>.centerlineParity(
+        centerlineCandidateByX: Map<Int, Float>,
+    ): CenterlineParity {
+        if (isEmpty() || centerlineCandidateByX.isEmpty()) return CenterlineParity()
+        val deltas = mapNotNull { point ->
+            centerlineCandidateByX[point.pixelX]?.let { centerlineY -> abs(centerlineY - point.pixelY) }
+        }.sorted()
+        if (deltas.isEmpty()) return CenterlineParity()
+        return CenterlineParity(
+            compared = true,
+            matchedColumnCount = deltas.size,
+            matchedColumnRatio = deltas.size.toFloat() / size.toFloat(),
+            medianAbsDeltaPx = deltas.percentile(0.50f),
+            p95AbsDeltaPx = deltas.percentile(0.95f),
+            maxAbsDeltaPx = deltas.last(),
+        )
+    }
+
+    private fun List<Float>.percentile(fraction: Float): Float {
+        if (isEmpty()) return 0f
+        val index = ((size - 1) * fraction.coerceIn(0f, 1f)).roundToInt()
+        return this[index.coerceIn(indices)]
     }
 
     private fun skeletonize(mask: BooleanArray, width: Int, height: Int): BooleanArray {
@@ -381,3 +434,12 @@ actual class CurveExtractor actual constructor() {
         timestamp = System.currentTimeMillis(),
     )
 }
+
+private data class CenterlineParity(
+    val compared: Boolean = false,
+    val matchedColumnCount: Int = 0,
+    val matchedColumnRatio: Float = 0f,
+    val medianAbsDeltaPx: Float = 0f,
+    val p95AbsDeltaPx: Float = 0f,
+    val maxAbsDeltaPx: Float = 0f,
+)

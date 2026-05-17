@@ -239,7 +239,19 @@ Accepted result:
 - Persistent fixture artifacts confirm centerline evidence on clean, two-graph,
   rotated, stacked XIC, and TIC-plus-ion examples.
 
-Next slice: `Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review`.
+Completed next slice: `Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review`.
+
+Accepted result:
+
+- The audit now compares skeleton/centerline candidates against the preserved signal
+  path instead of silently switching calculation inputs.
+- JSON/Markdown artifacts record selection decision, matched-column count/ratio,
+  median/P95/max pixel deltas, and centerline warnings.
+- Real fixture artifacts keep `selectedForSignal=false`; large P95 deltas confirm
+  that centerline remains candidate evidence until visual acceptance overlays explain
+  the mismatch.
+
+Next slice: `Phase 8.3c.5c.11 - Centerline Visual Acceptance Overlays`.
 
 ## Source Links
 
@@ -247,6 +259,8 @@ Next slice: `Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review`.
 - OpenCV connected components, contours, and shape descriptors: https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
 - OpenCV geometric transforms: https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV Java API: https://docs.opencv.org/4.x/javadoc/
+- OpenCV ximgproc thinning: https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
+- scikit-image morphology skeletonize/medial axis: https://scikit-image.org/docs/stable/api/skimage.morphology.html
 - OpenPnP OpenCV Java packaging: https://github.com/openpnp/opencv
 - BoofCV line detection example: https://boofcv.org/index.php?title=Example_Detect_Lines
 - BoofCV project: https://boofcv.org/

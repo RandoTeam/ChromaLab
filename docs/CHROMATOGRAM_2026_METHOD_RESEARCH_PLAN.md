@@ -716,7 +716,10 @@ OpenCV-backed desktop benchmark source behind that contract, Phase 8.3c.5c.7
 added deterministic axis/tick geometry audit fields, Phase 8.3c.5c.8 moved
 calibration toward values-only OCR matched to deterministic tick positions with
 residual-fit gates, and Phase 8.3c.5c.9 added audited skeleton/centerline trace
-candidates without yet changing the calculation signal.
+candidates without yet changing the calculation signal. Phase 8.3c.5c.10 added
+centerline-vs-preserved-signal parity metrics and confirmed on real fixtures that
+centerline must remain audit-only until visual acceptance explains the large pixel
+deltas.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -731,14 +734,15 @@ input fixture
   -> tick geometry positions
   -> OCR value matching and calibration residual metrics
   -> skeleton/centerline trace extraction candidates
+  -> centerline-vs-signal parity metrics
   -> visual parity review before centerline drives signal conversion
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with centerline selection and distortion-aware signal conversion. Keep BoofCV as
-a fallback candidate if native OpenCV packaging, APK size, or Android loading blocks
-the OpenCV path.
+fill with visual centerline acceptance overlays and distortion-aware signal
+conversion. Keep BoofCV as a fallback candidate if native OpenCV packaging, APK size,
+or Android loading blocks the OpenCV path.
 
 ## Source Links
 
@@ -748,6 +752,8 @@ the OpenCV path.
   https://docs.opencv.org/4.x/db/d73/classcv_1_1LineSegmentDetector.html
 - OpenCV connected components, contours, and shape descriptors:
   https://docs.opencv.org/4.x/d3/dc0/group__imgproc__shape.html
+- OpenCV ximgproc thinning:
+  https://docs.opencv.org/4.x/df/d2d/group__ximgproc.html
 - OpenCV geometric transforms:
   https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 - OpenCV camera calibration:
@@ -780,6 +786,8 @@ the OpenCV path.
   https://automeris.io/docs/digitize/
 - PlotDigitizer:
   https://plotdigitizer.com/
+- PlotDigitizer documentation:
+  https://plotdigitizer.com/docs
 - Plot Extractor:
   https://plotextractor.com/
 - Engauge Digitizer:

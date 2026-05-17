@@ -255,12 +255,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Trace Centerline")
         appendLine()
-        appendLine("| Graph | Available | Method | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
-        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Available | Method | Selected | Decision | Matched | Match ratio | Median delta | P95 delta | Max delta | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
+        appendLine("| ---: | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val centerline = graph.curveCenterline
             appendLine(
-                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.selectedForSignal} | ${centerline.selectionDecision.escapeTable()} | ${centerline.matchedColumnCount} | ${centerline.matchedColumnRatio.renderPercent()} | ${centerline.medianAbsDeltaPx.renderNumber()} | ${centerline.p95AbsDeltaPx.renderNumber()} | ${centerline.maxAbsDeltaPx.renderNumber()} | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -431,6 +431,8 @@ object OfflineAnalysisAuditArtifacts {
         reportRow("Curve coverage", graph.curveCoverage.renderPercent())
         reportRow("Centerline coverage", graph.curveCenterline.centerlineCoverage.renderPercent())
         reportRow("Skeleton support", graph.curveCenterline.skeletonCoverage.renderPercent())
+        reportRow("Centerline signal decision", graph.curveCenterline.selectionDecision.humanizeCode())
+        reportRow("Centerline P95 delta", "${graph.curveCenterline.p95AbsDeltaPx.renderNumber()} px")
         appendLine()
         renderHumanWarningList(
             (
