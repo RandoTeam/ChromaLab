@@ -8,18 +8,14 @@ import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
-import com.google.ai.edge.litertlm.ExperimentalApi
 import com.google.ai.edge.litertlm.Message
-import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.File
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 private const val TAG = "ChromaLabLiteRT"
 
@@ -38,13 +34,14 @@ class LiteRTEngine : InferenceEngine {
         preferGpu: Boolean = true,
         enableVision: Boolean = true,
         maxNumTokens: Int? = null,
+        cacheDir: String? = null,
     ) = withContext(Dispatchers.IO) {
         unload()
 
-        log("LOAD model=$modelPath vision=$enableVision maxTokens=$maxNumTokens preferGpu=$preferGpu")
+        log("LOAD model=$modelPath vision=$enableVision maxTokens=$maxNumTokens preferGpu=$preferGpu cacheDir=$cacheDir")
 
         val backends = if (preferGpu) {
-            listOf("NPU" to Backend.NPU(), "GPU" to Backend.GPU(), "CPU" to Backend.CPU())
+            listOf("GPU" to Backend.GPU(), "CPU" to Backend.CPU())
         } else {
             listOf("CPU" to Backend.CPU())
         }
@@ -56,13 +53,13 @@ class LiteRTEngine : InferenceEngine {
                 log("LOAD trying backend=$name")
 
                 val engineConfig = EngineConfig(
-                    modelPath,
-                    backend,
-                    if (enableVision) backend else null,
-                    null,
-                    maxNumTokens,
-                    if (enableVision) 1 else 0,
-                    null,
+                    modelPath = modelPath,
+                    backend = backend,
+                    visionBackend = if (enableVision) backend else null,
+                    audioBackend = null,
+                    maxNumTokens = maxNumTokens,
+                    maxNumImages = if (enableVision) 1 else null,
+                    cacheDir = cacheDir,
                 )
 
                 candidate = Engine(engineConfig)
@@ -145,7 +142,6 @@ class LiteRTEngine : InferenceEngine {
         }
     }
 
-    @OptIn(ExperimentalApi::class)
     override suspend fun inferRawStreaming(
         imagePath: String,
         prompt: String,
@@ -160,46 +156,24 @@ class LiteRTEngine : InferenceEngine {
             val conversation = eng.createConversation(createConversationConfig(options))
             val result = StringBuilder()
 
-            withTimeout(options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS) {
-                suspendCancellableCoroutine<String> { continuation ->
-                fun closeConversation() {
-                    runCatching { (conversation as? AutoCloseable)?.close() }
+            try {
+                withTimeout(options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS) {
+                    conversation.sendMessageAsync(buildContents(imagePath, prompt)).collect { message ->
+                        val chunk = extractText(message).ifBlank { message.toString() }
+                        if (chunk.isNotEmpty()) {
+                            result.append(chunk)
+                            onPartial(chunk)
+                        }
+                    }
                 }
-
-                continuation.invokeOnCancellation {
-                    runCatching { conversation.cancelProcess() }
-                    closeConversation()
-                }
-
-                try {
-                    conversation.sendMessageAsync(
-                        buildContents(imagePath, prompt),
-                        object : MessageCallback {
-                            override fun onMessage(message: Message) {
-                                val chunk = extractText(message).ifBlank { message.toString() }
-                                if (chunk.isNotEmpty()) {
-                                    result.append(chunk)
-                                    onPartial(chunk)
-                                }
-                            }
-
-                            override fun onDone() {
-                                log("STREAM response chars=${result.length}")
-                                closeConversation()
-                                continuation.resume(result.toString())
-                            }
-
-                            override fun onError(throwable: Throwable) {
-                                closeConversation()
-                                continuation.resumeWithException(throwable)
-                            }
-                        },
-                    )
-                } catch (e: Throwable) {
-                    closeConversation()
-                    continuation.resumeWithException(e)
-                }
-                }
+                log("STREAM response chars=${result.length}")
+                result.toString()
+            } catch (e: TimeoutCancellationException) {
+                runCatching { conversation.cancelProcess() }
+                logError("STREAM timeout after ${options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS}ms", e)
+                result.toString()
+            } finally {
+                (conversation as? AutoCloseable)?.close()
             }
         }
     }
@@ -274,37 +248,14 @@ class LiteRTEngine : InferenceEngine {
         contents: Contents,
         timeoutMs: Long,
     ): String = try {
+        val result = StringBuilder()
         withTimeout(timeoutMs) {
-            suspendCancellableCoroutine { continuation ->
-                val result = StringBuilder()
-
-                continuation.invokeOnCancellation {
-                    runCatching { conversation.cancelProcess() }
-                }
-
-                try {
-                    conversation.sendMessageAsync(
-                        contents,
-                        object : MessageCallback {
-                            override fun onMessage(message: Message) {
-                                val chunk = extractText(message)
-                                if (chunk.isNotEmpty()) result.append(chunk)
-                            }
-
-                            override fun onDone() {
-                                if (continuation.isActive) continuation.resume(result.toString())
-                            }
-
-                            override fun onError(throwable: Throwable) {
-                                if (continuation.isActive) continuation.resumeWithException(throwable)
-                            }
-                        },
-                    )
-                } catch (e: Throwable) {
-                    if (continuation.isActive) continuation.resumeWithException(e)
-                }
+            conversation.sendMessageAsync(contents).collect { message ->
+                val chunk = extractText(message)
+                if (chunk.isNotEmpty()) result.append(chunk)
             }
         }
+        result.toString()
     } catch (e: TimeoutCancellationException) {
         runCatching { conversation.cancelProcess() }
         logError("TIMEOUT after ${timeoutMs}ms", e)

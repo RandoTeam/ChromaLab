@@ -1370,7 +1370,7 @@ private fun effectiveAccelerator(
 
 private fun acceleratorHelpText(option: ChatModelOption): String =
     when (option.runtime.backend) {
-        ChatRuntimeBackend.LITERT_LM -> "Auto пробует NPU/GPU и откатывается на CPU; CPU фиксирует стабильный режим."
+        ChatRuntimeBackend.LITERT_LM -> "Auto пробует GPU и откатывается на CPU; CPU фиксирует стабильный режим."
         ChatRuntimeBackend.LLAMA_CPP -> "Vulkan использует ускоренный llama.cpp backend, если устройство его реально поддерживает; CPU стабильнее."
         ChatRuntimeBackend.IMPORTED,
         ChatRuntimeBackend.UNKNOWN -> "Для этой модели доступен только объявленный runtime."

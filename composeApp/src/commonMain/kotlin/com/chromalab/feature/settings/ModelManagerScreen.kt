@@ -92,7 +92,7 @@ fun ModelManagerScreen(
             item {
                 SectionHeader(
                     title = "Рекомендованные",
-                    subtitle = "LiteRT-LM · NPU/GPU ускорение",
+                    subtitle = "LiteRT-LM · GPU/CPU ускорение",
                     icon = Icons.Filled.Bolt,
                     color = MaterialTheme.colorScheme.primary,
                 )

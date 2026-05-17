@@ -127,7 +127,7 @@ object ModelRegistry {
         minRamMb = 4096,
         isBuiltin = true,
         supportsVision = true,
-        description = "Быстрая модель с NPU/GPU ускорением. Рекомендуется для большинства устройств.",
+        description = "Быстрая модель с GPU/CPU ускорением. Рекомендуется для большинства устройств.",
     )
 
     private val gemma4E4B = ModelInfo(
@@ -146,7 +146,7 @@ object ModelRegistry {
         minRamMb = 8192,
         isBuiltin = true,
         supportsVision = true,
-        description = "High-accuracy LiteRT-LM VLM. NPU/GPU capable. ~3.66 GB download; 8+ GB RAM recommended.",
+        description = "High-accuracy LiteRT-LM VLM. GPU/CPU capable. ~3.66 GB download; 8+ GB RAM recommended.",
     )
 
     private val fastVlm05B = ModelInfo(
@@ -165,7 +165,7 @@ object ModelRegistry {
         minRamMb = 4096,
         isBuiltin = true,
         supportsVision = true,
-        description = "Experimental non-Google LiteRT-LM VLM. Image input, CPU/GPU/Qualcomm NPU candidates. License: Apple AMLR.",
+        description = "Experimental non-Google LiteRT-LM VLM. Image input, GPU/CPU candidates. License: Apple AMLR.",
     )
 
     private val qwen35LiteRt08B = ModelInfo(

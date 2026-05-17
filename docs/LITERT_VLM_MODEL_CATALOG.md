@@ -1,6 +1,6 @@
 # LiteRT VLM Model Catalog
 
-Date: 2026-05-13
+Date: 2026-05-18
 
 This catalog records non-default LiteRT-LM vision-language models added to the in-app model manager. They are candidates for chromatogram photo analysis, but they still need device and chromatogram-specific validation before they can replace the current stable Gemma LiteRT path.
 
@@ -16,6 +16,10 @@ This catalog records non-default LiteRT-LM vision-language models added to the i
 - Both entries use `ModelRuntime.LITERT_LM` and `ModelFileType.LITERT_BUNDLE`.
 - Both entries are marked `supportsVision=true` and are eligible for chromatogram vision selection.
 - LiteRT-LM receives image/text through `Content.ImageFile` and `Content.Text`; these models must not be wrapped in GGUF ChatML text.
+- Android declares optional `libvndksupport.so` and `libOpenCL.so` for the LiteRT-LM GPU path, matching the current Kotlin API guidance.
+- Engine loading passes a writable LiteRT-LM cache directory.
+- Chat `Auto` loads LiteRT-LM as GPU first, then CPU fallback. NPU is not part of the automatic chat path because current devices can hang during model initialization before generation starts.
+- Chat streaming uses the coroutine `sendMessageAsync(...): Flow<Message>` API recommended by LiteRT-LM docs.
 - FastVLM license terms must be reviewed before any public release that distributes or promotes it as a bundled/default option.
 
 ## Validation Required

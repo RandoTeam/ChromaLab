@@ -329,6 +329,7 @@ class ModelManagerController(
                             preferGpu = preferAccelerated,
                             enableVision = false,
                             maxNumTokens = manager.liteRtMaxTokens(model.info),
+                            cacheDir = manager.liteRtCacheDir(),
                         )
                     }
                     liteRT
@@ -703,6 +704,7 @@ class ModelManagerController(
                             preferGpu = manager.liteRtPreferAccelerator(model.info),
                             enableVision = true,
                             maxNumTokens = manager.liteRtMaxTokens(model.info),
+                            cacheDir = manager.liteRtCacheDir(),
                         )
                     }
                     liteRT

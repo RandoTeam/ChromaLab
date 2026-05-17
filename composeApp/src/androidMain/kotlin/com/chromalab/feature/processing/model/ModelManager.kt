@@ -431,6 +431,9 @@ class ModelManager(private val context: Context) {
             null
         }
 
+    fun liteRtCacheDir(): String =
+        File(context.cacheDir, "litertlm").also { it.mkdirs() }.absolutePath
+
     fun llamaShouldLoadVisionProjector(model: ModelInfo): Boolean =
         model.runtime == ModelRuntime.LLAMA_CPP && canLoadForVision(model)
 
