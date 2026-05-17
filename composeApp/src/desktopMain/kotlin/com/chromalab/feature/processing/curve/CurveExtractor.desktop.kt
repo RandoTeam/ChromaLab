@@ -26,12 +26,27 @@ actual class CurveExtractor actual constructor() {
         }
         image.flush()
 
+        val skeletonMask = skeletonize(mask, width, height)
         val rawPoints = mutableListOf<CurvePoint>()
         val gapColumns = mutableListOf<Int>()
+        var skeletonPointCount = 0
+        var fallbackPointCount = 0
+        var wideClusterColumnCount = 0
+        var branchColumnCount = 0
         for (x in 0 until width) {
+            val skeletonCandidates = mutableListOf<Int>()
             val candidates = mutableListOf<Int>()
             for (y in 0 until height) {
+                if (skeletonMask[y * width + x]) skeletonCandidates += y
                 if (mask[y * width + x]) candidates += y
+            }
+
+            val skeletonCluster = skeletonCandidates.bestSignalCluster(height)
+            if (skeletonCluster != null) {
+                if (skeletonCandidates.clusters(maxGap = 2).size > 1 || skeletonCluster.size > 2) {
+                    branchColumnCount++
+                }
+                skeletonPointCount++
             }
 
             if (candidates.isEmpty()) {
@@ -44,19 +59,30 @@ actual class CurveExtractor actual constructor() {
                 gapColumns += x
                 continue
             }
+            if (cluster.size > 8) wideClusterColumnCount++
             rawPoints += CurvePoint(
                 pixelX = x,
                 pixelY = cluster.first().toFloat(),
                 confidence = cluster.confidence(),
             )
+            fallbackPointCount++
         }
 
         val interpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
         val points = (rawPoints + interpolatedPoints).sortedBy { it.pixelX }
+        val centerlineAudit = buildCenterlineAudit(
+            skeletonMask = skeletonMask,
+            totalColumns = width,
+            centerlineColumns = rawPoints.size,
+            skeletonPointCount = skeletonPointCount,
+            fallbackPointCount = fallbackPointCount,
+            wideClusterColumnCount = wideClusterColumnCount,
+            branchColumnCount = branchColumnCount,
+        )
         val overlayPath = File(outputDir).also { it.mkdirs() }
             .resolve("curve_overlay.png")
             .absolutePath
-        saveOverlay(mask, points, width, height, overlayPath)
+        saveOverlay(mask, skeletonMask, points, width, height, overlayPath)
 
         val result = CurveExtractionResult(
             points = points,
@@ -65,6 +91,7 @@ actual class CurveExtractor actual constructor() {
             extractedColumns = rawPoints.size,
             interpolatedColumns = interpolatedPoints.size,
             outlierCount = 0,
+            centerlineAudit = centerlineAudit,
             warnings = emptyList(),
             timestamp = System.currentTimeMillis(),
         )
@@ -117,6 +144,124 @@ actual class CurveExtractor actual constructor() {
             else -> CurvePoint.LOW_CONFIDENCE
         }
 
+    private fun List<Int>.centerY(): Float =
+        average().toFloat()
+
+    private fun buildCenterlineAudit(
+        skeletonMask: BooleanArray,
+        totalColumns: Int,
+        centerlineColumns: Int,
+        skeletonPointCount: Int,
+        fallbackPointCount: Int,
+        wideClusterColumnCount: Int,
+        branchColumnCount: Int,
+    ): CurveCenterlineAudit {
+        val skeletonPixelCount = skeletonMask.count { it }
+        val skeletonColumns = if (totalColumns > 0) {
+            (0 until totalColumns).count { x ->
+                var found = false
+                var y = x
+                while (y < skeletonMask.size && !found) {
+                    found = skeletonMask[y]
+                    y += totalColumns
+                }
+                found
+            }
+        } else {
+            0
+        }
+        val centerlineCoverage = if (totalColumns > 0) centerlineColumns.toFloat() / totalColumns else 0f
+        val skeletonCoverage = if (totalColumns > 0) skeletonColumns.toFloat() / totalColumns else 0f
+        val warnings = buildList {
+            if (skeletonPixelCount == 0) add("curve_centerline.no_skeleton_pixels")
+            if (skeletonPointCount == 0 && fallbackPointCount > 0) add("curve_centerline.cluster_center_fallback_only")
+            if (skeletonPointCount > 0 && fallbackPointCount > skeletonPointCount) add("curve_centerline.low_skeleton_support")
+            if (centerlineCoverage < 0.05f) add("curve_centerline.low_centerline_coverage")
+            if (branchColumnCount > centerlineColumns * 0.20f && branchColumnCount > 8) {
+                add("curve_centerline.many_branch_columns")
+            }
+        }
+        return CurveCenterlineAudit(
+            available = centerlineColumns > 0,
+            method = "zhang_suen_centerline_candidate_signal_preserved",
+            skeletonPixelCount = skeletonPixelCount,
+            skeletonColumnCount = skeletonColumns,
+            centerlineColumnCount = centerlineColumns,
+            skeletonPointCount = skeletonPointCount,
+            fallbackPointCount = fallbackPointCount,
+            wideClusterColumnCount = wideClusterColumnCount,
+            branchColumnCount = branchColumnCount,
+            centerlineCoverage = centerlineCoverage,
+            skeletonCoverage = skeletonCoverage,
+            warnings = warnings,
+        )
+    }
+
+    private fun skeletonize(mask: BooleanArray, width: Int, height: Int): BooleanArray {
+        val skeleton = mask.copyOf()
+        if (width < 3 || height < 3) return skeleton
+        var changed: Boolean
+        var iteration = 0
+        do {
+            changed = false
+            val firstPass = mutableListOf<Int>()
+            for (y in 1 until height - 1) {
+                for (x in 1 until width - 1) {
+                    val index = y * width + x
+                    if (!skeleton[index]) continue
+                    if (skeleton.shouldRemoveZhangSuen(width, x, y, firstPass = true)) {
+                        firstPass += index
+                    }
+                }
+            }
+            firstPass.forEach { skeleton[it] = false }
+            changed = changed || firstPass.isNotEmpty()
+
+            val secondPass = mutableListOf<Int>()
+            for (y in 1 until height - 1) {
+                for (x in 1 until width - 1) {
+                    val index = y * width + x
+                    if (!skeleton[index]) continue
+                    if (skeleton.shouldRemoveZhangSuen(width, x, y, firstPass = false)) {
+                        secondPass += index
+                    }
+                }
+            }
+            secondPass.forEach { skeleton[it] = false }
+            changed = changed || secondPass.isNotEmpty()
+            iteration++
+        } while (changed && iteration < 80)
+        return skeleton
+    }
+
+    private fun BooleanArray.shouldRemoveZhangSuen(
+        width: Int,
+        x: Int,
+        y: Int,
+        firstPass: Boolean,
+    ): Boolean {
+        val p2 = this[(y - 1) * width + x]
+        val p3 = this[(y - 1) * width + x + 1]
+        val p4 = this[y * width + x + 1]
+        val p5 = this[(y + 1) * width + x + 1]
+        val p6 = this[(y + 1) * width + x]
+        val p7 = this[(y + 1) * width + x - 1]
+        val p8 = this[y * width + x - 1]
+        val p9 = this[(y - 1) * width + x - 1]
+        val neighbors = listOf(p2, p3, p4, p5, p6, p7, p8, p9)
+        val activeNeighbors = neighbors.count { it }
+        if (activeNeighbors !in 2..6) return false
+        val transitions = (neighbors + p2)
+            .zipWithNext()
+            .count { (current, next) -> !current && next }
+        if (transitions != 1) return false
+        return if (firstPass) {
+            !(p2 && p4 && p6) && !(p4 && p6 && p8)
+        } else {
+            !(p2 && p4 && p8) && !(p2 && p6 && p8)
+        }
+    }
+
     private fun interpolateShortGaps(
         known: List<CurvePoint>,
         gaps: List<Int>,
@@ -153,6 +298,7 @@ actual class CurveExtractor actual constructor() {
 
     private fun saveOverlay(
         mask: BooleanArray,
+        skeletonMask: BooleanArray,
         points: List<CurvePoint>,
         width: Int,
         height: Int,
@@ -161,7 +307,16 @@ actual class CurveExtractor actual constructor() {
         val overlay = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
         for (y in 0 until height) {
             for (x in 0 until width) {
-                overlay.setRGB(x, y, if (mask[y * width + x]) MASK_RGB else BACKGROUND_RGB)
+                val index = y * width + x
+                overlay.setRGB(
+                    x,
+                    y,
+                    when {
+                        skeletonMask[index] -> SKELETON_RGB
+                        mask[index] -> MASK_RGB
+                        else -> BACKGROUND_RGB
+                    },
+                )
             }
         }
 
@@ -209,6 +364,7 @@ actual class CurveExtractor actual constructor() {
     private companion object {
         private const val BACKGROUND_RGB = -0x00EFEFF0
         private const val MASK_RGB = -0x00BFBFC0
+        private const val SKELETON_RGB = -0x00A040A0
     }
 }
 

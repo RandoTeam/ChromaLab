@@ -713,9 +713,10 @@ Phase 8.3c.5c.4 added the first audit-visible perspective/plot geometry contract
 Phase 8.3c.5c.5 added document, graph-panel, and plot-area quadrilateral
 candidates plus aggregate residual metrics, Phase 8.3c.5c.6 added an
 OpenCV-backed desktop benchmark source behind that contract, Phase 8.3c.5c.7
-added deterministic axis/tick geometry audit fields, and Phase 8.3c.5c.8 moved
+added deterministic axis/tick geometry audit fields, Phase 8.3c.5c.8 moved
 calibration toward values-only OCR matched to deterministic tick positions with
-residual-fit gates.
+residual-fit gates, and Phase 8.3c.5c.9 added audited skeleton/centerline trace
+candidates without yet changing the calculation signal.
 
 The next code slice should not tune prompts or ask VLM for pixel positions. It should
 start trace centerline extraction only after axis calibration has an auditable path:
@@ -730,13 +731,14 @@ input fixture
   -> tick geometry positions
   -> OCR value matching and calibration residual metrics
   -> skeleton/centerline trace extraction candidates
+  -> visual parity review before centerline drives signal conversion
 ```
 
 The CV geometry spike and OpenCV benchmark remain diagnostic evidence until Android
 native parity is reviewed. Production work now has a platform-neutral contract to
-fill with trace-centerline extraction and distortion-aware signal conversion. Keep
-BoofCV as a fallback candidate if native OpenCV packaging, APK size, or Android
-loading blocks the OpenCV path.
+fill with centerline selection and distortion-aware signal conversion. Keep BoofCV as
+a fallback candidate if native OpenCV packaging, APK size, or Android loading blocks
+the OpenCV path.
 
 ## Source Links
 

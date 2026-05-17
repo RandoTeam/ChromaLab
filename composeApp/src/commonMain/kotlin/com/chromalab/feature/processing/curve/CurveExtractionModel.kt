@@ -30,6 +30,7 @@ data class CurveExtractionResult(
     val extractedColumns: Int,
     val interpolatedColumns: Int,
     val outlierCount: Int,
+    val centerlineAudit: CurveCenterlineAudit = CurveCenterlineAudit(),
     val warnings: List<String>,
     val timestamp: Long,
 ) {
@@ -57,6 +58,22 @@ data class CurveExtractionResult(
     /** Whether extraction produced usable data */
     val isUsable: Boolean get() = points.size >= 10 && (coverage > 0.3f || isSparseTraceUsable)
 }
+
+@Serializable
+data class CurveCenterlineAudit(
+    val available: Boolean = false,
+    val method: String = "not_available",
+    val skeletonPixelCount: Int = 0,
+    val skeletonColumnCount: Int = 0,
+    val centerlineColumnCount: Int = 0,
+    val skeletonPointCount: Int = 0,
+    val fallbackPointCount: Int = 0,
+    val wideClusterColumnCount: Int = 0,
+    val branchColumnCount: Int = 0,
+    val centerlineCoverage: Float = 0f,
+    val skeletonCoverage: Float = 0f,
+    val warnings: List<String> = emptyList(),
+)
 
 fun CurveExtractionResult.scaledCoordinates(scale: Float): CurveExtractionResult {
     if (scale <= 0f || scale == 1f) return this

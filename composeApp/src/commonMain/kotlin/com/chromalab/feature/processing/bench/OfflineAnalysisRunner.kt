@@ -17,6 +17,7 @@ import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.calibration.CalibrationPoint
 import com.chromalab.feature.processing.calibration.LinearCalibration
 import com.chromalab.feature.processing.calibration.PixelCalibration
+import com.chromalab.feature.processing.curve.CurveCenterlineAudit
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
@@ -263,6 +264,7 @@ data class OfflineGraphAudit(
     val curveMaskCleanPixelCount: Int,
     val curveMaskSuppressionApplied: List<String>,
     val traceArtifacts: CurveTraceArtifactAudit,
+    val curveCenterline: CurveCenterlineAudit = CurveCenterlineAudit(),
     val curvePointCount: Int,
     val curveCoverage: Float,
     val curveUsable: Boolean,
@@ -1240,6 +1242,7 @@ class OfflineAnalysisRunner(
             curveMaskCleanPixelCount = maskResult?.cleanPixelCount ?: 0,
             curveMaskSuppressionApplied = maskResult?.suppressionApplied.orEmpty(),
             traceArtifacts = maskResult?.traceArtifactAudit ?: CurveTraceArtifactAudit(),
+            curveCenterline = curveResult?.centerlineAudit ?: CurveCenterlineAudit(),
             curvePointCount = curveResult?.points?.size ?: 0,
             curveCoverage = curveResult?.coverage ?: 0f,
             curveUsable = curveResult?.isUsable == true,

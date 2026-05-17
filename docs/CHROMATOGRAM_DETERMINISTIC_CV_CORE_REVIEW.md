@@ -296,9 +296,25 @@ but it should not split the architecture before OpenCV is measured.
 
 ### Phase 8.3c.5c.9 - Skeleton Trace Extraction
 
-- Add skeleton/thinning or equivalent trace-centerline extraction.
-- Add distortion-aware signal conversion.
-- Validate on best and worst fixtures before Android parity work.
+- Done: add Zhang-Suen thinning based trace centerline candidates to desktop and
+  Android curve extraction.
+- Done: persist `curveCenterline` audit fields for skeleton pixels/columns,
+  centerline coverage, skeleton support, wide-cluster columns, branch columns, and
+  method name.
+- Done: render skeleton evidence into the existing curve overlay while preserving the
+  current signal points for calculation until visual parity review accepts centerline
+  as the primary signal source.
+- Done: validate on clean, two-graph, rotated, stacked XIC, and TIC-plus-ion fixtures.
+- Still pending: visual acceptance of the centerline candidate as the calculation
+  signal, then distortion-aware signal conversion.
+
+### Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review
+
+- Compare legacy signal points against skeleton/centerline candidates on best and
+  worst fixtures.
+- Decide when centerline replaces legacy top-edge/cluster extraction.
+- Keep peak-count and report changes blocked until visual evidence and calibrated
+  signal parity are accepted.
 
 ## Bottom Line
 

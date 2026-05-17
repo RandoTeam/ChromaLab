@@ -226,7 +226,20 @@ Accepted result:
   - `bench_07_rotated_page_photo`: tick geometry is ready, but calibration remains
     blocked until OCR values are available.
 
-Next slice: `Phase 8.3c.5c.9 - Skeleton Trace Extraction`.
+Completed next slice: `Phase 8.3c.5c.9 - Skeleton Trace Extraction Candidates`.
+
+Accepted result:
+
+- Desktop and Android curve extraction now create an audited skeleton/centerline
+  candidate layer using Zhang-Suen style thinning.
+- The offline audit exposes `curveCenterline` with coverage, skeleton support,
+  fallback, branch, and wide-cluster diagnostics.
+- The existing calculation signal is intentionally preserved until a visual parity
+  review accepts centerline candidates as the primary signal source.
+- Persistent fixture artifacts confirm centerline evidence on clean, two-graph,
+  rotated, stacked XIC, and TIC-plus-ion examples.
+
+Next slice: `Phase 8.3c.5c.10 - Centerline Selection And Signal Parity Review`.
 
 ## Source Links
 

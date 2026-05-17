@@ -253,6 +253,18 @@ object OfflineAnalysisAuditArtifacts {
         }
         appendLine()
 
+        appendLine("## Trace Centerline")
+        appendLine()
+        appendLine("| Graph | Available | Method | Centerline columns | Centerline coverage | Skeleton pixels | Skeleton columns | Skeleton coverage | Skeleton points | Fallback points | Wide columns | Branch columns | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val centerline = graph.curveCenterline
+            appendLine(
+                "| ${graph.graphIndex} | ${centerline.available} | ${centerline.method.escapeTable()} | ${centerline.centerlineColumnCount} | ${centerline.centerlineCoverage.renderPercent()} | ${centerline.skeletonPixelCount} | ${centerline.skeletonColumnCount} | ${centerline.skeletonCoverage.renderPercent()} | ${centerline.skeletonPointCount} | ${centerline.fallbackPointCount} | ${centerline.wideClusterColumnCount} | ${centerline.branchColumnCount} | ${centerline.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
         appendLine("## Signal Conversion")
         appendLine()
         appendLine("| Graph | Ready | Points | Time start | Time end | Time range | Intensity min | Intensity max | Intensity range | Duplicates | Gaps | Sort valid | Warnings |")
@@ -417,6 +429,8 @@ object OfflineAnalysisAuditArtifacts {
         reportRow("OCR status", graph.ocrStatus.name.humanizeCode())
         reportRow("Curve points", graph.curvePointCount.toString())
         reportRow("Curve coverage", graph.curveCoverage.renderPercent())
+        reportRow("Centerline coverage", graph.curveCenterline.centerlineCoverage.renderPercent())
+        reportRow("Skeleton support", graph.curveCenterline.skeletonCoverage.renderPercent())
         appendLine()
         renderHumanWarningList(
             (

@@ -256,6 +256,14 @@ class ChromatogramBenchFixtureTest {
                 "${fixture.id} must expose non-zero curve extraction coverage",
             )
             assertTrue(
+                audit.graphs.all { it.curveCenterline.available && it.curveCenterline.centerlineColumnCount > 0 },
+                "${fixture.id} must expose audited curve centerline extraction",
+            )
+            assertTrue(
+                audit.graphs.all { it.curveCenterline.centerlineCoverage > 0f },
+                "${fixture.id} must expose non-zero curve centerline coverage",
+            )
+            assertTrue(
                 audit.graphs.all { !it.signal.ready },
                 "${fixture.id} must not convert a calibrated signal before axis calibration is confirmed",
             )
