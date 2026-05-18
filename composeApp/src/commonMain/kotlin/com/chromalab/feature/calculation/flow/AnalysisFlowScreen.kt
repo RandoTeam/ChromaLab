@@ -6,6 +6,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +21,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,12 +44,14 @@ import com.chromalab.feature.calculation.ui.PeakDetailsContent
 import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
 import com.chromalab.feature.calculation.screen.ExportCalculationScreen
+import com.chromalab.feature.calculation.export.CalculationRunReportExporter
 import com.chromalab.feature.calculation.algorithm.DistributionAnalyzer
 import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
 import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
 import com.chromalab.feature.calculation.algorithm.CompoundSource
 import com.chromalab.feature.reports.StoredReportMetadata
+import com.chromalab.feature.reports.StructuredReportPreview
 import com.chromalab.feature.reports.buildCalculationReportOptions
 import com.chromalab.feature.reports.StoredReportMetadataCodec
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +96,7 @@ fun AnalysisFlowScreen(
     var calcPhase by remember { mutableStateOf("Загрузка сигнала…") }
     var showExport by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var resultMode by remember { mutableStateOf(AnalysisResultMode.REPORT) }
     var algorithmSettings by remember { mutableStateOf(AlgorithmSettings.defaults()) }
     var recalculationKey by remember { mutableIntStateOf(0) }
     var activeSignalId by remember(signalId) { mutableStateOf(signalId) }
@@ -113,6 +118,7 @@ fun AnalysisFlowScreen(
         sourceChromatogram = null
         calculationRun = null
         showExport = false
+        resultMode = AnalysisResultMode.REPORT
         graphEntries = emptyList()
         selectedPeakIndex = -1
         showPeakSheet = false
@@ -357,14 +363,26 @@ fun AnalysisFlowScreen(
                                         }
                                     },
                                 )
-                                ResultsSummaryScreen(
-                                    run = calculationRun!!,
-                                    onPeakTap = { idx ->
-                                        selectedPeakIndex = idx
-                                        showPeakSheet = true
-                                    },
-                                    modifier = Modifier.weight(1f),
+                                AnalysisResultModeSwitcher(
+                                    mode = resultMode,
+                                    onModeChange = { resultMode = it },
                                 )
+                                when (resultMode) {
+                                    AnalysisResultMode.REPORT -> AnalysisStructuredReportScreen(
+                                        run = calculationRun!!,
+                                        chromatogram = sourceChromatogram,
+                                        signal = signal,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    AnalysisResultMode.DIAGNOSTICS -> ResultsSummaryScreen(
+                                        run = calculationRun!!,
+                                        onPeakTap = { idx ->
+                                            selectedPeakIndex = idx
+                                            showPeakSheet = true
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                }
                             }
                         }
                     }
@@ -416,12 +434,119 @@ fun AnalysisFlowScreen(
     }
 }
 
-// ─── Premium Analysis Progress Overlay ──────────────────────────
+// ─── Result report surface ──────────────────────────────────────
 
-/**
- * Full-screen overlay shown while auto-calculation runs.
- * Matches the AutoProgressOverlay design language.
- */
+private enum class AnalysisResultMode {
+    REPORT,
+    DIAGNOSTICS,
+}
+
+@Composable
+private fun AnalysisResultModeSwitcher(
+    mode: AnalysisResultMode,
+    onModeChange: (AnalysisResultMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        AnalysisResultModeButton(
+            selected = mode == AnalysisResultMode.REPORT,
+            label = "Отчет",
+            icon = Icons.Filled.Description,
+            onClick = { onModeChange(AnalysisResultMode.REPORT) },
+            modifier = Modifier.weight(1f),
+        )
+        AnalysisResultModeButton(
+            selected = mode == AnalysisResultMode.DIAGNOSTICS,
+            label = "Метрики",
+            icon = Icons.Filled.Insights,
+            onClick = { onModeChange(AnalysisResultMode.DIAGNOSTICS) },
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun AnalysisResultModeButton(
+    selected: Boolean,
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val content: @Composable RowScope.() -> Unit = {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(label)
+    }
+    if (selected) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(44.dp),
+            content = content,
+        )
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            modifier = modifier.height(44.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun AnalysisStructuredReportScreen(
+    run: CalculationRun,
+    chromatogram: ChromatogramEntity?,
+    signal: DigitalSignal?,
+    modifier: Modifier = Modifier,
+) {
+    val reportOptions = remember(run, chromatogram, signal) {
+        buildCalculationReportOptions(
+            run = run,
+            chromatogram = chromatogram,
+            signal = signal,
+        )
+    }
+    val report = remember(run, reportOptions) {
+        CalculationRunReportExporter.buildReport(run, reportOptions)
+    }
+    val validation = remember(run, reportOptions) {
+        CalculationRunReportExporter.validate(run, reportOptions)
+    }
+    val uiContract = remember(run, reportOptions) {
+        CalculationRunReportExporter.buildUiContract(run, reportOptions)
+    }
+    val graphOverlays = remember(run, report, reportOptions) {
+        val graphIndex = report.graphs.singleOrNull()?.graphIndex ?: reportOptions.graphIndex.coerceAtLeast(1)
+        mapOf(
+            graphIndex to CalculationToChartMapper.buildChartState(
+                run = run,
+                visibleLayers = setOf("raw", "baseline", "corrected"),
+            ),
+        )
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+    ) {
+        StructuredReportPreview(
+            report = report,
+            validation = validation,
+            graphOverlays = graphOverlays,
+            uiContract = uiContract,
+        )
+        Spacer(modifier = Modifier.height(Spacing.lg))
+    }
+}
+
 @Composable
 private fun GraphResultSwitcher(
     entries: List<AnalysisGraphEntry>,
@@ -475,6 +600,12 @@ private fun GraphResultSwitcher(
     }
 }
 
+// ─── Premium Analysis Progress Overlay ──────────────────────────
+
+/**
+ * Full-screen overlay shown while auto-calculation runs.
+ * Matches the AutoProgressOverlay design language.
+ */
 @Composable
 private fun AnalysisProgressOverlay(
     phase: String,
