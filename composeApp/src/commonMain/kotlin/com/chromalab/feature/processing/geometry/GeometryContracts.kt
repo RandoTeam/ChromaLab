@@ -27,6 +27,7 @@ enum class GeometryStageStatus {
 @Serializable
 enum class GeometryCandidateSource {
     CV,
+    SCREENSHOT_EMBEDDED_CHART,
     ML_KIT,
     VLM_HINT,
     FULL_IMAGE_FALLBACK,

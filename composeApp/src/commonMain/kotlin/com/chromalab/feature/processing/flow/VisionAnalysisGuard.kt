@@ -12,4 +12,5 @@ private val BlockingVisionErrorMarkers =
         "axis calibration requires",
         "axis calibration is required",
         "axis calibration is incomplete",
+        "no deterministic graph roi candidate",
     )

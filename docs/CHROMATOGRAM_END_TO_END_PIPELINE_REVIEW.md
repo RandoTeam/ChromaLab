@@ -611,6 +611,42 @@ Required correction:
 | P1 | Final report can render from incomplete upstream metadata. | A polished report can hide missing evidence. | Report validator must gate scientific sections on required evidence. |
 | P2 | Variant sweep scoring is useful but not artifact-complete. | Hard photos can create missed peaks or false peaks. | Add masks/overlays for axes, labels, frame, bleed-through, and text. |
 
+## Runtime ROI Rescue Contract
+
+As of the deterministic ROI rescue slice, AI/VLM is not the mandatory owner of
+graph ROI. The required runtime stage is now "obtain a validated graph geometry
+candidate".
+
+Candidate order:
+
+1. Existing deterministic CV graph detector.
+2. `ScreenshotEmbeddedChartDetector` for phone/PDF screenshots with a bright
+   embedded chart panel on a dark or document-like background.
+3. Expanded deterministic chart candidates.
+4. Optional VLM rough hint with a bounded timeout.
+5. Full-image internal graph search/fallback.
+6. Manual review diagnostic if all geometry candidates fail.
+
+`ScreenshotEmbeddedChartDetector` scores high-luminance connected components by
+area, rectangularity, aspect plausibility, white background ratio, internal dark
+trace density, vertical peak-like line density, axis/frame support, margin
+safety, and phone-UI/status-bar penalties. Accepted graph-panel candidates are
+expanded slightly so title/ion text and axis/tick labels are preserved before
+`PlotAreaBounds` is derived inside them.
+
+VLM may rank or warn about candidate overlays, read title/ion/labels, or explain
+why a crop is too tight or too wide. VLM must not be the only ROI source, must
+not provide exact coordinates for calculations, and must not block deterministic
+ROI rescue. If VLM times out or returns no usable ROI, the pipeline records the
+warning and continues with deterministic candidates.
+
+ROI failure is no longer allowed to be silent. Even when every candidate fails,
+runtime exports `runtime_evidence_roi_failure.json` with original/normalized
+image paths, ROI candidates, selected/rejected graph panel data when available,
+warnings, AI/VLM status, and exact geometry stage timings. The runtime evidence
+validator accepts this schema as an evidence-backed `FAIL`: the analysis still
+failed, but the failure is inspectable and can be debugged.
+
 ## Correct Next Work Order
 
 The next implementation slices should stay narrow:

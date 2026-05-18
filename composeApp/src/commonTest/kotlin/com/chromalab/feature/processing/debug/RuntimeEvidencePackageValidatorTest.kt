@@ -5,7 +5,10 @@ import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.geometry.GraphPanelBounds
+import com.chromalab.feature.processing.geometry.GeometryCandidateSource
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
@@ -136,6 +139,33 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertTrue(encoded.contains("runtime-evidence-validation-1.0"))
         assertEquals(RuntimeEvidenceValidationVerdict.PASS, json.decodeFromString(RuntimeEvidenceValidationSummary.serializer(), encoded).verdict)
+    }
+
+    @Test
+    fun validatorSupportsRoiFailurePackageWithEvidence() {
+        val roiFailurePackage = RuntimeRoiFailureEvidencePackage(
+            generatedAtEpochMillis = 123L,
+            stageId = "GRAPH_ROI",
+            failureReason = "No deterministic graph ROI candidate passed geometry checks.",
+            originalImagePath = "original.png",
+            normalizedImagePath = "normalized.png",
+            graphPanelCandidates = listOf(
+                GraphPanelBounds(
+                    region = GraphRegion(10, 20, 120, 80),
+                    candidateSource = GeometryCandidateSource.SCREENSHOT_EMBEDDED_CHART,
+                    confidence = 0.72f,
+                ),
+            ),
+            warnings = listOf("roi.failure.diagnostic_package"),
+            timings = listOf(GeometryStageTiming("graph_panel.screenshot_embedded_detector", 42L)),
+        )
+
+        val encoded = json.encodeToString(RuntimeRoiFailureEvidencePackage.serializer(), roiFailurePackage)
+        val result = RuntimeEvidencePackageValidator.validateJson(encoded, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertEquals("runtime-evidence-roi-failure-1.0", result.packageSchemaVersion)
+        assertTrue(result.blockingIssues.isEmpty())
     }
 
     private fun reportWithRecovery(

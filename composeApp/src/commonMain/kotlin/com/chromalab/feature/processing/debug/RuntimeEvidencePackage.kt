@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.debug
 
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
+import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.reports.ChromatogramReport
@@ -70,6 +71,22 @@ data class RuntimeEvidenceSummaryCounts(
     val rejectedRecoveredCandidates: Int = 0,
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
+)
+
+@Serializable
+data class RuntimeRoiFailureEvidencePackage(
+    val schemaVersion: String = "runtime-evidence-roi-failure-1.0",
+    val generatedAtEpochMillis: Long,
+    val stageId: String,
+    val failureReason: String,
+    val originalImagePath: String? = null,
+    val normalizedImagePath: String? = null,
+    val graphPanelCandidates: List<com.chromalab.feature.processing.geometry.GraphPanelBounds> = emptyList(),
+    val selectedGraphPanel: com.chromalab.feature.processing.geometry.GraphPanelBounds? = null,
+    val selectedPlotArea: com.chromalab.feature.processing.geometry.PlotAreaBounds? = null,
+    val warnings: List<String> = emptyList(),
+    val timings: List<GeometryStageTiming> = emptyList(),
+    val aiVisionStatus: String = "OPTIONAL_NOT_REQUIRED_FOR_ROI",
 )
 
 object RuntimeEvidencePackageBuilder {

@@ -68,6 +68,7 @@ import com.chromalab.feature.processing.quality.QualityReportContent
 import com.chromalab.feature.processing.quality.StageQuality
 import com.chromalab.feature.processing.export.ExportScreen
 import com.chromalab.feature.processing.export.ExportBundle
+import com.chromalab.feature.processing.debug.DebugPackageExporter
 import com.chromalab.feature.processing.storage.SessionWriter
 import com.chromalab.feature.processing.storage.ProcessingParams
 import com.chromalab.feature.processing.signal.SmoothingParams
@@ -330,7 +331,7 @@ fun ProcessingFlowScreen(
                                 // Multi-graph: reuse graph detection, target specific region
                                 cachedGraphResult = if (isSubsequentGraph) graphResult else null,
                                 overrideRegion = if (isSubsequentGraph) selectedRegion else null,
-                                requireVlmForAnalysis = true,
+                                requireVlmForAnalysis = false,
                                 preservePanelLabels = normalizedResult?.wasRotated == true,
                                 onProgress = { progress ->
                                     sweepProgress = progress
@@ -339,6 +340,10 @@ fun ProcessingFlowScreen(
 
                             if (sweepResults.isNotEmpty()) {
                                 val best = sweepResults.first()
+                                geometryResult = best.geometryResult
+                                if (best.selectedRegion == null) {
+                                    error("No deterministic graph ROI candidate passed geometry checks; ROI failure evidence should be exported.")
+                                }
                                 bestSweepConfig = best.config.name
                                 sweepPreparationVariants = sweepResults.toGraphPreparationVariants()
                                 println("PIPELINE[SWEEP] Winner: '${best.config.name}' score=${best.score} (${best.scoreBreakdown})")
@@ -348,11 +353,10 @@ fun ProcessingFlowScreen(
                                 // Only update graphResult on first graph
                                 if (!isSubsequentGraph) {
                                     graphResult = best.graphResult
-                                    best.selectedRegion?.let { selectedRegion = it }
+                                    selectedRegion = best.selectedRegion
                                 }
                                 ocrResult = best.ocrResult
                                 axesResult = best.axesResult
-                                geometryResult = best.geometryResult
                                 curveExtractionResult = best.curveResult
                                 curvePoints = best.curveResult?.points ?: emptyList()
 
@@ -367,7 +371,7 @@ fun ProcessingFlowScreen(
                                 println("PIPELINE[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
                                 println("PIPELINE[CURVE] points=${curvePoints.size}")
                             } else {
-                                error("AI vision analysis did not produce a usable graph and axis result.")
+                                error("No deterministic graph ROI candidate passed geometry checks; ROI failure evidence should be exported.")
                             }
                             sweepCompleted = true
                         }
@@ -565,6 +569,21 @@ fun ProcessingFlowScreen(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            if (currentStep == ProcessingStep.GRAPH_SELECTION || currentStep == ProcessingStep.GRAPH_ROI) {
+                runCatching {
+                    val path = DebugPackageExporter.writeRoiFailureEvidencePackage(
+                        writer = SessionWriter(outputDir),
+                        stageId = currentStep.name,
+                        failureReason = e.message ?: "unknown ROI failure",
+                        geometryResult = geometryResult,
+                        originalImagePath = imagePath,
+                        normalizedImagePath = currentImagePath,
+                    )
+                    println("PIPELINE[ROI_FAILURE_EVIDENCE] exported=$path")
+                }.onFailure { exportError ->
+                    println("PIPELINE[ROI_FAILURE_EVIDENCE] export_failed=${exportError.message}")
+                }
+            }
             processingError = "${currentStep.label}: ${e.message ?: "неизвестная ошибка"}"
         }
         val stepDuration = (System.currentTimeMillis() - stepStartedAt).coerceAtLeast(0L)

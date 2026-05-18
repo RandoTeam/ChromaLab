@@ -97,6 +97,19 @@ object RuntimeEvidencePackageValidator {
             .fold(
                 onSuccess = { validate(it, fileExists) },
                 onFailure = {
+                    validateRoiFailureJson(content, fileExists, it.message)
+                },
+            )
+
+    private fun validateRoiFailureJson(
+        content: String,
+        fileExists: (String) -> Boolean,
+        primaryDecodeError: String?,
+    ): RuntimeEvidenceValidationSummary =
+        runCatching { json.decodeFromString<RuntimeRoiFailureEvidencePackage>(content) }
+            .fold(
+                onSuccess = { validateRoiFailure(it, fileExists) },
+                onFailure = {
                     RuntimeEvidenceValidationSummary(
                         packageSchemaVersion = null,
                         reportId = null,
@@ -104,7 +117,7 @@ object RuntimeEvidencePackageValidator {
                         blockingIssues = listOf(
                             RuntimeEvidenceValidationIssue(
                                 code = "package.json_decode_failed",
-                                message = it.message ?: "Runtime evidence package JSON could not be decoded.",
+                                message = primaryDecodeError ?: it.message ?: "Runtime evidence package JSON could not be decoded.",
                                 severity = RuntimeEvidenceValidationIssueSeverity.BLOCKING,
                             ),
                         ),
@@ -138,6 +151,56 @@ object RuntimeEvidencePackageValidator {
     }
 
     fun exportJson(summary: RuntimeEvidenceValidationSummary): String = json.encodeToString(summary)
+
+    fun validateRoiFailure(
+        evidencePackage: RuntimeRoiFailureEvidencePackage,
+        fileExists: (String) -> Boolean = RuntimeEvidenceFileProbe::exists,
+    ): RuntimeEvidenceValidationSummary {
+        val issues = mutableListOf<RuntimeEvidenceValidationIssue>()
+        if (evidencePackage.stageId.isBlank()) {
+            issues.block("roi_failure.stage_missing", "ROI failure package stageId is missing.")
+        }
+        if (evidencePackage.failureReason.isBlank()) {
+            issues.block("roi_failure.reason_missing", "ROI failure package failureReason is missing.")
+        }
+        issues.requirePath(
+            evidencePackage.originalImagePath,
+            "source.original_image_missing",
+            "Original image is missing.",
+            graphIndex = null,
+            fileExists = fileExists,
+        )
+        issues.requirePath(
+            evidencePackage.normalizedImagePath,
+            "source.normalized_image_missing",
+            "Normalized image is missing.",
+            graphIndex = null,
+            fileExists = fileExists,
+        )
+        if (evidencePackage.graphPanelCandidates.isEmpty()) {
+            issues.block("roi_failure.candidates_missing", "ROI failure package contains no graphPanel candidates.")
+        }
+        if (evidencePackage.timings.isEmpty()) {
+            issues.block("roi_failure.timings_missing", "ROI failure package contains no stage timings.")
+        }
+        if (evidencePackage.aiVisionStatus.isBlank()) {
+            issues.warn("roi_failure.ai_vision_status_missing", "AI/VLM ROI status is not recorded.")
+        }
+        val blocking = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.BLOCKING }
+        val warnings = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.WARNING }
+        return RuntimeEvidenceValidationSummary(
+            packageSchemaVersion = evidencePackage.schemaVersion,
+            reportId = "ROI_FAILURE",
+            verdict = when {
+                blocking.isNotEmpty() -> RuntimeEvidenceValidationVerdict.FAIL
+                warnings.isNotEmpty() -> RuntimeEvidenceValidationVerdict.REVIEW
+                else -> RuntimeEvidenceValidationVerdict.FAIL
+            },
+            blockingIssues = blocking,
+            warnings = warnings,
+            graphSummaries = emptyList(),
+        )
+    }
 
     fun renderMarkdown(summary: RuntimeEvidenceValidationSummary): String = buildString {
         appendLine("# Runtime Evidence Package Validation")

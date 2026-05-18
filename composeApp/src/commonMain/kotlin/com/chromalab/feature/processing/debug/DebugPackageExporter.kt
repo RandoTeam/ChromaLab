@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.debug
 
 import com.chromalab.feature.processing.storage.SessionWriter
+import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.reports.ChromatogramReport
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -23,6 +24,27 @@ object DebugPackageExporter {
 
     fun exportRuntimeEvidencePackage(report: ChromatogramReport): String =
         json.encodeToString(RuntimeEvidencePackageBuilder.build(report))
+
+    fun exportRoiFailureEvidencePackage(
+        stageId: String,
+        failureReason: String,
+        geometryResult: GeometryPipelineResult?,
+        originalImagePath: String?,
+        normalizedImagePath: String?,
+    ): String = json.encodeToString(
+        RuntimeRoiFailureEvidencePackage(
+            generatedAtEpochMillis = System.currentTimeMillis(),
+            stageId = stageId,
+            failureReason = failureReason,
+            originalImagePath = originalImagePath,
+            normalizedImagePath = normalizedImagePath,
+            graphPanelCandidates = geometryResult?.trace?.roiCandidates.orEmpty(),
+            selectedGraphPanel = geometryResult?.graphPanelBounds,
+            selectedPlotArea = geometryResult?.plotAreaBounds,
+            warnings = geometryResult?.warnings.orEmpty(),
+            timings = geometryResult?.trace?.timings.orEmpty(),
+        ),
+    )
 
     fun validateRuntimeEvidencePackageJson(packageJson: String): String =
         RuntimeEvidencePackageValidator.exportJson(
@@ -69,4 +91,23 @@ object DebugPackageExporter {
             content = exportRuntimeEvidencePackage(report),
         )
     }
+
+    fun writeRoiFailureEvidencePackage(
+        writer: SessionWriter,
+        stageId: String,
+        failureReason: String,
+        geometryResult: GeometryPipelineResult?,
+        originalImagePath: String?,
+        normalizedImagePath: String?,
+    ): String =
+        writer.writeText(
+            filename = "runtime_evidence_roi_failure.json",
+            content = exportRoiFailureEvidencePackage(
+                stageId = stageId,
+                failureReason = failureReason,
+                geometryResult = geometryResult,
+                originalImagePath = originalImagePath,
+                normalizedImagePath = normalizedImagePath,
+            ),
+        )
 }

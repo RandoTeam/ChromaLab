@@ -271,12 +271,12 @@ class AutoSweepEngine {
             println("SWEEP[GEOMETRY] failed: ${e.message}")
             null
         }
-        val vlmGraphResult = geometryResult?.toGraphRegionResult(w, h)
-        val vlmRegion = geometryResult?.graphPanelBounds?.region
-        val graphRes = selectGraphResult(cvGraphRes, vlmGraphResult)
+        val geometryGraphResult = geometryResult?.toGraphRegionResult(w, h)
+        val geometryRegion = geometryResult?.graphPanelBounds?.region
+        val graphRes = selectGraphResult(cvGraphRes, geometryGraphResult)
 
-        // Region selection priority: override > CV > VLM fallback.
-        val detectedRegion = overrideRegion ?: graphRes?.selectedRegion ?: vlmRegion
+        // Region selection priority: override > validated geometry pipeline > legacy CV merge.
+        val detectedRegion = overrideRegion ?: geometryRegion ?: graphRes?.selectedRegion
         val preservePanelLabelsForRun = preservePanelLabels ||
             graphRes?.filteredRegions.orEmpty().any { it.requiresGraphPanelBoundaryMode(w, h) } ||
             detectedRegion?.requiresGraphPanelBoundaryMode(w, h) == true
@@ -293,11 +293,24 @@ class AutoSweepEngine {
             }
             correction.correctedRegion
         }
-        println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} CV regions, VLM=${vlmRegion != null}, selected=$region")
+        println("SWEEP[GRAPH] detected ${graphRes?.sortedRegions?.size ?: 0} CV regions, geometry=${geometryRegion != null}, selected=$region")
 
         if (region == null) {
-            println("SWEEP[ABORT] No graph region found (both VLM and CV failed)")
-            return emptyList()
+            println("SWEEP[ABORT] No validated graph ROI found; returning diagnostic geometry evidence")
+            return listOf(
+                SweepResult(
+                    config = configs.first(),
+                    preprocessingResult = null,
+                    graphResult = graphRes,
+                    selectedRegion = null,
+                    ocrResult = null,
+                    axesResult = null,
+                    curveResult = null,
+                    geometryResult = geometryResult,
+                    score = -1f,
+                    scoreBreakdown = "roi_failure, candidates=${geometryResult?.trace?.roiCandidates?.size ?: 0}",
+                ),
+            )
         }
         val curveRegion = geometryResult?.plotAreaBounds?.region ?: region
         if (curveRegion != region) {
@@ -312,8 +325,7 @@ class AutoSweepEngine {
             null
         }
         if (requireVlmForAnalysis && ocrResult == null) {
-            println("SWEEP[ABORT] VLM axis OCR is required but failed")
-            return emptyList()
+            println("SWEEP[OCR] required model/OCR stage returned no axis labels; deterministic ROI/curve rescue continues and calibration will gate report quality")
         }
         println("SWEEP[OCR] x=${ocrResult?.suggestedXValues}, y=${ocrResult?.suggestedYValues}")
 
@@ -686,7 +698,10 @@ class AutoSweepEngine {
         imageHeight: Int,
     ): GraphRegionResult? {
         val regions = trace.roiCandidates
-            .map { it.region }
+            .let { candidates ->
+                listOfNotNull(graphPanelBounds?.region) + candidates.map { it.region }
+            }
+            .distinctBy { "${it.x}:${it.y}:${it.width}:${it.height}" }
             .ifEmpty { graphPanelBounds?.let { listOf(it.region) }.orEmpty() }
         if (regions.isEmpty()) return null
         return GraphRegionResult(

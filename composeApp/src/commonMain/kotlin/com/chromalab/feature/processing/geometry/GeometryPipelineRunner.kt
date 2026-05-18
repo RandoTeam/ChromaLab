@@ -16,11 +16,13 @@ import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceReader
 import com.chromalab.feature.processing.pipeline.DetectionMethod
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GeometryPipelineRunner(
     private val graphDetector: GraphRegionDetector = GraphRegionDetector(),
+    private val screenshotEmbeddedChartDetector: ScreenshotEmbeddedChartDetector = ScreenshotEmbeddedChartDetector(),
     private val graphBoundaryCorrector: GraphRegionBoundaryCorrector = GraphRegionBoundaryCorrector(),
     private val plotAreaDetector: GraphPlotAreaDetector = GraphPlotAreaDetector(),
     private val axisDetector: AxisDetector = AxisDetector(),
@@ -55,6 +57,8 @@ class GeometryPipelineRunner(
         }
 
         val startedAt = System.currentTimeMillis()
+        val timings = mutableListOf<GeometryStageTiming>()
+        val stageWarnings = mutableListOf<String>()
         val provenance = SourceProvenance(
             originalImagePath = originalImagePath,
             normalizedImagePath = normalizedImagePath,
@@ -79,14 +83,38 @@ class GeometryPipelineRunner(
             mlKitSmartScanUsed = mlKitSmartScanUsed,
         )
 
-        val graphResult = cachedGraphResult ?: runCatching {
-            graphDetector.detect(imagePath, imageWidth, imageHeight)
-        }.getOrNull()
-        val vlmHintResult = if (runVlmHint && overridePanel == null) {
+        val graphResult = cachedGraphResult ?: timedStage("graph_panel.cv_detector", timings) {
             runCatching {
-                chartReader.detectGraphRegion(imagePath, imageWidth, imageHeight)
-                    ?.toGraphRegionResult(imageWidth, imageHeight)
+                graphDetector.detect(imagePath, imageWidth, imageHeight)
+            }.onFailure {
+                stageWarnings += "roi.cv_detector_failed:${it::class.simpleName}"
+                println("PIPELINE[GEOMETRY][graph_panel.cv_detector] FAILED ${it.message}")
             }.getOrNull()
+        }
+        val screenshotChartResult = timedStage("graph_panel.screenshot_embedded_detector", timings) {
+            runCatching {
+                screenshotEmbeddedChartDetector.detect(imagePath, imageWidth, imageHeight)
+            }.onFailure {
+                stageWarnings += "roi.screenshot_embedded_detector_failed:${it::class.simpleName}"
+                println("PIPELINE[GEOMETRY][graph_panel.screenshot_embedded_detector] FAILED ${it.message}")
+            }.getOrNull()
+        }
+        val vlmHintResult = if (runVlmHint && overridePanel == null) {
+            timedStage("graph_panel.vlm_hint", timings) {
+                val hint = runCatching {
+                    withTimeoutOrNull(VLM_ROI_HINT_TIMEOUT_MS) {
+                        chartReader.detectGraphRegion(imagePath, imageWidth, imageHeight)
+                    }
+                }.onFailure {
+                    stageWarnings += "roi.vlm_hint_failed:${it::class.simpleName}"
+                    println("PIPELINE[GEOMETRY][graph_panel.vlm_hint] FAILED ${it.message}")
+                }.getOrNull()
+                if (hint == null) {
+                    stageWarnings += "roi.vlm_hint_timeout_or_empty"
+                    println("PIPELINE[GEOMETRY][graph_panel.vlm_hint] timeout_or_empty; deterministic rescue continues")
+                }
+                hint?.toGraphRegionResult(imageWidth, imageHeight)
+            }
         } else {
             null
         }
@@ -96,12 +124,12 @@ class GeometryPipelineRunner(
             imageHeight = imageHeight,
             overridePanel = overridePanel,
             cvGraphResult = graphResult,
+            screenshotChartResult = screenshotChartResult,
             vlmGraphResult = vlmHintResult,
             preservePanelLabels = preservePanelLabels,
         )
-        val evaluatedCandidates = candidates
-            .take(MAX_GEOMETRY_RETRY_CANDIDATES)
-            .mapIndexed { retryIndex, candidate ->
+        val evaluatedCandidates = timedStage("graph_panel.candidate_evaluation", timings) {
+            candidates.take(MAX_GEOMETRY_RETRY_CANDIDATES).mapIndexed { retryIndex, candidate ->
                 evaluateCandidate(
                     imagePath = imagePath,
                     imageWidth = imageWidth,
@@ -112,6 +140,7 @@ class GeometryPipelineRunner(
                     outputDir = outputDir,
                 )
             }
+        }
         val selectedEvaluation = evaluatedCandidates.maxWithOrNull(
             compareBy<GeometryCandidateEvaluation> { it.reportStatus.selectionPriority }
                 .thenBy { it.selectionScore },
@@ -130,6 +159,8 @@ class GeometryPipelineRunner(
         val warnings = buildList {
             addAll(provenance.warnings)
             addAll(rectification.warnings)
+            addAll(stageWarnings)
+            addAll(screenshotChartResult?.warnings.orEmpty())
             if (selected == null) add("geometry.roi.no_candidate_selected")
             if (selectedPlot == null) add("geometry.plot_area.not_validated")
             if (selectedEvaluation != null && selectedEvaluation.retryIndex > 0) {
@@ -177,11 +208,9 @@ class GeometryPipelineRunner(
             peakLabelCropBoundsOverlayPath = selectedEvaluation?.peakLabelCropBoundsOverlayPath,
             peakLabelTextClassificationOverlayPath = selectedEvaluation?.peakLabelTextClassificationOverlayPath,
             warnings = warnings,
-            timings = listOf(
-                GeometryStageTiming(
-                    stageId = "geometry_pipeline",
-                    durationMillis = System.currentTimeMillis() - startedAt,
-                ),
+            timings = timings + GeometryStageTiming(
+                stageId = "geometry_pipeline",
+                durationMillis = System.currentTimeMillis() - startedAt,
             ),
         )
         return GeometryPipelineResult(
@@ -338,6 +367,7 @@ class GeometryPipelineRunner(
         overridePanel: GraphRegion?,
         cvGraphResult: GraphRegionResult?,
         vlmGraphResult: GraphRegionResult?,
+        screenshotChartResult: ScreenshotEmbeddedChartDetectionResult?,
         preservePanelLabels: Boolean,
     ): List<GraphPanelBounds> {
         val rawCandidates = buildList {
@@ -346,6 +376,17 @@ class GeometryPipelineRunner(
                 result.sortedRegions.forEach {
                     add(RawRoiCandidate(it, GeometryCandidateSource.CV, result.confidence.toBaseConfidence(), result.warnings))
                 }
+            }
+            screenshotChartResult?.candidates.orEmpty().forEach { candidate ->
+                add(
+                    RawRoiCandidate(
+                        region = candidate.graphPanel,
+                        source = GeometryCandidateSource.SCREENSHOT_EMBEDDED_CHART,
+                        baseConfidence = (candidate.scoreBreakdown.total / 100f).coerceIn(0.35f, 0.95f),
+                        warnings = candidate.warnings,
+                        scoreOverride = candidate.scoreBreakdown,
+                    ),
+                )
             }
             vlmGraphResult?.let { result ->
                 result.sortedRegions.forEach {
@@ -394,7 +435,7 @@ class GeometryPipelineRunner(
                 xTicks = ticks?.xTickPositions?.size ?: 0,
                 yTicks = ticks?.yTickPositions?.size ?: 0,
                 warnings = candidate.warnings + plot?.warnings.orEmpty() + ticks?.warnings.orEmpty(),
-            )
+            ).mergeOverride(candidate.scoreOverride)
             GraphPanelBounds(
                 region = corrected,
                 candidateSource = candidate.source,
@@ -411,6 +452,7 @@ private data class RawRoiCandidate(
     val source: GeometryCandidateSource,
     val baseConfidence: Float,
     val warnings: List<String> = emptyList(),
+    val scoreOverride: RoiCandidateScoreBreakdown? = null,
 )
 
 private data class GeometryCandidateEvaluation(
@@ -432,6 +474,23 @@ private data class GeometryCandidateEvaluation(
 )
 
 private const val MAX_GEOMETRY_RETRY_CANDIDATES = 6
+private const val VLM_ROI_HINT_TIMEOUT_MS = 45_000L
+
+private inline fun <T> timedStage(
+    stageId: String,
+    timings: MutableList<GeometryStageTiming>,
+    block: () -> T,
+): T {
+    val startedAt = System.currentTimeMillis()
+    println("PIPELINE[GEOMETRY][$stageId] start")
+    return try {
+        block()
+    } finally {
+        val duration = (System.currentTimeMillis() - startedAt).coerceAtLeast(0L)
+        timings += GeometryStageTiming(stageId = stageId, durationMillis = duration)
+        println("PIPELINE[GEOMETRY][$stageId] end durationMs=$duration")
+    }
+}
 
 private val GeometryReportStatus.selectionPriority: Int
     get() = when (this) {
@@ -456,8 +515,25 @@ private fun RawRoiCandidate.expandedVariants(imageWidth: Int, imageHeight: Int):
             region = expanded,
             baseConfidence = (baseConfidence * 0.96f).coerceIn(0f, 1f),
             warnings = warnings + "roi.expanded_${(ratio * 100).roundToInt()}pct",
+            scoreOverride = null,
         )
     }
+}
+
+private fun RoiCandidateScoreBreakdown.mergeOverride(
+    override: RoiCandidateScoreBreakdown?,
+): RoiCandidateScoreBreakdown {
+    override ?: return this
+    return copy(
+        graphFramePlotRectangleConfidence = maxOf(graphFramePlotRectangleConfidence, override.graphFramePlotRectangleConfidence),
+        tracePixelDensity = maxOf(tracePixelDensity, override.tracePixelDensity),
+        marginSafety = maxOf(marginSafety, override.marginSafety),
+        aspectRatioPlausibility = maxOf(aspectRatioPlausibility, override.aspectRatioPlausibility),
+        calibrationViability = maxOf(calibrationViability, override.calibrationViability),
+        curveCoverageScore = maxOf(curveCoverageScore, override.curveCoverageScore),
+        total = (total + override.total * 0.55f).coerceAtMost(100f),
+        notes = (notes + override.notes).distinct(),
+    )
 }
 
 private fun scoreCandidate(
