@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.geometry
 import com.chromalab.feature.processing.axis.AxisLine
 import com.chromalab.feature.processing.axis.AxisOrigin
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -256,6 +257,8 @@ data class GeometryTrace(
     val axisOverlayPath: String? = null,
     val tickOverlayPath: String? = null,
     val ocrCropPaths: List<String> = emptyList(),
+    val peakLabelEvidence: List<PeakLabelEvidence> = emptyList(),
+    val peakLabelCropPaths: List<String> = emptyList(),
     val calibrationFitOverlayPath: String? = null,
     val curveMaskRawPath: String? = null,
     val curveMaskCleanPath: String? = null,

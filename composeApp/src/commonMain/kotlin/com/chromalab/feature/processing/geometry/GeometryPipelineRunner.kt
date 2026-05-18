@@ -13,6 +13,8 @@ import com.chromalab.feature.processing.graph.requiresGraphPanelBoundaryMode
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrTextElement
+import com.chromalab.feature.processing.peaks.PeakLabelEvidence
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceReader
 import com.chromalab.feature.processing.pipeline.DetectionMethod
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -25,6 +27,7 @@ class GeometryPipelineRunner(
     private val axisTickGeometryDetector: AxisTickGeometryDetector = AxisTickGeometryDetector(),
     private val tickCropArtifactWriter: TickOcrCropArtifactWriter = TickOcrCropArtifactWriter(),
     private val chartReader: ChartAnalysisReader = ChartAnalysisReader(),
+    private val peakLabelEvidenceReader: PeakLabelEvidenceReader = PeakLabelEvidenceReader(),
     private val calibrationFitter: AxisCalibrationFitter = AxisCalibrationFitter(),
 ) {
     suspend fun run(
@@ -143,6 +146,9 @@ class GeometryPipelineRunner(
             addAll(axisGeometry.warnings)
             addAll(tickGeometry.warnings)
             addAll(tickOcr.warnings)
+            selectedEvaluation?.peakLabelEvidence
+                ?.flatMap { it.warnings }
+                ?.let { addAll(it) }
             addAll(xFit.warnings)
             addAll(yFit.warnings)
         }.distinct()
@@ -166,6 +172,8 @@ class GeometryPipelineRunner(
                 selectedEvaluation?.tickCropArtifacts?.map { it.path }.orEmpty() +
                     tickOcr.items.mapNotNull { it.localCropPath }
                 ).distinct(),
+            peakLabelEvidence = selectedEvaluation?.peakLabelEvidence.orEmpty(),
+            peakLabelCropPaths = selectedEvaluation?.peakLabelCropPaths.orEmpty(),
             warnings = warnings,
             timings = listOf(
                 GeometryStageTiming(
@@ -239,6 +247,24 @@ class GeometryPipelineRunner(
         } else {
             null
         }
+        val peakLabelEvidence = if (plot != null) {
+            runCatching {
+                peakLabelEvidenceReader.readPeakLabels(
+                    imagePath = imagePath,
+                    outputDir = outputDir,
+                    graphPanelBounds = candidate.region,
+                    plotAreaBounds = plot.region,
+                )
+            }.getOrElse {
+                com.chromalab.feature.processing.peaks.PeakLabelEvidenceResult(
+                    warnings = listOf("peak_label_ocr.runtime_reader_failed"),
+                )
+            }
+        } else {
+            com.chromalab.feature.processing.peaks.PeakLabelEvidenceResult(
+                warnings = listOf("peak_label_ocr.plot_area_missing"),
+            )
+        }
         val tickOcr = axisOcr.toTickOcrResult(candidate.region, tickGeometry, tickCropArtifacts)
         val xFit = calibrationFitter.fit(
             axis = GeometryAxis.X,
@@ -291,6 +317,8 @@ class GeometryPipelineRunner(
             tickGeometry = tickGeometry,
             tickOcr = tickOcr,
             tickCropArtifacts = tickCropArtifacts,
+            peakLabelEvidence = peakLabelEvidence.labels,
+            peakLabelCropPaths = peakLabelEvidence.cropPaths,
             xFit = xFit,
             yFit = yFit,
             reportStatus = reportStatus,
@@ -388,6 +416,8 @@ private data class GeometryCandidateEvaluation(
     val tickGeometry: TickGeometry,
     val tickOcr: TickOcrResult,
     val tickCropArtifacts: List<TickOcrCropArtifact>,
+    val peakLabelEvidence: List<PeakLabelEvidence>,
+    val peakLabelCropPaths: List<String>,
     val xFit: AxisCalibrationFit,
     val yFit: AxisCalibrationFit,
     val reportStatus: GeometryReportStatus,

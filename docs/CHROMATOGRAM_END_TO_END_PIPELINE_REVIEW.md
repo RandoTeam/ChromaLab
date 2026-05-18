@@ -129,10 +129,12 @@ Current bench status:
 
 - `bench_04_stacked_xic_resolution` passes the sparse review contract after
   fragmented trace selection and sparse artifact filtering.
-- `bench_03_small_tic_export` now passes without lowering global peak thresholds. The
-  raw detector still returns the three strong peaks, while the two smallest labeled
-  peaks around 5.610 and 8.560 min are represented as review-grade recovered
-  candidates after label evidence is linked to deterministic local signal evidence.
+- `bench_03_small_tic_export` now passes fixture sanity without lowering global peak
+  thresholds, but its extra two recovered peaks are explicitly test-only. The raw
+  detector still returns the three strong production-reportable peaks, while the two
+  smallest labeled peaks around 5.610 and 8.560 min are represented as fixture-hint
+  review candidates after label evidence is linked to deterministic local signal
+  evidence.
 - `bench_08_mz71_duplicate_candidate` now treats the 19 default peaks as a dense
   chromatographic series unless deterministic artifact scoring proves otherwise. The
   older guarded 5 -> 9 expectation is obsolete for this fixture because the default
@@ -154,6 +156,8 @@ Implemented:
   such as `5.610` or `8.560` is only an RT hint; it must be linked through accepted
   calibration and verified against a bounded local signal window before it affects
   reportable peak sanity.
+- Split production and test-only counts. `FIXTURE_HINT` evidence can satisfy fixture
+  diagnostics only; it cannot increase production reportable peak count.
 - Added local recovered-peak evidence: nearest local maximum, RT delta, local height,
   local S/N, curvature score, integration window, confidence, status, and rejection
   reason.
@@ -166,19 +170,22 @@ Bench decisions:
 - `bench_03`: root cause was low-resolution/fragmented trace evidence around labeled
   weak peaks, not a final calculation defect. The false right-edge artifact remains
   suppressed. Peaks at 5.610 and 8.560 are review-grade
-  `LOW_RESOLUTION_RECOVERED` / `LABEL_EVIDENCE_VERIFIED` candidates, not raw
-  release-grade detections.
+  `LOW_RESOLUTION_RECOVERED` / `LABEL_EVIDENCE_VERIFIED` candidates in fixture
+  testing, but they also carry `FIXTURE_HINT_ONLY` and are not production reportable.
 - `bench_08`: the current 19-peak signal is treated as valid dense-series raw
-  detection. No evidence currently justifies collapsing it to the old 9-peak guarded
-  contract. Any future reduction must come from deterministic artifact classification,
-  not from a hardcoded fixture count.
+  detection because every counted peak is linked to a signal apex
+  (`isValidatedApex=true`, `isCandidateLineOnly=false`). No evidence currently
+  justifies collapsing it to the old 9-peak guarded contract. Any future reduction
+  must come from deterministic artifact classification, not from a hardcoded fixture
+  count.
 
 Runtime note:
 
-- The desktop bench uses explicit fixture label hints as deterministic evidence input
-  and records that provenance. Android/runtime production still needs the same
-  `PeakLabelEvidence` contract fed by real local OCR/VLM label crops before this
-  recovery path can be treated as fully automated outside fixtures.
+- The desktop bench uses explicit fixture label hints as deterministic test-only
+  evidence input and records that provenance. Android/runtime now has a local-crop
+  `PeakLabelEvidenceReader` wired into the geometry trace, but production recovered
+  peak promotion still needs the post-signal verification bridge before this recovery
+  path can be treated as fully automated outside fixtures.
 
 ## Scope
 

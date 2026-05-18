@@ -14,11 +14,13 @@ import com.chromalab.feature.processing.bench.OfflinePeakSanityExpectationInput
 import com.chromalab.feature.processing.bench.OfflineReportContractSectionStatus
 import com.chromalab.feature.processing.bench.OfflineReportUiPlacement
 import com.chromalab.feature.processing.bench.OfflineStageStatus
+import com.chromalab.feature.processing.bench.computePlotAreaTextContamination
 import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.ImagePoint
 import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
 import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.perspective.PerspectiveWarper
 import java.awt.BasicStroke
 import java.awt.Color
@@ -711,11 +713,25 @@ class ChromatogramBenchFixtureTest {
             .filter { it.status == "REVIEW" || it.status == "ACCEPTED" }
 
         assertEquals(3, graph.peakDetection.rawDetectedPeakCount, "bench_03 raw signal should remain unchanged")
-        assertEquals(5, graph.peakDetection.reportablePeakCount, "bench_03 reportable count must include verified label evidence")
+        assertEquals(3, graph.peakDetection.productionReportablePeakCount, "bench_03 fixture hints must not become production reportable peaks")
+        assertEquals(5, graph.peakDetection.testOnlyReportablePeakCount, "bench_03 test-only count must include verified fixture label evidence")
         assertTrue(graph.peakSanity.ready, "bench_03 label recovery must satisfy expected labeled apex sanity")
+        assertTrue(
+            "peak_detection.test_only_fixture_label_recovery_not_production" in graph.peakDetection.warnings,
+            "bench_03 must mark fixture-hint recovery as non-production evidence",
+        )
+        assertTrue(
+            "peak_sanity.test_only_fixture_hint_used" in graph.peakSanity.warnings,
+            "bench_03 peak sanity must disclose test-only fixture hint usage",
+        )
+        assertTrue(
+            graph.peakDetection.peakLabelEvidence.all { !it.isRuntimeEvidence && it.source == "FIXTURE_HINT" },
+            "bench_03 fixture label evidence must not masquerade as runtime OCR/VLM evidence",
+        )
         listOf(5.610, 8.560).forEach { expected ->
             val candidate = recovered.firstOrNull { kotlin.math.abs(it.targetRt - expected) <= 0.001 }
             assertNotNull(candidate, "bench_03 must expose recovered candidate for label $expected")
+            assertFalse(candidate.isRuntimeEvidence, "bench_03 fixture-hint recovery must be marked test-only")
             assertTrue(
                 "LOW_RESOLUTION_RECOVERED" in candidate.qualityFlags,
                 "bench_03 recovered label $expected must be review-grade low-resolution evidence",
@@ -724,6 +740,12 @@ class ChromatogramBenchFixtureTest {
                 "LABEL_EVIDENCE_VERIFIED" in candidate.qualityFlags,
                 "bench_03 recovered label $expected must be verified against local signal",
             )
+            assertTrue(
+                "FIXTURE_HINT_ONLY" in candidate.qualityFlags,
+                "bench_03 recovered label $expected must disclose fixture-only evidence",
+            )
+            assertNotNull(candidate.nearestLocalMaximumRt, "bench_03 recovered label $expected must have local apex evidence")
+            assertNotNull(candidate.nearestLocalMaximumIntensity, "bench_03 recovered label $expected must have local apex intensity")
         }
         graph.peakDetection.peakLabelEvidence.forEach { label ->
             label.localCropPath?.let { path ->
@@ -757,10 +779,50 @@ class ChromatogramBenchFixtureTest {
         assertTrue(dense.status == "VALID" || dense.status == "REVIEW", "bench_08 dense-series status must be adjudicated")
         assertTrue(dense.seriesMemberCount >= 15, "bench_08 must classify the visible series members")
         assertEquals(0, dense.rejectedArtifactPeakCount, "bench_08 dense series must not be artifact-heavy")
+        assertEquals(dense.rawCandidatePeakCount, dense.validatedPeakCount, "bench_08 counted peaks must be signal-validated apexes")
         assertEquals(
             graph.peakDetection.rawDetectedPeakCount,
             dense.reportablePeakCount,
             "bench_08 raw dense peaks should remain reportable when no artifact suspicion is proven",
+        )
+        assertTrue(
+            dense.peaks.all { it.isValidatedApex && !it.isCandidateLineOnly },
+            "bench_08 reportable peaks must not be candidate lines without signal apex evidence",
+        )
+    }
+
+    @Test
+    fun plotAreaTextInsidePlotIsReviewOrInvalidEvidence() {
+        val plot = GraphRegion(40, 30, 300, 120, "plot")
+        val contamination = computePlotAreaTextContamination(
+            plotArea = plot,
+            textElements = listOf(
+                OcrTextElement(
+                    text = "Ion 71.00 (70.70 to 71.70)",
+                    numericValue = null,
+                    x = 80f,
+                    y = 36f,
+                    width = 150f,
+                    height = 14f,
+                    confidence = 0.9f,
+                ),
+                OcrTextElement(
+                    text = "TIC",
+                    numericValue = null,
+                    x = 120f,
+                    y = 58f,
+                    width = 40f,
+                    height = 12f,
+                    confidence = 0.9f,
+                ),
+            ),
+        )
+
+        assertTrue(contamination.score >= 0.18f, "title/ion text inside plot area must trigger review-grade contamination")
+        assertEquals(2, contamination.elementCount, "plot contamination must count OCR boxes inside plot area")
+        assertTrue(
+            contamination.warnings.any { it.startsWith("plot_area.title_or_axis_text_inside") },
+            "plot contamination must explain title/axis text inside plot area",
         )
     }
 
@@ -876,9 +938,18 @@ class ChromatogramBenchFixtureTest {
         assertTrue(audit.graphs.all { it.peakDetection.ready }, "${audit.sourceId} must detect peaks on every graph")
         assertTrue(audit.graphs.all { it.peakMetrics.ready }, "${audit.sourceId} must pass peak metrics review on every graph")
         assertTrue(
-            audit.graphs.sumOf { it.peakDetection.reportablePeakCount } >= minTotalPeaks,
+            audit.graphs.sumOf { it.peakDetection.testOnlyReportablePeakCount } >= minTotalPeaks,
             "${audit.sourceId} must detect visible peaks on real fixture examples",
         )
+        audit.graphs.forEach { graph ->
+            if (graph.peakDetection.testOnlyReportablePeakCount > graph.peakDetection.productionReportablePeakCount) {
+                assertTrue(
+                    "peak_detection.test_only_fixture_label_recovery_not_production" in graph.peakDetection.warnings ||
+                        "peak_sanity.test_only_fixture_hint_used" in graph.peakSanity.warnings,
+                    "${audit.sourceId} graph ${graph.graphIndex} must disclose when fixture hints affect test-only completeness",
+                )
+            }
+        }
         assertTrue(
             audit.graphs.all { it.peakMetrics.invalidBoundaryCount == 0 },
             "${audit.sourceId} must not accept invalid peak boundaries",
@@ -1592,6 +1663,11 @@ class ChromatogramBenchFixtureTest {
             "bench_08 must keep the major visible n-alkane series members",
         )
         assertEquals(
+            bench08.peakDetection.denseSeries.rawCandidatePeakCount,
+            bench08.peakDetection.denseSeries.validatedPeakCount,
+            "bench_08 dense-series members must be counted only after signal-apex validation",
+        )
+        assertEquals(
             0,
             bench08.peakDetection.denseSeries.rejectedArtifactPeakCount,
             "bench_08 current dense series must not be treated as artifact-heavy without deterministic evidence",
@@ -2234,16 +2310,27 @@ private fun writePeakOverlayArtifacts(
                             ?.coerceIn(plotLocalX, plotRight)
                         val target = (plotLocalX + xPair.valueToPixel(peak.targetRt)).roundToInt()
                             .coerceIn(plotLocalX, plotRight)
+                        val localMax = peak.nearestLocalMaximumRt?.let { plotLocalX + xPair.valueToPixel(it) }
+                            ?.roundToInt()
+                            ?.coerceIn(plotLocalX, plotRight)
+                        val localMaxY = peak.nearestLocalMaximumIntensity?.let { plotLocalY + yPair.valueToPixel(it) }
+                            ?.roundToInt()
+                            ?.coerceIn(plotLocalY, plotBottom)
                         graphics.color = Color(0x00, 0x96, 0x88, 85)
                         if (start != null && end != null) {
                             graphics.fillRect(start.coerceAtMost(end), plotLocalY, kotlin.math.abs(end - start).coerceAtLeast(1), plotBottom - plotLocalY)
                         }
-                        graphics.color = Color(0x00, 0x96, 0x88, 230)
+                        graphics.color = Color(0x00, 0x96, 0x88, 120)
                         graphics.drawLine(target, plotLocalY, target, plotBottom)
+                        if (localMax != null && localMaxY != null) {
+                            graphics.color = Color(0x00, 0x96, 0x88, 240)
+                            graphics.drawLine(localMax, plotLocalY, localMax, plotBottom)
+                            graphics.fillOval(localMax - 5, localMaxY - 5, 10, 10)
+                        }
                         graphics.drawString(
                             "R${index + 1}",
-                            (target + 4).coerceAtMost(focus.width - 22),
-                            (plotLocalY + 18 + index * 12).coerceAtMost(plotBottom - 4),
+                            ((localMax ?: target) + 4).coerceAtMost(focus.width - 22),
+                            ((localMaxY ?: (plotLocalY + 18 + index * 12)) - 6).coerceIn(12, plotBottom - 4),
                         )
                     }
             } finally {
@@ -2328,6 +2415,9 @@ private fun writePeakLabelEvidenceArtifacts(
                         graph.peakDetection.recoveredPeaks.forEach { recovered ->
                             val targetX = (plotLocalX + xPair.valueToPixel(recovered.targetRt)).roundToInt()
                                 .coerceIn(plotLocalX, (plotLocalX + plot.width).coerceIn(0, focus.width))
+                            val localMaxX = recovered.nearestLocalMaximumRt?.let { plotLocalX + xPair.valueToPixel(it) }
+                                ?.roundToInt()
+                                ?.coerceIn(plotLocalX, (plotLocalX + plot.width).coerceIn(0, focus.width))
                             val start = recovered.integrationWindowStart?.let { plotLocalX + xPair.valueToPixel(it) }
                                 ?.roundToInt()
                                 ?.coerceIn(plotLocalX, (plotLocalX + plot.width).coerceIn(0, focus.width))
@@ -2343,9 +2433,14 @@ private fun writePeakLabelEvidenceArtifacts(
                                 graphics.fillRect(start.coerceAtMost(end), plotLocalY, kotlin.math.abs(end - start).coerceAtLeast(1), plotBottom - plotLocalY)
                             }
                             graphics.drawLine(targetX, plotLocalY, targetX, plotBottom)
+                            if (localMaxX != null) {
+                                graphics.color = Color(0x00, 0x96, 0x88, 235)
+                                graphics.drawLine(localMaxX, plotLocalY, localMaxX, plotBottom)
+                                graphics.fillOval(localMaxX - 4, (plotLocalY + 6).coerceAtMost(plotBottom - 8), 8, 8)
+                            }
                             graphics.drawString(
                                 "${recovered.status}:${recovered.targetRt}",
-                                (targetX + 4).coerceAtMost(focus.width - 110),
+                                ((localMaxX ?: targetX) + 4).coerceAtMost(focus.width - 110),
                                 (plotBottom - 8).coerceAtLeast(14),
                             )
                         }

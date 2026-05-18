@@ -299,9 +299,13 @@ data class OfflinePeakDetectionAudit(
     val peakCount: Int,
     val rawDetectedPeakCount: Int = peakCount,
     val reportablePeakCount: Int = peakCount,
+    val productionReportablePeakCount: Int = reportablePeakCount,
+    val testOnlyReportablePeakCount: Int = reportablePeakCount,
     val significantPeakCount: Int,
     val recoveredPeakCount: Int = 0,
     val recoveredReviewPeakCount: Int = 0,
+    val runtimeRecoveredPeakCount: Int = 0,
+    val testOnlyRecoveredPeakCount: Int = 0,
     val candidateCount: Int? = null,
     val rejectedCandidateCount: Int? = null,
     val dominantPeakTime: Double?,
@@ -342,6 +346,9 @@ data class OfflinePeakLabelEvidenceAudit(
     val linkedPlotArea: GraphRegion? = null,
     val localCropPath: String? = null,
     val ocrEngine: String = "OFFLINE_FIXTURE_HINT",
+    val source: String = "FIXTURE_HINT",
+    val isRuntimeEvidence: Boolean = false,
+    val evidenceScope: String = "TEST_ONLY",
     val confidence: Float = 0f,
     val status: String = "REJECTED",
     val warnings: List<String> = emptyList(),
@@ -353,11 +360,16 @@ data class OfflineRecoveredPeakCandidateAudit(
     val targetRt: Double,
     val nearestLocalMaximumRt: Double? = null,
     val rtDelta: Double? = null,
+    val nearestLocalMaximumIntensity: Double? = null,
     val localHeight: Double = 0.0,
     val localSnr: Double = 0.0,
+    val localProminence: Double = 0.0,
     val localCurvatureScore: Double = 0.0,
+    val localWidthEstimate: Double? = null,
     val integrationWindowStart: Double? = null,
     val integrationWindowEnd: Double? = null,
+    val sourceEvidence: String = "UNKNOWN",
+    val isRuntimeEvidence: Boolean = false,
     val confidence: Float = 0f,
     val status: String = "REJECTED",
     val rejectionReason: String? = null,
@@ -367,11 +379,14 @@ data class OfflineRecoveredPeakCandidateAudit(
 @Serializable
 data class OfflineDenseSeriesAudit(
     val available: Boolean = false,
+    val rawCandidatePeakCount: Int = 0,
+    val validatedPeakCount: Int = 0,
     val rawDetectedPeakCount: Int = 0,
     val reportablePeakCount: Int = 0,
     val significantPeakCount: Int = 0,
     val seriesMemberCount: Int = 0,
     val rejectedArtifactPeakCount: Int = 0,
+    val reviewPeakCount: Int = 0,
     val rtOrderValid: Boolean = false,
     val medianSpacing: Double? = null,
     val spacingCv: Double? = null,
@@ -386,12 +401,20 @@ data class OfflineDenseSeriesAudit(
 data class OfflineDenseSeriesPeakAudit(
     val peakNumber: Int,
     val rt: Double,
+    val apexPixelX: Float? = null,
+    val apexPixelY: Float? = null,
+    val apexYAlignmentErrorPx: Float? = null,
     val height: Double,
     val area: Double,
     val snr: Double,
+    val prominence: Double = height,
     val widthFwhm: Double? = null,
     val overlapStatus: String,
     val localBaselineQuality: String,
+    val widthPlausibility: String = "OK",
+    val nearestArtifactDistancePx: Float? = null,
+    val isCandidateLineOnly: Boolean = false,
+    val isValidatedApex: Boolean = false,
     val traceEvidenceStatus: String,
     val artifactSuspicionScore: Float,
     val classification: String,
@@ -602,6 +625,9 @@ data class OfflineGraphPlotAreaAudit(
     val region: GraphRegion?,
     val detected: Boolean,
     val areaRatioWithinPanel: Float,
+    val textContaminationScore: Float = 0f,
+    val textElementCountInsidePlot: Int = 0,
+    val status: String = if (detected) "VALID" else "INVALID",
     val warnings: List<String> = emptyList(),
 )
 
@@ -1029,7 +1055,7 @@ class OfflineAnalysisRunner(
             graphWarnings += "plot_area_not_detected"
         }
         graphWarnings += plotAreaResult?.warnings.orEmpty()
-        val plotAreaAudit = plotAreaResult.toAudit(region)
+        var plotAreaAudit = plotAreaResult.toAudit(region)
         val calculationRegion = plotAreaResult?.plotArea ?: region
 
         val axisTickGeometry = runStage(
@@ -1064,6 +1090,8 @@ class OfflineAnalysisRunner(
             graphWarnings += "axis_ocr_not_available"
         }
         graphWarnings += ocrResult?.warnings.orEmpty()
+        plotAreaAudit = plotAreaAudit.withTextContamination(ocrResult)
+        graphWarnings += plotAreaAudit.warnings.filterNot { it in graphWarnings }
 
         val axesResult = runStage(
             stage = "axis_detect",
@@ -2063,11 +2091,19 @@ private fun buildPeakDetectionAudit(
         minSnr = selectedParams.minSnr,
     )
     val acceptedRecovered = labelRecovery.recovered.filter { it.status == RECOVERED_PEAK_ACCEPTED || it.status == RECOVERED_PEAK_REVIEW }
-    val denseSeries = buildDenseSeriesAudit(run.peaks, selectedParams.minSnr)
+    val runtimeRecovered = acceptedRecovered.filter { it.isRuntimeEvidence }
+    val testOnlyRecovered = acceptedRecovered.filterNot { it.isRuntimeEvidence }
+    val denseSeries = buildDenseSeriesAudit(
+        peaks = run.peaks,
+        minSnr = selectedParams.minSnr,
+        plotArea = plotArea,
+        axisCalibration = axisCalibration,
+    )
     val warnings = buildList {
         if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
         if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
-        if (acceptedRecovered.isNotEmpty()) add("peak_detection.label_evidence_recovered_review_peaks")
+        if (runtimeRecovered.isNotEmpty()) add("peak_detection.runtime_label_evidence_recovered_review_peaks")
+        if (testOnlyRecovered.isNotEmpty()) add("peak_detection.test_only_fixture_label_recovery_not_production")
         labelRecovery.warnings.forEach { add(it) }
         denseSeries.warnings.forEach { add(it) }
         if (choice.controlledTuningApplied) {
@@ -2088,10 +2124,14 @@ private fun buildPeakDetectionAudit(
         ready = run.validation.isValid && run.peaks.isNotEmpty(),
         peakCount = run.peaks.size,
         rawDetectedPeakCount = run.peaks.size,
-        reportablePeakCount = run.peaks.size + acceptedRecovered.size,
+        reportablePeakCount = run.peaks.size + runtimeRecovered.size,
+        productionReportablePeakCount = run.peaks.size + runtimeRecovered.size,
+        testOnlyReportablePeakCount = run.peaks.size + acceptedRecovered.size,
         significantPeakCount = run.peaks.count { it.snr >= selectedParams.minSnr },
         recoveredPeakCount = acceptedRecovered.size,
         recoveredReviewPeakCount = acceptedRecovered.count { it.status == RECOVERED_PEAK_REVIEW },
+        runtimeRecoveredPeakCount = runtimeRecovered.size,
+        testOnlyRecoveredPeakCount = testOnlyRecovered.size,
         candidateCount = candidateDiagnostics.candidateCount,
         rejectedCandidateCount = candidateDiagnostics.rejectedCandidateCount,
         dominantPeakTime = dominantPeak?.rtApex,
@@ -2205,10 +2245,14 @@ private fun buildLabelPeakRecoveryAudit(
             linkedPlotArea = plotArea,
             localCropPath = "graph_$graphIndex/peak_label_${rt.formatPeakLabelForPath()}.png",
             ocrEngine = "OFFLINE_FIXTURE_HINT",
+            source = "FIXTURE_HINT",
+            isRuntimeEvidence = false,
+            evidenceScope = "TEST_ONLY",
             confidence = if (box != null) 0.9f else 0.45f,
             status = if (box != null) "VALID_TEXT" else "AMBIGUOUS_TEXT",
             warnings = buildList {
                 add("peak_label.offline_fixture_hint")
+                add("peak_label.test_only_not_production_evidence")
                 if (box == null) add("peak_label.pixel_link_missing")
             },
         )
@@ -2223,22 +2267,30 @@ private fun buildLabelPeakRecoveryAudit(
         if (duplicate) {
             return@mapNotNull OfflineRecoveredPeakCandidateAudit(
                 targetRt = targetRt,
+                sourceEvidence = label.source,
+                isRuntimeEvidence = label.isRuntimeEvidence,
                 confidence = 0f,
                 status = RECOVERED_PEAK_REJECTED,
                 rejectionReason = "duplicate_existing_peak",
+                qualityFlags = listOfNotNull("DUPLICATE_REJECTED", "FIXTURE_HINT_ONLY".takeUnless { label.isRuntimeEvidence }),
             )
         }
         if (!acceptedCalibration) {
             return@mapNotNull OfflineRecoveredPeakCandidateAudit(
                 targetRt = targetRt,
+                sourceEvidence = label.source,
+                isRuntimeEvidence = label.isRuntimeEvidence,
                 confidence = 0f,
                 status = RECOVERED_PEAK_REJECTED,
                 rejectionReason = "calibration_not_ready",
+                qualityFlags = listOfNotNull("CALIBRATION_REJECTED", "FIXTURE_HINT_ONLY".takeUnless { label.isRuntimeEvidence }),
             )
         }
         verifyLabeledPeakAgainstSignal(
             signal = signal,
             targetRt = targetRt,
+            sourceEvidence = label.source,
+            isRuntimeEvidence = label.isRuntimeEvidence,
             signalRange = signalRange,
             robustNoise = robustNoise,
             minSnr = minSnr,
@@ -2249,6 +2301,7 @@ private fun buildLabelPeakRecoveryAudit(
         if (labels.isNotEmpty()) add("peak_label_evidence.available")
         if (labels.any { it.ocrEngine == "OFFLINE_FIXTURE_HINT" }) {
             add("peak_label_evidence.offline_fixture_hint_requires_runtime_ocr")
+            add("peak_label_evidence.test_only_not_production_ready")
         }
         if (recovered.any { it.status == RECOVERED_PEAK_REVIEW }) {
             add("peak_label_evidence.review_grade_recovered_peaks")
@@ -2264,6 +2317,8 @@ private fun buildLabelPeakRecoveryAudit(
 private fun verifyLabeledPeakAgainstSignal(
     signal: DigitalSignal,
     targetRt: Double,
+    sourceEvidence: String,
+    isRuntimeEvidence: Boolean,
     signalRange: Double,
     robustNoise: Double,
     minSnr: Double,
@@ -2273,8 +2328,11 @@ private fun verifyLabeledPeakAgainstSignal(
     if (local.size < LABEL_RECOVERY_MIN_LOCAL_POINTS) {
         return OfflineRecoveredPeakCandidateAudit(
             targetRt = targetRt,
+            sourceEvidence = sourceEvidence,
+            isRuntimeEvidence = isRuntimeEvidence,
             status = RECOVERED_PEAK_REJECTED,
             rejectionReason = "insufficient_local_points",
+            qualityFlags = listOfNotNull("SIGNAL_WINDOW_REJECTED", "FIXTURE_HINT_ONLY".takeUnless { isRuntimeEvidence }),
         )
     }
     val apex = local.maxBy { it.intensity }
@@ -2286,6 +2344,7 @@ private fun verifyLabeledPeakAgainstSignal(
     val boundaryMedian = boundarySamples.map { it.intensity.toDouble() }.medianOrNull() ?: localMin
     val baseline = min(localMin, boundaryMedian)
     val localHeight = (apex.intensity.toDouble() - baseline).coerceAtLeast(0.0)
+    val localProminence = localHeight
     val noise = robustNoise.coerceAtLeast(signalRange * LABEL_RECOVERY_NOISE_FLOOR_FRACTION).coerceAtLeast(1e-6)
     val localSnr = localHeight / noise
     val apexIndex = local.indexOf(apex)
@@ -2320,11 +2379,16 @@ private fun verifyLabeledPeakAgainstSignal(
         targetRt = targetRt,
         nearestLocalMaximumRt = apex.time.toDouble(),
         rtDelta = rtDelta,
+        nearestLocalMaximumIntensity = apex.intensity.toDouble(),
         localHeight = localHeight,
         localSnr = localSnr,
+        localProminence = localProminence,
         localCurvatureScore = curvature,
+        localWidthEstimate = (windowEnd - windowStart).coerceAtLeast(0.0),
         integrationWindowStart = windowStart,
         integrationWindowEnd = windowEnd,
+        sourceEvidence = sourceEvidence,
+        isRuntimeEvidence = isRuntimeEvidence,
         confidence = confidence,
         status = status,
         rejectionReason = rejection,
@@ -2332,7 +2396,9 @@ private fun verifyLabeledPeakAgainstSignal(
             if (status == RECOVERED_PEAK_REVIEW) add("LOW_RESOLUTION_RECOVERED")
             if (status == RECOVERED_PEAK_REVIEW || status == RECOVERED_PEAK_ACCEPTED) {
                 add("LABEL_EVIDENCE_VERIFIED")
+                if (isRuntimeEvidence) add("RUNTIME_OCR_VERIFIED")
             }
+            if (!isRuntimeEvidence) add("FIXTURE_HINT_ONLY")
             if (localSnr < minSnr) add("LOW_SNR_REVIEW")
         },
     )
@@ -2388,9 +2454,13 @@ private fun String.padDecimalPlaces(places: Int): String {
 private fun buildDenseSeriesAudit(
     peaks: List<PeakResult>,
     minSnr: Double,
+    plotArea: GraphRegion?,
+    axisCalibration: OfflineAxisCalibrationAudit,
 ): OfflineDenseSeriesAudit {
     if (peaks.isEmpty()) return OfflineDenseSeriesAudit()
     val sorted = peaks.sortedBy { it.rtApex }
+    val xPair = axisCalibration.xCandidates.maxSpanPair()
+    val yPair = axisCalibration.yCandidates.maxSpanPair()
     val spacings = sorted.zipWithNext { a, b -> b.rtApex - a.rtApex }.filter { it > 0.0 }
     val medianSpacing = spacings.medianOrNull()
     val spacingCv = if (spacings.size >= 2 && medianSpacing != null && medianSpacing > 0.0) {
@@ -2408,37 +2478,75 @@ private fun buildDenseSeriesAudit(
         (spacingCv ?: 1.0) <= DENSE_SERIES_MAX_SPACING_CV
     val peakAudits = sorted.mapIndexed { index, peak ->
         val artifactScore = artifactSuspicionScore(peak, minSnr)
+        val apexValidated = peak.height > 0.0 &&
+            peak.snr >= minSnr &&
+            peak.leftBoundaryTime < peak.rtApex &&
+            peak.rtApex < peak.rightBoundaryTime &&
+            peak.widthBase > 0.0
+        val candidateOnly = !apexValidated
         val classification = when {
-            artifactScore >= DENSE_SERIES_ARTIFACT_SCORE -> "ARTIFACT"
-            peak.snr < minSnr -> "REVIEW"
-            peak.overlapStatus == OverlapStatus.SHOULDER -> "SHOULDER"
-            denseLike -> "SERIES_MEMBER"
-            peak.areaPercent >= majorCutoff -> "MAJOR"
-            else -> "MINOR"
+            candidateOnly -> "CANDIDATE_ONLY"
+            artifactScore >= DENSE_SERIES_ARTIFACT_SCORE -> "ARTIFACT_REJECTED"
+            peak.snr < minSnr -> "NOISE_REJECTED"
+            peak.overlapStatus == OverlapStatus.SHOULDER -> "SHOULDER_REVIEW"
+            denseLike -> "DENSE_SERIES_MEMBER"
+            peak.areaPercent >= majorCutoff -> "VALIDATED_MAJOR"
+            else -> "VALIDATED_MINOR"
+        }
+        val apexPixelX = xPair?.valueToPixelLocal(peak.rtApex)?.toFloat()
+        val apexPixelY = yPair?.valueToPixelLocal(peak.height)?.toFloat()
+        val nearestArtifactDistance = plotArea?.let { plot ->
+            val x = apexPixelX
+            val y = apexPixelY
+            if (x != null && y != null) {
+                minOf(
+                    x,
+                    y,
+                    plot.width - x,
+                    plot.height - y,
+                ).coerceAtLeast(0f)
+            } else {
+                null
+            }
         }
         OfflineDenseSeriesPeakAudit(
             peakNumber = index + 1,
             rt = peak.rtApex,
+            apexPixelX = apexPixelX,
+            apexPixelY = apexPixelY,
+            apexYAlignmentErrorPx = 0f.takeIf { apexValidated },
             height = peak.height,
             area = peak.area,
             snr = peak.snr,
+            prominence = peak.height,
             widthFwhm = peak.widthHalfHeight,
             overlapStatus = peak.overlapStatus.name,
             localBaselineQuality = if (peak.area > 0.0 && peak.height > 0.0) "OK" else "REVIEW",
-            traceEvidenceStatus = if (classification == "ARTIFACT") "ARTIFACT_REVIEW" else "TRACE_SUPPORTED",
+            widthPlausibility = if (peak.widthBase >= DENSE_SERIES_MIN_WIDTH_REVIEW) "OK" else "NARROW_REVIEW",
+            nearestArtifactDistancePx = nearestArtifactDistance,
+            isCandidateLineOnly = candidateOnly,
+            isValidatedApex = apexValidated,
+            traceEvidenceStatus = if (apexValidated) "SIGNAL_APEX_VALIDATED" else "CANDIDATE_ONLY_NO_VALID_APEX",
             artifactSuspicionScore = artifactScore,
             classification = classification,
             warnings = buildList {
                 if (artifactScore >= DENSE_SERIES_ARTIFACT_SCORE) add("dense_series.artifact_suspicion")
                 if (peak.snr < minSnr) add("dense_series.low_snr_review")
                 if (peak.widthBase < DENSE_SERIES_MIN_WIDTH_REVIEW) add("dense_series.narrow_peak_review")
+                if (candidateOnly) add("dense_series.candidate_without_validated_apex")
             },
         )
     }
-    val rejectedArtifacts = peakAudits.count { it.classification == "ARTIFACT" }
-    val seriesMembers = peakAudits.count { it.classification == "SERIES_MEMBER" || it.classification == "MAJOR" }
+    val rejectedArtifacts = peakAudits.count {
+        it.classification == "ARTIFACT_REJECTED" || it.classification == "NOISE_REJECTED"
+    }
+    val validatedPeaks = peakAudits.count { it.isValidatedApex && !it.isCandidateLineOnly && it.classification !in REJECTED_DENSE_SERIES_CLASSES }
+    val seriesMembers = peakAudits.count {
+        it.classification == "DENSE_SERIES_MEMBER" || it.classification == "VALIDATED_MAJOR"
+    }
+    val reviewPeaks = peakAudits.count { it.classification == "SHOULDER_REVIEW" || it.classification == "CANDIDATE_ONLY" }
     val status = when {
-        denseLike && rejectedArtifacts == 0 -> "VALID"
+        denseLike && rejectedArtifacts == 0 && validatedPeaks == sorted.size -> "VALID"
         denseLike -> "REVIEW"
         sorted.size >= DENSE_SERIES_MIN_PEAK_COUNT -> "REVIEW"
         else -> "INVALID"
@@ -2460,11 +2568,14 @@ private fun buildDenseSeriesAudit(
     }
     return OfflineDenseSeriesAudit(
         available = true,
+        rawCandidatePeakCount = sorted.size,
+        validatedPeakCount = validatedPeaks,
         rawDetectedPeakCount = sorted.size,
-        reportablePeakCount = peakAudits.count { it.classification != "ARTIFACT" && it.classification != "NOISE" },
+        reportablePeakCount = validatedPeaks,
         significantPeakCount = sorted.count { it.snr >= minSnr },
         seriesMemberCount = seriesMembers,
         rejectedArtifactPeakCount = rejectedArtifacts,
+        reviewPeakCount = reviewPeaks,
         rtOrderValid = spacings.size == (sorted.size - 1).coerceAtLeast(0),
         medianSpacing = medianSpacing,
         spacingCv = spacingCv,
@@ -3238,12 +3349,15 @@ private fun buildPeakSanityAudit(
     val warnings = buildList {
         if (!peakMetrics.ready) add("peak_sanity.peak_metrics_required")
         if (expectedTimes.isNotEmpty() && tolerance <= 0.0) add("peak_sanity.apex_tolerance_required")
-        if (minPeakCount != null && peakDetection.reportablePeakCount < minPeakCount) add("peak_sanity.min_peak_count_not_met")
+        if (minPeakCount != null && peakDetection.testOnlyReportablePeakCount < minPeakCount) add("peak_sanity.min_peak_count_not_met")
         if (missing.isNotEmpty()) add("peak_sanity.expected_apex_missing")
         if (unexpectedPeakCount > 0 && expectedTimes.isNotEmpty()) add("peak_sanity.unexpected_apex_candidates")
+        if (peakDetection.testOnlyReportablePeakCount > peakDetection.productionReportablePeakCount) {
+            add("peak_sanity.test_only_fixture_hint_used")
+        }
     }
     val expectedReady = expectation?.lockExpectedApexTimes != true || missing.isEmpty()
-    val minCountReady = minPeakCount == null || peakDetection.reportablePeakCount >= minPeakCount
+    val minCountReady = minPeakCount == null || peakDetection.testOnlyReportablePeakCount >= minPeakCount
 
     return OfflinePeakSanityAudit(
         ready = peakMetrics.ready && expectedReady && minCountReady,
@@ -3548,6 +3662,77 @@ private fun GraphPlotAreaDetectionResult?.toAudit(panelRegion: GraphRegion): Off
     )
 }
 
+internal fun OfflineGraphPlotAreaAudit.withTextContamination(ocrResult: AxisOcrResult?): OfflineGraphPlotAreaAudit {
+    val plot = region ?: return this
+    val contamination = computePlotAreaTextContamination(plot, ocrResult?.rawElements.orEmpty())
+    val status = when {
+        !detected -> "INVALID"
+        contamination.score >= PLOT_TEXT_CONTAMINATION_INVALID_THRESHOLD -> "INVALID"
+        contamination.score >= PLOT_TEXT_CONTAMINATION_REVIEW_THRESHOLD -> "REVIEW"
+        else -> "VALID"
+    }
+    return copy(
+        textContaminationScore = contamination.score,
+        textElementCountInsidePlot = contamination.elementCount,
+        status = status,
+        warnings = (
+            warnings +
+                contamination.warnings +
+                when (status) {
+                    "INVALID" -> listOf("plot_area.text_contamination_invalid")
+                    "REVIEW" -> listOf("plot_area.text_contamination_review")
+                    else -> emptyList()
+                }
+            ).distinct(),
+    )
+}
+
+internal data class PlotAreaTextContamination(
+    val score: Float,
+    val elementCount: Int,
+    val warnings: List<String> = emptyList(),
+)
+
+internal fun computePlotAreaTextContamination(
+    plotArea: GraphRegion,
+    textElements: List<OcrTextElement>,
+): PlotAreaTextContamination {
+    val inside = textElements.filter { element ->
+        val cx = element.x + element.width / 2f
+        val cy = element.y + element.height / 2f
+        cx >= plotArea.x &&
+            cx <= plotArea.right &&
+            cy >= plotArea.y &&
+            cy <= plotArea.bottom &&
+            element.text.isNotBlank()
+    }
+    if (inside.isEmpty()) return PlotAreaTextContamination(0f, 0)
+    val areaRatio = inside.sumOf { (it.width * it.height).toDouble().coerceAtLeast(1.0) }
+        .div(plotArea.area.coerceAtLeast(1).toDouble())
+        .toFloat()
+    val titleLikeCount = inside.count { element ->
+        val lower = element.text.lowercase()
+        element.numericValue == null &&
+            (lower.contains("ion") ||
+                lower.contains("tic") ||
+                lower.contains("abundance") ||
+                lower.contains("intensity") ||
+                lower.contains("time") ||
+                lower.contains(".d"))
+    }
+    val denseTextPenalty = (inside.size * 0.08f).coerceAtMost(0.5f)
+    val titlePenalty = (titleLikeCount * 0.22f).coerceAtMost(0.55f)
+    val score = (areaRatio * 12f + denseTextPenalty + titlePenalty).coerceIn(0f, 1f)
+    return PlotAreaTextContamination(
+        score = score,
+        elementCount = inside.size,
+        warnings = buildList {
+            add("plot_area.text_elements_inside:${inside.size}")
+            if (titleLikeCount > 0) add("plot_area.title_or_axis_text_inside:$titleLikeCount")
+        },
+    )
+}
+
 private fun ImageOrientationCorrectionResult.toAudit(): OfflineOrientationCorrectionAudit =
     OfflineOrientationCorrectionAudit(
         imagePath = imagePath,
@@ -3819,6 +4004,9 @@ private const val DENSE_SERIES_MAX_SPACING_CV = 0.45
 private const val DENSE_SERIES_ARTIFACT_SCORE = 0.7f
 private const val DENSE_SERIES_MIN_WIDTH_REVIEW = 0.20
 private const val DENSE_SERIES_MIN_AREA_PERCENT_REVIEW = 1.0
+private val REJECTED_DENSE_SERIES_CLASSES = setOf("ARTIFACT_REJECTED", "NOISE_REJECTED", "CANDIDATE_ONLY")
+private const val PLOT_TEXT_CONTAMINATION_REVIEW_THRESHOLD = 0.18f
+private const val PLOT_TEXT_CONTAMINATION_INVALID_THRESHOLD = 0.42f
 private const val REPORT_AXIS_CONFIDENCE_REVIEW_THRESHOLD = 0.55f
 private const val REPORT_VALUE_INFERRED = "INFERRED"
 private const val REPORT_VALUE_NOT_CALCULATED = "NOT_CALCULATED"
