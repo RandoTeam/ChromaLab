@@ -291,12 +291,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Peak Detection")
         appendLine()
-        appendLine("| Graph | Ready | Profile | Peaks | Base peaks | Tuned peaks | Significant | Dominant time | Dominant height | Dominant area | Baseline | Boundary | Integration | Clamp negative | Max width | Min S/N | Warnings |")
-        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |")
+        appendLine("| Graph | Ready | Profile | Raw peaks | Reportable | Recovered | Base peaks | Tuned peaks | Significant | Dominant time | Dominant height | Dominant area | Baseline | Boundary | Integration | Clamp negative | Max width | Min S/N | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | ---: | ---: | --- |")
         audit.graphs.forEach { graph ->
             val peaks = graph.peakDetection
             appendLine(
-                "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.detectionProfile ?: "n/a"} | ${peaks.peakCount} | ${peaks.basePeakCount ?: "n/a"} | ${peaks.tunedPeakCount ?: "n/a"} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${peaks.ready} | ${peaks.detectionProfile ?: "n/a"} | ${peaks.rawDetectedPeakCount} | ${peaks.reportablePeakCount} | ${peaks.recoveredPeakCount} | ${peaks.basePeakCount ?: "n/a"} | ${peaks.tunedPeakCount ?: "n/a"} | ${peaks.significantPeakCount} | ${peaks.dominantPeakTime?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakHeight?.renderNumber() ?: "n/a"} | ${peaks.dominantPeakAreaPercent?.renderNumber() ?: "n/a"} | ${peaks.baselineMethod ?: "n/a"} | ${peaks.boundaryMethod ?: "n/a"} | ${peaks.integrationMethod ?: "n/a"} | ${peaks.clampNegative ?: "n/a"} | ${peaks.maxPeakWidth ?: "n/a"} | ${peaks.minSnr?.renderNumber() ?: "n/a"} | ${peaks.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
@@ -334,6 +334,71 @@ object OfflineAnalysisAuditArtifacts {
             appendLine(
                 "| ${graph.graphIndex} | ${quality.available} | ${quality.sparseTrace} | ${quality.localizedSparseTrace} | ${quality.reviewPeakCount} | ${quality.lowSnrCount} | ${quality.lowAreaShareCount} | ${quality.lowConfidenceCount} | ${quality.overlapReviewCount} | ${quality.requiresReportConfidenceText} | ${quality.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
+        }
+        appendLine()
+
+        appendLine("## Peak Label Evidence")
+        appendLine()
+        appendLine("| Graph | Label | Parsed RT | Status | Engine | Confidence | Crop | Warnings |")
+        appendLine("| ---: | --- | ---: | --- | --- | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            graph.peakDetection.peakLabelEvidence.forEach { label ->
+                appendLine(
+                    "| ${graph.graphIndex} | ${label.rawText.escapeTable()} | ${label.parsedRetentionTime?.renderNumber() ?: "n/a"} | ${label.status} | ${label.ocrEngine} | ${label.confidence.renderNumber()} | ${(label.localCropPath ?: "n/a").escapeTable()} | ${label.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                )
+            }
+        }
+        if (audit.graphs.all { it.peakDetection.peakLabelEvidence.isEmpty() }) {
+            appendLine("|  | none |  | none | none |  | none | none |")
+        }
+        appendLine()
+
+        appendLine("## Recovered Peak Candidates")
+        appendLine()
+        appendLine("| Graph | Target RT | Local max RT | Delta | Height | S/N | Curvature | Window | Status | Confidence | Flags | Rejection |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            graph.peakDetection.recoveredPeaks.forEach { peak ->
+                val window = if (peak.integrationWindowStart != null && peak.integrationWindowEnd != null) {
+                    "${peak.integrationWindowStart.renderNumber()}-${peak.integrationWindowEnd.renderNumber()}"
+                } else {
+                    "n/a"
+                }
+                appendLine(
+                    "| ${graph.graphIndex} | ${peak.targetRt.renderNumber()} | ${peak.nearestLocalMaximumRt?.renderNumber() ?: "n/a"} | ${peak.rtDelta?.renderNumber() ?: "n/a"} | ${peak.localHeight.renderNumber()} | ${peak.localSnr.renderNumber()} | ${peak.localCurvatureScore.renderNumber()} | $window | ${peak.status} | ${peak.confidence.renderNumber()} | ${peak.qualityFlags.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${(peak.rejectionReason ?: "none").escapeTable()} |",
+                )
+            }
+        }
+        if (audit.graphs.all { it.peakDetection.recoveredPeaks.isEmpty() }) {
+            appendLine("|  |  |  |  |  |  |  | none | none |  | none | none |")
+        }
+        appendLine()
+
+        appendLine("## Dense Series Classification")
+        appendLine()
+        appendLine("| Graph | Available | Status | Raw | Reportable | Significant | Series members | Artifacts | Median spacing | Spacing CV | Area trend | Confidence | Warnings |")
+        appendLine("| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | --- |")
+        audit.graphs.forEach { graph ->
+            val dense = graph.peakDetection.denseSeries
+            appendLine(
+                "| ${graph.graphIndex} | ${dense.available} | ${dense.status} | ${dense.rawDetectedPeakCount} | ${dense.reportablePeakCount} | ${dense.significantPeakCount} | ${dense.seriesMemberCount} | ${dense.rejectedArtifactPeakCount} | ${dense.medianSpacing?.renderNumber() ?: "n/a"} | ${dense.spacingCv?.renderNumber() ?: "n/a"} | ${dense.areaTrend} | ${dense.confidence.renderNumber()} | ${dense.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Dense Series Peak Classes")
+        appendLine()
+        appendLine("| Graph | Peak | RT | Height | Area | S/N | FWHM | Overlap | Baseline | Trace evidence | Artifact score | Class | Warnings |")
+        appendLine("| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | ---: | --- | --- |")
+        audit.graphs.forEach { graph ->
+            graph.peakDetection.denseSeries.peaks.forEach { peak ->
+                appendLine(
+                    "| ${graph.graphIndex} | ${peak.peakNumber} | ${peak.rt.renderNumber()} | ${peak.height.renderNumber()} | ${peak.area.renderNumber()} | ${peak.snr.renderNumber()} | ${peak.widthFwhm?.renderNumber() ?: "n/a"} | ${peak.overlapStatus} | ${peak.localBaselineQuality} | ${peak.traceEvidenceStatus} | ${peak.artifactSuspicionScore.renderNumber()} | ${peak.classification} | ${peak.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                )
+            }
+        }
+        if (audit.graphs.all { it.peakDetection.denseSeries.peaks.isEmpty() }) {
+            appendLine("|  |  |  |  |  |  |  | none | none | none |  | none | none |")
         }
         appendLine()
 

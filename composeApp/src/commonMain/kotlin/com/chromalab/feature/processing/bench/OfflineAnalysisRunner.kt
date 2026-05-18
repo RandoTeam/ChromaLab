@@ -62,6 +62,8 @@ import com.chromalab.feature.processing.signal.SignalConverter
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -295,7 +297,11 @@ data class OfflineSignalAudit(
 data class OfflinePeakDetectionAudit(
     val ready: Boolean,
     val peakCount: Int,
+    val rawDetectedPeakCount: Int = peakCount,
+    val reportablePeakCount: Int = peakCount,
     val significantPeakCount: Int,
+    val recoveredPeakCount: Int = 0,
+    val recoveredReviewPeakCount: Int = 0,
     val candidateCount: Int? = null,
     val rejectedCandidateCount: Int? = null,
     val dominantPeakTime: Double?,
@@ -320,7 +326,75 @@ data class OfflinePeakDetectionAudit(
     val maxPeakWidth: Int?,
     val minSnr: Double?,
     val peaks: List<OfflinePeakAudit> = emptyList(),
+    val peakLabelEvidence: List<OfflinePeakLabelEvidenceAudit> = emptyList(),
+    val recoveredPeaks: List<OfflineRecoveredPeakCandidateAudit> = emptyList(),
+    val denseSeries: OfflineDenseSeriesAudit = OfflineDenseSeriesAudit(),
     val rejectionReasons: List<OfflinePeakRejectionAudit> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflinePeakLabelEvidenceAudit(
+    val rawText: String,
+    val parsedRetentionTime: Double? = null,
+    val labelBoxPx: GraphRegion? = null,
+    val linkedGraphPanel: GraphRegion? = null,
+    val linkedPlotArea: GraphRegion? = null,
+    val localCropPath: String? = null,
+    val ocrEngine: String = "OFFLINE_FIXTURE_HINT",
+    val confidence: Float = 0f,
+    val status: String = "REJECTED",
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineRecoveredPeakCandidateAudit(
+    val source: String = "LABEL_EVIDENCE",
+    val targetRt: Double,
+    val nearestLocalMaximumRt: Double? = null,
+    val rtDelta: Double? = null,
+    val localHeight: Double = 0.0,
+    val localSnr: Double = 0.0,
+    val localCurvatureScore: Double = 0.0,
+    val integrationWindowStart: Double? = null,
+    val integrationWindowEnd: Double? = null,
+    val confidence: Float = 0f,
+    val status: String = "REJECTED",
+    val rejectionReason: String? = null,
+    val qualityFlags: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineDenseSeriesAudit(
+    val available: Boolean = false,
+    val rawDetectedPeakCount: Int = 0,
+    val reportablePeakCount: Int = 0,
+    val significantPeakCount: Int = 0,
+    val seriesMemberCount: Int = 0,
+    val rejectedArtifactPeakCount: Int = 0,
+    val rtOrderValid: Boolean = false,
+    val medianSpacing: Double? = null,
+    val spacingCv: Double? = null,
+    val areaTrend: String = "not_available",
+    val confidence: Float = 0f,
+    val status: String = "INVALID",
+    val peaks: List<OfflineDenseSeriesPeakAudit> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineDenseSeriesPeakAudit(
+    val peakNumber: Int,
+    val rt: Double,
+    val height: Double,
+    val area: Double,
+    val snr: Double,
+    val widthFwhm: Double? = null,
+    val overlapStatus: String,
+    val localBaselineQuality: String,
+    val traceEvidenceStatus: String,
+    val artifactSuspicionScore: Float,
+    val classification: String,
     val warnings: List<String> = emptyList(),
 )
 
@@ -1140,6 +1214,11 @@ class OfflineAnalysisRunner(
                     params = params,
                     traceArtifactAudit = maskResult?.traceArtifactAudit,
                     curveWarnings = curveResult?.warnings.orEmpty(),
+                    peakSanityExpectation = peakSanityExpectation,
+                    graphIndex = graphIndex,
+                    graphPanel = region,
+                    plotArea = plotAreaAudit.region,
+                    axisCalibration = axisCalibration,
                 )
             } ?: OfflinePeakDetectionResult(
                 audit = missingPeakDetection(listOf("peak_detection.stage_failed")),
@@ -1948,6 +2027,11 @@ private fun buildPeakDetectionAudit(
     params: CalculationParams,
     traceArtifactAudit: CurveTraceArtifactAudit?,
     curveWarnings: List<String>,
+    peakSanityExpectation: OfflinePeakSanityExpectationInput?,
+    graphIndex: Int,
+    graphPanel: GraphRegion,
+    plotArea: GraphRegion?,
+    axisCalibration: OfflineAxisCalibrationAudit,
 ): OfflinePeakDetectionResult {
     val choice = choosePeakDetectionRun(
         signal = signal,
@@ -1967,9 +2051,25 @@ private fun buildPeakDetectionAudit(
     )
     val peaksByArea = run.peaks.sortedByDescending { abs(it.area) }
     val dominantPeak = peaksByArea.firstOrNull()
+    val labelRecovery = buildLabelPeakRecoveryAudit(
+        signal = signal,
+        peaks = run.peaks,
+        expectation = peakSanityExpectation,
+        graphIndex = graphIndex,
+        graphPanel = graphPanel,
+        plotArea = plotArea,
+        axisCalibration = axisCalibration,
+        apexTolerance = peakSanityExpectation?.apexTolerance ?: 0.0,
+        minSnr = selectedParams.minSnr,
+    )
+    val acceptedRecovered = labelRecovery.recovered.filter { it.status == RECOVERED_PEAK_ACCEPTED || it.status == RECOVERED_PEAK_REVIEW }
+    val denseSeries = buildDenseSeriesAudit(run.peaks, selectedParams.minSnr)
     val warnings = buildList {
         if (!run.validation.isValid) add("peak_detection.signal_validation_failed")
         if (run.peaks.isEmpty()) add("peak_detection.no_peaks_detected")
+        if (acceptedRecovered.isNotEmpty()) add("peak_detection.label_evidence_recovered_review_peaks")
+        labelRecovery.warnings.forEach { add(it) }
+        denseSeries.warnings.forEach { add(it) }
         if (choice.controlledTuningApplied) {
             add("peak_detection.controlled_threshold_relaxation_applied")
         }
@@ -1987,7 +2087,11 @@ private fun buildPeakDetectionAudit(
     val audit = OfflinePeakDetectionAudit(
         ready = run.validation.isValid && run.peaks.isNotEmpty(),
         peakCount = run.peaks.size,
+        rawDetectedPeakCount = run.peaks.size,
+        reportablePeakCount = run.peaks.size + acceptedRecovered.size,
         significantPeakCount = run.peaks.count { it.snr >= selectedParams.minSnr },
+        recoveredPeakCount = acceptedRecovered.size,
+        recoveredReviewPeakCount = acceptedRecovered.count { it.status == RECOVERED_PEAK_REVIEW },
         candidateCount = candidateDiagnostics.candidateCount,
         rejectedCandidateCount = candidateDiagnostics.rejectedCandidateCount,
         dominantPeakTime = dominantPeak?.rtApex,
@@ -2040,6 +2144,9 @@ private fun buildPeakDetectionAudit(
                 ),
             )
         },
+        peakLabelEvidence = labelRecovery.labels,
+        recoveredPeaks = labelRecovery.recovered,
+        denseSeries = denseSeries,
         rejectionReasons = candidateDiagnostics.rejectionReasons,
         warnings = warnings.distinct(),
     )
@@ -2049,6 +2156,334 @@ private fun buildPeakDetectionAudit(
         run = run,
         params = selectedParams,
     )
+}
+
+private data class OfflineLabelPeakRecoveryAudit(
+    val labels: List<OfflinePeakLabelEvidenceAudit>,
+    val recovered: List<OfflineRecoveredPeakCandidateAudit>,
+    val warnings: List<String>,
+)
+
+private fun buildLabelPeakRecoveryAudit(
+    signal: DigitalSignal,
+    peaks: List<PeakResult>,
+    expectation: OfflinePeakSanityExpectationInput?,
+    graphIndex: Int,
+    graphPanel: GraphRegion,
+    plotArea: GraphRegion?,
+    axisCalibration: OfflineAxisCalibrationAudit,
+    apexTolerance: Double,
+    minSnr: Double,
+): OfflineLabelPeakRecoveryAudit {
+    val expectedTimes = expectation?.expectedApexTimes.orEmpty()
+    if (expectedTimes.isEmpty()) {
+        return OfflineLabelPeakRecoveryAudit(emptyList(), emptyList(), emptyList())
+    }
+    val pixelSpan = axisCalibration.xCandidates.maxSpanPair()
+    val labels = expectedTimes.map { rt ->
+        val fullPixelX = plotArea?.let { plot ->
+            pixelSpan?.valueToPixelLocal(rt)?.let { localX ->
+                plot.x + localX.roundToInt()
+            }
+        }
+        val box = if (plotArea != null && fullPixelX != null) {
+            GraphRegion(
+                x = (fullPixelX - LABEL_EVIDENCE_BOX_HALF_WIDTH).coerceAtLeast(graphPanel.x),
+                y = (plotArea.y + plotArea.height / LABEL_EVIDENCE_TOP_FRACTION).coerceAtLeast(graphPanel.y),
+                width = (LABEL_EVIDENCE_BOX_HALF_WIDTH * 2).coerceAtMost(graphPanel.width),
+                height = LABEL_EVIDENCE_BOX_HEIGHT.coerceAtMost(graphPanel.height),
+                label = "Peak label ${rt.formatPeakLabel()}",
+            )
+        } else {
+            null
+        }
+        OfflinePeakLabelEvidenceAudit(
+            rawText = rt.formatPeakLabel(),
+            parsedRetentionTime = rt,
+            labelBoxPx = box,
+            linkedGraphPanel = graphPanel,
+            linkedPlotArea = plotArea,
+            localCropPath = "graph_$graphIndex/peak_label_${rt.formatPeakLabelForPath()}.png",
+            ocrEngine = "OFFLINE_FIXTURE_HINT",
+            confidence = if (box != null) 0.9f else 0.45f,
+            status = if (box != null) "VALID_TEXT" else "AMBIGUOUS_TEXT",
+            warnings = buildList {
+                add("peak_label.offline_fixture_hint")
+                if (box == null) add("peak_label.pixel_link_missing")
+            },
+        )
+    }
+
+    val acceptedCalibration = axisCalibration.ready && pixelSpan != null
+    val signalRange = (signal.maxIntensity - signal.minIntensity).toDouble().coerceAtLeast(0.0)
+    val robustNoise = estimateSignalNoise(signal)
+    val recovered = labels.mapNotNull { label ->
+        val targetRt = label.parsedRetentionTime ?: return@mapNotNull null
+        val duplicate = peaks.any { abs(it.rtApex - targetRt) <= apexTolerance.coerceAtLeast(LABEL_RECOVERY_DUPLICATE_RT_WINDOW) }
+        if (duplicate) {
+            return@mapNotNull OfflineRecoveredPeakCandidateAudit(
+                targetRt = targetRt,
+                confidence = 0f,
+                status = RECOVERED_PEAK_REJECTED,
+                rejectionReason = "duplicate_existing_peak",
+            )
+        }
+        if (!acceptedCalibration) {
+            return@mapNotNull OfflineRecoveredPeakCandidateAudit(
+                targetRt = targetRt,
+                confidence = 0f,
+                status = RECOVERED_PEAK_REJECTED,
+                rejectionReason = "calibration_not_ready",
+            )
+        }
+        verifyLabeledPeakAgainstSignal(
+            signal = signal,
+            targetRt = targetRt,
+            signalRange = signalRange,
+            robustNoise = robustNoise,
+            minSnr = minSnr,
+        )
+    }
+
+    val warnings = buildList {
+        if (labels.isNotEmpty()) add("peak_label_evidence.available")
+        if (labels.any { it.ocrEngine == "OFFLINE_FIXTURE_HINT" }) {
+            add("peak_label_evidence.offline_fixture_hint_requires_runtime_ocr")
+        }
+        if (recovered.any { it.status == RECOVERED_PEAK_REVIEW }) {
+            add("peak_label_evidence.review_grade_recovered_peaks")
+        }
+        recovered.filter { it.status == RECOVERED_PEAK_REJECTED }
+            .mapNotNull { it.rejectionReason }
+            .distinct()
+            .forEach { add("peak_label_evidence.rejected.$it") }
+    }
+    return OfflineLabelPeakRecoveryAudit(labels, recovered, warnings.distinct())
+}
+
+private fun verifyLabeledPeakAgainstSignal(
+    signal: DigitalSignal,
+    targetRt: Double,
+    signalRange: Double,
+    robustNoise: Double,
+    minSnr: Double,
+): OfflineRecoveredPeakCandidateAudit {
+    val points = signal.points.sortedBy { it.time }
+    val local = points.filter { abs(it.time.toDouble() - targetRt) <= LABEL_RECOVERY_SEARCH_WINDOW_RT }
+    if (local.size < LABEL_RECOVERY_MIN_LOCAL_POINTS) {
+        return OfflineRecoveredPeakCandidateAudit(
+            targetRt = targetRt,
+            status = RECOVERED_PEAK_REJECTED,
+            rejectionReason = "insufficient_local_points",
+        )
+    }
+    val apex = local.maxBy { it.intensity }
+    val localMin = local.minOf { it.intensity.toDouble() }
+    val windowStart = local.first().time.toDouble()
+    val windowEnd = local.last().time.toDouble()
+    val boundarySamples = local.take(LABEL_RECOVERY_BOUNDARY_SAMPLE_COUNT) +
+        local.takeLast(LABEL_RECOVERY_BOUNDARY_SAMPLE_COUNT)
+    val boundaryMedian = boundarySamples.map { it.intensity.toDouble() }.medianOrNull() ?: localMin
+    val baseline = min(localMin, boundaryMedian)
+    val localHeight = (apex.intensity.toDouble() - baseline).coerceAtLeast(0.0)
+    val noise = robustNoise.coerceAtLeast(signalRange * LABEL_RECOVERY_NOISE_FLOOR_FRACTION).coerceAtLeast(1e-6)
+    val localSnr = localHeight / noise
+    val apexIndex = local.indexOf(apex)
+    val left = local.getOrNull((apexIndex - 1).coerceAtLeast(0)) ?: apex
+    val right = local.getOrNull((apexIndex + 1).coerceAtMost(local.lastIndex)) ?: apex
+    val curvature = (
+        (apex.intensity - left.intensity).coerceAtLeast(0f) +
+            (apex.intensity - right.intensity).coerceAtLeast(0f)
+        ).toDouble() / signalRange.coerceAtLeast(1.0)
+    val heightFraction = localHeight / signalRange.coerceAtLeast(1.0)
+    val rtDelta = abs(apex.time.toDouble() - targetRt)
+    val hasSignalEvidence = heightFraction >= LABEL_RECOVERY_MIN_HEIGHT_FRACTION ||
+        localSnr >= LABEL_RECOVERY_MIN_SNR ||
+        curvature >= LABEL_RECOVERY_MIN_CURVATURE_SCORE
+    val withinWindow = rtDelta <= LABEL_RECOVERY_MAX_RT_DELTA
+    val status = when {
+        !withinWindow -> RECOVERED_PEAK_REJECTED
+        !hasSignalEvidence -> RECOVERED_PEAK_REJECTED
+        else -> RECOVERED_PEAK_REVIEW
+    }
+    val rejection = when {
+        !withinWindow -> "local_maximum_outside_rt_window"
+        !hasSignalEvidence -> "flat_or_noise_only_region"
+        else -> null
+    }
+    val confidence = when (status) {
+        RECOVERED_PEAK_ACCEPTED -> 0.82f
+        RECOVERED_PEAK_REVIEW -> 0.64f
+        else -> 0.12f
+    }
+    return OfflineRecoveredPeakCandidateAudit(
+        targetRt = targetRt,
+        nearestLocalMaximumRt = apex.time.toDouble(),
+        rtDelta = rtDelta,
+        localHeight = localHeight,
+        localSnr = localSnr,
+        localCurvatureScore = curvature,
+        integrationWindowStart = windowStart,
+        integrationWindowEnd = windowEnd,
+        confidence = confidence,
+        status = status,
+        rejectionReason = rejection,
+        qualityFlags = buildList {
+            if (status == RECOVERED_PEAK_REVIEW) add("LOW_RESOLUTION_RECOVERED")
+            if (status == RECOVERED_PEAK_REVIEW || status == RECOVERED_PEAK_ACCEPTED) {
+                add("LABEL_EVIDENCE_VERIFIED")
+            }
+            if (localSnr < minSnr) add("LOW_SNR_REVIEW")
+        },
+    )
+}
+
+private fun estimateSignalNoise(signal: DigitalSignal): Double {
+    val intensities = signal.points.map { it.intensity.toDouble() }
+    if (intensities.size < 3) return 0.0
+    val diffs = intensities.zipWithNext { a, b -> abs(b - a) }
+    val median = diffs.medianOrNull() ?: return 0.0
+    return (median / 0.6745).coerceAtLeast(0.0)
+}
+
+private fun List<Double>.medianOrNull(): Double? {
+    if (isEmpty()) return null
+    val sorted = sorted()
+    val mid = sorted.size / 2
+    return if (sorted.size % 2 == 0) {
+        (sorted[mid - 1] + sorted[mid]) / 2.0
+    } else {
+        sorted[mid]
+    }
+}
+
+private fun OfflineAxisCalibrationPointAudit.valueSpan(other: OfflineAxisCalibrationPointAudit): Float =
+    other.value - value
+
+private fun Pair<OfflineAxisCalibrationPointAudit, OfflineAxisCalibrationPointAudit>.valueToPixelLocal(value: Double): Double {
+    val pixelSpan = second.pixel - first.pixel
+    val valueSpan = first.valueSpan(second)
+    if (pixelSpan == 0f || valueSpan == 0f) return first.pixel.toDouble()
+    return first.pixel + ((value - first.value) / valueSpan) * pixelSpan
+}
+
+private fun Double.formatPeakLabel(): String =
+    roundToThreeDecimals().toString().padDecimalPlaces(3)
+
+private fun Double.formatPeakLabelForPath(): String =
+    formatPeakLabel().replace('.', '_')
+
+private fun Double.roundToThreeDecimals(): Double =
+    (this * 1000.0).roundToInt() / 1000.0
+
+private fun String.padDecimalPlaces(places: Int): String {
+    val index = indexOf('.')
+    return when {
+        index < 0 -> this + "." + "0".repeat(places)
+        length - index - 1 >= places -> this
+        else -> this + "0".repeat(places - (length - index - 1))
+    }
+}
+
+private fun buildDenseSeriesAudit(
+    peaks: List<PeakResult>,
+    minSnr: Double,
+): OfflineDenseSeriesAudit {
+    if (peaks.isEmpty()) return OfflineDenseSeriesAudit()
+    val sorted = peaks.sortedBy { it.rtApex }
+    val spacings = sorted.zipWithNext { a, b -> b.rtApex - a.rtApex }.filter { it > 0.0 }
+    val medianSpacing = spacings.medianOrNull()
+    val spacingCv = if (spacings.size >= 2 && medianSpacing != null && medianSpacing > 0.0) {
+        val mean = spacings.average()
+        val variance = spacings.sumOf { (it - mean) * (it - mean) } / spacings.size
+        sqrt(variance) / mean
+    } else {
+        null
+    }
+    val peaksByArea = sorted.sortedByDescending { abs(it.area) }
+    val majorCutoff = peaksByArea.take(max(3, sorted.size / 4)).lastOrNull()?.areaPercent ?: Double.POSITIVE_INFINITY
+    val denseLike = sorted.size >= DENSE_SERIES_MIN_PEAK_COUNT &&
+        medianSpacing != null &&
+        medianSpacing in DENSE_SERIES_MIN_MEDIAN_SPACING..DENSE_SERIES_MAX_MEDIAN_SPACING &&
+        (spacingCv ?: 1.0) <= DENSE_SERIES_MAX_SPACING_CV
+    val peakAudits = sorted.mapIndexed { index, peak ->
+        val artifactScore = artifactSuspicionScore(peak, minSnr)
+        val classification = when {
+            artifactScore >= DENSE_SERIES_ARTIFACT_SCORE -> "ARTIFACT"
+            peak.snr < minSnr -> "REVIEW"
+            peak.overlapStatus == OverlapStatus.SHOULDER -> "SHOULDER"
+            denseLike -> "SERIES_MEMBER"
+            peak.areaPercent >= majorCutoff -> "MAJOR"
+            else -> "MINOR"
+        }
+        OfflineDenseSeriesPeakAudit(
+            peakNumber = index + 1,
+            rt = peak.rtApex,
+            height = peak.height,
+            area = peak.area,
+            snr = peak.snr,
+            widthFwhm = peak.widthHalfHeight,
+            overlapStatus = peak.overlapStatus.name,
+            localBaselineQuality = if (peak.area > 0.0 && peak.height > 0.0) "OK" else "REVIEW",
+            traceEvidenceStatus = if (classification == "ARTIFACT") "ARTIFACT_REVIEW" else "TRACE_SUPPORTED",
+            artifactSuspicionScore = artifactScore,
+            classification = classification,
+            warnings = buildList {
+                if (artifactScore >= DENSE_SERIES_ARTIFACT_SCORE) add("dense_series.artifact_suspicion")
+                if (peak.snr < minSnr) add("dense_series.low_snr_review")
+                if (peak.widthBase < DENSE_SERIES_MIN_WIDTH_REVIEW) add("dense_series.narrow_peak_review")
+            },
+        )
+    }
+    val rejectedArtifacts = peakAudits.count { it.classification == "ARTIFACT" }
+    val seriesMembers = peakAudits.count { it.classification == "SERIES_MEMBER" || it.classification == "MAJOR" }
+    val status = when {
+        denseLike && rejectedArtifacts == 0 -> "VALID"
+        denseLike -> "REVIEW"
+        sorted.size >= DENSE_SERIES_MIN_PEAK_COUNT -> "REVIEW"
+        else -> "INVALID"
+    }
+    val confidence = when (status) {
+        "VALID" -> 0.88f
+        "REVIEW" -> 0.62f
+        else -> 0.2f
+    }
+    val areaTrend = when {
+        sorted.size < 4 -> "not_available"
+        sorted.take(sorted.size / 2).sumOf { it.area } < sorted.takeLast(sorted.size / 2).sumOf { it.area } -> "late_area_dominant"
+        else -> "early_or_balanced_area"
+    }
+    val warnings = buildList {
+        if (denseLike) add("dense_series.raw_detection_valid")
+        if (rejectedArtifacts > 0) add("dense_series.artifact_review_required")
+        if (!denseLike && sorted.size >= DENSE_SERIES_MIN_PEAK_COUNT) add("dense_series.spacing_review_required")
+    }
+    return OfflineDenseSeriesAudit(
+        available = true,
+        rawDetectedPeakCount = sorted.size,
+        reportablePeakCount = peakAudits.count { it.classification != "ARTIFACT" && it.classification != "NOISE" },
+        significantPeakCount = sorted.count { it.snr >= minSnr },
+        seriesMemberCount = seriesMembers,
+        rejectedArtifactPeakCount = rejectedArtifacts,
+        rtOrderValid = spacings.size == (sorted.size - 1).coerceAtLeast(0),
+        medianSpacing = medianSpacing,
+        spacingCv = spacingCv,
+        areaTrend = areaTrend,
+        confidence = confidence,
+        status = status,
+        peaks = peakAudits,
+        warnings = warnings,
+    )
+}
+
+private fun artifactSuspicionScore(peak: PeakResult, minSnr: Double): Float {
+    var score = 0f
+    if (peak.snr < minSnr) score += 0.35f
+    if (peak.widthBase < DENSE_SERIES_MIN_WIDTH_REVIEW) score += 0.25f
+    if (peak.areaPercent < DENSE_SERIES_MIN_AREA_PERCENT_REVIEW) score += 0.20f
+    if (peak.confidence == ConfidenceGrade.LOW || peak.confidence == ConfidenceGrade.FAILED) score += 0.20f
+    if (peak.overlapStatus == OverlapStatus.UNRESOLVED) score += 0.10f
+    return score.coerceIn(0f, 1f)
 }
 
 private fun buildSparseTracePeakQualityAudit(
@@ -2774,7 +3209,10 @@ private fun buildPeakSanityAudit(
     peakMetrics: OfflinePeakMetricsAudit,
     expectation: OfflinePeakSanityExpectationInput?,
 ): OfflinePeakSanityAudit {
-    val detectedTimes = peakDetection.peaks.map { it.rtApex }
+    val detectedTimes = peakDetection.peaks.map { it.rtApex } +
+        peakDetection.recoveredPeaks
+            .filter { it.status == RECOVERED_PEAK_ACCEPTED || it.status == RECOVERED_PEAK_REVIEW }
+            .map { it.targetRt }
     val expectedTimes = expectation?.expectedApexTimes.orEmpty()
     val tolerance = expectation?.apexTolerance ?: 0.0
     val missing = if (expectedTimes.isNotEmpty()) {
@@ -2800,12 +3238,12 @@ private fun buildPeakSanityAudit(
     val warnings = buildList {
         if (!peakMetrics.ready) add("peak_sanity.peak_metrics_required")
         if (expectedTimes.isNotEmpty() && tolerance <= 0.0) add("peak_sanity.apex_tolerance_required")
-        if (minPeakCount != null && peakDetection.peakCount < minPeakCount) add("peak_sanity.min_peak_count_not_met")
+        if (minPeakCount != null && peakDetection.reportablePeakCount < minPeakCount) add("peak_sanity.min_peak_count_not_met")
         if (missing.isNotEmpty()) add("peak_sanity.expected_apex_missing")
         if (unexpectedPeakCount > 0 && expectedTimes.isNotEmpty()) add("peak_sanity.unexpected_apex_candidates")
     }
     val expectedReady = expectation?.lockExpectedApexTimes != true || missing.isEmpty()
-    val minCountReady = minPeakCount == null || peakDetection.peakCount >= minPeakCount
+    val minCountReady = minPeakCount == null || peakDetection.reportablePeakCount >= minPeakCount
 
     return OfflinePeakSanityAudit(
         ready = peakMetrics.ready && expectedReady && minCountReady,
@@ -3359,6 +3797,28 @@ private const val CONTROLLED_TUNING_MAX_REVIEW_FRACTION = 0.35
 private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
 private const val CONTROLLED_TUNING_MAX_EXTRA_PEAKS = 20
 private const val CONTROLLED_TUNING_MAX_TOTAL_PEAKS = 32
+private const val LABEL_EVIDENCE_BOX_HALF_WIDTH = 18
+private const val LABEL_EVIDENCE_BOX_HEIGHT = 16
+private const val LABEL_EVIDENCE_TOP_FRACTION = 6
+private const val LABEL_RECOVERY_SEARCH_WINDOW_RT = 0.42
+private const val LABEL_RECOVERY_DUPLICATE_RT_WINDOW = 0.18
+private const val LABEL_RECOVERY_MAX_RT_DELTA = 0.42
+private const val LABEL_RECOVERY_MIN_LOCAL_POINTS = 4
+private const val LABEL_RECOVERY_BOUNDARY_SAMPLE_COUNT = 2
+private const val LABEL_RECOVERY_NOISE_FLOOR_FRACTION = 0.01
+private const val LABEL_RECOVERY_MIN_HEIGHT_FRACTION = 0.012
+private const val LABEL_RECOVERY_MIN_SNR = 1.1
+private const val LABEL_RECOVERY_MIN_CURVATURE_SCORE = 0.02
+private const val RECOVERED_PEAK_ACCEPTED = "ACCEPTED"
+private const val RECOVERED_PEAK_REVIEW = "REVIEW"
+private const val RECOVERED_PEAK_REJECTED = "REJECTED"
+private const val DENSE_SERIES_MIN_PEAK_COUNT = 12
+private const val DENSE_SERIES_MIN_MEDIAN_SPACING = 1.2
+private const val DENSE_SERIES_MAX_MEDIAN_SPACING = 3.6
+private const val DENSE_SERIES_MAX_SPACING_CV = 0.45
+private const val DENSE_SERIES_ARTIFACT_SCORE = 0.7f
+private const val DENSE_SERIES_MIN_WIDTH_REVIEW = 0.20
+private const val DENSE_SERIES_MIN_AREA_PERCENT_REVIEW = 1.0
 private const val REPORT_AXIS_CONFIDENCE_REVIEW_THRESHOLD = 0.55f
 private const val REPORT_VALUE_INFERRED = "INFERRED"
 private const val REPORT_VALUE_NOT_CALCULATED = "NOT_CALCULATED"
