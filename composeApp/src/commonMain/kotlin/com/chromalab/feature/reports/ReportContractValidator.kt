@@ -1,5 +1,8 @@
 package com.chromalab.feature.reports
 
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+
 /**
  * Contract-level validation for the structured chromatogram report.
  *
@@ -131,6 +134,32 @@ object ReportContractValidator {
                 graphIndex = graph.graphIndex,
                 section = "axis_calibration",
                 message = "Axis calibration confidence is missing.",
+            )
+        }
+        when (graph.source.geometryReportStatus) {
+            GeometryReportStatus.DIAGNOSTIC_ONLY -> findings += error(
+                code = "geometry.diagnostic_only",
+                graphIndex = graph.graphIndex,
+                section = "source_and_graph_preparation",
+                message = "Geometry pipeline marked this graph diagnostic-only; release-quality peak table is blocked.",
+            )
+            GeometryReportStatus.REVIEW_READY -> findings += warning(
+                code = "geometry.review_grade",
+                graphIndex = graph.graphIndex,
+                section = "source_and_graph_preparation",
+                message = "Geometry pipeline marked numeric values as review-grade.",
+            )
+            GeometryReportStatus.SCIENTIFIC_READY,
+            null -> Unit
+        }
+        if (graph.axisCalibration.xCalibrationFit?.status == CalibrationFitStatus.INVALID ||
+            graph.axisCalibration.yCalibrationFit?.status == CalibrationFitStatus.INVALID
+        ) {
+            findings += error(
+                code = "axis.calibration_fit_invalid",
+                graphIndex = graph.graphIndex,
+                section = "axis_calibration",
+                message = "At least one axis calibration fit is invalid.",
             )
         }
 

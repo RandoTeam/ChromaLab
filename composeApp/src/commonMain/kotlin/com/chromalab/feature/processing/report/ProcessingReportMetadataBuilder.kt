@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.reports.ExecutedRuntime
@@ -35,6 +37,8 @@ fun buildProcessingReportMetadataConfig(
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
+    geometryReportStatus: GeometryReportStatus? = null,
+    geometryTrace: GeometryTrace? = null,
     selectedModel: ModelExecutionInfo? = null,
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
@@ -62,6 +66,8 @@ fun buildProcessingReportMetadataConfig(
             titleOcrConfidence = titleOcrConfidence,
             axisOcrConfidence = axisOcrConfidence,
             tickOcrConfidence = tickOcrConfidence,
+            geometryReportStatus = geometryReportStatus,
+            geometryTrace = geometryTrace,
             selectedModel = selectedModel,
             executedModel = executedModel,
             executedRuntime = executedRuntime,
@@ -124,6 +130,8 @@ fun buildProcessingStoredReportMetadata(
     titleOcrConfidence: Double? = null,
     axisOcrConfidence: Double? = null,
     tickOcrConfidence: Double? = null,
+    geometryReportStatus: GeometryReportStatus? = null,
+    geometryTrace: GeometryTrace? = null,
     selectedModel: ModelExecutionInfo? = null,
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
@@ -176,6 +184,8 @@ fun buildProcessingStoredReportMetadata(
         graphs = listOf(
             StoredGraphReportMetadata(
                 graphIndex = graphIndex.coerceAtLeast(1),
+                geometryReportStatus = geometryReportStatus,
+                geometryTrace = geometryTrace,
                 warnings = graphWarnings.toStoredGraphWarnings(graphIndex.coerceAtLeast(1)),
                 identification = ocrExtraction.identification,
                 axisCalibration = ocrExtraction.axisCalibration,
@@ -183,6 +193,8 @@ fun buildProcessingStoredReportMetadata(
                     sourceImageBounds = sourceImageBounds,
                     detectedGraphBounds = detectedGraphBounds,
                     cropConfidence = cropConfidence?.coerceIn(0.0, 1.0),
+                    geometryReportStatus = geometryReportStatus,
+                    geometryTrace = geometryTrace,
                     titleOcrConfidence = (titleOcrConfidence ?: ocrExtraction.titleOcrConfidence)?.coerceIn(0.0, 1.0),
                     axisOcrConfidence = axisOcrConfidence?.coerceIn(0.0, 1.0),
                     tickOcrConfidence = tickOcrConfidence?.coerceIn(0.0, 1.0),

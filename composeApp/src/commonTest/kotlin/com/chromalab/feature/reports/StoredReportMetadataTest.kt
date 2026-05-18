@@ -15,6 +15,8 @@ import com.chromalab.feature.calculation.core.SignalSource
 import com.chromalab.feature.calculation.core.ValidationResult
 import com.chromalab.feature.calculation.core.WarningSeverity
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -83,6 +85,42 @@ class StoredReportMetadataTest {
     @Test
     fun codecIgnoresUnrelatedAlgorithmConfigJson() {
         assertNull(StoredReportMetadataCodec.decodeOrNull("""{"baselineMethod":"ALS"}"""))
+    }
+
+    @Test
+    fun codecRoundTripsGeometryTraceAndReportStatus() {
+        val metadata = StoredReportMetadata(
+            inputSourceType = InputSourceType.CAMERA_CAPTURE,
+            sourceName = "geometry_trace_fixture.jpg",
+            detectedGraphCount = 1,
+            graphs = listOf(
+                StoredGraphReportMetadata(
+                    graphIndex = 1,
+                    geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+                    geometryTrace = GeometryTrace(
+                        originalImagePath = "raw.jpg",
+                        normalizedImagePath = "normalized.jpg",
+                        warnings = listOf("geometry.calibration.invalid"),
+                    ),
+                    source = GraphSourceMetadata(
+                        geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+                        geometryTrace = GeometryTrace(
+                            originalImagePath = "raw.jpg",
+                            normalizedImagePath = "normalized.jpg",
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val decoded = StoredReportMetadataCodec.decodeOrNull(StoredReportMetadataCodec.encode(metadata))
+
+        assertNotNull(decoded)
+        val graph = decoded.graphs.single()
+        assertEquals(GeometryReportStatus.DIAGNOSTIC_ONLY, graph.geometryReportStatus)
+        assertEquals("raw.jpg", graph.geometryTrace?.originalImagePath)
+        assertEquals(GeometryReportStatus.DIAGNOSTIC_ONLY, graph.source?.geometryReportStatus)
+        assertEquals("normalized.jpg", graph.source?.geometryTrace?.normalizedImagePath)
     }
 
     @Test

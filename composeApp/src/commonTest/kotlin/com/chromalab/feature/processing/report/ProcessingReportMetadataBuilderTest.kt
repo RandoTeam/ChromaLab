@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.report
 
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.reports.AxisCalibrationCandidateStatus
@@ -156,6 +158,34 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(ExecutedRuntime.GGUF, metadata.selectedModel?.runtime)
         assertNull(metadata.executedModel)
         assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
+    }
+
+    @Test
+    fun processingMetadataConfigStoresGeometryTraceStatus() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = "raw.jpg",
+            processedPath = "normalized.jpg",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 1,
+            detectedGraphCount = 1,
+            signalPointCount = 0,
+            analysisStartedAtEpochMillis = 100L,
+            analysisCompletedAtEpochMillis = 200L,
+            geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+            geometryTrace = GeometryTrace(
+                originalImagePath = "raw.jpg",
+                normalizedImagePath = "normalized.jpg",
+                warnings = listOf("calibration.x.two_anchor_review"),
+            ),
+        )
+
+        val graph = StoredReportMetadataCodec.decodeOrNull(config)?.graphs?.single()
+
+        assertNotNull(graph)
+        assertEquals(GeometryReportStatus.REVIEW_READY, graph.geometryReportStatus)
+        assertEquals(GeometryReportStatus.REVIEW_READY, graph.source?.geometryReportStatus)
+        assertEquals("raw.jpg", graph.geometryTrace?.originalImagePath)
+        assertEquals("calibration.x.two_anchor_review", graph.geometryTrace?.warnings?.single())
     }
 
     @Test

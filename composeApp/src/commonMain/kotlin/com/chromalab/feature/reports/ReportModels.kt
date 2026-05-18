@@ -1,5 +1,8 @@
 package com.chromalab.feature.reports
 
+import com.chromalab.feature.processing.geometry.AxisCalibrationFit
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
 import kotlinx.serialization.Serializable
 
 const val CURRENT_CHROMATOGRAM_REPORT_SCHEMA = "1.0.0-phase-1.3"
@@ -99,6 +102,8 @@ data class GraphSourceMetadata(
     val sourceImageBounds: PixelRect? = null,
     val detectedGraphBounds: PixelRect? = null,
     val cropConfidence: Double? = null,
+    val geometryReportStatus: GeometryReportStatus? = null,
+    val geometryTrace: GeometryTrace? = null,
     val preprocessingSteps: List<String> = emptyList(),
     val selectedPreparationVariant: GraphPreparationVariantMetadata? = null,
     val rejectedPreparationVariants: List<GraphPreparationVariantMetadata> = emptyList(),
@@ -145,6 +150,8 @@ data class ReportAxisCalibration(
     val xAxis: AxisReport = AxisReport(),
     val yAxis: AxisReport = AxisReport(),
     val calibrationConfidence: Double? = null,
+    val xCalibrationFit: AxisCalibrationFit? = null,
+    val yCalibrationFit: AxisCalibrationFit? = null,
     val calibrationCandidates: List<AxisCalibrationCandidate> = emptyList(),
     val pixelToUnitTransform: PixelToUnitTransform? = null,
     val warnings: List<ReportWarning> = emptyList(),

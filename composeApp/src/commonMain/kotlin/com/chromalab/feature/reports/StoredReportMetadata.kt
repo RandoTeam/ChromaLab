@@ -1,5 +1,7 @@
 package com.chromalab.feature.reports
 
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -38,6 +40,8 @@ data class StoredReportMetadata(
 data class StoredGraphReportMetadata(
     val graphIndex: Int = 1,
     val source: GraphSourceMetadata? = null,
+    val geometryReportStatus: GeometryReportStatus? = null,
+    val geometryTrace: GeometryTrace? = null,
     val identification: ChromatogramIdentification? = null,
     val axisCalibration: ReportAxisCalibration? = null,
     val warnings: List<ReportWarning> = emptyList(),

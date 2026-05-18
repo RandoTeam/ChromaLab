@@ -42,6 +42,11 @@ import com.chromalab.feature.calculation.ui.ChartPeakMarker
 import com.chromalab.feature.calculation.ui.ChartPoint
 import com.chromalab.feature.calculation.ui.ChromatogramChart
 import com.chromalab.feature.calculation.ui.ChromatogramChartState
+import com.chromalab.feature.processing.geometry.AxisCalibrationFit
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.graph.GraphRegion
 import kotlin.math.abs
 
 @Composable
@@ -437,6 +442,7 @@ private fun PreparationBlock(graph: GraphReport) {
         MetricGrid(
             rows = listOf(
                 "Crop confidence" to graph.source.cropConfidence.renderPercent(),
+                "Geometry" to graph.source.geometryReportStatus.renderGeometryStatus(),
                 "Scan mode" to (graph.source.scanMode ?: "not recorded"),
                 "Title OCR" to graph.source.titleOcrConfidence.renderPercent(),
                 "Axis OCR" to graph.source.axisOcrConfidence.renderPercent(),
@@ -461,6 +467,13 @@ private fun PreparationBlock(graph: GraphReport) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
+        graph.source.geometryTrace?.warnings?.takeIf { it.isNotEmpty() }?.let { warnings ->
+            QualityNotice(
+                title = "Geometry evidence needs review",
+                message = warnings.take(3).joinToString("; "),
+                severity = ReportSeverity.WARNING,
+            )
+        }
     }
 }
 
@@ -474,6 +487,8 @@ private fun AxisBlock(graph: GraphReport) {
                 "Y label" to graph.axisCalibration.yAxis.label.renderText(),
                 "Y range" to graph.axisCalibration.yAxis.renderRange(),
                 "Calibration" to graph.axisCalibration.calibrationConfidence.renderPercent(),
+                "X fit" to graph.axisCalibration.xCalibrationFit.renderCalibrationFitStatus(),
+                "Y fit" to graph.axisCalibration.yCalibrationFit.renderCalibrationFitStatus(),
                 "Transform" to (graph.axisCalibration.pixelToUnitTransform?.method ?: "not calculated"),
             ),
         )
@@ -738,6 +753,46 @@ private fun TechnicalAppendix(
                     DetailLine(
                         label = timing.stageName ?: timing.stageId,
                         value = timing.durationMillis.renderDuration(),
+                    )
+                }
+            }
+        }
+
+        SectionBlock(title = "Geometry evidence") {
+            val traces = report.graphs.mapNotNull { graph ->
+                graph.source.geometryTrace?.let { graph.graphIndex to it }
+            }
+            if (traces.isEmpty()) {
+                EmptyText("No geometry trace recorded.")
+            } else {
+                traces.forEach { (graphIndex, trace) ->
+                    DetailLine(
+                        label = "Graph $graphIndex status",
+                        value = report.graphs
+                            .firstOrNull { it.graphIndex == graphIndex }
+                            ?.source
+                            ?.geometryReportStatus
+                            .renderGeometryStatus(),
+                    )
+                    DetailLine(
+                        label = "Selected panel",
+                        value = trace.selectedGraphPanelBounds?.region.renderGraphRegion(),
+                    )
+                    DetailLine(
+                        label = "Selected plot",
+                        value = trace.selectedPlotAreaBounds?.region.renderGraphRegion(),
+                    )
+                    DetailLine(
+                        label = "Ticks",
+                        value = "x=${trace.tickGeometry?.xTicks?.size ?: 0}, y=${trace.tickGeometry?.yTicks?.size ?: 0}",
+                    )
+                    DetailLine(
+                        label = "Calibration",
+                        value = "x=${trace.xCalibrationFit.renderCalibrationFitStatus()}, y=${trace.yCalibrationFit.renderCalibrationFitStatus()}",
+                    )
+                    DetailLine(
+                        label = "Evidence artifacts",
+                        value = trace.geometryArtifactCount().toString(),
                     )
                 }
             }
@@ -1431,6 +1486,47 @@ private fun Double?.renderPercent(): String {
         "${(value * 100.0).formatReportNumber()}%"
     }
 }
+
+private fun GeometryReportStatus?.renderGeometryStatus(): String =
+    when (this) {
+        GeometryReportStatus.SCIENTIFIC_READY -> "scientific-ready"
+        GeometryReportStatus.REVIEW_READY -> "review-grade"
+        GeometryReportStatus.DIAGNOSTIC_ONLY -> "diagnostic-only"
+        null -> "not recorded"
+    }
+
+private fun AxisCalibrationFit?.renderCalibrationFitStatus(): String {
+    val fit = this ?: return "not recorded"
+    val residual = fit.rmsePx?.let { ", rmse=${it.formatReportNumber()}px" }.orEmpty()
+    return when (fit.status) {
+        CalibrationFitStatus.VALID -> "valid$residual"
+        CalibrationFitStatus.REVIEW -> "review$residual"
+        CalibrationFitStatus.INVALID -> "invalid$residual"
+    }
+}
+
+private fun GraphRegion?.renderGraphRegion(): String {
+    val region = this ?: return "not recorded"
+    return "${region.x},${region.y} ${region.width}x${region.height}"
+}
+
+private fun GeometryTrace.geometryArtifactCount(): Int =
+    listOfNotNull(
+        originalImagePath,
+        normalizedImagePath,
+        rectifiedImagePath,
+        selectedGraphPanelOverlayPath,
+        selectedPlotAreaOverlayPath,
+        axisOverlayPath,
+        tickOverlayPath,
+        calibrationFitOverlayPath,
+        curveMaskRawPath,
+        curveMaskCleanPath,
+        curveRejectedComponentsPath,
+        curveSelectedComponentPath,
+        curveSkeletonPath,
+        finalCenterlineOverlayPath,
+    ).size + ocrCropPaths.size
 
 private fun Double?.takeIfUsable(): Double? =
     if (this != null && !isNaN() && !isInfinite()) this else null
