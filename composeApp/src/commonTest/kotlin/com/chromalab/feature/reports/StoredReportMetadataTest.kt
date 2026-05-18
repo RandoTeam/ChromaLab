@@ -381,18 +381,12 @@ class StoredReportMetadataTest {
         assertEquals("Xiaomi Mi 8", options.deviceName)
         assertEquals(125L, options.stageTimings.single { it.stageId == "IMAGE_QUALITY" }.durationMillis)
         assertTrue(options.additionalReportWarnings.any { it.code == "model.execution_missing" })
-        assertTrue(options.additionalReportWarnings.any { it.code == "model.graph_region.required_vision_failed" })
         assertTrue(options.additionalReportWarnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
         assertEquals("qwen3-vl-2b-q4km", report.metadata.selectedModel?.modelId)
         assertNull(report.metadata.executedModel)
         assertTrue(warningCodes.contains("model.execution_missing"))
-        assertTrue(warningCodes.contains("model.graph_region.required_vision_failed"))
         assertTrue(warningCodes.contains("model.title_ion_axis.required_vision_failed"))
         assertTrue(warningCodes.contains("runtime.executed_unknown"))
-        assertEquals(
-            ReportSeverity.FAILED,
-            report.warnings.single { it.code == "model.graph_region.required_vision_failed" }.severity,
-        )
         assertEquals(
             ReportSeverity.FAILED,
             report.warnings.single { it.code == "model.title_ion_axis.required_vision_failed" }.severity,

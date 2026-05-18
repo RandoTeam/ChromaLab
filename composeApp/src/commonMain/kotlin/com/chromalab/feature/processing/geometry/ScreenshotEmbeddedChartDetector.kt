@@ -85,6 +85,17 @@ object ScreenshotEmbeddedChartAnalyzer {
                 aspectRatioPlausibility = metrics.aspectScore,
                 calibrationViability = metrics.peakLineScore,
                 curveCoverageScore = metrics.traceDensityScore,
+                containsYAxisRegionScore = metrics.containsYAxisRegionScore,
+                containsYTickLabelsScore = metrics.containsYTickLabelsScore,
+                containsXAxisRegionScore = metrics.containsXAxisRegionScore,
+                containsXTickLabelsScore = metrics.containsXTickLabelsScore,
+                titleOrIonPreservedScore = metrics.titleOrIonPreservedScore,
+                fullTraceHorizontalCoverageScore = metrics.fullTraceHorizontalCoverageScore,
+                leftMarginSafetyScore = metrics.leftMarginSafetyScore,
+                bottomMarginSafetyScore = metrics.bottomMarginSafetyScore,
+                subregionPenalty = metrics.subregionPenalty,
+                axisViabilityScore = metrics.axisLikeLineScore,
+                calibrationViabilityScore = metrics.peakLineScore,
                 total = metrics.totalScore,
                 notes = metrics.notes,
             )
@@ -154,9 +165,16 @@ object ScreenshotEmbeddedChartAnalyzer {
         val verticalPeakLines = columnDarkCounts.count { it >= (sampledHeight * 0.13f).roundToInt().coerceAtLeast(6) }
         val horizontalAxisRows = rowDarkCounts.count { it >= (sampledWidth * 0.34f).roundToInt().coerceAtLeast(16) }
         val verticalAxisColumns = columnDarkCounts.count { it >= (sampledHeight * 0.34f).roundToInt().coerceAtLeast(16) }
-        if (verticalPeakLines < 3 && horizontalAxisRows == 0 && verticalAxisColumns == 0) {
+        val plausibleChartStructure = verticalPeakLines >= 3 || horizontalAxisRows > 0 || verticalAxisColumns > 0
+        if (!plausibleChartStructure) {
             return null
         }
+        val yAxisRegionScore = if (verticalAxisColumns > 0 || verticalPeakLines >= 8) 10f else 5f
+        val yTickScore = if (veryDarkRatio in 0.008f..0.20f) 9f else 4f
+        val xAxisScore = if (horizontalAxisRows > 0) 8f else 5f
+        val xTickScore = if (veryDarkRatio in 0.008f..0.20f) 8f else 4f
+        val fullTraceScore = 16f
+        val titleScore = 6f
 
         val score = RoiCandidateScoreBreakdown(
             axisVisibility = ((horizontalAxisRows.coerceAtMost(4) + verticalAxisColumns.coerceAtMost(4)) / 8f) * 16f,
@@ -168,6 +186,17 @@ object ScreenshotEmbeddedChartAnalyzer {
             aspectRatioPlausibility = 10f,
             calibrationViability = (verticalPeakLines.coerceAtMost(18) / 18f) * 14f,
             curveCoverageScore = 12f,
+            containsYAxisRegionScore = yAxisRegionScore,
+            containsYTickLabelsScore = yTickScore,
+            containsXAxisRegionScore = xAxisScore,
+            containsXTickLabelsScore = xTickScore,
+            titleOrIonPreservedScore = titleScore,
+            fullTraceHorizontalCoverageScore = fullTraceScore,
+            leftMarginSafetyScore = 10f,
+            bottomMarginSafetyScore = 6f,
+            subregionPenalty = 0f,
+            axisViabilityScore = ((horizontalAxisRows.coerceAtMost(4) + verticalAxisColumns.coerceAtMost(4)) / 8f) * 16f,
+            calibrationViabilityScore = (verticalPeakLines.coerceAtMost(18) / 18f) * 14f,
             total = (
                 (lightRatio * 20f).coerceIn(0f, 20f) +
                     12f +
@@ -175,7 +204,13 @@ object ScreenshotEmbeddedChartAnalyzer {
                     (((horizontalAxisRows.coerceAtMost(4) + verticalAxisColumns.coerceAtMost(4)) / 8f) * 16f) +
                     7f +
                     8f +
-                    10f
+                    10f +
+                    yAxisRegionScore +
+                    yTickScore +
+                    xAxisScore +
+                    xTickScore +
+                    titleScore +
+                    fullTraceScore
                 ).coerceIn(0f, 100f),
             notes = listOf(
                 "screenshot_chart.mode:already_cropped_chart_panel",
@@ -346,6 +381,24 @@ object ScreenshotEmbeddedChartAnalyzer {
             marginY < 0.16f -> 4f
             else -> 8f
         }
+        val startsNearLeft = component.minX <= sampledWidth * 0.08f
+        val endsNearRight = component.maxX >= sampledWidth * 0.82f
+        val reachesBottom = component.maxY >= sampledHeight * 0.76f
+        val startsNearTop = component.minY <= sampledHeight * 0.14f
+        val containsYAxisRegionScore = if (startsNearLeft) 10f else if (component.minX <= sampledWidth * 0.18f) 5f else 0f
+        val containsYTickLabelsScore = if (startsNearLeft && darkRatio in 0.006f..0.28f) 9f else if (startsNearLeft) 4f else 0f
+        val containsXAxisRegionScore = if (reachesBottom) 8f else 3f
+        val containsXTickLabelsScore = if (reachesBottom && darkRatio in 0.006f..0.28f) 7f else if (reachesBottom) 3f else 0f
+        val titleOrIonPreservedScore = if (startsNearTop) 6f else 2f
+        val fullTraceHorizontalCoverageScore = when {
+            component.width >= sampledWidth * 0.92f -> 16f
+            component.width >= sampledWidth * 0.78f -> 10f
+            component.width >= sampledWidth * 0.62f -> 4f
+            else -> 0f
+        }
+        val leftMarginSafetyScore = if (startsNearLeft) 10f else 0f
+        val bottomMarginSafetyScore = if (reachesBottom) 6f else 0f
+        val subregionPenalty = if (!startsNearLeft && component.width < sampledWidth * 0.70f) 24f else 0f
         val aspectScore = when (aspect) {
             in 1.05f..3.8f -> 10f
             in 0.75f..5.2f -> 5f
@@ -359,7 +412,16 @@ object ScreenshotEmbeddedChartAnalyzer {
                 axisLikeLineScore +
                 tickLikeTextScore +
                 marginSafetyScore +
-                aspectScore -
+                aspectScore +
+                containsYAxisRegionScore +
+                containsYTickLabelsScore +
+                containsXAxisRegionScore +
+                containsXTickLabelsScore +
+                titleOrIonPreservedScore +
+                fullTraceHorizontalCoverageScore +
+                leftMarginSafetyScore +
+                bottomMarginSafetyScore -
+                subregionPenalty -
                 phoneUiPenalty
             ).coerceAtLeast(0f)
 
@@ -385,6 +447,15 @@ object ScreenshotEmbeddedChartAnalyzer {
             marginSafetyScore = marginSafetyScore,
             aspectScore = aspectScore,
             phoneUiPenalty = phoneUiPenalty,
+            containsYAxisRegionScore = containsYAxisRegionScore,
+            containsYTickLabelsScore = containsYTickLabelsScore,
+            containsXAxisRegionScore = containsXAxisRegionScore,
+            containsXTickLabelsScore = containsXTickLabelsScore,
+            titleOrIonPreservedScore = titleOrIonPreservedScore,
+            fullTraceHorizontalCoverageScore = fullTraceHorizontalCoverageScore,
+            leftMarginSafetyScore = leftMarginSafetyScore,
+            bottomMarginSafetyScore = bottomMarginSafetyScore,
+            subregionPenalty = subregionPenalty,
             rejectionReasons = rejectionReasons,
             notes = listOf(
                 "screenshot_chart.area_ratio:${regionAreaRatio.format2()}",
@@ -430,6 +501,15 @@ object ScreenshotEmbeddedChartAnalyzer {
         val marginSafetyScore: Float,
         val aspectScore: Float,
         val phoneUiPenalty: Float,
+        val containsYAxisRegionScore: Float,
+        val containsYTickLabelsScore: Float,
+        val containsXAxisRegionScore: Float,
+        val containsXTickLabelsScore: Float,
+        val titleOrIonPreservedScore: Float,
+        val fullTraceHorizontalCoverageScore: Float,
+        val leftMarginSafetyScore: Float,
+        val bottomMarginSafetyScore: Float,
+        val subregionPenalty: Float,
         val rejectionReasons: List<String>,
         val notes: List<String>,
     )

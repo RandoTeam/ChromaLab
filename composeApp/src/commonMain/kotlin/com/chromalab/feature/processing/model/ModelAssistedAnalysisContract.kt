@@ -49,7 +49,7 @@ object ModelAssistedAnalysisContract {
         ModelAssistedStageSpec(
             stageId = "model.graph_region",
             role = ModelAssistedStageRole.GRAPH_REGION,
-            mode = ModelAssistedStageMode.REQUIRED_VISION_CONTRACT,
+            mode = ModelAssistedStageMode.OPTIONAL_VISION_HINT,
             deterministicRunsFirst = true,
             allowedSources = setOf(ReportValueSource.VISION_MODEL, ReportValueSource.DETERMINISTIC),
             canProduceNumericResults = false,
@@ -146,10 +146,7 @@ object ModelAssistedAnalysisContract {
         val additions = requiredVisionStages().mapNotNull { stage ->
             if (stage.stageId in existingIds) return@mapNotNull null
             val sourceDuration = when (stage.role) {
-                ModelAssistedStageRole.GRAPH_REGION -> timingsById.firstDuration("GRAPH_SELECTION", "GRAPH_ROI")
                 ModelAssistedStageRole.TITLE_ION_AXIS -> timingsById.firstDuration(
-                    "GRAPH_SELECTION",
-                    "GRAPH_ROI",
                     "OCR_SUGGESTION",
                 )
                 else -> null

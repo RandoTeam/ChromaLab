@@ -98,8 +98,14 @@ private fun GraphRegionRefinementSample.findPlotAreaBounds(): PlotAreaBounds? {
     val horizontalAxis = findPlotHorizontalAxis(threshold)
         ?: findPlotHorizontalAxis(relaxedThreshold)?.also { relaxedAxisThreshold = true }
         ?: return null
+    var estimatedVerticalAxis = false
     val verticalAxis = findPlotVerticalAxis(threshold, horizontalAxis)
         ?: findPlotVerticalAxis(relaxedThreshold, horizontalAxis)?.also { relaxedAxisThreshold = true }
+        ?: findPlotVerticalAxisByProjection(threshold, horizontalAxis)?.also { estimatedVerticalAxis = true }
+        ?: findPlotVerticalAxisByProjection(relaxedThreshold, horizontalAxis)?.also {
+            relaxedAxisThreshold = true
+            estimatedVerticalAxis = true
+        }
         ?: return null
 
     val signalTop = findPlotSignalTop(
@@ -137,6 +143,9 @@ private fun GraphRegionRefinementSample.findPlotAreaBounds(): PlotAreaBounds? {
         }
         if (relaxedAxisThreshold) {
             add("plot_area.relaxed_axis_threshold")
+        }
+        if (estimatedVerticalAxis) {
+            add("plot_area.y_axis_estimated_from_panel_projection")
         }
     }
 
@@ -236,6 +245,62 @@ private fun GraphRegionRefinementSample.findPlotVerticalAxis(
         .ifEmpty { candidates.filter { it.x <= (width * 0.28f).roundToInt().coerceAtLeast(12) } }
         .ifEmpty { candidates }
     return axisBand
+        .filter { it.length >= comparable }
+        .minWithOrNull(
+            compareBy<PlotVerticalAxisRun> { it.x }
+                .thenBy { abs(it.x - horizontalAxis.startX) }
+                .thenByDescending { it.length },
+        )
+}
+
+private fun GraphRegionRefinementSample.findPlotVerticalAxisByProjection(
+    threshold: Int,
+    horizontalAxis: PlotHorizontalAxisRun,
+): PlotVerticalAxisRun? {
+    val searchEnd = minOf(
+        width - 1,
+        (width * 0.38f).roundToInt().coerceAtLeast(24),
+        (horizontalAxis.startX + width * 0.22f).roundToInt().coerceAtLeast(24),
+    )
+    val minRun = (height * 0.16f).roundToInt().coerceIn(18, height)
+    val maxGap = (height * 0.035f).roundToInt().coerceIn(6, 24)
+    val targetY = horizontalAxis.row
+    val endTolerance = (height * 0.14f).roundToInt().coerceIn(12, 54)
+    val candidates = mutableListOf<PlotVerticalAxisRun>()
+
+    for (x in 0..searchEnd) {
+        var y = 0
+        while (y <= targetY) {
+            while (y <= targetY && gray[y * width + x] >= threshold) y++
+            if (y > targetY) break
+
+            val start = y
+            var lastDark = y
+            var gap = 0
+            while (y <= targetY && gap <= maxGap) {
+                if (gray[y * width + x] < threshold) {
+                    lastDark = y
+                    gap = 0
+                } else {
+                    gap++
+                }
+                y++
+            }
+            val candidate = PlotVerticalAxisRun(
+                x = x,
+                startY = start,
+                endY = minOf(lastDark, targetY),
+            )
+            if (candidate.length >= minRun && candidate.endY >= targetY - endTolerance) {
+                candidates += candidate
+            }
+        }
+    }
+
+    if (candidates.isEmpty()) return null
+    val maxLength = candidates.maxOf { it.length }
+    val comparable = (maxLength * 0.48f).roundToInt().coerceAtLeast(minRun)
+    return candidates
         .filter { it.length >= comparable }
         .minWithOrNull(
             compareBy<PlotVerticalAxisRun> { it.x }

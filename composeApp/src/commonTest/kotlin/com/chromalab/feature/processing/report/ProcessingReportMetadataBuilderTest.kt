@@ -102,10 +102,9 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(ExecutedRuntime.LITERT, metadata.executedRuntime)
         assertEquals("Pixel Test", metadata.deviceName)
         assertEquals(ProcessingMode.FULL_ANALYSIS, metadata.processingMode)
-        assertEquals(5, metadata.stageTimings.size)
+        assertEquals(4, metadata.stageTimings.size)
         assertEquals(450L, metadata.stageTimings.single { it.stageId == "OCR_SUGGESTION" }.durationMillis)
-        assertEquals(900L, metadata.stageTimings.single { it.stageId == "model.graph_region" }.durationMillis)
-        assertEquals(900L, metadata.stageTimings.single { it.stageId == "model.title_ion_axis" }.durationMillis)
+        assertEquals(450L, metadata.stageTimings.single { it.stageId == "model.title_ion_axis" }.durationMillis)
         assertEquals(emptyList(), metadata.warnings)
 
         val graph = metadata.graphs.single()
@@ -215,7 +214,6 @@ class ProcessingReportMetadataBuilderTest {
         assertNotNull(metadata)
         assertEquals(ExecutedRuntime.UNKNOWN, metadata.executedRuntime)
         assertTrue(metadata.warnings.any { it.code == "model.execution_missing" })
-        assertTrue(metadata.warnings.any { it.code == "model.graph_region.required_vision_failed" })
         assertTrue(metadata.warnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
         assertTrue(metadata.warnings.all { it.graphIndex == 1 })
     }
@@ -253,7 +251,6 @@ class ProcessingReportMetadataBuilderTest {
         assertTrue(line.contains("runtime=UNKNOWN"))
         assertTrue(line.contains("device=Xiaomi_Mi_8"))
         assertTrue(line.contains("timings=IMAGE_QUALITY:125"))
-        assertTrue(line.contains("model.graph_region.required_vision_failed:FAILED"))
         assertTrue(line.contains("model.title_ion_axis.required_vision_failed:FAILED"))
     }
 

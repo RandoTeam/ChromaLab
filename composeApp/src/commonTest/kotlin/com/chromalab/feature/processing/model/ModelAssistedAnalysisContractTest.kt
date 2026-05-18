@@ -24,7 +24,7 @@ class ModelAssistedAnalysisContractTest {
         assertFalse(interpretation.canProduceNumericResults)
         assertFalse(interpretation.canAssignFinalCompounds)
 
-        assertEquals(ModelAssistedStageMode.REQUIRED_VISION_CONTRACT, graphRegion.mode)
+        assertEquals(ModelAssistedStageMode.OPTIONAL_VISION_HINT, graphRegion.mode)
         assertTrue(graphRegion.deterministicRunsFirst)
         assertFalse(graphRegion.canProduceNumericResults)
         assertFalse(graphRegion.canAssignFinalCompounds)

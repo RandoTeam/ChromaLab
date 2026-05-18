@@ -129,7 +129,9 @@ object RuntimeEvidencePackageBuilder {
                 cleanCurveMaskPath = trace?.curveMaskCleanPath,
                 textSuppressionOverlayPath = trace?.curveTextSuppressionOverlayPath,
                 rejectedComponentsOverlayPath = trace?.curveRejectedComponentsPath,
-                selectedTraceOverlayPath = trace?.curveSelectedComponentPath,
+                selectedTraceOverlayPath = trace?.curveSelectedComponentPath
+                    ?: trace?.curveSkeletonPath
+                    ?: trace?.finalCenterlineOverlayPath,
                 skeletonOrCenterlineOverlayPath = trace?.curveSkeletonPath,
                 finalPeakOverlayPath = trace?.finalCenterlineOverlayPath,
             ),

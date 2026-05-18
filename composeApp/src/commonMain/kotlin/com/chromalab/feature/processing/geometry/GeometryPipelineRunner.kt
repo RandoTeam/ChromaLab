@@ -32,6 +32,7 @@ class GeometryPipelineRunner(
     private val peakLabelEvidenceReader: PeakLabelEvidenceReader = PeakLabelEvidenceReader(),
     private val calibrationFitter: AxisCalibrationFitter = AxisCalibrationFitter(),
     private val graphMultiplicityResolver: GraphMultiplicityResolver = GraphMultiplicityResolver(),
+    private val geometryOverlayArtifactWriter: GeometryOverlayArtifactWriter = GeometryOverlayArtifactWriter(),
 ) {
     suspend fun run(
         imagePath: String,
@@ -172,6 +173,19 @@ class GeometryPipelineRunner(
         val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
         val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
         val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
+        val overlayArtifacts = timedStage("geometry.overlay_artifacts", timings) {
+            geometryOverlayArtifactWriter.writeOverlays(
+                imagePath = imagePath,
+                outputDir = outputDir,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                candidates = allCandidates,
+                selectedPanel = selected,
+                selectedPlotArea = selectedPlot,
+                axisGeometry = axisGeometry,
+                tickGeometry = tickGeometry,
+            )
+        }
         val warnings = buildList {
             addAll(provenance.warnings)
             addAll(rectification.warnings)
@@ -199,6 +213,7 @@ class GeometryPipelineRunner(
                 ?.let { addAll(it) }
             addAll(xFit.warnings)
             addAll(yFit.warnings)
+            addAll(overlayArtifacts.warnings)
         }.distinct()
         val trace = GeometryTrace(
             sourceProvenance = provenance,
@@ -215,12 +230,14 @@ class GeometryPipelineRunner(
             originalImagePath = originalImagePath,
             normalizedImagePath = normalizedImagePath,
             rectifiedImagePath = rectification.rectifiedImagePath,
-            selectedGraphPanelOverlayPath = selected?.overlayArtifactPath,
-            selectedPlotAreaOverlayPath = selectedPlot?.overlayArtifactPath,
+            selectedGraphPanelOverlayPath = selected?.overlayArtifactPath ?: overlayArtifacts.graphPanelOverlayPath,
+            selectedPlotAreaOverlayPath = selectedPlot?.overlayArtifactPath ?: overlayArtifacts.plotAreaOverlayPath,
             ocrCropPaths = (
                 selectedEvaluation?.tickCropArtifacts?.map { it.path }.orEmpty() +
                     tickOcr.items.mapNotNull { it.localCropPath }
                 ).distinct(),
+            axisOverlayPath = overlayArtifacts.axisOverlayPath,
+            tickOverlayPath = overlayArtifacts.tickOverlayPath,
             peakLabelEvidence = selectedEvaluation?.peakLabelEvidence.orEmpty(),
             peakLabelCropPaths = selectedEvaluation?.peakLabelCropPaths.orEmpty(),
             peakLabelCropBoundsOverlayPath = selectedEvaluation?.peakLabelCropBoundsOverlayPath,
@@ -363,6 +380,7 @@ class GeometryPipelineRunner(
         }
         val calibrationScore = xFit.confidence * 18f + yFit.confidence * 18f
         val tickScore = (tickGeometry.xTicks.size.coerceAtMost(8) + tickGeometry.yTicks.size.coerceAtMost(8)) * 1.5f
+        val incompletenessPenalty = candidate.incompletePanelSelectionPenalty(imageWidth, imageHeight)
         return GeometryCandidateEvaluation(
             panel = candidate,
             plot = plot,
@@ -378,7 +396,7 @@ class GeometryPipelineRunner(
             yFit = yFit,
             reportStatus = reportStatus,
             retryIndex = retryIndex,
-            selectionScore = candidate.scoreBreakdown.total + calibrationScore + tickScore,
+            selectionScore = candidate.scoreBreakdown.total + calibrationScore + tickScore - incompletenessPenalty,
         )
     }
 
@@ -554,6 +572,17 @@ private fun RoiCandidateScoreBreakdown.mergeOverride(
         aspectRatioPlausibility = maxOf(aspectRatioPlausibility, override.aspectRatioPlausibility),
         calibrationViability = maxOf(calibrationViability, override.calibrationViability),
         curveCoverageScore = maxOf(curveCoverageScore, override.curveCoverageScore),
+        containsYAxisRegionScore = maxOf(containsYAxisRegionScore, override.containsYAxisRegionScore),
+        containsYTickLabelsScore = maxOf(containsYTickLabelsScore, override.containsYTickLabelsScore),
+        containsXAxisRegionScore = maxOf(containsXAxisRegionScore, override.containsXAxisRegionScore),
+        containsXTickLabelsScore = maxOf(containsXTickLabelsScore, override.containsXTickLabelsScore),
+        titleOrIonPreservedScore = maxOf(titleOrIonPreservedScore, override.titleOrIonPreservedScore),
+        fullTraceHorizontalCoverageScore = maxOf(fullTraceHorizontalCoverageScore, override.fullTraceHorizontalCoverageScore),
+        leftMarginSafetyScore = maxOf(leftMarginSafetyScore, override.leftMarginSafetyScore),
+        bottomMarginSafetyScore = maxOf(bottomMarginSafetyScore, override.bottomMarginSafetyScore),
+        subregionPenalty = maxOf(subregionPenalty, override.subregionPenalty),
+        axisViabilityScore = maxOf(axisViabilityScore, override.axisViabilityScore),
+        calibrationViabilityScore = maxOf(calibrationViabilityScore, override.calibrationViabilityScore),
         total = (total + override.total * 0.55f).coerceAtMost(100f),
         notes = (notes + override.notes).distinct(),
     )
@@ -569,12 +598,58 @@ private fun scoreCandidate(
     yTicks: Int,
     warnings: List<String>,
 ): RoiCandidateScoreBreakdown {
+    val widthRatio = region.width.toFloat() / imageWidth.coerceAtLeast(1).toFloat()
+    val heightRatio = region.height.toFloat() / imageHeight.coerceAtLeast(1).toFloat()
+    val xStartRatio = region.x.toFloat() / imageWidth.coerceAtLeast(1).toFloat()
+    val bottomGapRatio = (imageHeight - region.bottom).coerceAtLeast(0).toFloat() / imageHeight.coerceAtLeast(1).toFloat()
     val axisVisibility = if (plotDetected) 18f else 4f
     val tickLabelVisibility = (minOf(xTicks, 6) + minOf(yTicks, 6)) * 2.2f
     val plotScore = if (plotDetected) 20f else 0f
     val traceDensity = 8f
     val textPenalty = if (region.area.toFloat() / (imageWidth * imageHeight).coerceAtLeast(1).toFloat() > 0.92f) 8f else 0f
     val marginSafety = region.marginSafety(imageWidth, imageHeight) * 10f
+    val containsYAxisRegionScore = when {
+        region.x <= imageWidth * 0.06f -> 10f
+        region.x <= imageWidth * 0.14f -> 6f
+        region.x <= imageWidth * 0.24f -> 2f
+        else -> 0f
+    }
+    val containsYTickLabelsScore = when {
+        region.x <= imageWidth * 0.04f && widthRatio >= 0.74f -> 10f
+        region.x <= imageWidth * 0.12f -> 5f
+        else -> 0f
+    }
+    val containsXAxisRegionScore = when {
+        bottomGapRatio <= 0.035f -> 8f
+        bottomGapRatio <= 0.09f -> 4f
+        else -> 0f
+    }
+    val containsXTickLabelsScore = when {
+        bottomGapRatio <= 0.025f && heightRatio >= 0.72f -> 8f
+        bottomGapRatio <= 0.08f -> 4f
+        else -> 0f
+    }
+    val titleOrIonPreservedScore = when {
+        region.y <= imageHeight * 0.04f && heightRatio >= 0.72f -> 6f
+        region.y <= imageHeight * 0.12f -> 3f
+        else -> 0f
+    }
+    val fullTraceHorizontalCoverageScore = when {
+        widthRatio >= 0.92f -> 16f
+        widthRatio >= 0.78f -> 10f
+        widthRatio >= 0.62f -> 4f
+        else -> 0f
+    }
+    val leftMarginSafetyScore = when {
+        xStartRatio <= 0.04f -> 10f
+        xStartRatio <= 0.12f -> 5f
+        else -> 0f
+    }
+    val bottomMarginSafetyScore = when {
+        bottomGapRatio <= 0.04f -> 6f
+        bottomGapRatio <= 0.10f -> 3f
+        else -> 0f
+    }
     val aspect = when (region.aspectRatio) {
         in 1.0f..4.6f -> 10f
         in 0.65f..5.5f -> 5f
@@ -585,6 +660,15 @@ private fun scoreCandidate(
         xTicks >= 2 && yTicks >= 2 -> 8f
         else -> 0f
     }
+    val axisViabilityScore = if (plotDetected && xTicks >= 2 && yTicks >= 2) 8f else if (plotDetected) 3f else 0f
+    val calibrationViabilityScore = calibrationViability
+    val subregionPenalty = buildList {
+        if (xStartRatio > 0.24f && widthRatio < 0.70f) add(36f)
+        if (warnings.any { it == "plot_area.signal_extends_above_detected_y_axis" }) add(18f)
+        if (warnings.any { it == "plot_area.x_axis_start_late" }) add(10f)
+        if (warnings.any { it == "plot_area.y_axis_far_from_left_panel" }) add(12f)
+        if (widthRatio < 0.58f && imageWidth >= 320) add(10f)
+    }.fold(0f) { acc, value -> acc + value }
     val warningPenalty = warnings.distinct().size * 0.7f
     val total = (
         baseConfidence * 18f +
@@ -594,7 +678,17 @@ private fun scoreCandidate(
             traceDensity +
             marginSafety +
             aspect +
-            calibrationViability -
+            calibrationViability +
+            containsYAxisRegionScore +
+            containsYTickLabelsScore +
+            containsXAxisRegionScore +
+            containsXTickLabelsScore +
+            titleOrIonPreservedScore +
+            fullTraceHorizontalCoverageScore +
+            leftMarginSafetyScore +
+            bottomMarginSafetyScore +
+            axisViabilityScore -
+            subregionPenalty -
             textPenalty -
             warningPenalty
         ).coerceAtLeast(0f)
@@ -608,9 +702,34 @@ private fun scoreCandidate(
         aspectRatioPlausibility = aspect,
         calibrationViability = calibrationViability,
         curveCoverageScore = traceDensity,
+        containsYAxisRegionScore = containsYAxisRegionScore,
+        containsYTickLabelsScore = containsYTickLabelsScore,
+        containsXAxisRegionScore = containsXAxisRegionScore,
+        containsXTickLabelsScore = containsXTickLabelsScore,
+        titleOrIonPreservedScore = titleOrIonPreservedScore,
+        fullTraceHorizontalCoverageScore = fullTraceHorizontalCoverageScore,
+        leftMarginSafetyScore = leftMarginSafetyScore,
+        bottomMarginSafetyScore = bottomMarginSafetyScore,
+        subregionPenalty = subregionPenalty,
+        axisViabilityScore = axisViabilityScore,
+        calibrationViabilityScore = calibrationViabilityScore,
         total = total,
         notes = warnings.distinct(),
     )
+}
+
+private fun GraphPanelBounds.incompletePanelSelectionPenalty(imageWidth: Int, imageHeight: Int): Float {
+    val widthRatio = region.width.toFloat() / imageWidth.coerceAtLeast(1).toFloat()
+    val xStartRatio = region.x.toFloat() / imageWidth.coerceAtLeast(1).toFloat()
+    val bottomGapRatio = (imageHeight - region.bottom).coerceAtLeast(0).toFloat() / imageHeight.coerceAtLeast(1).toFloat()
+    return buildList {
+        if (xStartRatio > 0.24f && widthRatio < 0.70f) add(40f)
+        if (scoreBreakdown.containsYAxisRegionScore <= 0f) add(18f)
+        if (scoreBreakdown.containsYTickLabelsScore <= 0f) add(14f)
+        if (bottomGapRatio > 0.10f) add(8f)
+        if ("plot_area.signal_extends_above_detected_y_axis" in warnings) add(24f)
+        if ("axis_tick_geometry.y_axis_not_found" in warnings) add(8f)
+    }.fold(0f) { acc, value -> acc + value }
 }
 
 private fun buildIdentityRectification(

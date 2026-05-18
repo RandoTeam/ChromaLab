@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 actual class PeakLabelEvidenceReader actual constructor() {
     private val visionBackend = ActiveVisionModelBackend()
@@ -34,6 +35,7 @@ actual class PeakLabelEvidenceReader actual constructor() {
             val crops = buildPeakLabelCropRegions(source.width, source.height, graphPanelBounds, plotAreaBounds)
             val labels = mutableListOf<PeakLabelEvidence>()
             val cropPaths = mutableListOf<String>()
+            val fallbackWarnings = mutableListOf<String>()
             crops.forEachIndexed { index, crop ->
                 val file = File(dir, "peak_label_${index.toString().padStart(2, '0')}_${crop.kind}.png")
                 val bitmap = Bitmap.createBitmap(
@@ -90,29 +92,40 @@ actual class PeakLabelEvidenceReader actual constructor() {
                         },
                     )
                 }
-                val vlmLabel = if (saved && shouldUseVlmFallback(mlKitLabels)) {
-                    visionBackend.readLocalTextCrop(
-                        cropImagePath = file.absolutePath,
-                        context = VisionLocalTextCropContext(
-                            cropKind = crop.kind,
-                            insidePlotArea = crop.insidePlotArea,
-                            graphContext = "graphPanel=${graphPanelBounds.width}x${graphPanelBounds.height};plotArea=${plotAreaBounds.width}x${plotAreaBounds.height}",
-                        ),
-                    )?.toPeakLabelEvidence(
+                val vlmResult = if (saved && crop.insidePlotArea && shouldUseVlmFallback(mlKitLabels)) {
+                    withTimeoutOrNull(LOCAL_CROP_VLM_TIMEOUT_MS) {
+                        visionBackend.readLocalTextCrop(
+                            cropImagePath = file.absolutePath,
+                            context = VisionLocalTextCropContext(
+                                cropKind = crop.kind,
+                                insidePlotArea = crop.insidePlotArea,
+                                graphContext = "graphPanel=${graphPanelBounds.width}x${graphPanelBounds.height};plotArea=${plotAreaBounds.width}x${plotAreaBounds.height}",
+                            ),
+                        )
+                    }.also {
+                        if (it == null) fallbackWarnings += "peak_label_ocr.vlm_local_crop_timeout:${crop.kind}"
+                    }
+                } else {
+                    if (saved && !crop.insidePlotArea && shouldUseVlmFallback(mlKitLabels)) {
+                        fallbackWarnings += "peak_label_ocr.vlm_skipped_non_plot_text_band:${crop.kind}"
+                    }
+                    null
+                }
+                val vlmLabel = vlmResult?.toPeakLabelEvidence(
                         crop = crop,
                         graphPanel = graphPanelBounds,
                         plotArea = plotAreaBounds,
                         cropPath = file.absolutePath,
                     )
-                } else {
-                    null
-                }
                 bitmap.recycle()
                 labels += mergeMlKitAndVlmEvidence(mlKitLabels, vlmLabel)
             }
             val mergedLabels = labels
                 .distinctBy { "${it.normalizedText}:${it.parsedRetentionTime}:${it.labelBoxPx?.x}:${it.labelBoxPx?.y}:${it.source}" }
                 .sortedBy { it.parsedRetentionTime ?: Double.POSITIVE_INFINITY }
+            val peakAnnotationLabels = mergedLabels.filter {
+                it.textClassification == PeakLabelTextClassification.PEAK_ANNOTATION
+            }
             val cropOverlay = savePeakLabelOverlay(
                 source = source,
                 outputDir = dir,
@@ -130,12 +143,12 @@ actual class PeakLabelEvidenceReader actual constructor() {
                 showLabels = true,
             )
             PeakLabelEvidenceResult(
-                labels = mergedLabels,
+                labels = peakAnnotationLabels,
                 cropPaths = cropPaths.distinct(),
                 cropBoundsOverlayPath = cropOverlay,
                 textClassificationOverlayPath = classificationOverlay,
                 warnings = buildList {
-                    if (labels.none { it.textClassification == PeakLabelTextClassification.PEAK_ANNOTATION }) {
+                    if (peakAnnotationLabels.isEmpty()) {
                         add("peak_label_ocr.no_peak_annotations")
                     }
                     if (cropPaths.isEmpty()) add("peak_label_ocr.no_crops_written")
@@ -143,6 +156,7 @@ actual class PeakLabelEvidenceReader actual constructor() {
                     if (labels.any { it.source == PeakLabelEvidenceSource.VLM || it.source == PeakLabelEvidenceSource.BOTH }) {
                         add("peak_label_ocr.vlm_local_crop_fallback_used")
                     }
+                    addAll(fallbackWarnings)
                 }.distinct(),
             )
         } finally {
@@ -214,7 +228,7 @@ private fun VisionLocalTextCropResult.toPeakLabelEvidence(
     cropPath: String,
 ): PeakLabelEvidence {
     val parsed = parsedRetentionTime ?: parsePeakRetentionLabel(rawText)
-    val classification = textType.toPeakLabelTextClassification(parsed)
+    val classification = classifyVlmTextRegion(rawText, textType, parsed, crop, plotArea)
     return PeakLabelEvidence(
         rawText = rawText,
         normalizedText = normalizedText.ifBlank { normalizePeakLabelText(rawText) },
@@ -262,6 +276,26 @@ private fun VisionTextRegionType.toPeakLabelTextClassification(parsed: Double?):
             PeakLabelTextClassification.UNKNOWN_TEXT
         }
     }
+
+private fun classifyVlmTextRegion(
+    text: String,
+    textType: VisionTextRegionType,
+    parsed: Double?,
+    crop: PeakLabelCropRegion,
+    plotArea: GraphRegion,
+): PeakLabelTextClassification {
+    if (isTitleOrIonChannelText(text)) return PeakLabelTextClassification.TITLE_OR_CHANNEL
+    return when (textType) {
+        VisionTextRegionType.UNKNOWN_TEXT -> classifyTextElement(
+            text = text,
+            parsedRetentionTime = parsed,
+            elementRegion = crop.region,
+            crop = crop,
+            plotArea = plotArea,
+        )
+        else -> textType.toPeakLabelTextClassification(parsed)
+    }
+}
 
 private fun mergeMlKitAndVlmEvidence(
     mlKitLabels: List<PeakLabelEvidence>,
@@ -360,6 +394,7 @@ private fun classifyTextElement(
     val nearPlot = centerX in (plotArea.x - plotArea.width * 0.08f)..(plotArea.right + plotArea.width * 0.08f) &&
         centerY in (plotArea.y - plotArea.height * 0.10f)..(plotArea.bottom + plotArea.height * 0.10f)
     return when {
+        isTitleOrIonChannelText(normalized) -> PeakLabelTextClassification.TITLE_OR_CHANNEL
         parsedRetentionTime != null && (insidePlot || nearPlot) -> PeakLabelTextClassification.PEAK_ANNOTATION
         normalized.contains("time") ||
             normalized.contains("время") ||
@@ -367,18 +402,19 @@ private fun classifyTextElement(
             normalized.contains("intensity") ||
             normalized.contains("интенсив") -> PeakLabelTextClassification.AXIS_LABEL
         parsedRetentionTime != null && !crop.insidePlotArea -> PeakLabelTextClassification.TICK_LABEL
-        normalized.contains("ion") ||
-            normalized.contains("tic") ||
-            normalized.contains("xic") ||
-            normalized.contains("data.ms") ||
-            normalized.contains(".d") -> PeakLabelTextClassification.TITLE_OR_CHANNEL
         !crop.insidePlotArea -> PeakLabelTextClassification.PAGE_TEXT
         else -> PeakLabelTextClassification.UNKNOWN_TEXT
     }
 }
 
+private fun isTitleOrIonChannelText(text: String): Boolean {
+    return PeakLabelTextHeuristics.isTitleOrIonChannelText(text)
+}
+
 private fun normalizePeakLabelText(text: String): String =
-    text.trim().replace(Regex("\\s+"), " ")
+    PeakLabelTextHeuristics.normalize(text)
+
+private const val LOCAL_CROP_VLM_TIMEOUT_MS = 6_000L
 
 private fun savePeakLabelOverlay(
     source: Bitmap,

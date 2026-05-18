@@ -56,6 +56,23 @@ data class PeakLabelEvidenceResult(
     val warnings: List<String> = emptyList(),
 )
 
+object PeakLabelTextHeuristics {
+    fun normalize(text: String): String = text.trim().replace(Regex("\\s+"), " ")
+
+    fun isTitleOrIonChannelText(text: String): Boolean {
+        val normalized = normalize(text).lowercase()
+        val hasChannelKeyword = normalized.contains("ion") ||
+            normalized.contains("m/z") ||
+            normalized.contains("tic") ||
+            normalized.contains("xic") ||
+            normalized.contains("data.ms") ||
+            normalized.contains(".d")
+        val hasIonRange = Regex("""\(?\s*\d{1,4}(?:[.,]\d+)?\s*(?:to|-|–)\s*\d{1,4}(?:[.,]\d+)?\s*\)?""")
+            .containsMatchIn(normalized)
+        return hasChannelKeyword || hasIonRange
+    }
+}
+
 expect class PeakLabelEvidenceReader() {
     suspend fun readPeakLabels(
         imagePath: String,

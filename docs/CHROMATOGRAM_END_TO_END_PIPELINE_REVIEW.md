@@ -650,6 +650,28 @@ auto-export `runtime_evidence_package`, validator JSON, and validator Markdown
 artifacts for review. See
 `docs/CHROMATOGRAM_REAL_ANDROID_E332_ROI_MULTIPLICITY.md`.
 
+The follow-up Android run on commit `9a0674d6` proved that one graph was emitted,
+but the selected graphPanel was still a right-side subregion (`x=256 y=36
+w=284 h=256`) of an already-cropped white chart (`542x353`). The current
+contract now treats graphPanel completeness as part of deterministic scoring:
+left Y-axis/y-tick preservation, bottom X-axis/x-tick preservation, title/ion
+preservation, full horizontal trace coverage, left/bottom margin safety,
+subregion penalty, axis viability, and calibration viability are recorded in
+`RoiCandidateScoreBreakdown`. A candidate that emits
+`plot_area.signal_extends_above_detected_y_axis` or starts far to the right while
+a larger chart panel exists is no longer allowed to win simply because it has
+local line/tick-like density. See
+`docs/CHROMATOGRAM_REAL_ANDROID_9A0674D6_GRAPH_PANEL_AUDIT.md`.
+
+Title/channel OCR is also separated from peak-label recovery. Text such as
+`Ion 71.00 (70.70 to 71.70)` or a title tail like
+`71.70); BELIY TIGR_1.Data.ms` is `TITLE_OR_CHANNEL`, never
+`PEAK_ANNOTATION`; it cannot create `PeakLabelEvidence` or a recovered peak.
+Peak-label recovery remains limited to local crop evidence that passes signal
+verification. VLM local-crop fallback is limited to plot annotation crops and
+bounded by timeout; it is not run on graph title/channel bands during ROI or
+graphPanel selection.
+
 VLM may rank or warn about candidate overlays, read title/ion/labels, or explain
 why a crop is too tight or too wide. VLM must not be the only ROI source, must
 not provide exact coordinates for calculations, and must not block deterministic
