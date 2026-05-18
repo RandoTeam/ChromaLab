@@ -1,6 +1,9 @@
 package com.chromalab.feature.processing.calibration
 
 import com.chromalab.feature.processing.axis.AxesResult
+import com.chromalab.feature.processing.geometry.CalibrationAnchorEvidence
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 
@@ -14,12 +17,20 @@ internal fun AxisOcrResult?.buildAutomaticXAxisCalibration(
 
     val anchors = result.xCalibrationAnchors(graphRegion)
     val calibration = if (anchors.size >= 2) {
-        val first = anchors.first()
-        val last = anchors.last()
-        LinearCalibration(
-            point1 = CalibrationPoint(first.sourceX - graphRegion.x.toFloat(), first.value),
-            point2 = CalibrationPoint(last.sourceX - graphRegion.x.toFloat(), last.value),
+        val fit = AxisCalibrationFitter().fit(
+            axis = GeometryAxis.X,
+            anchors = anchors.map {
+                CalibrationAnchorEvidence(
+                    axis = GeometryAxis.X,
+                    tickPixelPosition = it.sourceX - graphRegion.x.toFloat(),
+                    value = it.value.toDouble(),
+                    confidence = it.confidence,
+                )
+            },
+            axisLengthPx = graphRegion.width.toFloat(),
         )
+        if (fit.status == CalibrationFitStatus.INVALID) return null
+        fit.toLinearCalibrationOrNull() ?: return null
     } else {
         val leftPx = ((axes?.origin?.x ?: axes?.xAxis?.x1 ?: graphRegion.x.toFloat()) - graphRegion.x)
             .coerceIn(0f, graphRegion.width.toFloat())
@@ -53,12 +64,20 @@ internal fun AxisOcrResult?.buildAutomaticYAxisCalibration(
 
     val anchors = result.yCalibrationAnchors(graphRegion)
     val calibration = if (anchors.size >= 2) {
-        val bottom = anchors.first()
-        val top = anchors.last()
-        LinearCalibration(
-            point1 = CalibrationPoint(bottom.sourceY - graphRegion.y.toFloat(), bottom.value),
-            point2 = CalibrationPoint(top.sourceY - graphRegion.y.toFloat(), top.value),
+        val fit = AxisCalibrationFitter().fit(
+            axis = GeometryAxis.Y,
+            anchors = anchors.map {
+                CalibrationAnchorEvidence(
+                    axis = GeometryAxis.Y,
+                    tickPixelPosition = it.sourceY - graphRegion.y.toFloat(),
+                    value = it.value.toDouble(),
+                    confidence = it.confidence,
+                )
+            },
+            axisLengthPx = graphRegion.height.toFloat(),
         )
+        if (fit.status == CalibrationFitStatus.INVALID) return null
+        fit.toLinearCalibrationOrNull() ?: return null
     } else {
         val bottomPx = ((axes?.origin?.y ?: axes?.xAxis?.y1 ?: (graphRegion.y + graphRegion.height).toFloat()) - graphRegion.y)
             .coerceIn(0f, graphRegion.height.toFloat())
