@@ -12,6 +12,7 @@ import com.chromalab.feature.processing.preprocess.ImagePreprocessor
 import com.chromalab.feature.processing.preprocess.PreprocessingParams
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
+import com.chromalab.feature.processing.curve.CurveMaskResult
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveExtractionResult
 import com.chromalab.feature.processing.curve.CurvePoint
@@ -296,6 +297,10 @@ class AutoSweepEngine {
             println("SWEEP[ABORT] No graph region found (both VLM and CV failed)")
             return emptyList()
         }
+        val curveRegion = geometryResult?.plotAreaBounds?.region ?: region
+        if (curveRegion != region) {
+            println("SWEEP[PLOT_AREA] curve extraction uses plotArea=$curveRegion inside graphPanel=$region")
+        }
 
         onProgress(SweepProgress(0, configs.size, "OCR осей", "ocr"))
         val ocrResult = try {
@@ -347,11 +352,18 @@ class AutoSweepEngine {
             // produces different edges for Canny detection
             onProgress(SweepProgress(index + 1, configs.size, config.description, "curve"))
             val curveInputPath = curveInputPath(imagePath, prepResult, config.inputVariant)
+            var maskResult: CurveMaskResult? = null
             val curveResult = try {
                 val axes = axesRes ?: fallbackAxes()
-                val mask = curveMaskPreparer.prepare(curveInputPath, region, axes, configDir)
+                val mask = curveMaskPreparer.prepare(curveInputPath, curveRegion, axes, configDir)
+                maskResult = mask
                 val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: curveInputPath
-                curveExtractor.extract(maskPath, region.width, region.height, configDir)
+                curveExtractor.extract(
+                    maskPath = maskPath,
+                    maskWidth = mask.maskWidth.takeIf { it > 0 } ?: curveRegion.width,
+                    maskHeight = mask.maskHeight.takeIf { it > 0 } ?: curveRegion.height,
+                    outputDir = configDir,
+                )
                     .scaledCoordinates(mask.coordinateScale)
             } catch (e: Exception) {
                 println("SWEEP[${config.name}] curve extraction failed: ${e.message}")
@@ -359,9 +371,9 @@ class AutoSweepEngine {
             }
 
             // Score: measured graph + axis + OCR + curve quality.
-            val curveScore = calculateCurveScore(curveResult, region)
+            val curveScore = calculateCurveScore(curveResult, curveRegion)
             val totalScore = graphScore.first + axisScore.first + ocrBaseScore.first + curveScore.first
-            val breakdown = "${graphScore.second}, ${axisScore.second}, ${ocrBaseScore.second}, variant=${config.inputVariant.name.lowercase()}, ${curveScore.second}"
+            val breakdown = "${graphScore.second}, ${axisScore.second}, ${ocrBaseScore.second}, curveRegion=plotArea, variant=${config.inputVariant.name.lowercase()}, ${curveScore.second}"
             println(
                 "SWEEP[${config.name}] total=$totalScore " +
                     "(graph=${graphScore.first} + axes=${axisScore.first} + ocr=${ocrBaseScore.first} + curve=${curveScore.first})",
@@ -376,7 +388,7 @@ class AutoSweepEngine {
                     ocrResult = ocrResult,
                     axesResult = axesRes,
                     curveResult = curveResult,
-                    geometryResult = geometryResult,
+                    geometryResult = geometryResult.withCurveArtifacts(maskResult, curveResult, configDir),
                     score = totalScore,
                     scoreBreakdown = breakdown,
                 )
@@ -681,6 +693,34 @@ class AutoSweepEngine {
             imageHeight = imageHeight,
             warnings = warnings + listOf("graph.regions_from_geometry_pipeline"),
             timestamp = System.currentTimeMillis(),
+        )
+    }
+
+    private fun GeometryPipelineResult?.withCurveArtifacts(
+        mask: CurveMaskResult?,
+        curve: CurveExtractionResult?,
+        outputDir: String,
+    ): GeometryPipelineResult? {
+        val result = this ?: return null
+        val artifactWarnings = buildList {
+            addAll(mask?.traceArtifactAudit?.warnings.orEmpty())
+            addAll(mask?.traceArtifactAudit?.cleanupHypothesisWarnings.orEmpty())
+            addAll(curve?.warnings.orEmpty())
+        }.distinct()
+        return result.copy(
+            trace = result.trace.copy(
+                plotAreaCropPath = mask?.plotAreaCropPath ?: result.trace.plotAreaCropPath,
+                curveMaskRawPath = mask?.rawMaskPath ?: result.trace.curveMaskRawPath,
+                curveMaskCleanPath = mask?.cleanMaskPath ?: result.trace.curveMaskCleanPath,
+                curveRejectedComponentsPath = mask?.traceArtifactAudit?.artifactMaskPath
+                    ?: result.trace.curveRejectedComponentsPath,
+                curveSelectedComponentPath = mask?.traceArtifactAudit?.cleanupHypothesisMaskPath
+                    ?: result.trace.curveSelectedComponentPath,
+                curveSkeletonPath = "$outputDir/centerline_parity_overlay.png",
+                finalCenterlineOverlayPath = curve?.maskImagePath ?: result.trace.finalCenterlineOverlayPath,
+                warnings = (result.trace.warnings + artifactWarnings).distinct(),
+            ),
+            warnings = (result.warnings + artifactWarnings).distinct(),
         )
     }
 

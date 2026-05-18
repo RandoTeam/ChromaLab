@@ -56,6 +56,44 @@ The important product change is that missing crop/perspective/calibration eviden
 now visible to the report layer. The app should no longer silently promote identity
 geometry or weak two-point assumptions into a release-quality scientific report.
 
+## Operational Geometry Update - 2026-05-18
+
+The next slice made the geometry contract affect actual processing, not only report
+metadata.
+
+Implemented:
+
+- Runtime auto-sweep now sends `PlotAreaBounds` into `CurveMaskPreparer` and
+  `CurveExtractor`; `GraphPanelBounds` remains the source for panel-level OCR and
+  report/source context.
+- Curve extraction now records a `plot_area_crop.png` artifact before mask creation.
+  This makes it auditable whether tick labels, captions, title text, or page margins
+  entered the curve mask.
+- `GeometryPipelineRunner` now evaluates a retry ladder of ROI candidates instead of
+  selecting the first/best preliminary candidate and stopping. Candidate selection is
+  based on final status priority:
+  `SCIENTIFIC_READY > REVIEW_READY > DIAGNOSTIC_ONLY`, then deterministic score.
+- Candidate scoring now carries an explicit curve-coverage score field in addition to
+  axis visibility, tick visibility, plot frame confidence, trace density, margin
+  safety, aspect ratio, and calibration viability.
+- `GeometryTrace` now has a plot-area crop path and receives curve mask / centerline
+  artifact paths from the selected sweep variant.
+
+Invariant preserved:
+
+- VLM may still provide a rough graph-region hint and text values, but pixel geometry
+  used for calibration comes from deterministic axis/tick positions. OCR/VLM values
+  without a matched deterministic tick remain semantic evidence only.
+
+Still open:
+
+- Local OCR crops around every deterministic tick need a platform artifact writer and
+  OCR call path; the current runner pairs OCR values to deterministic tick positions
+  but does not yet persist every local crop.
+- Sparse/fragmented trace component scoring still needs more work. The current
+  failing bench cases are classified in
+  `docs/CHROMATOGRAM_GEOMETRY_FAILURE_CLASSIFICATION.md`.
+
 ## Scope
 
 Reviewed areas:

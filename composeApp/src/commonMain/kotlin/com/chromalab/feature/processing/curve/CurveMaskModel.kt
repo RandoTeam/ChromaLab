@@ -9,6 +9,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class CurveMaskResult(
+    /** Path to the cropped plot/graph area used as mask input */
+    val plotAreaCropPath: String? = null,
     /** Path to raw binary mask (before axis/grid suppression) */
     val rawMaskPath: String?,
     /** Path to cleaned binary mask (after suppression) */

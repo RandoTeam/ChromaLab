@@ -64,6 +64,11 @@ actual class CurveMaskPreparer actual constructor() {
 
         val w = cropped.width
         val h = cropped.height
+        val dir = File(outputDir).also { it.mkdirs() }
+        val plotAreaCropPath = File(dir, "plot_area_crop.png").absolutePath
+        FileOutputStream(plotAreaCropPath).use { fos ->
+            cropped.compress(Bitmap.CompressFormat.PNG, 100, fos)
+        }
         val pixels = IntArray(w * h)
         cropped.getPixels(pixels, 0, w, 0, 0, w, h)
         cropped.recycle()
@@ -113,7 +118,6 @@ actual class CurveMaskPreparer actual constructor() {
         println("MASK[3-COMBINED] pixels=$rawCount")
 
         // Save raw mask
-        val dir = File(outputDir).also { it.mkdirs() }
         val rawPath = File(dir, "mask_raw.png").absolutePath
         saveMask(rawMask, w, h, rawPath)
 
@@ -153,6 +157,7 @@ actual class CurveMaskPreparer actual constructor() {
         saveMask(cleanMask, w, h, cleanPath)
 
         return CurveMaskResult(
+            plotAreaCropPath = plotAreaCropPath,
             rawMaskPath = rawPath,
             cleanMaskPath = cleanPath,
             graphRegion = graphRegion,

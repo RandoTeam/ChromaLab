@@ -396,6 +396,7 @@ fun ProcessingFlowScreen(
                         if (xCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
+                            val calibrationRegion = geometryResult?.plotAreaBounds?.region ?: selectedRegion
                             xCalibration = geometryResult
                                 ?.xCalibrationFit
                                 ?.takeIf { it.status != CalibrationFitStatus.INVALID }
@@ -408,7 +409,7 @@ fun ProcessingFlowScreen(
                                         timestamp = System.currentTimeMillis(),
                                     )
                                 }
-                                ?: ocr.buildAutomaticXAxisCalibration(selectedRegion, axes)
+                                ?: ocr.buildAutomaticXAxisCalibration(calibrationRegion, axes)
                             if (xCalibration != null) {
                                 val cal = xCalibration!!.calibration
                                 println("PIPELINE[X_CAL] auto: px1=${cal.point1.pixelPos}->${cal.point1.realValue}, px2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${xCalibration!!.unit}")
@@ -423,6 +424,7 @@ fun ProcessingFlowScreen(
                         if (yCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
+                            val calibrationRegion = geometryResult?.plotAreaBounds?.region ?: selectedRegion
                             yCalibration = geometryResult
                                 ?.yCalibrationFit
                                 ?.takeIf { it.status != CalibrationFitStatus.INVALID }
@@ -435,7 +437,7 @@ fun ProcessingFlowScreen(
                                         timestamp = System.currentTimeMillis(),
                                     )
                                 }
-                                ?: ocr.buildAutomaticYAxisCalibration(selectedRegion, axes)
+                                ?: ocr.buildAutomaticYAxisCalibration(calibrationRegion, axes)
                             if (yCalibration != null) {
                                 val cal = yCalibration!!.calibration
                                 println("PIPELINE[Y_CAL] auto: py1=${cal.point1.pixelPos}->${cal.point1.realValue}, py2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${yCalibration!!.unit}")
@@ -447,7 +449,7 @@ fun ProcessingFlowScreen(
                                 xCalibration = xCalibration,
                                 yCalibration = yCalibration,
                                 axesResult = axes,
-                                selectedRegion = selectedRegion,
+                                selectedRegion = calibrationRegion,
                             ) ?: failAutomaticAxisCalibration("confirmed X and Y calibration are required before signal conversion")
                         }
                     }
@@ -463,16 +465,19 @@ fun ProcessingFlowScreen(
                             // CLAHE improves edge detection for Canny in CurveMaskPreparer.
                             val inputForMask = preprocessingResult?.contrastEnhancedPath ?: currentImagePath
                             val graphOutputDir = graphProcessingOutputDir(outputDir, currentGraphIndex)
-                            println("PIPELINE[CURVE] input=$inputForMask, region=$selectedRegion")
+                            val curveRegion = geometryResult?.plotAreaBounds?.region ?: selectedRegion
+                            println("PIPELINE[CURVE] input=$inputForMask, plotArea=$curveRegion, graphPanel=$selectedRegion")
                             val mask = curveMaskPreparer.prepare(
-                                inputForMask, selectedRegion,
+                                inputForMask, curveRegion,
                                 axesResult!!, graphOutputDir,
                             )
                             println("PIPELINE[CURVE] mask: raw=${mask.rawMaskPath}, clean=${mask.cleanMaskPath}")
                             val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: inputForMask
                             curveExtractionResult = curveExtractor.extract(
-                                maskPath, selectedRegion.width,
-                                selectedRegion.height, graphOutputDir,
+                                maskPath,
+                                mask.maskWidth.takeIf { it > 0 } ?: curveRegion.width,
+                                mask.maskHeight.takeIf { it > 0 } ?: curveRegion.height,
+                                graphOutputDir,
                             ).scaledCoordinates(mask.coordinateScale)
                             curvePoints = curveExtractionResult?.points ?: emptyList()
                             println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")

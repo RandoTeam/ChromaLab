@@ -27,6 +27,9 @@ actual class CurveMaskPreparer actual constructor() {
                 gray[y * width + x] = source.getRGB(region.x + x, region.y + y).toGray()
             }
         }
+        val dir = File(outputDir).also { it.mkdirs() }
+        val plotAreaCropPath = File(dir, "plot_area_crop.png").absolutePath
+        ImageIO.write(source.getSubimage(region.x, region.y, width, height), "png", File(plotAreaCropPath))
         source.flush()
 
         val adaptiveMask = adaptiveThreshold(gray, width, height, blockSize = 31, c = 9)
@@ -54,7 +57,6 @@ actual class CurveMaskPreparer actual constructor() {
         if (removedSmall) suppressions += "small_components"
         val cleanCount = cleanMask.count { it }
 
-        val dir = File(outputDir).also { it.mkdirs() }
         val rawPath = File(dir, "mask_raw.png").absolutePath
         val cleanPath = File(dir, "mask_clean.png").absolutePath
         val traceArtifactPath = File(dir, "trace_artifacts.png").absolutePath
@@ -72,6 +74,7 @@ actual class CurveMaskPreparer actual constructor() {
         saveMask(cleanMask, width, height, cleanPath)
 
         return CurveMaskResult(
+            plotAreaCropPath = plotAreaCropPath,
             rawMaskPath = rawPath,
             cleanMaskPath = cleanPath,
             graphRegion = region,

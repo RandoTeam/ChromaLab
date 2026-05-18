@@ -95,86 +95,47 @@ class GeometryPipelineRunner(
             vlmGraphResult = vlmHintResult,
             preservePanelLabels = preservePanelLabels,
         )
-        val selected = candidates.maxByOrNull { it.scoreBreakdown.total }
-        val selectedPlot = selected?.let {
-            plotAreaDetector.detect(imagePath, it.region, imageWidth, imageHeight)
-        }?.takeIf { it.detected && it.plotArea != null }?.let {
-            PlotAreaBounds(
-                region = it.plotArea!!,
-                parentGraphPanelRegion = it.panelRegion,
-                confidence = (selected.confidence * 0.85f + 0.10f).coerceIn(0f, 1f),
-                warnings = it.warnings,
-            )
-        }
-
-        val axes = selected?.let {
-            runCatching { axisDetector.detect(imagePath, selectedPlot?.region ?: it.region) }.getOrNull()
-        }
-        val axisTick = selected?.let {
-            runCatching {
-                axisTickGeometryDetector.detect(
+        val evaluatedCandidates = candidates
+            .take(MAX_GEOMETRY_RETRY_CANDIDATES)
+            .mapIndexed { retryIndex, candidate ->
+                evaluateCandidate(
                     imagePath = imagePath,
-                    graphIndex = 1,
-                    panelRegion = it.region,
-                    plotRegion = selectedPlot?.region,
+                    imageWidth = imageWidth,
+                    imageHeight = imageHeight,
+                    candidate = candidate,
+                    retryIndex = retryIndex,
+                    runTickOcr = runTickOcr,
                 )
-            }.getOrNull()
-        }
-        val axisGeometry = axes.toAxisGeometry(axisTick)
-        val tickGeometry = axisTick.toTickGeometry()
-        val axisOcr = if (runTickOcr && selected != null) {
-            runCatching { chartReader.readAxisLabels(imagePath, selected.region) }.getOrNull()
-        } else {
-            null
-        }
-        val tickOcr = axisOcr.toTickOcrResult(selected?.region, tickGeometry)
-        val xFit = calibrationFitter.fit(
-            axis = GeometryAxis.X,
-            anchors = tickOcr.acceptedItems
-                .filter { it.axis == GeometryAxis.X && it.parsedNumericValue != null && it.tickPixelPosition != null }
-                .map {
-                    CalibrationAnchorEvidence(
-                        axis = GeometryAxis.X,
-                        tickPixelPosition = (it.tickPixelPosition!! - (selectedPlot?.region?.x ?: 0)).coerceAtLeast(0f),
-                        value = it.parsedNumericValue!!,
-                        rawText = it.rawText,
-                        localCropPath = it.localCropPath,
-                        confidence = it.confidence,
-                    )
-                },
-            axisLengthPx = selectedPlot?.region?.width?.toFloat() ?: selected?.region?.width?.toFloat(),
-            geometryCleanliness = axisGeometry.axisConfidence,
+            }
+        val selectedEvaluation = evaluatedCandidates.maxWithOrNull(
+            compareBy<GeometryCandidateEvaluation> { it.reportStatus.selectionPriority }
+                .thenBy { it.selectionScore },
         )
-        val yFit = calibrationFitter.fit(
-            axis = GeometryAxis.Y,
-            anchors = tickOcr.acceptedItems
-                .filter { it.axis == GeometryAxis.Y && it.parsedNumericValue != null && it.tickPixelPosition != null }
-                .map {
-                    CalibrationAnchorEvidence(
-                        axis = GeometryAxis.Y,
-                        tickPixelPosition = (it.tickPixelPosition!! - (selectedPlot?.region?.y ?: 0)).coerceAtLeast(0f),
-                        value = it.parsedNumericValue!!,
-                        rawText = it.rawText,
-                        localCropPath = it.localCropPath,
-                        confidence = it.confidence,
-                    )
-                },
-            axisLengthPx = selectedPlot?.region?.height?.toFloat() ?: selected?.region?.height?.toFloat(),
-            geometryCleanliness = axisGeometry.axisConfidence,
+        val selected = selectedEvaluation?.panel
+        val selectedPlot = selectedEvaluation?.plot
+        val axisGeometry = selectedEvaluation?.axisGeometry ?: (null as AxesResult?).toAxisGeometry(null)
+        val tickGeometry = selectedEvaluation?.tickGeometry ?: (null as AxisTickGeometryResult?).toTickGeometry()
+        val tickOcr = selectedEvaluation?.tickOcr ?: TickOcrResult(
+            warnings = listOf("tick_ocr.not_available"),
+            timestamp = System.currentTimeMillis(),
         )
-        val reportStatus = when {
-            selected == null || selectedPlot == null -> GeometryReportStatus.DIAGNOSTIC_ONLY
-            xFit.status == CalibrationFitStatus.VALID && yFit.status == CalibrationFitStatus.VALID ->
-                GeometryReportStatus.SCIENTIFIC_READY
-            xFit.status == CalibrationFitStatus.INVALID || yFit.status == CalibrationFitStatus.INVALID ->
-                GeometryReportStatus.DIAGNOSTIC_ONLY
-            else -> GeometryReportStatus.REVIEW_READY
-        }
+        val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
+        val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
+        val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
         val warnings = buildList {
             addAll(provenance.warnings)
             addAll(rectification.warnings)
             if (selected == null) add("geometry.roi.no_candidate_selected")
             if (selectedPlot == null) add("geometry.plot_area.not_validated")
+            if (selectedEvaluation != null && selectedEvaluation.retryIndex > 0) {
+                add("geometry.retry_ladder_selected_candidate_${selectedEvaluation.retryIndex + 1}")
+            }
+            if (reportStatus == GeometryReportStatus.DIAGNOSTIC_ONLY && evaluatedCandidates.size > 1) {
+                add("geometry.retry_ladder_exhausted")
+            }
+            if (candidates.size > evaluatedCandidates.size) {
+                add("geometry.retry_ladder_limited:${evaluatedCandidates.size}/${candidates.size}")
+            }
             addAll(selected?.warnings.orEmpty())
             addAll(selectedPlot?.warnings.orEmpty())
             addAll(axisGeometry.warnings)
@@ -219,6 +180,101 @@ class GeometryPipelineRunner(
             xCalibrationFit = xFit,
             yCalibrationFit = yFit,
             warnings = warnings,
+        )
+    }
+
+    private suspend fun evaluateCandidate(
+        imagePath: String,
+        imageWidth: Int,
+        imageHeight: Int,
+        candidate: GraphPanelBounds,
+        retryIndex: Int,
+        runTickOcr: Boolean,
+    ): GeometryCandidateEvaluation {
+        val plot = runCatching {
+            plotAreaDetector.detect(imagePath, candidate.region, imageWidth, imageHeight)
+        }.getOrNull()?.takeIf { it.detected && it.plotArea != null }?.let {
+            PlotAreaBounds(
+                region = it.plotArea!!,
+                parentGraphPanelRegion = it.panelRegion,
+                confidence = (candidate.confidence * 0.85f + 0.10f).coerceIn(0f, 1f),
+                warnings = it.warnings,
+            )
+        }
+        val axes = runCatching {
+            axisDetector.detect(imagePath, plot?.region ?: candidate.region)
+        }.getOrNull()
+        val axisTick = runCatching {
+            axisTickGeometryDetector.detect(
+                imagePath = imagePath,
+                graphIndex = 1,
+                panelRegion = candidate.region,
+                plotRegion = plot?.region,
+            )
+        }.getOrNull()
+        val axisGeometry = axes.toAxisGeometry(axisTick)
+        val tickGeometry = axisTick.toTickGeometry()
+        val axisOcr = if (runTickOcr) {
+            runCatching { chartReader.readAxisLabels(imagePath, candidate.region) }.getOrNull()
+        } else {
+            null
+        }
+        val tickOcr = axisOcr.toTickOcrResult(candidate.region, tickGeometry)
+        val xFit = calibrationFitter.fit(
+            axis = GeometryAxis.X,
+            anchors = tickOcr.acceptedItems
+                .filter { it.axis == GeometryAxis.X && it.parsedNumericValue != null && it.tickPixelPosition != null }
+                .map {
+                    CalibrationAnchorEvidence(
+                        axis = GeometryAxis.X,
+                        tickPixelPosition = (it.tickPixelPosition!! - (plot?.region?.x ?: 0)).coerceAtLeast(0f),
+                        value = it.parsedNumericValue!!,
+                        rawText = it.rawText,
+                        localCropPath = it.localCropPath,
+                        confidence = it.confidence,
+                    )
+                },
+            axisLengthPx = plot?.region?.width?.toFloat() ?: candidate.region.width.toFloat(),
+            geometryCleanliness = axisGeometry.axisConfidence,
+        )
+        val yFit = calibrationFitter.fit(
+            axis = GeometryAxis.Y,
+            anchors = tickOcr.acceptedItems
+                .filter { it.axis == GeometryAxis.Y && it.parsedNumericValue != null && it.tickPixelPosition != null }
+                .map {
+                    CalibrationAnchorEvidence(
+                        axis = GeometryAxis.Y,
+                        tickPixelPosition = (it.tickPixelPosition!! - (plot?.region?.y ?: 0)).coerceAtLeast(0f),
+                        value = it.parsedNumericValue!!,
+                        rawText = it.rawText,
+                        localCropPath = it.localCropPath,
+                        confidence = it.confidence,
+                    )
+                },
+            axisLengthPx = plot?.region?.height?.toFloat() ?: candidate.region.height.toFloat(),
+            geometryCleanliness = axisGeometry.axisConfidence,
+        )
+        val reportStatus = when {
+            plot == null -> GeometryReportStatus.DIAGNOSTIC_ONLY
+            xFit.status == CalibrationFitStatus.VALID && yFit.status == CalibrationFitStatus.VALID ->
+                GeometryReportStatus.SCIENTIFIC_READY
+            xFit.status == CalibrationFitStatus.INVALID || yFit.status == CalibrationFitStatus.INVALID ->
+                GeometryReportStatus.DIAGNOSTIC_ONLY
+            else -> GeometryReportStatus.REVIEW_READY
+        }
+        val calibrationScore = xFit.confidence * 18f + yFit.confidence * 18f
+        val tickScore = (tickGeometry.xTicks.size.coerceAtMost(8) + tickGeometry.yTicks.size.coerceAtMost(8)) * 1.5f
+        return GeometryCandidateEvaluation(
+            panel = candidate,
+            plot = plot,
+            axisGeometry = axisGeometry,
+            tickGeometry = tickGeometry,
+            tickOcr = tickOcr,
+            xFit = xFit,
+            yFit = yFit,
+            reportStatus = reportStatus,
+            retryIndex = retryIndex,
+            selectionScore = candidate.scoreBreakdown.total + calibrationScore + tickScore,
         )
     }
 
@@ -304,6 +360,28 @@ private data class RawRoiCandidate(
     val warnings: List<String> = emptyList(),
 )
 
+private data class GeometryCandidateEvaluation(
+    val panel: GraphPanelBounds,
+    val plot: PlotAreaBounds?,
+    val axisGeometry: AxisGeometry,
+    val tickGeometry: TickGeometry,
+    val tickOcr: TickOcrResult,
+    val xFit: AxisCalibrationFit,
+    val yFit: AxisCalibrationFit,
+    val reportStatus: GeometryReportStatus,
+    val retryIndex: Int,
+    val selectionScore: Float,
+)
+
+private const val MAX_GEOMETRY_RETRY_CANDIDATES = 6
+
+private val GeometryReportStatus.selectionPriority: Int
+    get() = when (this) {
+        GeometryReportStatus.SCIENTIFIC_READY -> 3
+        GeometryReportStatus.REVIEW_READY -> 2
+        GeometryReportStatus.DIAGNOSTIC_ONLY -> 1
+    }
+
 private fun RawRoiCandidate.expandedVariants(imageWidth: Int, imageHeight: Int): List<RawRoiCandidate> {
     if (source == GeometryCandidateSource.FULL_IMAGE_FALLBACK) return emptyList()
     return listOf(0.035f, 0.075f).mapNotNull { ratio ->
@@ -372,6 +450,7 @@ private fun scoreCandidate(
         marginSafety = marginSafety,
         aspectRatioPlausibility = aspect,
         calibrationViability = calibrationViability,
+        curveCoverageScore = traceDensity,
         total = total,
         notes = warnings.distinct(),
     )

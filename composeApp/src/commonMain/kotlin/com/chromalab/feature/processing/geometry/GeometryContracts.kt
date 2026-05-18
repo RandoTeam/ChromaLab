@@ -120,6 +120,7 @@ data class RoiCandidateScoreBreakdown(
     val marginSafety: Float = 0f,
     val aspectRatioPlausibility: Float = 0f,
     val calibrationViability: Float = 0f,
+    val curveCoverageScore: Float = 0f,
     val total: Float = 0f,
     val notes: List<String> = emptyList(),
 )
@@ -251,6 +252,7 @@ data class GeometryTrace(
     val rectifiedImagePath: String? = null,
     val selectedGraphPanelOverlayPath: String? = null,
     val selectedPlotAreaOverlayPath: String? = null,
+    val plotAreaCropPath: String? = null,
     val axisOverlayPath: String? = null,
     val tickOverlayPath: String? = null,
     val ocrCropPaths: List<String> = emptyList(),
