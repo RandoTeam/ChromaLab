@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3d.1 - Android structured VLM JSON prompt contract`.
-- Next work slice: `Phase 8.3d.2 - Android VLM runtime timeout and device-kill audit`.
+- Latest completed work slice: `Phase 8.3d.2 - Android VLM axis completeness retry gate`.
+- Next work slice: `Phase 8.3d.3 - Android VLM runtime timeout and device-kill audit`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -118,7 +118,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.16 | Done | `8afbcf7` | Add an audit-only fragmentation-aware reconstruction candidate over skeleton components, interpolate only short column gaps, write per-graph fragment reconstruction overlays, expose parity/coverage/component metrics in JSON/Markdown/report evidence, and keep calculation input unchanged. |
 | Phase 8.3c.5c.17 | Done | `a429250` | Add signal-guided guard tuning for fragment reconstruction components and short-gap interpolation, expose guide match/rejection metrics in JSON/Markdown/report evidence, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because hard fixtures still have too many large-delta columns. |
 | Phase 8.3c.5c.18 | Done | `500f040` | Add reconstructed-trace residual taxonomy and acceptance gate fields, color residual classes in fragment reconstruction overlays, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because residuals are dominated by branch/edge ambiguity plus crop/frame-text blockers. |
-| Phase 8.3d.1 | Done | `this commit` | Enforce Android VLM graph/axis/structure prompts as JSON-only no-thinking contracts with strict retry parsing, so chart stages reject chatty reasoning output instead of treating it as analysis evidence. |
+| Phase 8.3d.1 | Done | `5541b4c` | Enforce Android VLM graph/axis/structure prompts as JSON-only no-thinking contracts with strict retry parsing, so chart stages reject chatty reasoning output instead of treating it as analysis evidence. |
+| Phase 8.3d.2 | Done | `this commit` | Require both X and Y axis evidence before accepting Android VLM axis OCR as complete; retry and merge VLM axis evidence before supplemental ML Kit OCR. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -1025,6 +1026,17 @@ Completed Phase 8.3d.1 work slice:
    recognition evidence, never peak metrics.
 5. Keep the next Android slice focused on runtime timeout/high-CPU kill diagnostics,
    because prompt structure alone cannot prove device-level stability.
+
+Completed Phase 8.3d.2 work slice:
+
+1. Diagnose the device run where LiteRT/Gemma returned a parseable but incomplete
+   axis JSON: X tick labels were present, Y tick labels were absent.
+2. Treat one-axis VLM output as incomplete evidence that must trigger the structured
+   VLM retry instead of moving directly to ML Kit supplementation.
+3. Merge primary and retry VLM axis evidence before supplemental OCR so one response
+   can supply X labels and the other can supply Y labels.
+4. Keep strict full-analysis behavior: if both axes are still missing after VLM retry
+   plus supplemental OCR, the report remains blocked.
 
 Exit criteria:
 

@@ -63,18 +63,29 @@ actual class ChartAnalysisReader actual constructor() {
                 log("Axis extraction raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
                 var analysis = ChartPrompts.parseResponse(rawResponse)
 
-                if (!analysis.hasUsableAxisEvidence()) {
+                if (!analysis.hasCompleteAxisEvidence()) {
                     val retryPrompt = ChartPrompts.axisExtractionRetryPrompt(style)
+                    log(
+                        "Axis extraction incomplete before retry " +
+                            "x=${analysis.xValues.size} y=${analysis.yValues.size} " +
+                            "confidence=${analysis.confidence}",
+                    )
                     log("Axis extraction retry promptStyle=$style prompt=${retryPrompt.take(60)}...")
-                    rawResponse = inferStructuredRaw(
+                    val retryResponse = inferStructuredRaw(
                         engine = engine,
                         imagePath = imagePath,
                         prompt = retryPrompt,
                         task = VlmTask.AxisExtraction,
                         config = config,
                     )
-                    log("Axis extraction retry raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
-                    analysis = ChartPrompts.parseResponse(rawResponse)
+                    log("Axis extraction retry raw response chars=${retryResponse.length} preview=${retryResponse.take(200)}")
+                    val retryAnalysis = ChartPrompts.parseResponse(retryResponse)
+                    analysis = analysis.mergeAxisEvidence(retryAnalysis)
+                    log(
+                        "Axis extraction merged VLM evidence " +
+                            "x=${analysis.xValues.size} y=${analysis.yValues.size} " +
+                            "confidence=${analysis.confidence}",
+                    )
                 }
 
                 if (analysis.hasUsableAxisEvidence()) {
@@ -429,6 +440,39 @@ private fun List<Float>.averageOrNull(): Float? =
 
 private fun ChartAnalysis.hasUsableAxisEvidence(): Boolean =
     confidence > 0.5f && (xValues.isNotEmpty() || yValues.isNotEmpty())
+
+private fun ChartAnalysis.hasCompleteAxisEvidence(): Boolean =
+    confidence > 0.5f && xValues.isNotEmpty() && yValues.isNotEmpty()
+
+private fun ChartAnalysis.mergeAxisEvidence(other: ChartAnalysis): ChartAnalysis {
+    val mergedX = (xValues + other.xValues).stableAxisValues()
+    val mergedY = (yValues + other.yValues).stableAxisValues()
+    val mergedXTicks = (xTicks + other.xTicks).dedupeAxisTicks()
+    val mergedYTicks = (yTicks + other.yTicks).dedupeAxisTicks()
+    val completenessBoost = if (mergedX.isNotEmpty() && mergedY.isNotEmpty()) 0.05f else 0f
+    return copy(
+        xValues = mergedX,
+        yValues = mergedY,
+        xTicks = mergedXTicks,
+        yTicks = mergedYTicks,
+        xUnit = xUnit ?: other.xUnit,
+        yUnit = yUnit ?: other.yUnit,
+        confidence = maxOf(confidence, other.confidence, completenessBoost).coerceIn(0f, 0.99f),
+    )
+}
+
+private fun List<ChartAxisTick>.dedupeAxisTicks(): List<ChartAxisTick> =
+    groupBy { tick ->
+        val valueKey = (tick.value * 1000f).toInt()
+        val positionKey = tick.position?.let { (it * 1000f).toInt() }
+        valueKey to positionKey
+    }.values.map { ticks ->
+        ticks.maxBy { tick ->
+            val confidence = tick.confidence ?: 0f
+            val positioned = if (tick.position != null) 1f else 0f
+            confidence + positioned
+        }
+    }.sortedBy { it.value }
 
 private enum class VlmTask {
     GraphRegion,

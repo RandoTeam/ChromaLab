@@ -55,6 +55,9 @@ compound assignments.
   prompts also demand JSON-only output. Graph-region, axis-label, and axis-structure
   stages each get one structured retry, then fail strict photo analysis if usable
   evidence is still missing.
+- Android axis OCR treats one-axis VLM output as incomplete. A response with only X
+  labels or only Y labels triggers the VLM retry; the primary and retry evidence are
+  merged before supplemental ML Kit OCR is allowed to fill remaining gaps.
 - Report metadata already records selected/executed model, runtime, backend, device,
   and stage timings; those fields remain required evidence for Phase 8 validation.
 
