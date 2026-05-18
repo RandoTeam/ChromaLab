@@ -13,6 +13,7 @@ import com.chromalab.feature.processing.preprocess.PreprocessingParams
 import com.chromalab.feature.processing.preprocess.PreprocessingResult
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
 import com.chromalab.feature.processing.curve.CurveMaskResult
+import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveExtractionResult
 import com.chromalab.feature.processing.curve.CurvePoint
@@ -24,6 +25,7 @@ import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryPipelineRunner
 import com.chromalab.feature.processing.geometry.SourceType as GeometrySourceType
 import com.chromalab.feature.processing.pipeline.DetectionMethod
+import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -355,7 +357,13 @@ class AutoSweepEngine {
             var maskResult: CurveMaskResult? = null
             val curveResult = try {
                 val axes = axesRes ?: fallbackAxes()
-                val mask = curveMaskPreparer.prepare(curveInputPath, curveRegion, axes, configDir)
+                val mask = curveMaskPreparer.prepare(
+                    curveInputPath,
+                    curveRegion,
+                    axes,
+                    configDir,
+                    geometryResult.toCurveTextSuppressionRegions(),
+                )
                 maskResult = mask
                 val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: curveInputPath
                 curveExtractor.extract(
@@ -712,7 +720,8 @@ class AutoSweepEngine {
                 plotAreaCropPath = mask?.plotAreaCropPath ?: result.trace.plotAreaCropPath,
                 curveMaskRawPath = mask?.rawMaskPath ?: result.trace.curveMaskRawPath,
                 curveMaskCleanPath = mask?.cleanMaskPath ?: result.trace.curveMaskCleanPath,
-                curveRejectedComponentsPath = mask?.traceArtifactAudit?.artifactMaskPath
+                curveRejectedComponentsPath = mask?.textSuppressionOverlayPath
+                    ?: mask?.traceArtifactAudit?.artifactMaskPath
                     ?: result.trace.curveRejectedComponentsPath,
                 curveSelectedComponentPath = mask?.traceArtifactAudit?.cleanupHypothesisMaskPath
                     ?: result.trace.curveSelectedComponentPath,
@@ -723,6 +732,31 @@ class AutoSweepEngine {
             warnings = (result.warnings + artifactWarnings).distinct(),
         )
     }
+
+    private fun GeometryPipelineResult?.toCurveTextSuppressionRegions(): List<CurveMaskTextSuppressionRegion> =
+        this
+            ?.trace
+            ?.peakLabelEvidence
+            .orEmpty()
+            .mapNotNull { evidence ->
+                val region = evidence.labelBoxPx ?: return@mapNotNull null
+                CurveMaskTextSuppressionRegion(
+                    region = region,
+                    classification = evidence.textClassification.name,
+                    source = evidence.source.name,
+                    reason = when (evidence.textClassification) {
+                        PeakLabelTextClassification.PEAK_ANNOTATION ->
+                            "suppress_peak_annotation_text_before_curve_mask"
+                        PeakLabelTextClassification.TITLE_OR_CHANNEL,
+                        PeakLabelTextClassification.AXIS_LABEL,
+                        PeakLabelTextClassification.TICK_LABEL ->
+                            "suppress_non_signal_text_before_curve_mask"
+                        PeakLabelTextClassification.PAGE_TEXT,
+                        PeakLabelTextClassification.UNKNOWN_TEXT ->
+                            "suppress_unclassified_ocr_text_before_curve_mask"
+                    },
+                )
+            }
 
     private fun selectGraphResult(
         cv: GraphRegionResult?,

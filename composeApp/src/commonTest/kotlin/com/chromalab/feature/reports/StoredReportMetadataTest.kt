@@ -15,8 +15,18 @@ import com.chromalab.feature.calculation.core.SignalSource
 import com.chromalab.feature.calculation.core.ValidationResult
 import com.chromalab.feature.calculation.core.WarningSeverity
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
+import com.chromalab.feature.processing.geometry.AxisCalibrationFit
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.peaks.PeakLabelEvidence
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
+import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
+import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateFlag
+import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -447,6 +457,141 @@ class StoredReportMetadataTest {
         assertTrue(graph.kovats.missingDataNotes.any { it.contains("Measured n-paraffin reference retention times") })
     }
 
+    @Test
+    fun fixtureHintCannotProduceProductionReportableRecoveredPeak() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = localPeakSignal(apexRt = 5.61),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "5.610",
+                            parsedRetentionTime = 5.610,
+                            source = PeakLabelEvidenceSource.FIXTURE_HINT,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = false,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val recovery = report.graphs.single().peakRecovery
+
+        assertEquals(0, recovery.runtimeRecoveredPeaks.size)
+        assertEquals(1, recovery.testOnlyRecoveredPeaks.size)
+        assertEquals(0, recovery.productionReportablePeaks)
+        assertTrue(recovery.testOnlyRecoveredPeaks.single().flags.contains(RecoveredPeakCandidateFlag.FIXTURE_HINT_ONLY))
+    }
+
+    @Test
+    fun runtimePeakLabelEvidenceRecoversReviewGradePeakOnlyAfterLocalSignalVerification() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = localPeakSignal(apexRt = 5.61),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "5.610",
+                            parsedRetentionTime = 5.610,
+                            labelBoxPx = GraphRegion(10, 10, 28, 12, "label"),
+                            localCropPath = "peak_label_crops/label_5610.png",
+                            source = PeakLabelEvidenceSource.ML_KIT,
+                            confidence = 0.82f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val recovered = report.graphs.single().peakRecovery.runtimeRecoveredPeaks.single()
+
+        assertEquals(RecoveredPeakCandidateStatus.REVIEW, recovered.status)
+        assertTrue(recovered.flags.contains(RecoveredPeakCandidateFlag.RUNTIME_OCR_VERIFIED))
+        assertTrue(recovered.flags.contains(RecoveredPeakCandidateFlag.LABEL_EVIDENCE_VERIFIED))
+        assertTrue(recovered.localSNR?.let { it > 1.5 } == true)
+        assertEquals(1, report.graphs.single().peakRecovery.productionReportablePeaks)
+        assertEquals(1, report.graphs.single().peakRecovery.reviewGradePeaks)
+    }
+
+    @Test
+    fun runtimeRecoveredPeakRequiresLocalSignalMaximum() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = flatSignal(),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "8.560",
+                            parsedRetentionTime = 8.560,
+                            source = PeakLabelEvidenceSource.ML_KIT,
+                            confidence = 0.86f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val rejected = report.graphs.single().peakRecovery.rejectedRecoveredCandidates.single()
+
+        assertEquals(RecoveredPeakCandidateStatus.REJECTED, rejected.status)
+        assertTrue(rejected.flags.contains(RecoveredPeakCandidateFlag.FLAT_SIGNAL_REJECTED))
+        assertEquals(0, report.graphs.single().peakRecovery.productionReportablePeaks)
+    }
+
+    @Test
+    fun runtimeRecoveredPeakRequiresReviewOrValidCalibration() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = localPeakSignal(apexRt = 5.61),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = GeometryTrace(
+                        peakLabelEvidence = listOf(
+                            PeakLabelEvidence(
+                                rawText = "5.610",
+                                parsedRetentionTime = 5.610,
+                                source = PeakLabelEvidenceSource.ML_KIT,
+                                confidence = 0.86f,
+                                status = PeakLabelEvidenceStatus.VALID_TEXT,
+                                textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                                isRuntimeEvidence = true,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val rejected = report.graphs.single().peakRecovery.rejectedRecoveredCandidates.single()
+
+        assertEquals(RecoveredPeakCandidateStatus.REJECTED, rejected.status)
+        assertTrue(rejected.flags.contains(RecoveredPeakCandidateFlag.CALIBRATION_INVALID_REJECTED))
+        assertEquals(0, report.graphs.single().peakRecovery.productionReportablePeaks)
+    }
+
     private fun chromatogramEntity(
         sourceType: SourceType,
         filePath: String?,
@@ -471,6 +616,17 @@ class StoredReportMetadataTest {
     private fun calculationRun(
         peaks: List<PeakResult> = emptyList(),
         warnings: List<CalculationWarning> = emptyList(),
+        rawPoints: List<SignalPoint> = listOf(
+            SignalPoint(
+                index = 0,
+                time = 0.0,
+                intensity = 1.0,
+                pixelX = 0,
+                pixelY = 0.0,
+                confidence = 1.0,
+                isInterpolated = false,
+            ),
+        ),
     ): CalculationRun =
         CalculationRun(
             id = "run-1",
@@ -480,7 +636,7 @@ class StoredReportMetadataTest {
             params = CalculationParams(),
             validation = ValidationResult(
                 isValid = true,
-                pointCount = 1,
+                pointCount = rawPoints.size,
                 isSorted = true,
                 duplicateTimeCount = 0,
                 gapCount = 0,
@@ -493,17 +649,7 @@ class StoredReportMetadataTest {
                 warnings = emptyList(),
             ),
             signals = SignalBundle(
-                raw = listOf(
-                    SignalPoint(
-                        index = 0,
-                        time = 0.0,
-                        intensity = 1.0,
-                        pixelX = 0,
-                        pixelY = 0.0,
-                        confidence = 1.0,
-                        isInterpolated = false,
-                    ),
-                ),
+                raw = rawPoints,
                 smoothed = null,
                 baseline = null,
                 baselineCorrected = null,
@@ -514,6 +660,50 @@ class StoredReportMetadataTest {
             warnings = warnings,
             timestamp = 4000L,
         )
+
+    private fun recoveryTrace(vararg evidence: PeakLabelEvidence): GeometryTrace =
+        GeometryTrace(
+            peakLabelEvidence = evidence.toList(),
+            xCalibrationFit = AxisCalibrationFit(
+                axis = GeometryAxis.X,
+                status = CalibrationFitStatus.REVIEW,
+                confidence = 0.62f,
+            ),
+            yCalibrationFit = AxisCalibrationFit(
+                axis = GeometryAxis.Y,
+                status = CalibrationFitStatus.REVIEW,
+                confidence = 0.62f,
+            ),
+        )
+
+    private fun localPeakSignal(apexRt: Double): List<SignalPoint> =
+        (0..100).map { index ->
+            val time = index / 10.0
+            val distance = kotlin.math.abs(time - apexRt)
+            val intensity = 10.0 + 90.0 * kotlin.math.exp(-(distance * distance) / 0.012)
+            SignalPoint(
+                index = index,
+                time = time,
+                intensity = intensity,
+                pixelX = index,
+                pixelY = 100.0 - intensity,
+                confidence = 0.95,
+                isInterpolated = false,
+            )
+        }
+
+    private fun flatSignal(): List<SignalPoint> =
+        (0..100).map { index ->
+            SignalPoint(
+                index = index,
+                time = index / 10.0,
+                intensity = 10.0,
+                pixelX = index,
+                pixelY = 90.0,
+                confidence = 0.95,
+                isInterpolated = false,
+            )
+        }
 
     private fun peakResult(
         peakId: Int,

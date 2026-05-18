@@ -374,6 +374,11 @@ private fun GraphReportSection(
             visualEvidence = uiContract.visualEvidenceFor("peak_table"),
         )
         HorizontalDivider()
+        PeakRecoveryBlock(
+            graph = graph,
+            visualEvidence = uiContract.visualEvidenceFor("peak_label_evidence_and_recovery"),
+        )
+        HorizontalDivider()
         QualityBlock(graph)
         HorizontalDivider()
         KovatsBlock(graph)
@@ -575,6 +580,45 @@ private fun PeakTable(
                     header = false,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PeakRecoveryBlock(
+    graph: GraphReport,
+    visualEvidence: List<ReportVisualEvidenceContract>,
+) {
+    SectionBlock(title = "Peak label evidence and recovery") {
+        VisualEvidenceStrip(visualEvidence)
+        val recovery = graph.peakRecovery
+        MetricGrid(
+            rows = listOf(
+                "Raw detected" to (recovery.rawDetectedPeaks?.toString() ?: graph.peaks.size.toString()),
+                "Validated" to (recovery.validatedPeaks?.toString() ?: "not calculated"),
+                "Production reportable" to (recovery.productionReportablePeaks?.toString() ?: "not calculated"),
+                "Runtime recovered" to recovery.runtimeRecoveredPeaks.size.toString(),
+                "Test-only recovered" to recovery.testOnlyRecoveredPeaks.size.toString(),
+                "Rejected candidates" to recovery.rejectedRecoveredCandidates.size.toString(),
+            ),
+        )
+        val candidates = recovery.runtimeRecoveredPeaks +
+            recovery.testOnlyRecoveredPeaks +
+            recovery.rejectedRecoveredCandidates
+        if (candidates.isEmpty()) {
+            EmptyText("No recovered peak candidates.")
+            return@SectionBlock
+        }
+        candidates.take(6).forEach { candidate ->
+            DetailLine(
+                label = candidate.sourceEvidence?.rawText ?: candidate.labelRt.formatReportNumber(),
+                value = listOfNotNull(
+                    candidate.status.name,
+                    candidate.nearestLocalMaximumRt?.let { "max ${it.formatReportNumber()}" },
+                    candidate.localSNR?.let { "S/N ${it.formatReportNumber()}" },
+                    candidate.rejectionReason,
+                ).joinToString(" / "),
+            )
         }
     }
 }

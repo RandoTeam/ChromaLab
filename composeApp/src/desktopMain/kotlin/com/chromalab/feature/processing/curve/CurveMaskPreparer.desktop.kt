@@ -14,6 +14,7 @@ actual class CurveMaskPreparer actual constructor() {
         graphRegion: GraphRegion,
         axes: AxesResult,
         outputDir: String,
+        textSuppressionRegions: List<CurveMaskTextSuppressionRegion>,
     ): CurveMaskResult {
         val source = ImageIO.read(File(imagePath))
             ?: return emptyResult(graphRegion)
@@ -41,6 +42,14 @@ actual class CurveMaskPreparer actual constructor() {
 
         val cleanMask = rawMask.copyOf()
         val suppressions = mutableListOf<String>()
+        val appliedTextSuppressions = suppressTextRegions(
+            mask = cleanMask,
+            width = width,
+            height = height,
+            graphRegion = region,
+            textRegions = textSuppressionRegions,
+        )
+        if (appliedTextSuppressions.isNotEmpty()) suppressions += "ocr_text_boxes"
         suppressLongHorizontalRows(cleanMask, width, height)
         suppressions += "horizontal_axes_grid"
         suppressLeftAxisLabelBand(cleanMask, width, height)
@@ -63,6 +72,7 @@ actual class CurveMaskPreparer actual constructor() {
         val cleanPath = File(dir, "mask_clean.png").absolutePath
         val traceArtifactPath = File(dir, "trace_artifacts.png").absolutePath
         val cleanupHypothesisPath = File(dir, "trace_artifact_suppressed_mask.png").absolutePath
+        val textOverlayPath = File(dir, "mask_text_suppression_overlay.png").absolutePath
         val traceArtifactAudit = buildTraceArtifactAudit(
             mask = cleanMask,
             width = width,
@@ -74,6 +84,9 @@ actual class CurveMaskPreparer actual constructor() {
         )
         saveMask(rawMask, width, height, rawPath)
         saveMask(cleanMask, width, height, cleanPath)
+        if (appliedTextSuppressions.isNotEmpty()) {
+            saveTextSuppressionOverlay(rawMask, appliedTextSuppressions, width, height, region, textOverlayPath)
+        }
 
         return CurveMaskResult(
             plotAreaCropPath = plotAreaCropPath,
@@ -86,6 +99,8 @@ actual class CurveMaskPreparer actual constructor() {
             rawPixelCount = rawCount,
             cleanPixelCount = cleanCount,
             suppressionApplied = suppressions,
+            textSuppressionRegions = appliedTextSuppressions,
+            textSuppressionOverlayPath = textOverlayPath.takeIf { appliedTextSuppressions.isNotEmpty() },
             traceArtifactAudit = traceArtifactAudit,
             timestamp = System.currentTimeMillis(),
         )
@@ -249,6 +264,32 @@ actual class CurveMaskPreparer actual constructor() {
             }
         }
         return true
+    }
+
+    private fun suppressTextRegions(
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+        graphRegion: GraphRegion,
+        textRegions: List<CurveMaskTextSuppressionRegion>,
+    ): List<CurveMaskTextSuppressionRegion> {
+        val applied = mutableListOf<CurveMaskTextSuppressionRegion>()
+        textRegions.forEach { textRegion ->
+            val local = textRegion.region.toLocal(graphRegion, width, height) ?: return@forEach
+            applied += textRegion.copy(region = local)
+            val padX = (local.width * 0.12f).roundToInt().coerceIn(1, 6)
+            val padY = (local.height * 0.18f).roundToInt().coerceIn(1, 6)
+            val left = (local.x - padX).coerceAtLeast(0)
+            val right = (local.right + padX).coerceAtMost(width)
+            val top = (local.y - padY).coerceAtLeast(0)
+            val bottom = (local.bottom + padY).coerceAtMost(height)
+            for (y in top until bottom) {
+                for (x in left until right) {
+                    mask[y * width + x] = false
+                }
+            }
+        }
+        return applied
     }
 
     private fun suppressFloatingComponents(
@@ -716,6 +757,38 @@ actual class CurveMaskPreparer actual constructor() {
         image.flush()
     }
 
+    private fun saveTextSuppressionOverlay(
+        baseMask: BooleanArray,
+        textRegions: List<CurveMaskTextSuppressionRegion>,
+        width: Int,
+        height: Int,
+        graphRegion: GraphRegion,
+        path: String,
+    ) {
+        val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                image.setRGB(x, y, if (baseMask[y * width + x]) MASK_GRAY else BLACK)
+            }
+        }
+        textRegions.forEach { region ->
+            val local = region.region.toLocal(graphRegion, width, height) ?: region.region
+            val color = if (region.classification == "PEAK_ANNOTATION") ANNOTATION_GREEN else ARTIFACT_RED
+            for (x in local.x until local.right.coerceAtMost(width)) {
+                if (local.y in 0 until height) image.setRGB(x, local.y, color)
+                val bottom = (local.bottom - 1).coerceIn(0, height - 1)
+                image.setRGB(x, bottom, color)
+            }
+            for (y in local.y until local.bottom.coerceAtMost(height)) {
+                if (local.x in 0 until width) image.setRGB(local.x, y, color)
+                val right = (local.right - 1).coerceIn(0, width - 1)
+                image.setRGB(right, y, color)
+            }
+        }
+        ImageIO.write(image, "png", File(path))
+        image.flush()
+    }
+
     private fun emptyResult(graphRegion: GraphRegion): CurveMaskResult =
         CurveMaskResult(
             rawMaskPath = null,
@@ -735,6 +808,7 @@ actual class CurveMaskPreparer actual constructor() {
         private const val BLACK = -0x1000000
         private const val MASK_GRAY = -0x777778
         private const val ARTIFACT_RED = -0x10000
+        private const val ANNOTATION_GREEN = -0xff0100
         private const val MIN_USABLE_COLUMN_COVERAGE = 0.30f
         private const val HIGH_INTERNAL_ARTIFACT_RATIO = 0.18f
         private const val MIN_CLEANUP_RETAINED_RATIO = 0.70f
@@ -768,6 +842,15 @@ private fun GraphRegion.clampTo(imageWidth: Int, imageHeight: Int): GraphRegion?
     val right = right.coerceIn(left, imageWidth)
     val bottom = bottom.coerceIn(top, imageHeight)
     if (right - left <= 1 || bottom - top <= 1) return null
+    return copy(x = left, y = top, width = right - left, height = bottom - top)
+}
+
+private fun GraphRegion.toLocal(parent: GraphRegion, width: Int, height: Int): GraphRegion? {
+    val left = (x - parent.x).coerceIn(0, width)
+    val top = (y - parent.y).coerceIn(0, height)
+    val right = (right - parent.x).coerceIn(left, width)
+    val bottom = (bottom - parent.y).coerceIn(top, height)
+    if (right - left <= 0 || bottom - top <= 0) return null
     return copy(x = left, y = top, width = right - left, height = bottom - top)
 }
 

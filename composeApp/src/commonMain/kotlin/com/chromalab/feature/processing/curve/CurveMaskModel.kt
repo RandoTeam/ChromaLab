@@ -29,6 +29,9 @@ data class CurveMaskResult(
     val cleanPixelCount: Int,
     /** Which suppression passes were applied */
     val suppressionApplied: List<String>,
+    /** OCR/VLM text boxes erased before curve extraction so labels do not become signal pixels. */
+    val textSuppressionRegions: List<CurveMaskTextSuppressionRegion> = emptyList(),
+    val textSuppressionOverlayPath: String? = null,
     /** Non-destructive audit of internal artifact risk in the cleaned mask */
     val traceArtifactAudit: CurveTraceArtifactAudit = CurveTraceArtifactAudit(),
     val timestamp: Long,
@@ -37,6 +40,14 @@ data class CurveMaskResult(
     val suppressionRatio: Float
         get() = if (rawPixelCount > 0) cleanPixelCount.toFloat() / rawPixelCount else 1f
 }
+
+@Serializable
+data class CurveMaskTextSuppressionRegion(
+    val region: GraphRegion,
+    val classification: String,
+    val source: String,
+    val reason: String,
+)
 
 @Serializable
 data class CurveTraceArtifactAudit(

@@ -25,6 +25,7 @@ import com.chromalab.feature.processing.curve.CurveEditorScreen
 import com.chromalab.feature.processing.curve.CurveExtractionResult
 import com.chromalab.feature.processing.curve.CurveExtractor
 import com.chromalab.feature.processing.curve.CurveMaskPreparer
+import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.curve.CurveOverlayScreen
 import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.scaledCoordinates
@@ -45,6 +46,7 @@ import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrSuggestionScreen
+import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
 import com.chromalab.feature.processing.perspective.PerspectiveCorrectionResult
 import com.chromalab.feature.processing.perspective.PerspectiveReviewScreen
 import com.chromalab.feature.processing.perspective.PerspectiveWarper
@@ -470,6 +472,7 @@ fun ProcessingFlowScreen(
                             val mask = curveMaskPreparer.prepare(
                                 inputForMask, curveRegion,
                                 axesResult!!, graphOutputDir,
+                                geometryResult.toCurveTextSuppressionRegions(),
                             )
                             println("PIPELINE[CURVE] mask: raw=${mask.rawMaskPath}, clean=${mask.cleanMaskPath}")
                             val maskPath = mask.cleanMaskPath ?: mask.rawMaskPath ?: inputForMask
@@ -1214,6 +1217,33 @@ private data class ProcessedGraphSnapshot(
 
 private fun List<ProcessedGraphSnapshot>.toReportSaveEntries(): List<ProcessedGraphSnapshot> =
     sortedBy { it.graphIndex }.filter { it.signal.smoothed.points.size >= 10 }
+
+private fun GeometryPipelineResult?.toCurveTextSuppressionRegions(): List<CurveMaskTextSuppressionRegion> =
+    this
+        ?.trace
+        ?.peakLabelEvidence
+        .orEmpty()
+        .mapNotNull { evidence ->
+            val region = evidence.labelBoxPx ?: return@mapNotNull null
+            val classification = evidence.textClassification.name
+            val reason = when (evidence.textClassification) {
+                PeakLabelTextClassification.PEAK_ANNOTATION ->
+                    "suppress_peak_annotation_text_before_curve_mask"
+                PeakLabelTextClassification.TITLE_OR_CHANNEL,
+                PeakLabelTextClassification.AXIS_LABEL,
+                PeakLabelTextClassification.TICK_LABEL ->
+                    "suppress_non_signal_text_before_curve_mask"
+                PeakLabelTextClassification.PAGE_TEXT,
+                PeakLabelTextClassification.UNKNOWN_TEXT ->
+                    "suppress_unclassified_ocr_text_before_curve_mask"
+            }
+            CurveMaskTextSuppressionRegion(
+                region = region,
+                classification = classification,
+                source = evidence.source.name,
+                reason = reason,
+            )
+        }
 
 private fun List<AutoSweepEngine.SweepResult>.toGraphPreparationVariants(): List<GraphPreparationVariantMetadata> =
     mapIndexed { index, result ->

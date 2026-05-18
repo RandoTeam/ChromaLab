@@ -22,5 +22,6 @@ expect class CurveMaskPreparer() {
         graphRegion: GraphRegion,
         axes: AxesResult,
         outputDir: String,
+        textSuppressionRegions: List<CurveMaskTextSuppressionRegion> = emptyList(),
     ): CurveMaskResult
 }

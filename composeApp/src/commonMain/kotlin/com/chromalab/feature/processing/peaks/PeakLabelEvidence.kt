@@ -19,16 +19,29 @@ enum class PeakLabelEvidenceStatus {
 }
 
 @Serializable
+enum class PeakLabelTextClassification {
+    PEAK_ANNOTATION,
+    TICK_LABEL,
+    AXIS_LABEL,
+    TITLE_OR_CHANNEL,
+    PAGE_TEXT,
+    UNKNOWN_TEXT,
+}
+
+@Serializable
 data class PeakLabelEvidence(
     val rawText: String,
+    val normalizedText: String = rawText.trim(),
     val parsedRetentionTime: Double? = null,
     val labelBoxPx: GraphRegion? = null,
+    val cropBoundsPx: GraphRegion? = null,
     val linkedGraphPanelBounds: GraphRegion? = null,
     val linkedPlotAreaBounds: GraphRegion? = null,
     val localCropPath: String? = null,
     val source: PeakLabelEvidenceSource,
     val confidence: Float = 0f,
     val status: PeakLabelEvidenceStatus = PeakLabelEvidenceStatus.REJECTED,
+    val textClassification: PeakLabelTextClassification = PeakLabelTextClassification.UNKNOWN_TEXT,
     val isRuntimeEvidence: Boolean = source != PeakLabelEvidenceSource.FIXTURE_HINT,
     val warnings: List<String> = emptyList(),
 )

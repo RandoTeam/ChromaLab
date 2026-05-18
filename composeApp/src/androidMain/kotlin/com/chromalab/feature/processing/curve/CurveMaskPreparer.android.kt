@@ -29,6 +29,7 @@ actual class CurveMaskPreparer actual constructor() {
         graphRegion: GraphRegion,
         axes: AxesResult,
         outputDir: String,
+        textSuppressionRegions: List<CurveMaskTextSuppressionRegion>,
     ): CurveMaskResult {
         // Determine if we need to downsample (prevents OOM on large images)
         val maxMaskDim = 2048
@@ -124,6 +125,18 @@ actual class CurveMaskPreparer actual constructor() {
         // --- Suppression passes ---
         val cleanMask = rawMask.copyOf()
         val suppressions = mutableListOf<String>()
+        val appliedTextSuppressions = suppressTextRegions(
+            mask = cleanMask,
+            w = w,
+            h = h,
+            graphRegion = graphRegion,
+            coordinateScale = scale,
+            textRegions = textSuppressionRegions,
+        )
+        if (appliedTextSuppressions.isNotEmpty()) {
+            suppressions.add("ocr_text_boxes")
+            println("MASK[4-TEXT] pixels=${cleanMask.count { it }}, suppressed=${appliedTextSuppressions.size}")
+        }
 
         // Pass 1: Suppress axes (wider margin to cover tick marks)
         if (axes.xAxis != null || axes.yAxis != null) {
@@ -154,7 +167,11 @@ actual class CurveMaskPreparer actual constructor() {
 
         val cleanCount = cleanMask.count { it }
         val cleanPath = File(dir, "mask_clean.png").absolutePath
+        val textOverlayPath = File(dir, "mask_text_suppression_overlay.png").absolutePath
         saveMask(cleanMask, w, h, cleanPath)
+        if (appliedTextSuppressions.isNotEmpty()) {
+            saveTextSuppressionOverlay(rawMask, appliedTextSuppressions, w, h, textOverlayPath)
+        }
 
         return CurveMaskResult(
             plotAreaCropPath = plotAreaCropPath,
@@ -167,6 +184,8 @@ actual class CurveMaskPreparer actual constructor() {
             rawPixelCount = rawCount,
             cleanPixelCount = cleanCount,
             suppressionApplied = suppressions,
+            textSuppressionRegions = appliedTextSuppressions,
+            textSuppressionOverlayPath = textOverlayPath.takeIf { appliedTextSuppressions.isNotEmpty() },
             timestamp = System.currentTimeMillis(),
         )
     }
@@ -310,6 +329,33 @@ actual class CurveMaskPreparer actual constructor() {
         return suppressed
     }
 
+    private fun suppressTextRegions(
+        mask: BooleanArray,
+        w: Int,
+        h: Int,
+        graphRegion: GraphRegion,
+        coordinateScale: Float,
+        textRegions: List<CurveMaskTextSuppressionRegion>,
+    ): List<CurveMaskTextSuppressionRegion> {
+        val applied = mutableListOf<CurveMaskTextSuppressionRegion>()
+        textRegions.forEach { textRegion ->
+            val local = textRegion.region.toLocal(graphRegion, w, h, coordinateScale) ?: return@forEach
+            applied += textRegion.copy(region = local)
+            val padX = (local.width * 0.12f).roundToInt().coerceIn(1, 6)
+            val padY = (local.height * 0.18f).roundToInt().coerceIn(1, 6)
+            val left = (local.x - padX).coerceAtLeast(0)
+            val right = (local.right + padX).coerceAtMost(w)
+            val top = (local.y - padY).coerceAtLeast(0)
+            val bottom = (local.bottom + padY).coerceAtMost(h)
+            for (y in top until bottom) {
+                for (x in left until right) {
+                    mask[y * w + x] = false
+                }
+            }
+        }
+        return applied
+    }
+
     private fun floodFill(
         mask: BooleanArray, labels: IntArray,
         w: Int, h: Int, startX: Int, startY: Int, label: Int,
@@ -361,6 +407,42 @@ actual class CurveMaskPreparer actual constructor() {
             if (mask[i]) 0xFF_FF_FF_FF.toInt() else 0xFF_00_00_00.toInt()
         }
         bmp.setPixels(px, 0, w, 0, 0, w, h)
+        FileOutputStream(path).use { out ->
+            bmp.compress(Bitmap.CompressFormat.PNG, 90, out)
+        }
+        bmp.recycle()
+    }
+
+    private fun saveTextSuppressionOverlay(
+        baseMask: BooleanArray,
+        textRegions: List<CurveMaskTextSuppressionRegion>,
+        w: Int,
+        h: Int,
+        path: String,
+    ) {
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val pixels = IntArray(w * h) { i ->
+            if (baseMask[i]) 0xFF_88_88_88.toInt() else 0xFF_00_00_00.toInt()
+        }
+        textRegions.forEach { textRegion ->
+            val color = if (textRegion.classification == "PEAK_ANNOTATION") {
+                0xFF_00_AA_55.toInt()
+            } else {
+                0xFF_DD_33_33.toInt()
+            }
+            val region = textRegion.region
+            for (x in region.x until region.right.coerceAtMost(w)) {
+                if (region.y in 0 until h) pixels[region.y * w + x] = color
+                val bottom = (region.bottom - 1).coerceIn(0, h - 1)
+                pixels[bottom * w + x] = color
+            }
+            for (y in region.y until region.bottom.coerceAtMost(h)) {
+                if (region.x in 0 until w) pixels[y * w + region.x] = color
+                val right = (region.right - 1).coerceIn(0, w - 1)
+                pixels[y * w + right] = color
+            }
+        }
+        bmp.setPixels(pixels, 0, w, 0, 0, w, h)
         FileOutputStream(path).use { out ->
             bmp.compress(Bitmap.CompressFormat.PNG, 90, out)
         }
@@ -583,4 +665,13 @@ actual class CurveMaskPreparer actual constructor() {
             if (labels[i] != largestLabel) mask[i] = false
         }
     }
+}
+
+private fun GraphRegion.toLocal(parent: GraphRegion, width: Int, height: Int, scale: Float): GraphRegion? {
+    val left = ((x - parent.x) * scale).roundToInt().coerceIn(0, width)
+    val top = ((y - parent.y) * scale).roundToInt().coerceIn(0, height)
+    val right = ((right - parent.x) * scale).roundToInt().coerceIn(left, width)
+    val bottom = ((bottom - parent.y) * scale).roundToInt().coerceIn(top, height)
+    if (right - left <= 0 || bottom - top <= 0) return null
+    return copy(x = left, y = top, width = right - left, height = bottom - top)
 }

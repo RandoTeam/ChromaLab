@@ -183,9 +183,12 @@ Runtime note:
 
 - The desktop bench uses explicit fixture label hints as deterministic test-only
   evidence input and records that provenance. Android/runtime now has a local-crop
-  `PeakLabelEvidenceReader` wired into the geometry trace, but production recovered
-  peak promotion still needs the post-signal verification bridge before this recovery
-  path can be treated as fully automated outside fixtures.
+  `PeakLabelEvidenceReader` wired into the geometry trace. Production recovered
+  peak promotion now runs through `RuntimePeakRecoveryEvaluator` in the report
+  mapper: only runtime ML Kit/VLM labels with local signal evidence become
+  review-grade `RecoveredPeakCandidate` rows, while `FIXTURE_HINT` remains
+  test-only and cannot increase production reportable peak counts. See
+  `docs/CHROMATOGRAM_RUNTIME_PEAK_RECOVERY.md`.
 
 ## Scope
 

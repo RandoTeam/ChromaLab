@@ -137,6 +137,56 @@ object ReportMarkdownRenderer {
                 ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
             )
         }
+        renderPeakRecovery(graph)
+    }
+
+    private fun StringBuilder.renderPeakRecovery(graph: GraphReport) {
+        val recovery = graph.peakRecovery
+        if (recovery.labelEvidence.isEmpty() &&
+            recovery.runtimeRecoveredPeaks.isEmpty() &&
+            recovery.testOnlyRecoveredPeaks.isEmpty() &&
+            recovery.rejectedRecoveredCandidates.isEmpty()
+        ) {
+            return
+        }
+
+        appendLine()
+        appendLine("Peak label evidence and recovery:")
+        appendLine()
+        appendLine("| Metric | Count |")
+        appendLine("| --- | --- |")
+        row("Raw detected peaks", recovery.rawDetectedPeaks?.toString() ?: notCalculated())
+        row("Validated peaks", recovery.validatedPeaks?.toString() ?: notCalculated())
+        row("Production reportable peaks", recovery.productionReportablePeaks?.toString() ?: notCalculated())
+        row("Runtime recovered review peaks", recovery.runtimeRecoveredPeaks.size.toString())
+        row("Test-only recovered peaks", recovery.testOnlyRecoveredPeaks.size.toString())
+        row("Rejected recovered candidates", recovery.rejectedRecoveredCandidates.size.toString())
+
+        val rows = recovery.runtimeRecoveredPeaks +
+            recovery.testOnlyRecoveredPeaks +
+            recovery.rejectedRecoveredCandidates
+        if (rows.isEmpty()) return
+
+        appendLine()
+        appendLine("| Label | Source | Crop | Local max RT | Height | S/N | Prominence | Decision | Flags | Reason |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        rows.forEach { candidate ->
+            val evidence = candidate.sourceEvidence
+            appendLine(
+                listOf(
+                    evidence?.rawText ?: candidate.labelRt.formatDouble(),
+                    evidence?.source?.name ?: "UNKNOWN",
+                    evidence?.localCropPath ?: "",
+                    candidate.nearestLocalMaximumRt?.formatDouble() ?: notCalculated(),
+                    candidate.localHeight?.formatDouble() ?: notCalculated(),
+                    candidate.localSNR?.formatDouble() ?: notCalculated(),
+                    candidate.localProminence?.formatDouble() ?: notCalculated(),
+                    candidate.status.name,
+                    candidate.flags.joinToString("; ") { it.name },
+                    candidate.rejectionReason ?: "",
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
     }
 
     private fun StringBuilder.renderGraphOverlay(graph: GraphReport, showGraphHeader: Boolean) {

@@ -225,6 +225,13 @@ object ChromatogramReportUiContractBuilder {
             ),
             uiSection("peak_table", "Peak table", "peak_table", sectionStatus.peakTable.name, validation),
             uiSection(
+                "peak_label_evidence_and_recovery",
+                "Peak label evidence and recovery",
+                "peak_table",
+                recoveryStatus(),
+                validation,
+            ),
+            uiSection(
                 "chromatographic_quality",
                 "Chromatographic quality",
                 "chromatographic_quality",
@@ -305,6 +312,13 @@ object ChromatogramReportUiContractBuilder {
                 nearSectionId = "peak_table",
                 generatedStatus = if (peaks.isNotEmpty()) "rendered" else "not_available_until_peak_metrics_pass",
             ),
+            visualEvidence(
+                evidenceId = "peak_label_evidence",
+                label = "Peak label OCR crops",
+                renderSurfaceId = "graph_${graphIndex}_peak_label_evidence",
+                nearSectionId = "peak_label_evidence_and_recovery",
+                generatedStatus = if (peakRecovery.labelEvidence.isNotEmpty()) "linked" else "not_available",
+            ),
         )
 
     private fun GraphReport.visualEvidence(
@@ -352,6 +366,14 @@ object ChromatogramReportUiContractBuilder {
             validation.findings.any {
                 it.graphIndex == graphIndex && it.severity == ReportContractSeverity.WARNING
             } || warnings.any { it.severity != ReportSeverity.INFO } -> "REVIEW"
+            else -> "READY"
+        }
+
+    private fun GraphReport.recoveryStatus(): String =
+        when {
+            peakRecovery.rejectedRecoveredCandidates.isNotEmpty() -> "REVIEW"
+            peakRecovery.runtimeRecoveredPeaks.isNotEmpty() -> "REVIEW"
+            peakRecovery.testOnlyRecoveredPeaks.isNotEmpty() -> "TEST_ONLY"
             else -> "READY"
         }
 }

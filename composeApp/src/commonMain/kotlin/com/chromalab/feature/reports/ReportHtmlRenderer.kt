@@ -108,6 +108,7 @@ object ReportHtmlRenderer {
                 "axis_calibration" -> renderAxisCalibration(graph, uiContract, section)
                 "interactive_or_rendered_graph" -> renderGraphOverlay(graph, uiContract, section)
                 "peak_table" -> renderPeakTable(graph, uiContract, section)
+                "peak_label_evidence_and_recovery" -> renderPeakRecovery(graph, uiContract, section)
                 "chromatographic_quality" -> renderQuality(graph, section)
                 "kovats_index_analysis" -> renderKovats(graph, section)
                 "distribution_and_chemical_interpretation" -> renderInterpretation(graph, section)
@@ -301,6 +302,51 @@ object ReportHtmlRenderer {
                     )
                 },
             )
+        }
+        appendLine("</section>")
+    }
+
+    private fun StringBuilder.renderPeakRecovery(
+        graph: GraphReport,
+        uiContract: GraphReportUiContract,
+        section: ReportUiSectionContract,
+    ) {
+        appendGraphSubsection(section)
+        renderVisualEvidence(uiContract.visualEvidenceFor(section.sectionId))
+        val recovery = graph.peakRecovery
+        renderTable(
+            headers = listOf("Metric", "Count"),
+            rows = listOf(
+                "Raw detected peaks" to (recovery.rawDetectedPeaks?.toString() ?: "not calculated"),
+                "Validated peaks" to (recovery.validatedPeaks?.toString() ?: "not calculated"),
+                "Production reportable peaks" to (recovery.productionReportablePeaks?.toString() ?: "not calculated"),
+                "Runtime recovered review peaks" to recovery.runtimeRecoveredPeaks.size.toString(),
+                "Test-only recovered peaks" to recovery.testOnlyRecoveredPeaks.size.toString(),
+                "Rejected recovered candidates" to recovery.rejectedRecoveredCandidates.size.toString(),
+            ).map { listOf(it.first, it.second) },
+        )
+        val candidates = recovery.runtimeRecoveredPeaks +
+            recovery.testOnlyRecoveredPeaks +
+            recovery.rejectedRecoveredCandidates
+        if (candidates.isNotEmpty()) {
+            renderTable(
+                headers = listOf("Label", "Source", "Local max RT", "Height", "S/N", "Prominence", "Decision", "Flags", "Reason"),
+                rows = candidates.map { candidate ->
+                    listOf(
+                        candidate.sourceEvidence?.rawText ?: candidate.labelRt.formatNumber(),
+                        candidate.sourceEvidence?.source?.name ?: "UNKNOWN",
+                        candidate.nearestLocalMaximumRt?.formatNumber() ?: "not calculated",
+                        candidate.localHeight?.formatNumber() ?: "not calculated",
+                        candidate.localSNR?.formatNumber() ?: "not calculated",
+                        candidate.localProminence?.formatNumber() ?: "not calculated",
+                        candidate.status.name,
+                        candidate.flags.joinToString("; ") { it.name },
+                        candidate.rejectionReason ?: "",
+                    )
+                },
+            )
+        } else if (recovery.labelEvidence.isEmpty()) {
+            appendLine("<p class=\"muted\">No peak-label OCR/VLM recovery evidence recorded.</p>")
         }
         appendLine("</section>")
     }

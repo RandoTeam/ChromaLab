@@ -64,4 +64,54 @@ class CurveMaskPreparerPlotAreaTest {
         assertTrue(result.rawPixelCount > 0, "plot area crop must still include trace pixels")
         crop.flush()
     }
+
+    @Test
+    fun peakAnnotationTextBoxesAreSuppressedBeforeCleanCurveMask() {
+        val root = Files.createTempDirectory("chromalab-plot-text-suppression-test")
+        val imagePath = root.resolve("plot.png")
+        val image = BufferedImage(260, 140, BufferedImage.TYPE_INT_RGB)
+        val g = image.createGraphics()
+        g.color = Color.WHITE
+        g.fillRect(0, 0, image.width, image.height)
+        g.color = Color.BLACK
+        g.drawRect(10, 10, 230, 100)
+        g.drawPolyline(
+            intArrayOf(12, 50, 90, 130, 180, 238),
+            intArrayOf(102, 92, 58, 96, 44, 98),
+            6,
+        )
+        g.font = Font("SansSerif", Font.PLAIN, 14)
+        g.drawString("5.610", 82, 34)
+        g.dispose()
+        ImageIO.write(image, "png", imagePath.toFile())
+        image.flush()
+
+        val textRegion = GraphRegion(82, 20, 44, 18, "5.610 label")
+        val result = CurveMaskPreparer().prepare(
+            imagePath = imagePath.toAbsolutePath().toString(),
+            graphRegion = GraphRegion(10, 10, 231, 101, "plot area"),
+            axes = AxesResult(
+                xAxis = null,
+                yAxis = null,
+                origin = null,
+                detectionMethod = DetectionMethod.AUTO,
+                confidence = 0f,
+                timestamp = System.currentTimeMillis(),
+            ),
+            outputDir = root.resolve("mask").toAbsolutePath().toString(),
+            textSuppressionRegions = listOf(
+                CurveMaskTextSuppressionRegion(
+                    region = textRegion,
+                    classification = "PEAK_ANNOTATION",
+                    source = "ML_KIT",
+                    reason = "test_peak_annotation_suppression",
+                ),
+            ),
+        )
+
+        assertTrue(result.suppressionApplied.contains("ocr_text_boxes"))
+        assertEquals(1, result.textSuppressionRegions.size)
+        assertNotNull(result.textSuppressionOverlayPath)
+        assertTrue(result.cleanPixelCount < result.rawPixelCount)
+    }
 }

@@ -14,6 +14,9 @@ import com.chromalab.feature.calculation.core.SignalPoint
 import com.chromalab.feature.calculation.core.WarningSeverity
 import com.chromalab.feature.knowledge.ChromaLabBaseKnowledgePack
 import com.chromalab.feature.knowledge.LocalKnowledgePack
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
+import com.chromalab.feature.processing.peaks.RuntimePeakRecoveryEvaluator
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -55,9 +58,11 @@ object CalculationRunReportMapper {
     ): ChromatogramReport {
         val graphIndex = options.graphIndex.coerceAtLeast(1)
         val sortedPeaks = run.peaks.sortedBy { it.rtApex }
+        val peakRecovery = buildPeakRecoveryReport(run, sortedPeaks, options)
         val distribution = run.distribution ?: DistributionAnalyzer.analyze(sortedPeaks)
         val methodQuality = run.methodQuality ?: MethodQualityAnalyzer.analyze(sortedPeaks, run.signals)
-        val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex, options)
+        val graphWarnings = buildGraphWarnings(run, sortedPeaks, graphIndex, options) +
+            peakRecovery.warnings.withGraphIndex(graphIndex)
         val identification = options.identification ?: buildIdentification(options.sourceName ?: run.sourceSignalId)
         val knowledge = ReportKnowledgeInterpreter.interpret(identification, options.localKnowledgePack)
 
@@ -88,6 +93,7 @@ object CalculationRunReportMapper {
                     peaks = sortedPeaks.mapIndexed { index, peak ->
                         peak.toReportPeak(index + 1, run, graphIndex)
                     },
+                    peakRecovery = peakRecovery,
                     quality = buildQualityReport(sortedPeaks, run.params, distribution, methodQuality, graphWarnings),
                     kovats = buildKovatsReport(sortedPeaks, options.localKnowledgePack),
                     interpretation = buildInterpretation(
@@ -188,6 +194,82 @@ object CalculationRunReportMapper {
                 run.params.noiseMethod
             },
             correctedSignalAvailable = run.signals.baselineCorrected != null,
+        )
+    }
+
+    private fun buildPeakRecoveryReport(
+        run: CalculationRun,
+        peaks: List<PeakResult>,
+        options: CalculationRunReportOptions,
+    ): PeakEvidenceAndRecoveryReport {
+        val source = options.graphSourceMetadata
+        val trace = source?.geometryTrace
+        val evidence = trace?.peakLabelEvidence.orEmpty()
+        val evaluation = RuntimePeakRecoveryEvaluator().evaluate(
+            run = run,
+            peakLabelEvidence = evidence,
+            geometryReportStatus = source?.geometryReportStatus,
+            xCalibrationStatus = options.axisCalibration?.xCalibrationFit?.status ?: trace?.xCalibrationFit?.status,
+            yCalibrationStatus = options.axisCalibration?.yCalibrationFit?.status ?: trace?.yCalibrationFit?.status,
+        )
+        val runtimeRecovered = evaluation.runtimeRecoveredPeaks
+        val testOnlyRecovered = evaluation.testOnlyRecoveredPeaks
+        val rejected = evaluation.rejectedRecoveredCandidates
+        val warnings = buildList {
+            val fixtureHintCount = evidence.count { it.source == PeakLabelEvidenceSource.FIXTURE_HINT || !it.isRuntimeEvidence }
+            if (fixtureHintCount > 0) {
+                add(
+                    ReportWarning(
+                        code = "peak_label_evidence.fixture_hint_test_only",
+                        message = "$fixtureHintCount fixture hint label(s) were kept as test-only evidence and excluded from production reportable peaks.",
+                        severity = ReportSeverity.INFO,
+                        stage = "peak_label_recovery",
+                    ),
+                )
+            }
+            val runtimeLabels = evidence.filter {
+                it.isRuntimeEvidence &&
+                    it.source != PeakLabelEvidenceSource.FIXTURE_HINT &&
+                    it.status != PeakLabelEvidenceStatus.REJECTED &&
+                    it.parsedRetentionTime != null
+            }
+            if (runtimeLabels.isNotEmpty() && runtimeRecovered.isEmpty()) {
+                add(
+                    ReportWarning(
+                        code = "peak_label_recovery.runtime_labels_rejected",
+                        message = "Runtime OCR/VLM read ${runtimeLabels.size} RT-like peak label(s), but none passed local signal verification.",
+                        severity = ReportSeverity.WARNING,
+                        stage = "peak_label_recovery",
+                    ),
+                )
+            }
+            runtimeRecovered.forEachIndexed { index, candidate ->
+                add(
+                    ReportWarning(
+                        code = "peak_label_recovery.review_grade",
+                        message = "Recovered label RT ${candidate.labelRt.formatRecoveryNumber()} is review-grade and verified by local signal evidence, not a high-confidence automatic peak.",
+                        severity = ReportSeverity.WARNING,
+                        stage = "peak_label_recovery",
+                        peakNumber = peaks.size + index + 1,
+                    ),
+                )
+            }
+        }
+        return PeakEvidenceAndRecoveryReport(
+            rawDetectedPeaks = peaks.size,
+            validatedPeaks = peaks.count { peak ->
+                val apex = run.signals.raw.nearestSample(peak.rtApex)
+                apex != null && peak.confidence != ConfidenceGrade.FAILED
+            },
+            runtimeRecoveredPeaks = runtimeRecovered,
+            testOnlyRecoveredPeaks = testOnlyRecovered,
+            rejectedRecoveredCandidates = rejected,
+            productionReportablePeaks = peaks.size + runtimeRecovered.size,
+            reviewGradePeaks = runtimeRecovered.size + peaks.count { it.confidence == ConfidenceGrade.LOW },
+            denseSeriesMembers = null,
+            rejectedArtifactPeaks = 0,
+            labelEvidence = evidence,
+            warnings = warnings,
         )
     }
 
@@ -662,6 +744,8 @@ object CalculationRunReportMapper {
             sorted[middle]
         }
     }
+
+    private fun Double.formatRecoveryNumber(): String = "%.4f".format(this)
 
     private fun calculatedText(
         value: String,

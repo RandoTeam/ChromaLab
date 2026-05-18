@@ -3,6 +3,8 @@ package com.chromalab.feature.reports
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.peaks.PeakLabelEvidence
+import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import kotlinx.serialization.Serializable
 
 const val CURRENT_CHROMATOGRAM_REPORT_SCHEMA = "1.0.0-phase-1.3"
@@ -90,10 +92,26 @@ data class GraphReport(
     val axisCalibration: ReportAxisCalibration,
     val signal: SignalAndBaselineReport,
     val peaks: List<ReportPeak>,
+    val peakRecovery: PeakEvidenceAndRecoveryReport = PeakEvidenceAndRecoveryReport(),
     val quality: ChromatographicQualityReport,
     val kovats: KovatsIndexReport,
     val interpretation: ChemicalInterpretationReport,
     val sectionStatus: ReportSectionStatus = ReportSectionStatus(),
+    val warnings: List<ReportWarning> = emptyList(),
+)
+
+@Serializable
+data class PeakEvidenceAndRecoveryReport(
+    val rawDetectedPeaks: Int? = null,
+    val validatedPeaks: Int? = null,
+    val runtimeRecoveredPeaks: List<RecoveredPeakCandidate> = emptyList(),
+    val testOnlyRecoveredPeaks: List<RecoveredPeakCandidate> = emptyList(),
+    val rejectedRecoveredCandidates: List<RecoveredPeakCandidate> = emptyList(),
+    val productionReportablePeaks: Int? = null,
+    val reviewGradePeaks: Int? = null,
+    val denseSeriesMembers: Int? = null,
+    val rejectedArtifactPeaks: Int? = null,
+    val labelEvidence: List<PeakLabelEvidence> = emptyList(),
     val warnings: List<ReportWarning> = emptyList(),
 )
 
