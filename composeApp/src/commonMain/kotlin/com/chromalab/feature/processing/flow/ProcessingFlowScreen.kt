@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxisEditorScreen
@@ -13,6 +14,8 @@ import com.chromalab.feature.processing.axis.AxisLine
 import com.chromalab.feature.processing.axis.AxisOrigin
 import com.chromalab.feature.processing.calibration.XAxisCalibration
 import com.chromalab.feature.processing.calibration.YAxisCalibration
+import com.chromalab.feature.processing.calibration.buildAutomaticXAxisCalibration
+import com.chromalab.feature.processing.calibration.buildAutomaticYAxisCalibration
 import com.chromalab.feature.processing.crop.CropRect
 import com.chromalab.feature.processing.crop.CropResult
 import com.chromalab.feature.processing.crop.CropReviewScreen
@@ -91,7 +94,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 /**
  * Processing flow orchestrator.
@@ -379,59 +381,10 @@ fun ProcessingFlowScreen(
                         if (xCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
-                            val xValues = ocr?.suggestedXValues ?: emptyList()
-                            val origin = axes?.origin
-                            val regionWidth = selectedRegion.width.toFloat()
-
-                            if (xValues.size >= 2) {
-                                val sorted = xValues.sorted()
-                                val minVal = sorted.first()
-                                val maxVal = sorted.last()
-
-                                // Find OCR elements with matching values to get pixel positions
-                                val rawElems = ocr?.rawElements ?: emptyList()
-                                val xElems = rawElems
-                                    .filter { it.numericValue != null && it.numericValue in sorted }
-                                    .sortedBy { it.numericValue }
-
-                                // Convert from full-image coords to graphRegion-relative coords
-                                val regionX = selectedRegion.x.toFloat()
-
-                                // Build calibration points from OCR elements
-                                // Filter: only use elements that map to valid pixel positions (inside the region)
-                                val validPoints = xElems.mapNotNull { elem ->
-                                    val px = (elem.x + elem.width / 2f) - regionX
-                                    val value = elem.numericValue ?: return@mapNotNull null
-                                    // Reject if pixel position is outside the region (±10% tolerance)
-                                    if (px < -regionWidth * 0.1f || px > regionWidth * 1.1f) {
-                                        println("PIPELINE[X_CAL] rejected: value=$value px=$px (outside region 0..${regionWidth.toInt()})")
-                                        return@mapNotNull null
-                                    }
-                                    px to value
-                                }.distinctBy { it.second } // one point per unique value
-                                    .sortedBy { it.second }
-
-                                val hasDistinctPixels = validPoints
-                                    .distinctBy { it.first.roundToInt() }
-                                    .size >= 2
-
-                                if (validPoints.size >= 2 && hasDistinctPixels) {
-                                    val first = validPoints.first()
-                                    val last = validPoints.last()
-                                    println("PIPELINE[X_CAL] OCR-based: px1=${first.first}→${first.second}, px2=${last.first}→${last.second} (regionX=$regionX, ${validPoints.size} points)")
-
-                                    xCalibration = XAxisCalibration(
-                                        calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                            point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(first.first, first.second),
-                                            point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(last.first, last.second),
-                                        ),
-                                        unit = ocr?.xUnit ?: "мин",
-                                        timestamp = System.currentTimeMillis(),
-                                    )
-                                } else {
-                                    println("PIPELINE[X_CAL] blocked: not enough valid OCR points (${validPoints.size})")
-                                    failAutomaticAxisCalibration("at least two distinct X tick label positions are required")
-                                }
+                            xCalibration = ocr.buildAutomaticXAxisCalibration(selectedRegion, axes)
+                            if (xCalibration != null) {
+                                val cal = xCalibration!!.calibration
+                                println("PIPELINE[X_CAL] auto: px1=${cal.point1.pixelPos}->${cal.point1.realValue}, px2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${xCalibration!!.unit}")
                             } else {
                                 failAutomaticAxisCalibration("at least two X tick labels are required before signal conversion")
                             }
@@ -443,54 +396,10 @@ fun ProcessingFlowScreen(
                         if (yCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
-                            val yValues = ocr?.suggestedYValues ?: emptyList()
-                            val origin = axes?.origin
-
-                            if (yValues.size >= 2) {
-                                val sorted = yValues.sorted()
-                                val maxVal = sorted.last()
-
-                                // Find OCR element for the highest Y value to get its pixel position
-                                val rawElems = ocr?.rawElements ?: emptyList()
-                                val topElem = rawElems
-                                    .filter { it.numericValue == maxVal && (it.width > 0f || it.height > 0f) }
-                                    .minByOrNull { it.y } // highest on screen = smallest y
-
-                                // Convert to graphRegion-relative coords
-                                val regionY = selectedRegion.y.toFloat()
-
-                                // Top of Y scale: position of highest OCR label
-                                val py1 = if (topElem != null) {
-                                    (topElem.y + topElem.height / 2f) - regionY
-                                } else {
-                                    0f
-                                }
-
-                                // Bottom of Y scale: origin = zero line
-                                // origin.y is in full-image coords, convert to region-relative
-                                val py2 = if (origin != null) {
-                                    origin.y - regionY
-                                } else {
-                                    selectedRegion.height.toFloat()
-                                }
-
-                                // Y axis: py1 (top, small pixel) → maxVal, py2 (bottom, origin) → 0
-                                println("PIPELINE[Y_CAL] OCR-based: py1=$py1→$maxVal, py2=$py2→0 (regionY=$regionY)")
-
-                                val candidateCalibration = YAxisCalibration(
-                                    calibration = com.chromalab.feature.processing.calibration.LinearCalibration(
-                                        point1 = com.chromalab.feature.processing.calibration.CalibrationPoint(py1, maxVal),
-                                        point2 = com.chromalab.feature.processing.calibration.CalibrationPoint(py2, 0f),
-                                    ),
-                                    unit = ocr?.yUnit ?: "mAU",
-                                    timestamp = System.currentTimeMillis(),
-                                )
-                                if (candidateCalibration.calibration.isValid) {
-                                    yCalibration = candidateCalibration
-                                } else {
-                                    println("PIPELINE[Y_CAL] blocked: invalid OCR pixels py1=$py1 py2=$py2")
-                                    failAutomaticAxisCalibration("valid Y tick pixel positions are required before signal conversion")
-                                }
+                            yCalibration = ocr.buildAutomaticYAxisCalibration(selectedRegion, axes)
+                            if (yCalibration != null) {
+                                val cal = yCalibration!!.calibration
+                                println("PIPELINE[Y_CAL] auto: py1=${cal.point1.pixelPos}->${cal.point1.realValue}, py2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${yCalibration!!.unit}")
                             } else {
                                 failAutomaticAxisCalibration("at least two Y tick labels are required before signal conversion")
                             }
@@ -973,29 +882,20 @@ fun ProcessingFlowScreen(
                                         color = MaterialTheme.colorScheme.onErrorContainer,
                                     )
                                 }
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                                ) {
-                                    OutlinedButton(onClick = { onCancel() }) {
-                                        Text("Отмена")
-                                    }
-                                    Button(onClick = {
+                                ProcessingErrorActions(
+                                    blocksSkip = blocksSkip,
+                                    onCancel = onCancel,
+                                    onRetry = {
                                         processingError = null
                                         val s = currentStep
                                         currentStep = ProcessingStep.FIRST
                                         currentStep = s
-                                    }) {
-                                        Text("Повторить")
-                                    }
-                                    if (!blocksSkip) {
-                                        TextButton(onClick = {
-                                            processingError = null
-                                            advance(currentStep)
-                                        }) {
-                                            Text("Пропустить")
-                                        }
-                                    }
-                                }
+                                    },
+                                    onSkip = {
+                                        processingError = null
+                                        advance(currentStep)
+                                    },
+                                )
                             }
                         }
                     }
@@ -1068,7 +968,42 @@ fun ProcessingFlowScreen(
     }
 }
 
-
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ProcessingErrorActions(
+    blocksSkip: Boolean,
+    onCancel: () -> Unit,
+    onRetry: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        maxItemsInEachRow = 2,
+    ) {
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.widthIn(min = 112.dp),
+        ) {
+            Text("Отмена", maxLines = 1)
+        }
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.widthIn(min = 128.dp),
+        ) {
+            Text("Повторить", maxLines = 1)
+        }
+        if (!blocksSkip) {
+            TextButton(
+                onClick = onSkip,
+                modifier = Modifier.widthIn(min = 128.dp),
+            ) {
+                Text("Пропустить", maxLines = 1)
+            }
+        }
+    }
+}
 
 // --- Fallback data when processing fails or isn't applicable --------
 
