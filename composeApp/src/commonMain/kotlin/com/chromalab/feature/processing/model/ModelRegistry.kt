@@ -44,6 +44,42 @@ data class ModelInfo(
 ) {
     val totalSizeBytes: Long get() = files.sumOf { it.sizeBytes }
     val primaryFileName: String get() = files.first().fileName
+    val chatContextLimit: Int
+        get() = when {
+            runtime == ModelRuntime.LITERT_LM -> 8192
+            family.equals("qwen3.5-mtp", ignoreCase = true) -> 32768
+            family.contains("gpt-oss", ignoreCase = true) -> 32768
+            runtime == ModelRuntime.LLAMA_CPP -> 16384
+            else -> 4096
+        }
+    val defaultChatContextSize: Int
+        get() = when {
+            family.equals("qwen3.5-mtp", ignoreCase = true) -> 4096
+            runtime == ModelRuntime.LITERT_LM -> 4096
+            else -> minOf(4096, chatContextLimit)
+        }
+    val kvCacheBytesPerToken: Long
+        get() = when {
+            id.contains("20b", ignoreCase = true) -> 1_024L * 1_024L
+            id.contains("9b", ignoreCase = true) -> 512L * 1024L
+            id.contains("8b", ignoreCase = true) -> 512L * 1024L
+            id.contains("4b", ignoreCase = true) -> 256L * 1024L
+            id.contains("2b", ignoreCase = true) -> 192L * 1024L
+            runtime == ModelRuntime.LITERT_LM -> 192L * 1024L
+            else -> 256L * 1024L
+        }
+    val runtimeOverheadBytes: Long
+        get() = when (runtime) {
+            ModelRuntime.LITERT_LM -> 512L * 1024L * 1024L
+            ModelRuntime.LLAMA_CPP -> if (supportsMtp) 768L * 1024L * 1024L else 512L * 1024L * 1024L
+        }
+    val maxMtpDraftTokens: Int get() = if (supportsMtp) 16 else 0
+    val defaultMtpDraftTokens: Int
+        get() = when {
+            !supportsMtp -> 0
+            id.contains("9b", ignoreCase = true) -> 8
+            else -> 10
+        }
     val supportsMtp: Boolean
         get() {
             if (runtime != ModelRuntime.LLAMA_CPP) return false
@@ -88,7 +124,7 @@ data class ModelGroup(
  *               FastVLM 0.5B (1.08 GB), Qwen3.5 0.8B VLM (1.08 GB)
  *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
  *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M),
- *               Qwen3.5 MTP 4B/9B chat (Q4_K_M, UD-Q4_K_XL),
+ *               Qwen3.5 MTP 4B/9B chat (all Unsloth GGUF quants),
  *               GPT-OSS 20B chat test (Q4_K_M),
  *               PaddleOCR-VL-1.5 (Q8_0, BF16),
  *               dots.mocr (Q5_K_M, Q8_0, BF16),
@@ -361,33 +397,78 @@ object ModelRegistry {
         quantLabel = quant,
     )
 
-    private val qwen35Mtp4B_Q4_K_M = qwen35MtpVariant(
+    private data class Qwen35MtpQuant(
+        val quant: String,
+        val sizeBytes: Long,
+        val minRamMb: Int,
+    )
+
+    private fun qwen35MtpVariants(
+        sizeLabel: String,
+        specs: List<Qwen35MtpQuant>,
+    ): List<ModelInfo> =
+        specs.map { spec ->
+            qwen35MtpVariant(
+                sizeLabel = sizeLabel,
+                quant = spec.quant,
+                sizeBytes = spec.sizeBytes,
+                minRam = spec.minRamMb,
+                desc = "Unsloth Qwen3.5 $sizeLabel MTP GGUF chat model. Quant ${spec.quant}; text-only in ChromaLab.",
+            )
+        }
+
+    private val qwen35Mtp4BVariants = qwen35MtpVariants(
         sizeLabel = "4B",
-        quant = "Q4_K_M",
-        sizeBytes = 2_834_975_040L,
-        minRam = 6144,
-        desc = "Unsloth Qwen3.5 MTP chat model. Standard Q4_K_M quant; text-only in ChromaLab.",
+        specs = listOf(
+            Qwen35MtpQuant("UD-IQ2_M", 1_942_548_800L, 4096),
+            Qwen35MtpQuant("UD-IQ3_XXS", 2_103_521_600L, 4096),
+            Qwen35MtpQuant("UD-Q2_K_XL", 2_121_677_120L, 4096),
+            Qwen35MtpQuant("Q3_K_S", 2_177_505_600L, 4096),
+            Qwen35MtpQuant("Q3_K_M", 2_374_564_160L, 4096),
+            Qwen35MtpQuant("UD-Q3_K_XL", 2_528_860_480L, 4096),
+            Qwen35MtpQuant("IQ4_XS", 2_642_012_480L, 6144),
+            Qwen35MtpQuant("Q4_0", 2_669_209_920L, 6144),
+            Qwen35MtpQuant("Q4_K_S", 2_683_300_160L, 6144),
+            Qwen35MtpQuant("IQ4_NL", 2_729_175_360L, 6144),
+            Qwen35MtpQuant("Q4_K_M", 2_834_975_040L, 6144),
+            Qwen35MtpQuant("Q4_1", 2_877_122_880L, 6144),
+            Qwen35MtpQuant("UD-Q4_K_XL", 2_990_664_000L, 6144),
+            Qwen35MtpQuant("Q5_K_S", 3_124_357_440L, 6144),
+            Qwen35MtpQuant("Q5_K_M", 3_212_790_080L, 6144),
+            Qwen35MtpQuant("UD-Q5_K_XL", 3_304_827_200L, 8192),
+            Qwen35MtpQuant("Q6_K", 3_639_654_720L, 8192),
+            Qwen35MtpQuant("UD-Q6_K_XL", 4_261_908_800L, 8192),
+            Qwen35MtpQuant("Q8_0", 4_610_580_800L, 10240),
+            Qwen35MtpQuant("UD-Q8_K_XL", 6_065_971_520L, 12288),
+            Qwen35MtpQuant("BF16", 8_665_620_544L, 16384),
+        ),
     )
-    private val qwen35Mtp4B_UD_Q4_K_XL = qwen35MtpVariant(
-        sizeLabel = "4B",
-        quant = "UD-Q4_K_XL",
-        sizeBytes = 2_990_664_000L,
-        minRam = 6144,
-        desc = "Unsloth Dynamic Q4_K_XL quant recommended by the model card; text-only MTP chat.",
-    )
-    private val qwen35Mtp9B_Q4_K_M = qwen35MtpVariant(
+
+    private val qwen35Mtp9BVariants = qwen35MtpVariants(
         sizeLabel = "9B",
-        quant = "Q4_K_M",
-        sizeBytes = 5_868_826_976L,
-        minRam = 12288,
-        desc = "Higher-quality Unsloth Qwen3.5 MTP chat model. Standard Q4_K_M quant; high-end only.",
-    )
-    private val qwen35Mtp9B_UD_Q4_K_XL = qwen35MtpVariant(
-        sizeLabel = "9B",
-        quant = "UD-Q4_K_XL",
-        sizeBytes = 6_135_034_208L,
-        minRam = 12288,
-        desc = "Unsloth Dynamic Q4_K_XL quant for Qwen3.5 9B MTP; high-end text-only chat test.",
+        specs = listOf(
+            Qwen35MtpQuant("UD-IQ2_M", 3_969_560_928L, 8192),
+            Qwen35MtpQuant("UD-IQ3_XXS", 4_295_536_992L, 8192),
+            Qwen35MtpQuant("UD-Q2_K_XL", 4_440_797_536L, 8192),
+            Qwen35MtpQuant("Q3_K_S", 4_461_195_616L, 8192),
+            Qwen35MtpQuant("Q3_K_M", 4_834_783_584L, 10240),
+            Qwen35MtpQuant("UD-Q3_K_XL", 5_241_319_776L, 10240),
+            Qwen35MtpQuant("IQ4_XS", 5_467_189_600L, 10240),
+            Qwen35MtpQuant("Q4_0", 5_551_599_968L, 12288),
+            Qwen35MtpQuant("Q4_K_S", 5_577_290_080L, 12288),
+            Qwen35MtpQuant("IQ4_NL", 5_644_398_944L, 12288),
+            Qwen35MtpQuant("Q4_K_M", 5_868_826_976L, 12288),
+            Qwen35MtpQuant("Q4_1", 6_022_541_664L, 12288),
+            Qwen35MtpQuant("UD-Q4_K_XL", 6_135_034_208L, 12288),
+            Qwen35MtpQuant("Q5_K_S", 6_559_543_648L, 12288),
+            Qwen35MtpQuant("Q5_K_M", 6_729_445_728L, 12288),
+            Qwen35MtpQuant("UD-Q5_K_XL", 6_874_345_824L, 12288),
+            Qwen35MtpQuant("Q6_K", 7_684_551_008L, 14336),
+            Qwen35MtpQuant("UD-Q6_K_XL", 8_987_439_456L, 16384),
+            Qwen35MtpQuant("Q8_0", 9_786_061_152L, 16384),
+            Qwen35MtpQuant("UD-Q8_K_XL", 13_245_182_304L, 24576),
+            Qwen35MtpQuant("BF16", 18_407_321_728L, 32768),
+        ),
     )
 
     // ===== GPT-OSS 20B (Unsloth GGUF, chat test) =====
@@ -622,11 +703,13 @@ object ModelRegistry {
         qwen3vl8B_Q2_K, qwen3vl8B_Q3_K_M, qwen3vl8B_Q4_K_M, qwen3vl8B_Q5_K_M, qwen3vl8B_Q6_K, qwen3vl8B_Q8_0,
         // Qwen3.5-VL 9B
         qwen35vl9b,
-        // Qwen3.5 MTP chat variants
-        qwen35Mtp4B_Q4_K_M, qwen35Mtp4B_UD_Q4_K_XL, qwen35Mtp9B_Q4_K_M, qwen35Mtp9B_UD_Q4_K_XL,
-        // GPT-OSS chat test
-        gptOss20B_Q4_K_M,
-    )
+    ) +
+        qwen35Mtp4BVariants +
+        qwen35Mtp9BVariants +
+        listOf(
+            // GPT-OSS chat test
+            gptOss20B_Q4_K_M,
+        )
 
     /** Model groups for expandable UI. */
     val modelGroups: List<ModelGroup> = listOf(
@@ -664,7 +747,7 @@ object ModelRegistry {
             runtime = ModelRuntime.LLAMA_CPP,
             description = "Unsloth GGUF MTP chat model. Text-only in ChromaLab.",
             supportsVision = false,
-            variants = listOf(qwen35Mtp4B_Q4_K_M, qwen35Mtp4B_UD_Q4_K_XL),
+            variants = qwen35Mtp4BVariants,
         ),
         ModelGroup(
             groupId = "qwen35-mtp-9b",
@@ -673,7 +756,7 @@ object ModelRegistry {
             runtime = ModelRuntime.LLAMA_CPP,
             description = "Higher-quality Unsloth GGUF MTP chat model for high-end devices.",
             supportsVision = false,
-            variants = listOf(qwen35Mtp9B_Q4_K_M, qwen35Mtp9B_UD_Q4_K_XL),
+            variants = qwen35Mtp9BVariants,
         ),
         ModelGroup(
             groupId = "paddleocr-vl",

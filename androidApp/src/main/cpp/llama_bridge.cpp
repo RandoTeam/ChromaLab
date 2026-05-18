@@ -1322,12 +1322,21 @@ static std::string run_text_completion_mtp(
     }
 
     common_speculative_print_stats(mc->spec);
-    LOGI("MTP text generated chars=%zu tokens=%d drafted=%d accepted=%d elapsed=%lld ms",
+    const long long elapsed_total_ms = elapsed_ms_since(total_started);
+    const double mtp_acceptance_rate = drafted_tokens > 0
+        ? (100.0 * (double)accepted_draft_tokens / (double)drafted_tokens)
+        : 0.0;
+    const double mtp_tokens_per_second = elapsed_total_ms > 0
+        ? (1000.0 * (double)generated_tokens / (double)elapsed_total_ms)
+        : 0.0;
+    LOGI("MTP text generated chars=%zu tokens=%d drafted=%d accepted=%d acceptance=%.1f%% tps=%.2f elapsed=%lld ms",
          result_text.size(),
          generated_tokens,
          drafted_tokens,
          accepted_draft_tokens,
-         elapsed_ms_since(total_started));
+         mtp_acceptance_rate,
+         mtp_tokens_per_second,
+         elapsed_total_ms);
 
     llama_batch_free(batch_tgt);
     return result_text;
@@ -1399,7 +1408,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         model_params.main_gpu = -1;
     }
     const std::vector<int> gpu_layer_attempts = use_accelerated
-        ? std::vector<int>{4}
+        ? std::vector<int>{16, 8, 4}
         : std::vector<int>{0};
     LOGI("GGUF load params: backendCode=%d accelerated_requested=%d accelerated_available=%d gpu_layer_attempts=%zu split_mode=%d main_gpu=%d threads=%d requested_ctx=%d requested_batch=%d",
          backendCode,
@@ -1436,7 +1445,7 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
 
     // 2) Create context
     llama_context_params ctx_params = llama_context_default_params();
-    ctx_params.n_ctx     = std::clamp((int)contextSize, 1024, 8192);
+    ctx_params.n_ctx     = std::clamp((int)contextSize, 1024, 32768);
     ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
     ctx_params.n_rs_seq  = use_mtp ? (uint32_t)requested_mtp_draft_tokens : 0u;
     ctx_params.n_threads = (threads > 0) ? threads : 4;

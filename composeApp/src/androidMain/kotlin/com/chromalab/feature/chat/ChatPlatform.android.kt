@@ -88,6 +88,7 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
         val loaded = controller.activateForChat(
             modelId = modelId,
             runtimeAccelerator = runtimeAccelerator,
+            contextSize = settings.contextSize,
             mtpDraftTokens = if (settings.enableMtp) settings.mtpDraftTokens.coerceIn(1, 16) else 0,
         )
         if (!loaded) {
@@ -134,11 +135,11 @@ private fun buildChatPrompt(
 
 private fun ChatSettings.toGenerationOptions(): GenerationOptions =
     GenerationOptions(
-        maxTokens = maxTokens.coerceIn(64, 4096),
+        maxTokens = maxTokens.coerceIn(64, maxOf(64, minOf(8192, contextSize / 2))),
         temperature = temperature.coerceIn(0f, 2f),
         topP = topP.coerceIn(0.05f, 1f),
         topK = topK.coerceIn(1, 256),
         repeatPenalty = repeatPenalty.coerceIn(0.8f, 1.5f),
-        repeatLastN = repeatLastN.coerceIn(0, 2048),
+        repeatLastN = repeatLastN.coerceIn(0, contextSize.coerceAtLeast(1024)),
         mtpDraftTokens = if (enableMtp) mtpDraftTokens.coerceIn(1, 16) else 0,
     )

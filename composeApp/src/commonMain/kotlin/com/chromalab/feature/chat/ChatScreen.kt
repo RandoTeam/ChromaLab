@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -57,7 +58,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -271,6 +271,7 @@ fun ChatScreen(
     if (showSettings && selected != null) {
         ChatSettingsSheet(
             settings = selected.settings,
+            selectedModelOption = selectedModelOption,
             onDismiss = { showSettings = false },
             onApply = { settings ->
                 actions.updateSettings(selected.id, settings)
@@ -321,19 +322,32 @@ private fun ChatTopBar(
     onSettings: () -> Unit,
 ) {
     val chatColors = chatColorTokens()
-    CenterAlignedTopAppBar(
-        navigationIcon = {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = chatColors.background.copy(alpha = 0.88f),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .heightIn(min = 64.dp)
+                .padding(horizontal = Spacing.xs, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
             if (selected != null) {
                 IconButton(onClick = onBack, enabled = !isGenerating) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                 }
+            } else {
+                Spacer(Modifier.size(CHAT_TOUCH_TARGET_SIZE))
             }
-        },
-        title = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = selected?.title ?: "Чаты",
@@ -359,8 +373,6 @@ private fun ChatTopBar(
                     )
                 }
             }
-        },
-        actions = {
             if (selected != null) {
                 IconButton(onClick = onSettings, enabled = !isGenerating) {
                     Icon(Icons.Filled.Tune, contentDescription = "Настройки")
@@ -373,8 +385,8 @@ private fun ChatTopBar(
             IconButton(onClick = onNewChat, enabled = !isGenerating) {
                 Icon(Icons.Filled.Add, contentDescription = "Новый чат")
             }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -1023,10 +1035,30 @@ private fun ChatComposer(
 @Composable
 private fun ChatSettingsSheet(
     settings: ChatSettings,
+    selectedModelOption: ChatModelOption?,
     onDismiss: () -> Unit,
     onApply: (ChatSettings) -> Unit,
 ) {
-    var local by remember(settings) { mutableStateOf(settings.copy(enableMtp = true)) }
+    val resourceProfile = selectedModelOption?.resourceProfile ?: ChatModelResourceProfile()
+    val maxContextTokens = resourceProfile.maxContextTokens.coerceAtLeast(1024)
+    val normalizedSettings = settings.copy(
+        enableMtp = resourceProfile.supportsMtp || settings.enableMtp,
+        contextSize = settings.contextSize.coerceIn(1024, maxContextTokens),
+        maxTokens = settings.maxTokens.coerceIn(64, maxOf(64, minOf(8192, settings.contextSize.coerceAtLeast(1024) / 2))),
+        mtpDraftTokens = when {
+            resourceProfile.supportsMtp -> settings.mtpDraftTokens
+                .takeIf { it > 0 }
+                ?.coerceIn(1, resourceProfile.maxMtpDraftTokens.coerceAtLeast(1))
+                ?: resourceProfile.defaultMtpDraftTokens.coerceAtLeast(1)
+            else -> 0
+        },
+    )
+    var local by remember(settings, selectedModelOption?.id) { mutableStateOf(normalizedSettings) }
+    val maxResponseTokens = maxOf(128, minOf(8192, local.contextSize / 2))
+    val estimatedRamBytes = resourceProfile.estimateRuntimeMemoryBytes(
+        contextTokens = local.contextSize,
+        mtpDraftTokens = if (resourceProfile.supportsMtp) local.mtpDraftTokens else 0,
+    )
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
@@ -1035,6 +1067,20 @@ private fun ChatSettingsSheet(
         ) {
             item {
                 Text("Настройки чата", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            }
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Text(
+                        text = selectedModelOption?.name ?: "Модель не выбрана",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Text(
+                        text = "Оценка RAM: ${formatMemoryBytes(estimatedRamBytes)} · контекст ${local.contextSize} токенов",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             item {
                 OutlinedTextField(
@@ -1068,13 +1114,29 @@ private fun ChatSettingsSheet(
             }
             item {
                 SettingSlider(
+                    label = "Context window",
+                    value = local.contextSize.toFloat(),
+                    min = 1024f,
+                    max = maxContextTokens.toFloat(),
+                    valueFormatter = { "${roundContextTokens(it.roundToInt())}" },
+                ) {
+                    val contextTokens = roundContextTokens(it.roundToInt()).coerceIn(1024, maxContextTokens)
+                    local = local.copy(
+                        contextSize = contextTokens,
+                        maxTokens = local.maxTokens.coerceAtMost(maxOf(128, contextTokens / 2)),
+                        repeatLastN = local.repeatLastN.coerceAtMost(contextTokens),
+                    )
+                }
+            }
+            item {
+                SettingSlider(
                     label = "Max tokens",
                     value = local.maxTokens.toFloat(),
                     min = 128f,
-                    max = 4096f,
+                    max = maxResponseTokens.toFloat(),
                     valueFormatter = { it.roundToInt().toString() },
                 ) {
-                    local = local.copy(maxTokens = it.roundToInt())
+                    local = local.copy(maxTokens = it.roundToInt().coerceIn(128, maxResponseTokens))
                 }
             }
             item {
@@ -1102,34 +1164,57 @@ private fun ChatSettingsSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("MTP", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                         Text(
-                            "GGUF text-only draft acceleration",
+                            if (resourceProfile.supportsMtp) {
+                                "Автоматически включено для MTP-модели"
+                            } else {
+                                "Недоступно для выбранной модели"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Switch(
-                        checked = true,
-                        onCheckedChange = { local = local.copy(enableMtp = true) },
+                        checked = resourceProfile.supportsMtp,
+                        onCheckedChange = {
+                            local = local.copy(enableMtp = resourceProfile.supportsMtp)
+                        },
                         enabled = false,
                     )
                 }
             }
-            item {
-                SettingSlider(
-                    label = "MTP draft tokens",
-                    value = local.mtpDraftTokens.toFloat(),
-                    min = 1f,
-                    max = 16f,
-                    valueFormatter = { it.roundToInt().toString() },
-                ) {
-                    local = local.copy(mtpDraftTokens = it.roundToInt())
+            if (resourceProfile.supportsMtp) {
+                item {
+                    SettingSlider(
+                        label = "MTP draft tokens",
+                        value = local.mtpDraftTokens.toFloat(),
+                        min = 1f,
+                        max = resourceProfile.maxMtpDraftTokens.coerceAtLeast(1).toFloat(),
+                        valueFormatter = { it.roundToInt().toString() },
+                    ) {
+                        local = local.copy(mtpDraftTokens = it.roundToInt())
+                    }
                 }
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Отмена") }
                     Spacer(Modifier.width(Spacing.sm))
-                    Button(onClick = { onApply(local.copy(enableMtp = true)) }) { Text("Применить") }
+                    Button(
+                        onClick = {
+                            onApply(
+                                local.copy(
+                                    enableMtp = resourceProfile.supportsMtp,
+                                    contextSize = local.contextSize.coerceIn(1024, maxContextTokens),
+                                    maxTokens = local.maxTokens.coerceIn(64, maxResponseTokens),
+                                    mtpDraftTokens = if (resourceProfile.supportsMtp) {
+                                        local.mtpDraftTokens.coerceIn(1, resourceProfile.maxMtpDraftTokens.coerceAtLeast(1))
+                                    } else {
+                                        0
+                                    },
+                                )
+                            )
+                        },
+                    ) { Text("Применить") }
                 }
             }
             item {
@@ -1456,6 +1541,15 @@ private fun acceleratorHelpText(option: ChatModelOption): String =
         ChatRuntimeBackend.IMPORTED,
         ChatRuntimeBackend.UNKNOWN -> "Для этой модели доступен только объявленный runtime."
     }
+
+private fun roundContextTokens(value: Int): Int =
+    ((value + 127) / 256 * 256).coerceAtLeast(1024)
+
+private fun formatMemoryBytes(bytes: Long): String = when {
+    bytes >= 1024L * 1024L * 1024L -> "%.1f GB".format(bytes / (1024.0 * 1024.0 * 1024.0))
+    bytes >= 1024L * 1024L -> "%.0f MB".format(bytes / (1024.0 * 1024.0))
+    else -> "$bytes B"
+}
 
 @Composable
 private fun SettingSlider(

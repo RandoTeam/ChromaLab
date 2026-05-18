@@ -31,6 +31,7 @@ import com.chromalab.feature.capture.FileImportScreenWithPicker
 import com.chromalab.feature.chat.ChatModelCapabilities
 import com.chromalab.feature.chat.ChatModelCompatibility
 import com.chromalab.feature.chat.ChatModelOption
+import com.chromalab.feature.chat.ChatModelResourceProfile
 import com.chromalab.feature.chat.ChatRuntimeAccelerator
 import com.chromalab.feature.chat.ChatRuntimeBackend
 import com.chromalab.feature.chat.ChatRuntimeUiState
@@ -284,6 +285,7 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
                     sizeBytes = model.totalSizeBytes,
                 ),
                 runtime = model.toChatRuntimeUiState(),
+                resourceProfile = model.toChatModelResourceProfile(),
                 isActive = model.id == activeModelId,
                 isActivating = model.id == activatingModelId,
             )
@@ -314,6 +316,11 @@ private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
                         isSelectableForChat = custom.supportsTextChat,
                         reason = if (custom.supportsTextChat) null else "Imported model is not marked as chat-capable.",
                     ),
+                ),
+                resourceProfile = ChatModelResourceProfile(
+                    maxContextTokens = 4096,
+                    defaultContextTokens = 4096,
+                    baseModelBytes = custom.sizeBytes,
                 ),
                 isActive = custom.id == activeModelId,
                 isActivating = custom.id == activatingModelId,
@@ -378,6 +385,18 @@ private fun ModelInfo.toChatRuntimeUiState(): ChatRuntimeUiState {
     )
 }
 
+private fun ModelInfo.toChatModelResourceProfile(): ChatModelResourceProfile =
+    ChatModelResourceProfile(
+        maxContextTokens = chatContextLimit,
+        defaultContextTokens = defaultChatContextSize,
+        baseModelBytes = totalSizeBytes,
+        kvCacheBytesPerToken = kvCacheBytesPerToken,
+        runtimeOverheadBytes = runtimeOverheadBytes,
+        supportsMtp = supportsMtp,
+        defaultMtpDraftTokens = defaultMtpDraftTokens,
+        maxMtpDraftTokens = maxMtpDraftTokens,
+    )
+
 private fun ModelRuntime.toChatRuntimeBackend(): ChatRuntimeBackend = when (this) {
     ModelRuntime.LITERT_LM -> ChatRuntimeBackend.LITERT_LM
     ModelRuntime.LLAMA_CPP -> ChatRuntimeBackend.LLAMA_CPP
@@ -394,6 +413,7 @@ private fun ModelRuntime.chatAccelerators(): List<ChatRuntimeAccelerator> = when
         ChatRuntimeAccelerator.CPU,
     )
     ModelRuntime.LLAMA_CPP -> listOf(
+        ChatRuntimeAccelerator.AUTO,
         ChatRuntimeAccelerator.CPU,
         ChatRuntimeAccelerator.VULKAN,
     )
@@ -401,7 +421,7 @@ private fun ModelRuntime.chatAccelerators(): List<ChatRuntimeAccelerator> = when
 
 private fun ModelRuntime.defaultChatAccelerator(): ChatRuntimeAccelerator = when (this) {
     ModelRuntime.LITERT_LM -> ChatRuntimeAccelerator.AUTO
-    ModelRuntime.LLAMA_CPP -> ChatRuntimeAccelerator.CPU
+    ModelRuntime.LLAMA_CPP -> ChatRuntimeAccelerator.AUTO
 }
 
 private fun ModelInfo.supportsChatThinking(): Boolean {

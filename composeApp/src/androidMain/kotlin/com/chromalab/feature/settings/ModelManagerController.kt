@@ -54,6 +54,7 @@ class ModelManagerController(
     private var unloadTimerJob: Job? = null
     private var activeChatAccelerator: ChatRuntimeAccelerator? = null
     private var activeChatMtpDraftTokens: Int = 0
+    private var activeChatContextSize: Int = 0
 
     init {
         refresh()
@@ -237,13 +238,21 @@ class ModelManagerController(
     suspend fun activateForChat(
         modelId: String,
         runtimeAccelerator: ChatRuntimeAccelerator = ChatRuntimeAccelerator.AUTO,
+        contextSize: Int? = null,
         mtpDraftTokens: Int = 0,
     ): Boolean {
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
         val requestedModel = manager.getDownloadedModels().find { it.info.id == modelId }
+        val requestedInfo = requestedModel?.info
+        val requestedContextSize = requestedInfo?.let { info ->
+            (contextSize ?: info.defaultChatContextSize).coerceIn(1024, info.chatContextLimit)
+        } ?: (contextSize ?: 4096).coerceIn(1024, 32768)
         val requestedMtpDraftTokens =
-            if (requestedModel?.info?.supportsMtp == true) {
-                mtpDraftTokens.takeIf { it > 0 }?.coerceIn(1, 16) ?: 16
+            if (requestedInfo?.supportsMtp == true) {
+                mtpDraftTokens
+                    .takeIf { it > 0 }
+                    ?.coerceIn(1, requestedInfo.maxMtpDraftTokens.coerceAtLeast(1))
+                    ?: requestedInfo.defaultMtpDraftTokens.coerceAtLeast(1)
             } else {
                 0
             }
@@ -251,7 +260,8 @@ class ModelManagerController(
             loadedId == modelId &&
             VlmEngineHolder.activeEngine?.isLoaded() == true &&
             activeChatAccelerator == runtimeAccelerator &&
-            activeChatMtpDraftTokens == requestedMtpDraftTokens
+            activeChatMtpDraftTokens == requestedMtpDraftTokens &&
+            activeChatContextSize == requestedContextSize
         ) {
             cancelAutoUnloadTimer()
             refresh()
@@ -295,6 +305,7 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
                 activeChatMtpDraftTokens = 0
+                activeChatContextSize = 0
             }
 
             cancelAutoUnloadTimer()
@@ -314,7 +325,7 @@ class ModelManagerController(
                             mmprojPath = "",
                             threads = manager.threadCount,
                             modelFamily = model.info.family,
-                            contextSize = manager.llamaContextSize(model.info, forVision = false),
+                            contextSize = requestedContextSize,
                             batchSize = manager.llamaBatchSize(model.info, forVision = false),
                             preferAccelerated = preferAccelerated,
                             mtpDraftTokens = effectiveMtpDraftTokens,
@@ -347,6 +358,7 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 activeChatAccelerator = runtimeAccelerator
                 activeChatMtpDraftTokens = effectiveMtpDraftTokens
+                activeChatContextSize = requestedContextSize
                 logModel("Chat engine loaded: ${model.info.displayName} (family=${model.info.family}, backend=${engine.getBackendName()})")
             }
 
@@ -362,6 +374,7 @@ class ModelManagerController(
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
             activeChatMtpDraftTokens = 0
+            activeChatContextSize = 0
             _state.update {
                 it.copy(
                     activatingModelId = null,
@@ -384,6 +397,7 @@ class ModelManagerController(
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
             activeChatMtpDraftTokens = 0
+            activeChatContextSize = 0
         }
         manager.delete(modelId)
         refresh()
@@ -472,6 +486,7 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
                 activeChatMtpDraftTokens = 0
+                activeChatContextSize = 0
                 manager.clearActiveModel()
                 refresh()
             }
@@ -520,6 +535,7 @@ class ModelManagerController(
         VlmEngineHolder.executedModel = null
         activeChatAccelerator = null
         activeChatMtpDraftTokens = 0
+        activeChatContextSize = 0
         manager.clearActiveModel()
         refresh()
     }
@@ -551,6 +567,7 @@ class ModelManagerController(
         VlmEngineHolder.executedModel = null
         activeChatAccelerator = null
         activeChatMtpDraftTokens = 0
+        activeChatContextSize = 0
         manager.clearActiveModel()
         refresh()
     }
@@ -614,6 +631,7 @@ class ModelManagerController(
                 VlmEngineHolder.selectedModel = null
                 activeChatAccelerator = null
                 activeChatMtpDraftTokens = 0
+                activeChatContextSize = 0
             } else {
                 logModel("Unloading active non-chromatogram vision model before pipeline: ${VlmEngineHolder.activeModelDiagnostics()}")
                 VlmEngineHolder.activeEngine = null
@@ -621,6 +639,7 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = null
                 activeChatAccelerator = null
                 activeChatMtpDraftTokens = 0
+                activeChatContextSize = 0
             }
         }
 
@@ -632,6 +651,7 @@ class ModelManagerController(
             VlmEngineHolder.executedModel = null
             activeChatAccelerator = null
             activeChatMtpDraftTokens = 0
+            activeChatContextSize = 0
         }
 
         // Find a model to load for chromatogram vision. This path must never
@@ -750,7 +770,7 @@ private fun ModelInfo.preferAcceleratedForChat(
 ): Boolean =
     when (runtime) {
         ModelRuntime.LITERT_LM -> runtimeAccelerator != ChatRuntimeAccelerator.CPU
-        ModelRuntime.LLAMA_CPP -> runtimeAccelerator == ChatRuntimeAccelerator.VULKAN
+        ModelRuntime.LLAMA_CPP -> runtimeAccelerator != ChatRuntimeAccelerator.CPU
     }
 
 private fun ModelDownloadUiState.isRunningDownload(): Boolean =

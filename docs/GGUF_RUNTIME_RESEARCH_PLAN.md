@@ -424,6 +424,47 @@ adb shell am start -n com.chromalab.app/.MainActivity \
   --es backend accelerated
 ```
 
+## 2026-05-19 MTP Chat Runtime Audit
+
+Live log capture on the stronger phone showed that the Qwen3.5 MTP path is
+functional after the speculative-context cleanup, but it was not using the
+fastest available path:
+
+- The loaded model was `qwen35-mtp-9b-ud-q4kxl`
+  (`Qwen3.5-MTP-9B-UD_Q4_K_XL.gguf`).
+- The native load line reported `backendCode=0` while
+  `accelerated_available=1`, so chat AUTO still loaded CPU-only.
+- The same run used `ctx=4096`, `batch=512`, and `mtpDraftTokens=10`.
+- Prompt evaluation took about 34.8 s for 274 prompt tokens.
+- Earlier MTP stats showed `drafted=768`, `accepted=128`, and about
+  182 s for 172 generated tokens, which means MTP was active but acceptance was
+  low and the CPU path was too slow for this 9B quant.
+- Android system logs reported sustained high CPU load for
+  `com.chromalab.app`.
+
+Implemented follow-up:
+
+- GGUF chat accelerator default is now AUTO, and AUTO is allowed to request the
+  accelerated llama.cpp backend instead of forcing CPU.
+- Native accelerated loads now try 16, then 8, then 4 GPU layers before falling
+  back at load failure.
+- Native context cap is raised from 8192 to 32768 so the UI context slider and
+  runtime limit no longer contradict each other.
+- MTP generation logs now include acceptance percentage and tokens/second.
+- Qwen3.5 MTP 4B and 9B expose all verified Unsloth GGUF quants in the model
+  registry.
+- Chat settings now expose selected-model context limits and a live RAM
+  estimate that changes with the context window and MTP draft setting.
+
+Open validation:
+
+- Re-run the same 9B MTP prompt on the phone and confirm that AUTO reports an
+  accelerated backend when the device supports it.
+- Compare `acceptance` and `tps` before/after. If Vulkan loads but is slower or
+  unstable on a device, select CPU explicitly and keep the evidence in logcat.
+- For weak devices, prefer 4B low/medium quants and smaller context windows; do
+  not weaken model output quality to hide hardware limits.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.

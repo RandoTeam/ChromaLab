@@ -113,6 +113,12 @@ class ModelRegistryVisionPackageTest {
     fun qwen35MtpModelsAreTextOnlyChatEntries() {
         val fourB = assertNotNull(ModelRegistry.findById("qwen35-mtp-4b-q4km"))
         val nineB = assertNotNull(ModelRegistry.findById("qwen35-mtp-9b-ud-q4kxl"))
+        val fourBGroup = assertNotNull(
+            ModelRegistry.groupsForRuntime(ModelRuntime.LLAMA_CPP).firstOrNull { it.groupId == "qwen35-mtp-4b" },
+        )
+        val nineBGroup = assertNotNull(
+            ModelRegistry.groupsForRuntime(ModelRuntime.LLAMA_CPP).firstOrNull { it.groupId == "qwen35-mtp-9b" },
+        )
 
         listOf(fourB, nineB).forEach { model ->
             assertEquals(ModelRuntime.LLAMA_CPP, model.runtime)
@@ -121,7 +127,13 @@ class ModelRegistryVisionPackageTest {
             assertFalse(ModelRegistry.isChromatogramVisionModel(model))
             assertEquals(1, model.files.size)
             assertEquals(ModelFileType.GGUF_BASE, model.files.single().type)
+            assertTrue(model.supportsMtp)
         }
+
+        assertEquals(21, fourBGroup.variants.size)
+        assertEquals(21, nineBGroup.variants.size)
+        assertNotNull(ModelRegistry.findById("qwen35-mtp-4b-bf16"))
+        assertNotNull(ModelRegistry.findById("qwen35-mtp-9b-bf16"))
 
         assertEquals(
             "https://huggingface.co/unsloth/Qwen3.5-4B-MTP-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf",

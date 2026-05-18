@@ -15,12 +15,13 @@ data class ChatSettings(
     val temperature: Float = 0.15f,
     val topP: Float = 0.95f,
     val topK: Int = 40,
+    val contextSize: Int = 4096,
     val maxTokens: Int = 1024,
     val repeatPenalty: Float = 1.05f,
     val repeatLastN: Int = 128,
     val enableThinking: Boolean = false,
     val enableMtp: Boolean = true,
-    val mtpDraftTokens: Int = 16,
+    val mtpDraftTokens: Int = 10,
 )
 
 @Serializable
@@ -89,9 +90,35 @@ data class ChatModelOption(
     val name: String,
     val summary: String,
     val runtime: ChatRuntimeUiState = ChatRuntimeUiState(),
+    val resourceProfile: ChatModelResourceProfile = ChatModelResourceProfile(),
     val isActive: Boolean,
     val isActivating: Boolean = false,
 )
+
+data class ChatModelResourceProfile(
+    val maxContextTokens: Int = 4096,
+    val defaultContextTokens: Int = 4096,
+    val baseModelBytes: Long = 0L,
+    val kvCacheBytesPerToken: Long = 128L * 1024L,
+    val runtimeOverheadBytes: Long = 384L * 1024L * 1024L,
+    val supportsMtp: Boolean = false,
+    val defaultMtpDraftTokens: Int = 0,
+    val maxMtpDraftTokens: Int = 0,
+) {
+    fun estimateRuntimeMemoryBytes(
+        contextTokens: Int,
+        mtpDraftTokens: Int,
+    ): Long {
+        val ctx = contextTokens.coerceIn(1024, maxContextTokens.coerceAtLeast(1024))
+        val targetKvBytes = kvCacheBytesPerToken * ctx.toLong()
+        val draftKvBytes = if (supportsMtp && mtpDraftTokens > 0) {
+            (targetKvBytes * 3L) / 5L
+        } else {
+            0L
+        }
+        return baseModelBytes + targetKvBytes + draftKvBytes + runtimeOverheadBytes
+    }
+}
 
 enum class ChatRuntimeBackend(
     val label: String,
