@@ -12,15 +12,15 @@ enum class ChatRole {
 @Serializable
 data class ChatSettings(
     val systemPrompt: String = "You are a concise, helpful on-device assistant.",
-    val temperature: Float = 0.7f,
+    val temperature: Float = 0.15f,
     val topP: Float = 0.95f,
     val topK: Int = 40,
     val maxTokens: Int = 1024,
     val repeatPenalty: Float = 1.05f,
     val repeatLastN: Int = 128,
     val enableThinking: Boolean = false,
-    val enableMtp: Boolean = false,
-    val mtpDraftTokens: Int = 4,
+    val enableMtp: Boolean = true,
+    val mtpDraftTokens: Int = 16,
 )
 
 @Serializable

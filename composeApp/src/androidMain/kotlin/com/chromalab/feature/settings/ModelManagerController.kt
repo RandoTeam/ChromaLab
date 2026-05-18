@@ -242,7 +242,11 @@ class ModelManagerController(
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
         val requestedModel = manager.getDownloadedModels().find { it.info.id == modelId }
         val requestedMtpDraftTokens =
-            if (requestedModel?.info?.runtime == ModelRuntime.LLAMA_CPP) mtpDraftTokens.coerceIn(0, 16) else 0
+            if (requestedModel?.info?.supportsMtp == true) {
+                mtpDraftTokens.takeIf { it > 0 }?.coerceIn(1, 16) ?: 16
+            } else {
+                0
+            }
         if (
             loadedId == modelId &&
             VlmEngineHolder.activeEngine?.isLoaded() == true &&
@@ -297,7 +301,7 @@ class ModelManagerController(
             manager.setActiveModel(modelId)
             val preferAccelerated = model.info.preferAcceleratedForChat(runtimeAccelerator)
             val effectiveMtpDraftTokens =
-                if (model.info.runtime == ModelRuntime.LLAMA_CPP) requestedMtpDraftTokens else 0
+                if (model.info.supportsMtp) requestedMtpDraftTokens else 0
 
             // Create engine based on runtime. Chat loads text-only to keep memory lower than
             // chromatogram vision analysis, which loads its own model/mmproj later.

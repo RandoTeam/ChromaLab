@@ -1026,7 +1026,7 @@ private fun ChatSettingsSheet(
     onDismiss: () -> Unit,
     onApply: (ChatSettings) -> Unit,
 ) {
-    var local by remember(settings) { mutableStateOf(settings) }
+    var local by remember(settings) { mutableStateOf(settings.copy(enableMtp = true)) }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
@@ -1108,29 +1108,28 @@ private fun ChatSettingsSheet(
                         )
                     }
                     Switch(
-                        checked = local.enableMtp,
-                        onCheckedChange = { local = local.copy(enableMtp = it) },
+                        checked = true,
+                        onCheckedChange = { local = local.copy(enableMtp = true) },
+                        enabled = false,
                     )
                 }
             }
-            if (local.enableMtp) {
-                item {
-                    SettingSlider(
-                        label = "MTP draft tokens",
-                        value = local.mtpDraftTokens.toFloat(),
-                        min = 1f,
-                        max = 16f,
-                        valueFormatter = { it.roundToInt().toString() },
-                    ) {
-                        local = local.copy(mtpDraftTokens = it.roundToInt())
-                    }
+            item {
+                SettingSlider(
+                    label = "MTP draft tokens",
+                    value = local.mtpDraftTokens.toFloat(),
+                    min = 1f,
+                    max = 16f,
+                    valueFormatter = { it.roundToInt().toString() },
+                ) {
+                    local = local.copy(mtpDraftTokens = it.roundToInt())
                 }
             }
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Отмена") }
                     Spacer(Modifier.width(Spacing.sm))
-                    Button(onClick = { onApply(local) }) { Text("Применить") }
+                    Button(onClick = { onApply(local.copy(enableMtp = true)) }) { Text("Применить") }
                 }
             }
             item {

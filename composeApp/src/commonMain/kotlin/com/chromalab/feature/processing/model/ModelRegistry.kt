@@ -44,6 +44,24 @@ data class ModelInfo(
 ) {
     val totalSizeBytes: Long get() = files.sumOf { it.sizeBytes }
     val primaryFileName: String get() = files.first().fileName
+    val supportsMtp: Boolean
+        get() {
+            if (runtime != ModelRuntime.LLAMA_CPP) return false
+            if (files.any { it.type == ModelFileType.GGUF_MMPROJ }) return false
+
+            val supportSignal = listOf(
+                id,
+                displayName,
+                family,
+                files.firstOrNull()?.fileName.orEmpty(),
+                quantLabel.orEmpty(),
+                description,
+            ).joinToString(" ").lowercase()
+
+            return supportSignal.contains("mtp") ||
+                supportSignal.contains("nextn") ||
+                supportSignal.contains("next-n")
+        }
 }
 
 /**

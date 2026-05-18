@@ -1163,7 +1163,9 @@ static std::string run_text_completion_mtp(
                 llama_memory_seq_pos_max(llama_get_memory(mc->ctx), seq_id)
             );
 
-            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+            const bool use_ckpt_dft_before =
+                ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL;
+            if (use_ckpt_dft_before) {
                 ckpt.update_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
             }
 
@@ -1178,12 +1180,26 @@ static std::string run_text_completion_mtp(
             common_speculative_draft(mc->spec);
             drafted_tokens += (int)draft.size();
 
-            if (!draft.empty() && ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+            if (ctx_dft_seq_rm_type != COMMON_CONTEXT_SEQ_RM_TYPE_NO) {
+                if (use_ckpt_dft_before) {
+                    ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+                }
+                common_context_seq_rm(mc->ctx_mtp, seq_id, ckpt.pos_max + 1, -1);
+            }
+
+            const bool use_ckpt_tgt_after =
+                ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL ||
+                (ctx_tgt_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS &&
+                    draft.size() > (size_t)llama_n_rs_seq(mc->ctx));
+            const bool use_ckpt_dft_after =
+                ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_RS &&
+                draft.size() > (size_t)llama_n_rs_seq(mc->ctx_mtp);
+
+            if (!draft.empty() && use_ckpt_tgt_after) {
                 ckpt.update_tgt(mc->ctx, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
             }
-            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
-                ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
-                common_context_seq_rm(mc->ctx_mtp, seq_id, ckpt.pos_max + 1, -1);
+            if (!draft.empty() && use_ckpt_dft_after) {
+                ckpt.update_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
             }
         }
 
@@ -1223,8 +1239,10 @@ static std::string run_text_completion_mtp(
             draft = std::move(ids);
             ckpt.load_tgt(mc->ctx, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
             common_context_seq_rm(mc->ctx, seq_id, ckpt.pos_max + 1, -1);
-            if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
-                ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+            if (ctx_dft_seq_rm_type != COMMON_CONTEXT_SEQ_RM_TYPE_NO) {
+                if (ctx_dft_seq_rm_type == COMMON_CONTEXT_SEQ_RM_TYPE_FULL) {
+                    ckpt.load_dft(mc->ctx_mtp, seq_id, LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY | LLAMA_STATE_SEQ_FLAGS_ON_DEVICE);
+                }
                 common_context_seq_rm(mc->ctx_mtp, seq_id, ckpt.pos_max + 1, -1);
             }
             prompt_tgt.resize((size_t)ckpt.n_tokens);
