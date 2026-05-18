@@ -22,7 +22,7 @@ object Strings {
     val tabProjects @Composable get() = s("Проекты", "Projects", "Projets", "Projekte", "Proyectos", "Progetti", "Projekty", "Projekty")
     val tabCapture @Composable get() = s("Съёмка", "Capture", "Capture", "Aufnahme", "Captura", "Cattura", "Zdjęcie", "Snímek")
     val tabCalculations @Composable get() = s("Расчёты", "Calculations", "Calculs", "Berechnungen", "Cálculos", "Calcoli", "Obliczenia", "Výpočty")
-    val tabMore @Composable get() = s("Ещё", "More", "Plus", "Mehr", "Más", "Altro", "Więcej", "Více")
+    val tabMore @Composable get() = s("Настройки", "Settings", "Paramètres", "Einstellungen", "Ajustes", "Impostazioni", "Ustawienia", "Nastavení")
 
     // --- Buttons ---
     val btnNewProject @Composable get() = s("Новый проект", "New Project", "Nouveau projet", "Neues Projekt", "Nuevo proyecto", "Nuovo progetto", "Nowy projekt", "Nový projekt")

@@ -3,9 +3,9 @@ package com.chromalab.app.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.chromalab.core.common.AppLanguage
@@ -22,7 +22,7 @@ enum class BottomTab(
     Capture(icon = Icons.Filled.PhotoCamera, route = Route.Capture),
     Calculations(icon = Icons.Filled.Analytics, route = Route.Calculations),
     Chats(icon = Icons.Filled.Chat, route = Route.Chats),
-    More(icon = Icons.Filled.MoreHoriz, route = Route.More),
+    More(icon = Icons.Filled.Settings, route = Route.More),
     ;
 
     val label: String

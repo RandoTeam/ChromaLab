@@ -52,6 +52,8 @@ kotlin {
             // Image loading
             implementation(libs.coil.compose)
             implementation(libs.coil.network)
+            implementation(libs.richtext.commonmark)
+            implementation(libs.richtext.ui.material3)
 
             // Room
             implementation(libs.room.runtime)

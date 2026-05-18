@@ -19,7 +19,7 @@ import com.chromalab.core.ui.theme.AppThemeMode
 import kotlin.math.roundToInt
 
 /**
- * "More" tab screen — settings hub with sections.
+ * Settings hub with sections.
  */
 @Composable
 fun MoreScreen(
@@ -356,9 +356,9 @@ private fun DownloadSpeedLimitCard(
 ) {
     val normalizedLimit = downloadSpeedLimitMbps.coerceIn(0, 50)
     val subtitle = if (normalizedLimit == 0) {
-        "Ð‘ÐµÐ· Ð¾Ð³Ñ€Ð°Ð½Ð¸Ñ‡ÐµÐ½Ð¸Ñ"
+        "Без ограничения"
     } else {
-        "ÐžÐ±Ñ‰Ð¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚: $normalizedLimit MB/s"
+        "Общий лимит: $normalizedLimit MB/s"
     }
 
     ElevatedCard(
@@ -379,7 +379,7 @@ private fun DownloadSpeedLimitCard(
                 Spacer(Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Ð¡ÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒ ÑÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ñ",
+                        "Скорость скачивания",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                     )

@@ -3,6 +3,11 @@ package com.chromalab.feature.chat
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -37,6 +42,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -62,6 +68,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -83,12 +90,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.chromalab.core.ui.theme.Spacing
+import com.halilibo.richtext.commonmark.Markdown
+import com.halilibo.richtext.ui.material3.RichText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -208,6 +217,7 @@ fun ChatScreen(
                 ChatThreadContent(
                     state = state,
                     selected = selected,
+                    isSelectedModelLoading = selectedModelOption?.isActivating == true,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -322,12 +332,12 @@ private fun ChatTopBar(
         title = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
                     text = selected?.title ?: "Чаты",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -375,6 +385,8 @@ private fun ChatModelChip(
     onClick: () -> Unit,
 ) {
     val chatColors = chatColorTokens()
+    val isLoading = option?.isActivating == true
+    val isLoaded = option?.isActive == true && !isLoading
     Row(
         modifier = Modifier
             .clip(CircleShape)
@@ -393,16 +405,31 @@ private fun ChatModelChip(
             )
             if (option?.isActivating == true) {
                 CircularProgressIndicator(modifier = Modifier.size(21.dp), strokeWidth = 2.dp)
+            } else if (isLoaded) {
+                Icon(
+                    Icons.Filled.CheckCircle,
+                    contentDescription = "Модель загружена в память",
+                    modifier = Modifier.size(14.dp).align(Alignment.BottomEnd),
+                    tint = chatColors.accent,
+                )
             }
         }
         Text(
-            text = modelName ?: "Выбрать модель",
+            text = if (isLoading) "Загрузка..." else modelName ?: "Выбрать модель",
             style = MaterialTheme.typography.labelLarge,
             color = chatColors.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 180.dp),
         )
+        if (isLoaded) {
+            Text(
+                text = "В памяти",
+                style = MaterialTheme.typography.labelSmall,
+                color = chatColors.accent,
+                maxLines = 1,
+            )
+        }
         Icon(
             Icons.Filled.ExpandMore,
             contentDescription = null,
@@ -534,6 +561,7 @@ private fun ChatSessionCard(
 private fun ChatThreadContent(
     state: ChatState,
     selected: ChatSession?,
+    isSelectedModelLoading: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val chatColors = chatColorTokens()
@@ -587,30 +615,81 @@ private fun ChatThreadContent(
         }
         if (showGeneratingPlaceholder) {
             item {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    color = chatColors.panelHigh,
-                    shape = RoundedCornerShape(16.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                        Text(
-                            "Модель отвечает...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = chatColors.mutedText,
-                        )
-                    }
-                }
+                ChatActivitySurface(
+                    label = if (isSelectedModelLoading) "Загружаю модель в память" else "Модель готовит ответ",
+                )
             }
         }
         item(key = "chat_bottom_anchor") {
             Spacer(Modifier.height(Spacing.sm))
+        }
+    }
+}
+
+@Composable
+private fun ChatActivitySurface(label: String) {
+    val chatColors = chatColorTokens()
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        color = chatColors.panelHigh,
+        shape = RoundedCornerShape(16.dp),
+    ) {
+        ChatActivityIndicator(
+            label = label,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChatActivityIndicator(
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    val chatColors = chatColorTokens()
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        AnimatedDots(color = chatColors.accent)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = chatColors.mutedText,
+        )
+    }
+}
+
+@Composable
+private fun AnimatedDots(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "chat_dots")
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(3) { index ->
+            val alpha by transition.animateFloat(
+                initialValue = 0.32f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 640, delayMillis = index * 120, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "chat_dot_$index",
+            )
+            Box(
+                modifier = Modifier
+                    .size(5.dp)
+                    .graphicsLayer { this.alpha = alpha }
+                    .background(color, CircleShape),
+            )
         }
     }
 }
@@ -648,9 +727,8 @@ private fun MessageBubble(message: ChatMessage) {
                 color = chatColors.mutedText,
             )
             if (isUser) {
-                Text(
+                ChatMarkdownText(
                     text = message.content,
-                    style = MaterialTheme.typography.bodyMedium,
                     color = chatColors.onUserBubble,
                 )
             } else {
@@ -676,11 +754,7 @@ private fun ChatThinkingBlock(
     isStreaming: Boolean,
 ) {
     val chatColors = chatColorTokens()
-    var expanded by remember { mutableStateOf(isStreaming) }
-
-    LaunchedEffect(isStreaming) {
-        if (isStreaming) expanded = true
-    }
+    var expanded by remember { mutableStateOf(false) }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -694,7 +768,7 @@ private fun ChatThinkingBlock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = !isStreaming) { expanded = !expanded },
+                    .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -704,6 +778,12 @@ private fun ChatThinkingBlock(
                     modifier = Modifier.size(15.dp),
                     tint = chatColors.mutedText,
                 )
+                if (isStreaming) {
+                    AnimatedDots(
+                        color = chatColors.accent,
+                        modifier = Modifier.width(24.dp),
+                    )
+                }
                 Text(
                     text = "Thinking",
                     style = MaterialTheme.typography.labelMedium,
@@ -718,11 +798,11 @@ private fun ChatThinkingBlock(
                 )
             }
             AnimatedVisibility(visible = expanded) {
-                Text(
+                ChatMarkdownText(
                     text = text,
                     modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodySmall,
                     color = chatColors.mutedText,
+                    small = true,
                 )
             }
         }
@@ -753,14 +833,16 @@ private fun StreamingMessageText(message: ChatMessage) {
 
     val text = when {
         bufferedText.isNotBlank() -> bufferedText
-        message.isStreaming -> "Генерация..."
+        message.isStreaming -> ""
         else -> message.content
     }
 
-    val isStructuredOutput = text.looksLikeStructuredOutput()
-    val shouldFade = message.isStreaming &&
-        !isStructuredOutput &&
-        text.length <= CHAT_STREAM_FADE_MAX_CHARS
+    if (text.isBlank() && message.isStreaming) {
+        ChatActivityIndicator(label = "Формирую ответ")
+        return
+    }
+
+    val shouldFade = message.isStreaming && text.length <= CHAT_STREAM_FADE_MAX_CHARS
 
     if (shouldFade) {
         Crossfade(
@@ -768,25 +850,30 @@ private fun StreamingMessageText(message: ChatMessage) {
             animationSpec = tween(durationMillis = CHAT_STREAM_FADE_MS),
             label = "chat_stream_text",
         ) { target ->
-            ChatStreamTextContent(target)
+            ChatMarkdownText(target)
         }
     } else {
-        ChatStreamTextContent(text)
+        ChatMarkdownText(text)
     }
 }
 
 @Composable
-private fun ChatStreamTextContent(text: String) {
-    val textStyle = if (text.looksLikeStructuredOutput()) {
-        MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
-    } else {
-        MaterialTheme.typography.bodyMedium
+private fun ChatMarkdownText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color? = null,
+    small: Boolean = false,
+) {
+    val chatColors = chatColorTokens()
+    val resolvedColor = color ?: chatColors.text
+    val style = if (small) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+    SelectionContainer {
+        ProvideTextStyle(value = style.copy(color = resolvedColor)) {
+            RichText(modifier = modifier.fillMaxWidth()) {
+                Markdown(content = text)
+            }
+        }
     }
-    Text(
-        text = text,
-        modifier = Modifier.fillMaxWidth(),
-        style = textStyle,
-    )
 }
 
 @Composable
@@ -819,21 +906,6 @@ private fun formatStatsText(stats: ChatMessageStats): String =
         add("${formatRate(stats.tokensPerSecond)} tok/s")
     }.joinToString(" | ")
 
-private fun String.looksLikeStructuredOutput(): Boolean {
-    val trimmed = trim()
-    if (trimmed.isEmpty()) return false
-    if ("```" in trimmed) return true
-    val lines = trimmed.lines()
-    if (lines.any { it.count { char -> char == '|' } >= 2 }) return true
-    return lines.any { line ->
-        line.contains('\t') ||
-            line.contains("Retention", ignoreCase = true) ||
-            line.contains("Peak", ignoreCase = true) ||
-            line.contains("Area", ignoreCase = true) ||
-            line.contains("RT", ignoreCase = false)
-    }
-}
-
 @Composable
 private fun ChatComposer(
     enabled: Boolean,
@@ -861,16 +933,16 @@ private fun ChatComposer(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .heightIn(min = 76.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .heightIn(min = 58.dp),
             shape = CHAT_COMPOSER_SHAPE,
             color = chatColors.panel,
             border = BorderStroke(1.dp, chatColors.outline),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                verticalAlignment = Alignment.Bottom,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 BasicTextField(
                     value = text,
@@ -886,11 +958,11 @@ private fun ChatComposer(
                                 }
                             }
                         }
-                        .padding(vertical = 10.dp),
+                        .padding(vertical = 6.dp),
                     enabled = enabled && !isGenerating,
                     minLines = 1,
                     maxLines = 3,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = if (enabled && !isGenerating) {
                             chatColors.text
                         } else {
@@ -902,7 +974,7 @@ private fun ChatComposer(
                             if (text.isEmpty()) {
                                 Text(
                                     text = placeholderText,
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = chatColors.mutedText,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -1332,14 +1404,24 @@ private fun ChatModelPickerRow(
             }
         }
         when {
-            option.isActivating -> CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            option.isActivating -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Text(
+                    "Загрузка в память...",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = chatColors.accent,
+                )
+            }
             !isSelectable -> Text(
                 "Недоступна",
                 style = MaterialTheme.typography.labelSmall,
                 color = chatColors.error,
             )
             selected && option.isActive -> Text(
-                "Загружена",
+                "В памяти",
                 style = MaterialTheme.typography.labelSmall,
                 color = chatColors.accent,
             )
@@ -1350,7 +1432,7 @@ private fun ChatModelPickerRow(
                 tint = chatColors.accent,
             )
             option.isActive -> Text(
-                "Загружена",
+                "В памяти",
                 style = MaterialTheme.typography.labelSmall,
                 color = chatColors.accent,
             )
