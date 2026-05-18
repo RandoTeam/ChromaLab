@@ -70,6 +70,22 @@ object CalculationRunReportExporter {
         options: CalculationRunReportOptions = CalculationRunReportOptions(),
     ): String =
         DebugPackageExporter.exportRuntimeEvidencePackage(buildReport(run, options))
+
+    fun exportRuntimeEvidenceValidationJson(
+        run: CalculationRun,
+        options: CalculationRunReportOptions = CalculationRunReportOptions(),
+    ): String =
+        DebugPackageExporter.validateRuntimeEvidencePackageJson(
+            exportRuntimeEvidencePackageJson(run, options),
+        )
+
+    fun exportRuntimeEvidenceValidationMarkdown(
+        run: CalculationRun,
+        options: CalculationRunReportOptions = CalculationRunReportOptions(),
+    ): String =
+        DebugPackageExporter.validateRuntimeEvidencePackageMarkdown(
+            exportRuntimeEvidencePackageJson(run, options),
+        )
 }
 
 fun generateExportBundle(run: CalculationRun): Map<String, String> {

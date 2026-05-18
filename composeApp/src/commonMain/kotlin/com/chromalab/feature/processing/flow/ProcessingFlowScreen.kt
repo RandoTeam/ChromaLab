@@ -490,6 +490,8 @@ fun ProcessingFlowScreen(
                                         curveMaskCleanPath = mask.cleanMaskPath ?: result.trace.curveMaskCleanPath,
                                         curveTextSuppressionOverlayPath = mask.textSuppressionOverlayPath
                                             ?: result.trace.curveTextSuppressionOverlayPath,
+                                        curveTextSuppressionRegions = mask.textSuppressionRegions
+                                            .ifEmpty { result.trace.curveTextSuppressionRegions },
                                         curveRejectedComponentsPath = mask.textSuppressionOverlayPath
                                             ?: mask.traceArtifactAudit.artifactMaskPath
                                             ?: result.trace.curveRejectedComponentsPath,

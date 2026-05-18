@@ -24,6 +24,16 @@ object DebugPackageExporter {
     fun exportRuntimeEvidencePackage(report: ChromatogramReport): String =
         json.encodeToString(RuntimeEvidencePackageBuilder.build(report))
 
+    fun validateRuntimeEvidencePackageJson(packageJson: String): String =
+        RuntimeEvidencePackageValidator.exportJson(
+            RuntimeEvidencePackageValidator.validateJson(packageJson),
+        )
+
+    fun validateRuntimeEvidencePackageMarkdown(packageJson: String): String =
+        RuntimeEvidencePackageValidator.renderMarkdown(
+            RuntimeEvidencePackageValidator.validateJson(packageJson),
+        )
+
     /**
      * Write full debug package to the session directory.
      * Copies all intermediate images and writes debug_info.json.

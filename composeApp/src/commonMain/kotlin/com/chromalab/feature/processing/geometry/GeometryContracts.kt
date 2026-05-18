@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.geometry
 
 import com.chromalab.feature.processing.axis.AxisLine
 import com.chromalab.feature.processing.axis.AxisOrigin
+import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import kotlinx.serialization.Serializable
@@ -265,6 +266,7 @@ data class GeometryTrace(
     val curveMaskRawPath: String? = null,
     val curveMaskCleanPath: String? = null,
     val curveTextSuppressionOverlayPath: String? = null,
+    val curveTextSuppressionRegions: List<CurveMaskTextSuppressionRegion> = emptyList(),
     val curveRejectedComponentsPath: String? = null,
     val curveSelectedComponentPath: String? = null,
     val curveSkeletonPath: String? = null,

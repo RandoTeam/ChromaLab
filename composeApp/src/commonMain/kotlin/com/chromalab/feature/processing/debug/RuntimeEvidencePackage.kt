@@ -1,5 +1,6 @@
 package com.chromalab.feature.processing.debug
 
+import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.reports.ChromatogramReport
@@ -29,6 +30,7 @@ data class RuntimeEvidenceGraphPackage(
     val runtimeRecoveredPeaks: List<RecoveredPeakCandidate>,
     val testOnlyRecoveredPeaks: List<RecoveredPeakCandidate>,
     val rejectedRecoveredCandidates: List<RecoveredPeakCandidate>,
+    val suppressedTextBoxes: List<CurveMaskTextSuppressionRegion> = emptyList(),
     val summaryCounts: RuntimeEvidenceSummaryCounts,
     val warnings: List<ReportWarning> = emptyList(),
     val fixtureHintCount: Int = 0,
@@ -116,6 +118,7 @@ object RuntimeEvidencePackageBuilder {
             runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks,
             testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks,
             rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates,
+            suppressedTextBoxes = trace?.curveTextSuppressionRegions.orEmpty(),
             summaryCounts = RuntimeEvidenceSummaryCounts(
                 rawDetectedPeaks = recovery.rawDetectedPeaks,
                 validatedPeaks = recovery.validatedPeaks,

@@ -92,6 +92,43 @@ The package is intentionally report-contract based: it cannot promote
 `FIXTURE_HINT` rows into runtime reportable peaks, and every runtime recovery
 must retain a crop path with source `ML_KIT`, `VLM`, or `BOTH`.
 
+## Runtime Evidence Package Validator
+
+The export screen also exposes:
+
+- `Validate runtime evidence (JSON)`
+- `Validate runtime evidence (Markdown)`
+
+The validator reads a `RuntimeEvidencePackage` JSON payload and produces a
+deterministic `PASS` / `REVIEW` / `FAIL` summary. It does not change any
+calculation, geometry, OCR, or recovery algorithm.
+
+Validated gates:
+
+- source/provenance: original and normalized image paths, device metadata,
+  selected/executed model metadata, and executed runtime;
+- geometry: graph-panel overlay, plot-area overlay, plot area inside graph panel
+  when bounds are present, title/channel text contamination, axis/tick overlays,
+  and calibration fit statuses;
+- OCR/label evidence: runtime source must be `ML_KIT`, `VLM`, or `BOTH`,
+  `FIXTURE_HINT` is blocking, every evidence row needs a local crop path,
+  parsed RT or rejection reason, and text classification;
+- VLM fallback: VLM rows must keep the crop path and raw text, and remain marked
+  as text-only/no-peak-metrics evidence;
+- recovery: every recovered candidate needs source evidence, label RT, local
+  signal window or rejection reason, local maximum or rejection reason, flags,
+  and duplicate protection against existing validated peaks;
+- curve extraction: raw mask, clean mask, selected trace overlay, text-suppression
+  overlay path when used, and listed suppressed text boxes;
+- report contract: raw detected, validated, runtime recovered, test-only
+  recovered, rejected recovery, production reportable, and review-grade counts.
+
+The validator is strict by design. An exported JSON file alone may fail file-path
+checks if the referenced Android artifact files were not exported together or the
+validator is run off-device. Real image success should only be claimed when the
+runtime package and its artifacts validate on the device or in an artifact bundle
+where all referenced paths are present.
+
 ## bench_03 Meaning
 
 The fixture can still have test-only label hints for `5.610` and `8.560`, but

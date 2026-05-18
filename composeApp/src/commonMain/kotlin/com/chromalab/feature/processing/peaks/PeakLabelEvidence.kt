@@ -43,6 +43,7 @@ data class PeakLabelEvidence(
     val status: PeakLabelEvidenceStatus = PeakLabelEvidenceStatus.REJECTED,
     val textClassification: PeakLabelTextClassification = PeakLabelTextClassification.UNKNOWN_TEXT,
     val isRuntimeEvidence: Boolean = source != PeakLabelEvidenceSource.FIXTURE_HINT,
+    val rejectionReason: String? = null,
     val warnings: List<String> = emptyList(),
 )
 

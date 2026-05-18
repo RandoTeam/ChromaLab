@@ -75,6 +75,12 @@ actual class PeakLabelEvidenceReader actual constructor() {
                         },
                         textClassification = classification,
                         isRuntimeEvidence = true,
+                        rejectionReason = when {
+                            parsed == null -> "ocr_text_not_rt_like"
+                            classification != PeakLabelTextClassification.PEAK_ANNOTATION -> "ocr_text_not_peak_annotation"
+                            element.confidence < 0.55f -> "ocr_low_confidence"
+                            else -> null
+                        },
                         warnings = buildList {
                             add("peak_label_ocr.local_crop:${crop.kind}")
                             if (crop.insidePlotArea) add("peak_label_ocr.crop_inside_plot_area_requires_signal_verification")
@@ -228,6 +234,13 @@ private fun VisionLocalTextCropResult.toPeakLabelEvidence(
         },
         textClassification = classification,
         isRuntimeEvidence = true,
+        rejectionReason = when {
+            rawText.isBlank() -> "vlm_empty_text"
+            parsed == null -> "vlm_text_not_rt_like"
+            classification != PeakLabelTextClassification.PEAK_ANNOTATION -> "vlm_text_not_peak_annotation"
+            confidence < 0.50f -> "vlm_low_confidence"
+            else -> null
+        },
         warnings = warnings + buildList {
             add("peak_label_ocr.local_crop:${crop.kind}")
             add("peak_label_ocr.vlm_text_only_no_peak_metrics")

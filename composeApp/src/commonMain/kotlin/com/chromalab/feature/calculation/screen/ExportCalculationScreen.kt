@@ -220,6 +220,36 @@ fun ExportCalculationScreen(
             },
         )
 
+        ExportButton(
+            title = "Validate runtime evidence (JSON)",
+            subtitle = "runtime_evidence_validation.json - deterministic PASS/REVIEW/FAIL diagnostic",
+            icon = Icons.Filled.Code,
+            color = Color(0xFF00897B),
+            onClick = {
+                val validationJson = CalculationRunReportExporter.exportRuntimeEvidenceValidationJson(run, reportOptions)
+                save("runtime_evidence_validation_${run.id}.json", validationJson, "application/json")
+            },
+            onShare = {
+                val validationJson = CalculationRunReportExporter.exportRuntimeEvidenceValidationJson(run, reportOptions)
+                share("runtime_evidence_validation_${run.id}.json", validationJson, "application/json")
+            },
+        )
+
+        ExportButton(
+            title = "Validate runtime evidence (Markdown)",
+            subtitle = "runtime_evidence_validation.md - human-readable diagnostic report",
+            icon = Icons.Filled.Description,
+            color = Color(0xFF546E7A),
+            onClick = {
+                val validationMarkdown = CalculationRunReportExporter.exportRuntimeEvidenceValidationMarkdown(run, reportOptions)
+                save("runtime_evidence_validation_${run.id}.md", validationMarkdown, "text/markdown")
+            },
+            onShare = {
+                val validationMarkdown = CalculationRunReportExporter.exportRuntimeEvidenceValidationMarkdown(run, reportOptions)
+                share("runtime_evidence_validation_${run.id}.md", validationMarkdown, "text/markdown")
+            },
+        )
+
         // Share button
         ExportButton(
             title = "Поделиться отчётом",

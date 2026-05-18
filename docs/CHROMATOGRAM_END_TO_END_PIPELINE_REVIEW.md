@@ -233,6 +233,24 @@ that a specific phone image has already been recovered unless the exported runti
 evidence package contains crop paths with source `ML_KIT`, `VLM`, or `BOTH` and
 accepted/review `RecoveredPeakCandidate` rows.
 
+## Runtime Evidence Validation Update - 2026-05-18
+
+Added a deterministic runtime evidence package validator. It reads the exported
+`RuntimeEvidencePackage` JSON and emits both JSON and Markdown diagnostics with a
+`PASS`, `REVIEW`, or `FAIL` verdict.
+
+The validator checks source image artifacts, device/model/runtime metadata,
+graph-panel and plot-area evidence, axis/tick overlays, calibration statuses,
+runtime OCR/VLM crop provenance, recovered-peak local signal evidence, duplicate
+recovery protection, curve masks before/after text suppression, listed suppressed
+text boxes, and the raw/validated/recovered/reportable counts in the report
+contract.
+
+This is a diagnostic gate only. It does not alter `CalculationEngine`, fixture
+expectations, or image-processing algorithms. A real Android run is not considered
+proven just because the report is generated; the exported package must pass this
+validator with its referenced artifacts present.
+
 ## Scope
 
 Reviewed areas:
