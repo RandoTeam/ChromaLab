@@ -31,6 +31,7 @@ class GeometryPipelineRunner(
     private val chartReader: ChartAnalysisReader = ChartAnalysisReader(),
     private val peakLabelEvidenceReader: PeakLabelEvidenceReader = PeakLabelEvidenceReader(),
     private val calibrationFitter: AxisCalibrationFitter = AxisCalibrationFitter(),
+    private val graphMultiplicityResolver: GraphMultiplicityResolver = GraphMultiplicityResolver(),
 ) {
     suspend fun run(
         imagePath: String,
@@ -99,7 +100,10 @@ class GeometryPipelineRunner(
                 println("PIPELINE[GEOMETRY][graph_panel.screenshot_embedded_detector] FAILED ${it.message}")
             }.getOrNull()
         }
-        val vlmHintResult = if (runVlmHint && overridePanel == null) {
+        val hasDeterministicRoiCandidate =
+            graphResult?.filteredRegions?.isNotEmpty() == true ||
+                screenshotChartResult?.candidates?.isNotEmpty() == true
+        val vlmHintResult = if (runVlmHint && overridePanel == null && !hasDeterministicRoiCandidate) {
             timedStage("graph_panel.vlm_hint", timings) {
                 val hint = runCatching {
                     withTimeoutOrNull(VLM_ROI_HINT_TIMEOUT_MS) {
@@ -116,9 +120,12 @@ class GeometryPipelineRunner(
                 hint?.toGraphRegionResult(imageWidth, imageHeight)
             }
         } else {
+            if (runVlmHint && overridePanel == null && hasDeterministicRoiCandidate) {
+                stageWarnings += "roi.vlm_hint_skipped_deterministic_candidate_available"
+            }
             null
         }
-        val candidates = buildRoiCandidates(
+        val allCandidates = buildRoiCandidates(
             imagePath = imagePath,
             imageWidth = imageWidth,
             imageHeight = imageHeight,
@@ -128,6 +135,15 @@ class GeometryPipelineRunner(
             vlmGraphResult = vlmHintResult,
             preservePanelLabels = preservePanelLabels,
         )
+        val multiplicityResolution = timedStage("graph_panel.multiplicity_resolver", timings) {
+            graphMultiplicityResolver.resolve(
+                candidates = allCandidates,
+                imageWidth = imageWidth,
+                imageHeight = imageHeight,
+                vlmGraphCountHint = vlmHintResult?.regions?.size,
+            )
+        }
+        val candidates = multiplicityResolution.resolvedGraphPanels.ifEmpty { allCandidates }
         val evaluatedCandidates = timedStage("graph_panel.candidate_evaluation", timings) {
             candidates.take(MAX_GEOMETRY_RETRY_CANDIDATES).mapIndexed { retryIndex, candidate ->
                 evaluateCandidate(
@@ -161,6 +177,7 @@ class GeometryPipelineRunner(
             addAll(rectification.warnings)
             addAll(stageWarnings)
             addAll(screenshotChartResult?.warnings.orEmpty())
+            addAll(multiplicityResolution.warnings)
             if (selected == null) add("geometry.roi.no_candidate_selected")
             if (selectedPlot == null) add("geometry.plot_area.not_validated")
             if (selectedEvaluation != null && selectedEvaluation.retryIndex > 0) {
@@ -186,7 +203,8 @@ class GeometryPipelineRunner(
         val trace = GeometryTrace(
             sourceProvenance = provenance,
             pageRectification = rectification,
-            roiCandidates = candidates,
+            roiCandidates = allCandidates,
+            multiplicityResolution = multiplicityResolution,
             selectedGraphPanelBounds = selected,
             selectedPlotAreaBounds = selectedPlot,
             axisGeometry = axisGeometry,
@@ -274,7 +292,11 @@ class GeometryPipelineRunner(
             emptyList()
         }
         val axisOcr = if (runTickOcr && tickCropArtifacts.isNotEmpty()) {
-            runCatching { chartReader.readTickLabelCrops(tickCropArtifacts) }.getOrNull()
+            runCatching {
+                withTimeoutOrNull(TICK_OCR_TIMEOUT_MS) {
+                    chartReader.readTickLabelCrops(tickCropArtifacts)
+                }
+            }.getOrNull()
         } else {
             null
         }
@@ -474,7 +496,8 @@ private data class GeometryCandidateEvaluation(
 )
 
 private const val MAX_GEOMETRY_RETRY_CANDIDATES = 6
-private const val VLM_ROI_HINT_TIMEOUT_MS = 45_000L
+private const val VLM_ROI_HINT_TIMEOUT_MS = 8_000L
+private const val TICK_OCR_TIMEOUT_MS = 8_000L
 
 private inline fun <T> timedStage(
     stageId: String,

@@ -52,6 +52,16 @@ object ScreenshotEmbeddedChartAnalyzer {
         val imageArea = (imageWidth.toFloat() * imageHeight.toFloat()).coerceAtLeast(1f)
         val accepted = mutableListOf<ScreenshotEmbeddedChartCandidate>()
         val rejected = mutableListOf<ScreenshotEmbeddedChartRejectedCandidate>()
+        detectAlreadyCroppedChartPanel(
+            gray = gray,
+            sampledWidth = sampledWidth,
+            sampledHeight = sampledHeight,
+            scale = scale,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+            brightThreshold = brightThreshold,
+            darkThreshold = darkThreshold,
+        )?.let { accepted += it }
 
         components.forEach { component ->
             val region = component.toGraphRegion(scale, imageWidth, imageHeight)
@@ -103,10 +113,95 @@ object ScreenshotEmbeddedChartAnalyzer {
                 .take(12),
             warnings = buildList {
                 if (accepted.isEmpty()) add("screenshot_chart.no_accepted_bright_panel")
+                if (accepted.any { "screenshot_chart.already_cropped_chart_panel" in it.warnings }) {
+                    add("screenshot_chart.already_cropped_chart_panel")
+                }
                 add("screenshot_chart.components:${components.size}")
                 add("screenshot_chart.bright_threshold:$brightThreshold")
                 add("screenshot_chart.dark_threshold:$darkThreshold")
             },
+        )
+    }
+
+    private fun detectAlreadyCroppedChartPanel(
+        gray: IntArray,
+        sampledWidth: Int,
+        sampledHeight: Int,
+        scale: Float,
+        imageWidth: Int,
+        imageHeight: Int,
+        brightThreshold: Int,
+        darkThreshold: Int,
+    ): ScreenshotEmbeddedChartCandidate? {
+        val imageArea = gray.size.coerceAtLeast(1)
+        val lightRatio = gray.count { it >= brightThreshold - 12 }.toFloat() / imageArea.toFloat()
+        val veryDarkRatio = gray.count { it <= darkThreshold }.toFloat() / imageArea.toFloat()
+        val aspect = sampledWidth.toFloat() / sampledHeight.coerceAtLeast(1).toFloat()
+        if (lightRatio < 0.54f || veryDarkRatio !in 0.004f..0.32f || aspect !in 0.75f..5.2f) {
+            return null
+        }
+
+        val columnDarkCounts = IntArray(sampledWidth)
+        val rowDarkCounts = IntArray(sampledHeight)
+        for (y in 0 until sampledHeight) {
+            for (x in 0 until sampledWidth) {
+                if (gray[y * sampledWidth + x] <= darkThreshold) {
+                    columnDarkCounts[x]++
+                    rowDarkCounts[y]++
+                }
+            }
+        }
+        val verticalPeakLines = columnDarkCounts.count { it >= (sampledHeight * 0.13f).roundToInt().coerceAtLeast(6) }
+        val horizontalAxisRows = rowDarkCounts.count { it >= (sampledWidth * 0.34f).roundToInt().coerceAtLeast(16) }
+        val verticalAxisColumns = columnDarkCounts.count { it >= (sampledHeight * 0.34f).roundToInt().coerceAtLeast(16) }
+        if (verticalPeakLines < 3 && horizontalAxisRows == 0 && verticalAxisColumns == 0) {
+            return null
+        }
+
+        val score = RoiCandidateScoreBreakdown(
+            axisVisibility = ((horizontalAxisRows.coerceAtMost(4) + verticalAxisColumns.coerceAtMost(4)) / 8f) * 16f,
+            tickLabelVisibility = if (veryDarkRatio in 0.008f..0.20f) 7f else 2f,
+            graphFramePlotRectangleConfidence = (lightRatio * 20f).coerceIn(0f, 20f),
+            tracePixelDensity = 12f,
+            textContaminationPenalty = 0f,
+            marginSafety = 8f,
+            aspectRatioPlausibility = 10f,
+            calibrationViability = (verticalPeakLines.coerceAtMost(18) / 18f) * 14f,
+            curveCoverageScore = 12f,
+            total = (
+                (lightRatio * 20f).coerceIn(0f, 20f) +
+                    12f +
+                    ((verticalPeakLines.coerceAtMost(18) / 18f) * 14f) +
+                    (((horizontalAxisRows.coerceAtMost(4) + verticalAxisColumns.coerceAtMost(4)) / 8f) * 16f) +
+                    7f +
+                    8f +
+                    10f
+                ).coerceIn(0f, 100f),
+            notes = listOf(
+                "screenshot_chart.mode:already_cropped_chart_panel",
+                "screenshot_chart.light_ratio:${lightRatio.format2()}",
+                "screenshot_chart.dark_ratio:${veryDarkRatio.format2()}",
+                "screenshot_chart.vertical_peak_lines:$verticalPeakLines",
+                "screenshot_chart.axis_rows:$horizontalAxisRows",
+                "screenshot_chart.axis_columns:$verticalAxisColumns",
+            ),
+        )
+
+        val insetX = (sampledWidth * 0.004f * scale).roundToInt().coerceIn(0, 3)
+        val insetY = (sampledHeight * 0.004f * scale).roundToInt().coerceIn(0, 3)
+        return ScreenshotEmbeddedChartCandidate(
+            graphPanel = GraphRegion(
+                x = insetX,
+                y = insetY,
+                width = imageWidth - insetX * 2,
+                height = imageHeight - insetY * 2,
+                label = "Already cropped chart panel",
+            ).clampToImage(imageWidth, imageHeight),
+            scoreBreakdown = score,
+            warnings = listOf(
+                "screenshot_chart.already_cropped_chart_panel",
+                "roi.screenshot_embedded_chart",
+            ),
         )
     }
 

@@ -168,6 +168,23 @@ class RuntimeEvidencePackageValidatorTest {
         assertTrue(result.blockingIssues.isEmpty())
     }
 
+    @Test
+    fun validatorSupportsDiagnosticOnlyRuntimePackage() {
+        val evidence = runtimeEvidence()
+        val report = reportWithRecovery(
+            evidence = evidence,
+            geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(
+            RuntimeEvidencePackageBuilder.build(report),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.PASS, result.verdict)
+        assertEquals(1, result.graphSummaries.single().runtimeRecoveredPeaks)
+    }
+
     private fun reportWithRecovery(
         evidence: PeakLabelEvidence,
         runtimeRecovered: List<RecoveredPeakCandidate> = listOf(recoveredCandidate(evidence)),
@@ -180,6 +197,7 @@ class RuntimeEvidencePackageValidatorTest {
                 reason = "suppress_peak_annotation_text_before_curve_mask",
             ),
         ),
+        geometryReportStatus: GeometryReportStatus = GeometryReportStatus.SCIENTIFIC_READY,
     ): ChromatogramReport {
         val trace = GeometryTrace(
             originalImagePath = "original.png",
@@ -218,7 +236,7 @@ class RuntimeEvidencePackageValidatorTest {
                 GraphReport(
                     graphIndex = 1,
                     source = GraphSourceMetadata(
-                        geometryReportStatus = GeometryReportStatus.SCIENTIFIC_READY,
+                        geometryReportStatus = geometryReportStatus,
                         geometryTrace = trace,
                     ),
                     identification = ChromatogramIdentification(),

@@ -634,6 +634,22 @@ safety, and phone-UI/status-bar penalties. Accepted graph-panel candidates are
 expanded slightly so title/ion text and axis/tick labels are preserved before
 `PlotAreaBounds` is derived inside them.
 
+The real Android run on commit `e332cec8` showed that ROI candidate multiplicity
+can be mistaken for physical graph multiplicity. The image had one chromatogram,
+but overlapping/nested ROI candidates were looped as six graph reports. The
+runtime now applies `GraphMultiplicityResolver` before the multi-graph loop:
+duplicates are rejected by IoU, nested panels are treated as subregions, dense
+peak clusters inside the same axis system cannot become graph reports, and VLM
+graph count remains advisory. `AutoSweepEngine` exposes only resolved physical
+graph panels to `ProcessingFlowScreen`; raw candidates stay in `GeometryTrace`.
+
+`ScreenshotEmbeddedChartDetector` also supports an
+`ALREADY_CROPPED_CHART_PANEL` mode for normalized images where the white chart
+panel already fills most of the image. Diagnostic terminal reports now
+auto-export `runtime_evidence_package`, validator JSON, and validator Markdown
+artifacts for review. See
+`docs/CHROMATOGRAM_REAL_ANDROID_E332_ROI_MULTIPLICITY.md`.
+
 VLM may rank or warn about candidate overlays, read title/ion/labels, or explain
 why a crop is too tight or too wide. VLM must not be the only ROI source, must
 not provide exact coordinates for calculations, and must not block deterministic

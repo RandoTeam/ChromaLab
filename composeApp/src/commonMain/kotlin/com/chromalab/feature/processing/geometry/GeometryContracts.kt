@@ -78,6 +78,25 @@ enum class GeometryReportStatus {
 }
 
 @Serializable
+enum class GraphMultiplicityStatus {
+    SINGLE_GRAPH,
+    MULTI_GRAPH_VALID,
+    MULTI_GRAPH_REVIEW,
+    INVALID,
+}
+
+@Serializable
+enum class GraphPanelRejectionReason {
+    DUPLICATE_IOU,
+    NESTED_INSIDE_SELECTED_PANEL,
+    SAME_AXIS_SYSTEM,
+    SUBREGION_NOT_GRAPH_PANEL,
+    LOW_FRAME_EVIDENCE,
+    PEAK_CLUSTER_NOT_GRAPH,
+    TEXT_ONLY_REGION,
+}
+
+@Serializable
 data class GeometryPoint(
     val x: Float,
     val y: Float,
@@ -135,6 +154,26 @@ data class GraphPanelBounds(
     val confidence: Float,
     val scoreBreakdown: RoiCandidateScoreBreakdown = RoiCandidateScoreBreakdown(),
     val overlayArtifactPath: String? = null,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class RejectedGraphPanelCandidate(
+    val candidate: GraphPanelBounds,
+    val rejectedAgainst: GraphPanelBounds? = null,
+    val reasons: List<GraphPanelRejectionReason>,
+    val iou: Float = 0f,
+    val containmentRatio: Float = 0f,
+    val notes: List<String> = emptyList(),
+)
+
+@Serializable
+data class GraphMultiplicityResolution(
+    val resolvedGraphPanels: List<GraphPanelBounds> = emptyList(),
+    val rejectedDuplicatePanels: List<RejectedGraphPanelCandidate> = emptyList(),
+    val rejectedNestedPanels: List<RejectedGraphPanelCandidate> = emptyList(),
+    val rejectedSubregions: List<RejectedGraphPanelCandidate> = emptyList(),
+    val multiplicityStatus: GraphMultiplicityStatus = GraphMultiplicityStatus.INVALID,
     val warnings: List<String> = emptyList(),
 )
 
@@ -243,6 +282,7 @@ data class GeometryTrace(
     val sourceProvenance: SourceProvenance? = null,
     val pageRectification: PageRectificationResult? = null,
     val roiCandidates: List<GraphPanelBounds> = emptyList(),
+    val multiplicityResolution: GraphMultiplicityResolution? = null,
     val selectedGraphPanelBounds: GraphPanelBounds? = null,
     val selectedPlotAreaBounds: PlotAreaBounds? = null,
     val axisGeometry: AxisGeometry? = null,

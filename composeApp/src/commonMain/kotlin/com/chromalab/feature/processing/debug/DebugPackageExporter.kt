@@ -92,6 +92,28 @@ object DebugPackageExporter {
         )
     }
 
+    fun writeRuntimeEvidencePackageWithValidation(
+        writer: SessionWriter,
+        report: ChromatogramReport,
+        graphIndex: Int? = null,
+    ): List<String> {
+        val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
+        val evidenceJson = exportRuntimeEvidencePackage(report)
+        val evidencePath = writer.writeText(
+            filename = "runtime_evidence_package$suffix.json",
+            content = evidenceJson,
+        )
+        val validationJsonPath = writer.writeText(
+            filename = "runtime_evidence_validation$suffix.json",
+            content = validateRuntimeEvidencePackageJson(evidenceJson),
+        )
+        val validationMarkdownPath = writer.writeText(
+            filename = "runtime_evidence_validation$suffix.md",
+            content = validateRuntimeEvidencePackageMarkdown(evidenceJson),
+        )
+        return listOf(evidencePath, validationJsonPath, validationMarkdownPath)
+    }
+
     fun writeRoiFailureEvidencePackage(
         writer: SessionWriter,
         stageId: String,

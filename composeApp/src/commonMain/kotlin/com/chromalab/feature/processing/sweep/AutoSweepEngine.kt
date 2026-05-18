@@ -697,9 +697,12 @@ class AutoSweepEngine {
         imageWidth: Int,
         imageHeight: Int,
     ): GraphRegionResult? {
-        val regions = trace.roiCandidates
-            .let { candidates ->
-                listOfNotNull(graphPanelBounds?.region) + candidates.map { it.region }
+        val regions = trace.multiplicityResolution
+            ?.resolvedGraphPanels
+            ?.map { it.region }
+            .orEmpty()
+            .let { resolved ->
+                if (resolved.isNotEmpty()) resolved else listOfNotNull(graphPanelBounds?.region)
             }
             .distinctBy { "${it.x}:${it.y}:${it.width}:${it.height}" }
             .ifEmpty { graphPanelBounds?.let { listOf(it.region) }.orEmpty() }

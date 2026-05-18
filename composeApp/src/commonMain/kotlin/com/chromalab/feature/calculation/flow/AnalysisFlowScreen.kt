@@ -45,6 +45,7 @@ import com.chromalab.feature.calculation.ui.PeakDetailsData
 import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
 import com.chromalab.feature.calculation.screen.ExportCalculationScreen
 import com.chromalab.feature.calculation.export.CalculationRunReportExporter
+import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.calculation.algorithm.DistributionAnalyzer
 import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
@@ -526,6 +527,25 @@ private fun AnalysisStructuredReportScreen(
                 visibleLayers = setOf("raw", "baseline", "corrected"),
             ),
         )
+    }
+    LaunchedEffect(run.id, report.metadata.reportId) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val evidenceJson = CalculationRunReportExporter.exportRuntimeEvidencePackageJson(run, reportOptions)
+                val validationJson = CalculationRunReportExporter.exportRuntimeEvidenceValidationJson(run, reportOptions)
+                val validationMarkdown = CalculationRunReportExporter.exportRuntimeEvidenceValidationMarkdown(run, reportOptions)
+                listOf(
+                    "runtime_evidence_package_${run.id}.json" to (evidenceJson to "application/json"),
+                    "runtime_evidence_validation_${run.id}.json" to (validationJson to "application/json"),
+                    "runtime_evidence_validation_${run.id}.md" to (validationMarkdown to "text/markdown"),
+                ).forEach { (fileName, payload) ->
+                    val result = FileSharer.saveText(fileName, payload.first, payload.second)
+                    println("ANALYSIS[RUNTIME_EVIDENCE_EXPORT] $fileName success=${result.success} location=${result.location ?: result.message}")
+                }
+            }.onFailure { error ->
+                println("ANALYSIS[RUNTIME_EVIDENCE_EXPORT] failed=${error.message}")
+            }
+        }
     }
 
     Column(
