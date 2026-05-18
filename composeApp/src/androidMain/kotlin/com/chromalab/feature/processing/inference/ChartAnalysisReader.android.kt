@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.inference
 
 import android.util.Log
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import com.chromalab.feature.processing.model.ModelRegistry
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
@@ -140,6 +141,9 @@ actual class ChartAnalysisReader actual constructor() {
         // === Diagnostic fallback only when strict photo analysis is disabled ===
         return fallbackOcr.readAxisLabels(imagePath, graphRegion)
     }
+
+    actual suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult =
+        fallbackOcr.readTickLabelCrops(crops)
 
     /**
      * VLM-based graph region detection.

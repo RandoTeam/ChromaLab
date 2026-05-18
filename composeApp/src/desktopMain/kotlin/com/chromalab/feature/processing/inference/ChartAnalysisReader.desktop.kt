@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.inference
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 
@@ -16,6 +17,9 @@ actual class ChartAnalysisReader actual constructor() {
         imagePath: String,
         graphRegion: GraphRegion,
     ): AxisOcrResult = fallbackOcr.readAxisLabels(imagePath, graphRegion)
+
+    actual suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult =
+        fallbackOcr.readTickLabelCrops(crops)
 
     /** No VLM on desktop — always returns null. */
     actual suspend fun detectGraphRegion(

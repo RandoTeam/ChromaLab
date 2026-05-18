@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.ocr
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 
 /**
  * Platform-specific OCR for axis labels.
@@ -16,4 +17,10 @@ expect class AxisOcrReader() {
      * Never throws — returns empty result on failure.
      */
     suspend fun readAxisLabels(imagePath: String, graphRegion: GraphRegion): AxisOcrResult
+
+    /**
+     * Run OCR only on local crops around deterministic tick positions.
+     * The crop geometry is produced by CV and remains the only source of tick pixels.
+     */
+    suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult
 }

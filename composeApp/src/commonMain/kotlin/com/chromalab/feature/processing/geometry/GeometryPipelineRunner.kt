@@ -234,8 +234,8 @@ class GeometryPipelineRunner(
         } else {
             emptyList()
         }
-        val axisOcr = if (runTickOcr) {
-            runCatching { chartReader.readAxisLabels(imagePath, candidate.region) }.getOrNull()
+        val axisOcr = if (runTickOcr && tickCropArtifacts.isNotEmpty()) {
+            runCatching { chartReader.readTickLabelCrops(tickCropArtifacts) }.getOrNull()
         } else {
             null
         }

@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.inference
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 
@@ -24,6 +25,11 @@ expect class ChartAnalysisReader() {
      * VLM-first on Android, ML Kit OCR fallback always available.
      */
     suspend fun readAxisLabels(imagePath: String, graphRegion: GraphRegion): AxisOcrResult
+
+    /**
+     * Read numeric tick labels only from deterministic local tick crops.
+     */
+    suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult
 
     /**
      * Detect the graph plot area bounding box via VLM.

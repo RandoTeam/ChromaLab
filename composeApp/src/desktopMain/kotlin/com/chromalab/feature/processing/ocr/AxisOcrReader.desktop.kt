@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.ocr
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -70,6 +71,18 @@ actual class AxisOcrReader actual constructor() {
             unavailableAxisOcrResult(warning)
         }
     }
+
+    actual suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult =
+        unavailableAxisOcrResult(
+            buildList {
+                if (crops.isEmpty()) {
+                    add("desktop_tick_crop_ocr.no_crops")
+                } else {
+                    add("desktop_tick_crop_ocr.local_crops_available:${crops.size}")
+                    add("desktop_tick_crop_ocr.engine_not_configured")
+                }
+            },
+        )
 }
 
 private fun DesktopAxisVlmConfig.readReplayResponse(): DesktopVlmTextResult? {

@@ -2,6 +2,8 @@ package com.chromalab.feature.processing.ocr
 
 import android.graphics.BitmapFactory
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.geometry.GeometryAxis
+import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -200,6 +202,54 @@ actual class AxisOcrReader actual constructor() {
             yUnit = yUnit,
             status = OcrStatus.NOT_AVAILABLE,
             confidence = estimateOcrConfidence(allElements, sortedX, sortedY),
+            timestamp = System.currentTimeMillis(),
+        )
+    }
+
+    actual suspend fun readTickLabelCrops(crops: List<TickOcrCropArtifact>): AxisOcrResult {
+        if (crops.isEmpty()) return emptyResult().copy(warnings = listOf("tick_crop_ocr.no_crops"))
+        val elements = mutableListOf<OcrTextElement>()
+        val xValues = mutableListOf<Float>()
+        val yValues = mutableListOf<Float>()
+        val warnings = mutableListOf<String>()
+
+        crops.forEachIndexed { index, crop ->
+            val bitmap = BitmapFactory.decodeFile(crop.path)
+            if (bitmap == null) {
+                warnings.add("tick_crop_ocr.crop_read_failed:$index")
+                return@forEachIndexed
+            }
+            val cropElements = try {
+                scanWithMlKit(bitmap).map {
+                    it.copy(
+                        x = it.x + crop.cropRegion.x,
+                        y = it.y + crop.cropRegion.y,
+                        confidence = (it.confidence * 0.92f).coerceIn(0f, 1f),
+                    )
+                }
+            } finally {
+                bitmap.recycle()
+            }
+            elements.addAll(cropElements)
+            val values = cropElements.mapNotNull { it.numericValue }
+            if (values.isEmpty()) warnings.add("tick_crop_ocr.no_numeric_text:$index")
+            when (crop.axis) {
+                GeometryAxis.X -> xValues.addAll(values)
+                GeometryAxis.Y -> yValues.addAll(values)
+            }
+        }
+
+        val x = filterAxisValues(xValues.distinct().sorted())
+        val y = filterAxisValues(yValues.distinct().sorted()).sortedDescending()
+        return AxisOcrResult(
+            rawElements = elements,
+            suggestedXValues = x,
+            suggestedYValues = y,
+            xUnit = null,
+            yUnit = null,
+            status = OcrStatus.NOT_AVAILABLE,
+            confidence = estimateOcrConfidence(elements, x, y),
+            warnings = warnings.distinct() + "tick_crop_ocr.local_crops_used",
             timestamp = System.currentTimeMillis(),
         )
     }

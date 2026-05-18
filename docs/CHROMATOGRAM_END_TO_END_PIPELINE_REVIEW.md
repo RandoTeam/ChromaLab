@@ -81,6 +81,9 @@ Implemented:
 - Deterministic tick positions now produce local `geometry_tick_crops/candidate_N/*.png`
   evidence crops on Android and desktop. Accepted tick OCR items can link back to the
   exact local crop used as evidence.
+- Runtime geometry OCR now calls the local tick-crop reader when deterministic crops
+  exist. If no deterministic tick crop exists, the geometry runner treats OCR as
+  unavailable for calibration instead of asking a model to invent axis positions.
 
 Invariant preserved:
 
@@ -90,9 +93,9 @@ Invariant preserved:
 
 Still open:
 
-- The platform crop writer exists, but the OCR engines still read axis bands/panel
-  regions. The next step is to route OCR execution itself through the local crop set
-  instead of only attaching local crop evidence after deterministic tick matching.
+- Desktop local crop OCR currently records the crop evidence but returns diagnostic
+  `NOT_AVAILABLE` unless a dedicated desktop tick-crop OCR backend is added. Android
+  uses ML Kit on the local crop images.
 - Sparse/fragmented trace component scoring still needs more work. The current
   failing bench cases are classified in
   `docs/CHROMATOGRAM_GEOMETRY_FAILURE_CLASSIFICATION.md`.
