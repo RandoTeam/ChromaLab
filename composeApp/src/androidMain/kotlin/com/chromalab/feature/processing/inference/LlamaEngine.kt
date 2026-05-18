@@ -20,7 +20,7 @@ private fun logError(message: String, throwable: Throwable? = null) {
 
 /**
  * llama.cpp inference engine for .gguf models.
- * Uses JNI bridge to native llama.cpp library (b9101, May 2026).
+ * Uses JNI bridge to native llama.cpp library (b9219, May 2026).
  *
  * Supports multimodal inference via mtmd (Qwen3.5-VL, Gemma 4 VL, etc.).
  * Vision models require base .gguf + mmproj .gguf pair.

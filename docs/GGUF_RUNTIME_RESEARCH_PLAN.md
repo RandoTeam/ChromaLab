@@ -27,8 +27,8 @@ deterministic-only chromatogram report.
 
 Current vendored llama.cpp:
 
-- `androidApp/libs/llama.cpp` is at `b9101`
-  (`389ff61d77b5c71cec0cf92fe4e5d01ace80b797`).
+- `androidApp/libs/llama.cpp` is at `b9219`
+  (`45b455e66fc09abed65b7d52d42a4a29ba0d45d6`).
 - Qwen3-VL architecture and mtmd support exist in the vendored tree:
   `src/llama-arch.cpp`, `src/models/qwen3vl.cpp`,
   `tools/mtmd/models/qwen3vl.cpp`.

@@ -4,7 +4,7 @@ project(llama_bridge LANGUAGES C CXX)
 # ============================================================
 # llama.cpp JNI Bridge for ChromaLab
 # ============================================================
-# Pinned to llama.cpp master b9198+6 (2026-05-18).
+# Pinned to llama.cpp b9219 (2026-05-18).
 # Builds: ggml + llama + llama-common (text/MTP) + mtmd library (vision/audio).
 # Links statically into llama_bridge.so for Android arm64.
 # ============================================================
