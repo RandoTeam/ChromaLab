@@ -1336,7 +1336,8 @@ private fun buildAxisCalibrationAudit(
         warnings += "axis_calibration.tick_geometry_not_ready_for_ocr_matching"
     }
 
-    val xCandidates = if (ocrResult != null && axisTickGeometry.available) {
+    val canUseTickMatching = axisTickGeometry.available && axisTickGeometry.readyForOcrValueMatching
+    val xTickMatchedCandidates = if (ocrResult != null && canUseTickMatching) {
         ocrResult.rawElements.toTickMatchedCalibrationCandidates(
             axis = CalibrationAxis.X,
             axisTickGeometry = axisTickGeometry,
@@ -1346,7 +1347,7 @@ private fun buildAxisCalibrationAudit(
     } else {
         emptyList()
     }
-    val yCandidates = if (ocrResult != null && axisTickGeometry.available) {
+    val yTickMatchedCandidates = if (ocrResult != null && canUseTickMatching) {
         ocrResult.rawElements.toTickMatchedCalibrationCandidates(
             axis = CalibrationAxis.Y,
             axisTickGeometry = axisTickGeometry,
@@ -1355,6 +1356,66 @@ private fun buildAxisCalibrationAudit(
         )
     } else {
         emptyList()
+    }
+    val xAnchorCandidates = if (!xTickMatchedCandidates.axisStats().ready && ocrResult != null) {
+        ocrResult.rawElements.toAxisAnchorCalibrationCandidates(
+            axis = CalibrationAxis.X,
+            panelRegion = panelRegion,
+            plotRegion = plotRegion,
+            suggestedValues = ocrResult.confirmedXValues?.takeIf { it.size >= 2 } ?: ocrResult.suggestedXValues,
+        )
+    } else {
+        emptyList()
+    }
+    val yAnchorCandidates = if (!yTickMatchedCandidates.axisStats().ready && ocrResult != null) {
+        ocrResult.rawElements.toAxisAnchorCalibrationCandidates(
+            axis = CalibrationAxis.Y,
+            panelRegion = panelRegion,
+            plotRegion = plotRegion,
+            suggestedValues = ocrResult.confirmedYValues?.takeIf { it.size >= 2 } ?: ocrResult.suggestedYValues,
+        )
+    } else {
+        emptyList()
+    }
+    val xRangeCandidates = if (!xTickMatchedCandidates.selectCandidateSet(xAnchorCandidates).axisStats().ready && ocrResult?.isAcceptedForAutoCalibration() == true) {
+        ocrResult.toGeometryRangeCalibrationCandidates(
+            axis = CalibrationAxis.X,
+            axesResult = axesResult,
+            axisTickGeometry = axisTickGeometry,
+            plotRegion = plotRegion,
+        )
+    } else {
+        emptyList()
+    }
+    val yRangeCandidates = if (!yTickMatchedCandidates.selectCandidateSet(yAnchorCandidates).axisStats().ready && ocrResult?.isAcceptedForAutoCalibration() == true) {
+        ocrResult.toGeometryRangeCalibrationCandidates(
+            axis = CalibrationAxis.Y,
+            axesResult = axesResult,
+            axisTickGeometry = axisTickGeometry,
+            plotRegion = plotRegion,
+        )
+    } else {
+        emptyList()
+    }
+    val xCandidates = xTickMatchedCandidates
+        .selectCandidateSet(xAnchorCandidates)
+        .selectCandidateSet(xRangeCandidates)
+        .deduplicateCalibrationValues(CalibrationAxis.X)
+    val yCandidates = yTickMatchedCandidates
+        .selectCandidateSet(yAnchorCandidates)
+        .selectCandidateSet(yRangeCandidates)
+        .deduplicateCalibrationValues(CalibrationAxis.Y)
+    if (xTickMatchedCandidates.isEmpty() && xAnchorCandidates.isNotEmpty()) {
+        warnings += "axis_calibration.x_ocr_anchor_fallback"
+    }
+    if (yTickMatchedCandidates.isEmpty() && yAnchorCandidates.isNotEmpty()) {
+        warnings += "axis_calibration.y_ocr_anchor_fallback"
+    }
+    if (xCandidates === xRangeCandidates || (xTickMatchedCandidates.axisStats().ready.not() && xAnchorCandidates.axisStats().ready.not() && xRangeCandidates.isNotEmpty())) {
+        warnings += "axis_calibration.x_geometry_range_fallback"
+    }
+    if (yCandidates === yRangeCandidates || (yTickMatchedCandidates.axisStats().ready.not() && yAnchorCandidates.axisStats().ready.not() && yRangeCandidates.isNotEmpty())) {
+        warnings += "axis_calibration.y_geometry_range_fallback"
     }
 
     val xStats = xCandidates.axisStats()
@@ -1517,8 +1578,8 @@ private fun List<OcrTextElement>.toTickMatchedCalibrationCandidates(
         val tickPosition = tickPositions.minBy { tick -> abs(tick - labelPosition) }
         if (abs(tickPosition - labelPosition) > maxMatchDistance) return@mapNotNull null
         val pixel = when (axis) {
-            CalibrationAxis.X -> tickPosition - origin.x
-            CalibrationAxis.Y -> origin.y - tickPosition
+            CalibrationAxis.X -> tickPosition - plotRegion.x
+            CalibrationAxis.Y -> tickPosition - plotRegion.y
         }
         if (pixel < 0f) return@mapNotNull null
 
@@ -1536,6 +1597,142 @@ private fun List<OcrTextElement>.toTickMatchedCalibrationCandidates(
         .map { group -> group.maxBy { it.confidence } }
         .sortedBy { it.pixel }
 }
+
+private fun List<OcrTextElement>.toAxisAnchorCalibrationCandidates(
+    axis: CalibrationAxis,
+    panelRegion: GraphRegion,
+    plotRegion: GraphRegion,
+    suggestedValues: List<Float>,
+): List<OfflineAxisCalibrationPointAudit> {
+    if (suggestedValues.size < 2) return emptyList()
+    val xLowerY = plotRegion.y + plotRegion.height * 0.45f
+    val xUpperY = panelRegion.bottom + panelRegion.height * 0.12f
+    val yRightX = plotRegion.x + plotRegion.width * 0.35f
+    val yUpperY = plotRegion.y - plotRegion.height * 0.06f
+    val yLowerY = plotRegion.bottom + plotRegion.height * 0.06f
+
+    return mapNotNull { element ->
+        val value = element.numericValue ?: return@mapNotNull null
+        if (!suggestedValues.containsAxisValue(value)) return@mapNotNull null
+        val centerX = element.x + element.width / 2f
+        val centerY = element.y + element.height / 2f
+        val accepted = when (axis) {
+            CalibrationAxis.X -> centerX in plotRegion.x.toFloat()..plotRegion.right.toFloat() &&
+                centerY in xLowerY..xUpperY
+            CalibrationAxis.Y -> centerX <= yRightX &&
+                centerY in yUpperY..yLowerY
+        }
+        if (!accepted) return@mapNotNull null
+
+        OfflineAxisCalibrationPointAudit(
+            pixel = when (axis) {
+                CalibrationAxis.X -> centerX - plotRegion.x
+                CalibrationAxis.Y -> centerY - plotRegion.y
+            },
+            value = value,
+            text = element.text,
+            confidence = element.confidence,
+        )
+    }
+        .filter { it.pixel >= 0f }
+        .groupBy { candidate ->
+            "${candidate.value.roundToBucket()}:${candidate.pixel.roundToInt()}"
+        }
+        .values
+        .map { group -> group.maxBy { it.confidence } }
+        .sortedBy { it.pixel }
+}
+
+private fun AxisOcrResult.toGeometryRangeCalibrationCandidates(
+    axis: CalibrationAxis,
+    axesResult: AxesResult?,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
+    plotRegion: GraphRegion,
+): List<OfflineAxisCalibrationPointAudit> {
+    val values = when (axis) {
+        CalibrationAxis.X -> confirmedXValues?.takeIf { it.size >= 2 } ?: suggestedXValues
+        CalibrationAxis.Y -> confirmedYValues?.takeIf { it.size >= 2 } ?: suggestedYValues
+    }.distinct().sorted()
+    if (values.size < 2) return emptyList()
+
+    val candidateConfidence = this.confidence ?: 0.5f
+    val candidates = when (axis) {
+        CalibrationAxis.X -> {
+            val originX = axesResult?.origin?.x
+                ?: axisTickGeometry.origin?.x
+                ?: axesResult?.xAxis?.x1
+                ?: axisTickGeometry.xAxis?.x1
+                ?: plotRegion.x.toFloat()
+            val endX = axesResult?.xAxis?.x2
+                ?: axisTickGeometry.xAxis?.x2
+                ?: plotRegion.right.toFloat()
+            val leftPx = (originX - plotRegion.x).coerceIn(0f, plotRegion.width.toFloat())
+            val rightPx = (endX - plotRegion.x).coerceIn(0f, plotRegion.width.toFloat())
+            if (rightPx - leftPx < plotRegion.width * 0.25f) return emptyList()
+            listOf(
+                OfflineAxisCalibrationPointAudit(leftPx, values.first(), "geometry:${values.first()}", candidateConfidence),
+                OfflineAxisCalibrationPointAudit(rightPx, values.last(), "geometry:${values.last()}", candidateConfidence),
+            )
+        }
+        CalibrationAxis.Y -> {
+            val yAxis = axesResult?.yAxis ?: axisTickGeometry.yAxis
+            val originY = axesResult?.origin?.y
+                ?: axisTickGeometry.origin?.y
+                ?: yAxis?.let { maxOf(it.y1, it.y2) }
+                ?: plotRegion.bottom.toFloat()
+            val topY = yAxis?.let { minOf(it.y1, it.y2) } ?: plotRegion.y.toFloat()
+            val topPx = (topY - plotRegion.y).coerceIn(0f, plotRegion.height.toFloat())
+            val bottomPx = (originY - plotRegion.y).coerceIn(0f, plotRegion.height.toFloat())
+            if (bottomPx - topPx < plotRegion.height * 0.25f) return emptyList()
+            listOf(
+                OfflineAxisCalibrationPointAudit(topPx, values.last(), "geometry:${values.last()}", candidateConfidence),
+                OfflineAxisCalibrationPointAudit(bottomPx, values.first(), "geometry:${values.first()}", candidateConfidence),
+            )
+        }
+    }
+    return candidates.sortedBy { it.pixel }
+}
+
+private fun List<OfflineAxisCalibrationPointAudit>.selectCandidateSet(
+    alternative: List<OfflineAxisCalibrationPointAudit>,
+): List<OfflineAxisCalibrationPointAudit> {
+    val currentStats = axisStats()
+    if (currentStats.ready) return this
+    val alternativeStats = alternative.axisStats()
+    return when {
+        alternativeStats.ready -> alternative
+        isNotEmpty() -> this
+        else -> alternative
+    }
+}
+
+private fun List<OfflineAxisCalibrationPointAudit>.deduplicateCalibrationValues(
+    axis: CalibrationAxis,
+): List<OfflineAxisCalibrationPointAudit> {
+    if (size < 2) return this
+    return groupBy { it.value.roundToBucket() }
+        .values
+        .map { group ->
+            group.maxWith(
+                compareBy<OfflineAxisCalibrationPointAudit> { it.confidence }
+                    .thenBy {
+                        when (axis) {
+                            CalibrationAxis.X -> it.pixel
+                            CalibrationAxis.Y -> it.pixel
+                        }
+                    },
+            )
+        }
+        .sortedBy { it.pixel }
+}
+
+private fun AxisOcrResult.isAcceptedForAutoCalibration(): Boolean =
+    status == OcrStatus.ACCEPTED ||
+        status == OcrStatus.CORRECTED ||
+        status == OcrStatus.AUTO_ACCEPTED
+
+private fun List<Float>.containsAxisValue(value: Float): Boolean =
+    any { abs(it - value) < 0.0001f }
 
 private data class AxisCalibrationStats(
     val ready: Boolean,

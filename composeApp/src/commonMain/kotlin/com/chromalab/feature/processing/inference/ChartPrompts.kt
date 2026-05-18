@@ -87,8 +87,13 @@ RULES:
 7. If units are printed near the axis (e.g. "min", "mAU"), include them.
 8. Numbers may use comma or period as decimal separator — normalize to period.
 
+9. For every visible printed tick label, include its normalized axis position:
+   - X position: 0.0 at the left edge of the graph region, 1.0 at the right edge.
+   - Y position: 0.0 at the top edge of the graph region, 1.0 at the bottom edge.
+10. If you cannot localize a tick position, keep the value in the axis array but omit it from the tick object array.
+
 Respond with ONLY this JSON, no other text:
-{"x": [<numbers>], "y": [<numbers>], "x_unit": "<unit or null>", "y_unit": "<unit or null>"}
+{"x":[<numbers>],"y":[<numbers>],"x_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"y_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"x_unit":"<unit or null>","y_unit":"<unit or null>"}
 """.trimIndent()
 
     /** ChatML-formatted axis extraction prompt for Qwen VL Instruct models. */
@@ -250,14 +255,22 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
         val jsonStr = extractJson(response)
 
         return try {
-            val xValues = extractFloatArray(jsonStr, "\"x\"")
-            val yValues = extractFloatArray(jsonStr, "\"y\"")
+            val xTicks = extractTickArray(jsonStr, "\"x_ticks\"")
+            val yTicks = extractTickArray(jsonStr, "\"y_ticks\"")
+            val xValues = (extractFloatArray(jsonStr, "\"x\"") + xTicks.map { it.value })
+                .distinct()
+                .sorted()
+            val yValues = (extractFloatArray(jsonStr, "\"y\"") + yTicks.map { it.value })
+                .distinct()
+                .sorted()
             val xUnit = extractString(jsonStr, "\"x_unit\"")
             val yUnit = extractString(jsonStr, "\"y_unit\"")
 
             // Confidence heuristic: more values = higher confidence
+            val positionedTicks = xTicks.count { it.position != null } + yTicks.count { it.position != null }
             val totalValues = xValues.size + yValues.size
             val confidence = when {
+                totalValues >= 10 && positionedTicks >= 4 -> 0.97f
                 totalValues >= 10 -> 0.95f
                 totalValues >= 5 -> 0.85f
                 totalValues >= 2 -> 0.7f
@@ -265,7 +278,7 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
                 else -> 0.1f
             }
 
-            println("VLM[PARSE] Parsed: ${xValues.size} X, ${yValues.size} Y, conf=$confidence")
+            println("VLM[PARSE] Parsed: ${xValues.size} X, ${yValues.size} Y, positioned=$positionedTicks, conf=$confidence")
             if (xValues.isNotEmpty()) println("VLM[PARSE] X: ${xValues.joinToString()}")
             if (yValues.isNotEmpty()) println("VLM[PARSE] Y: ${yValues.joinToString()}")
 
@@ -274,6 +287,8 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
                 yValues = yValues,
                 xUnit = xUnit,
                 yUnit = yUnit,
+                xTicks = xTicks,
+                yTicks = yTicks,
                 confidence = confidence,
             )
         } catch (e: Exception) {
@@ -389,18 +404,105 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
     }
 
     private fun extractFloatArray(json: String, key: String): List<Float> {
-        val keyIdx = json.indexOf(key)
-        if (keyIdx < 0) return emptyList()
-        val arrStart = json.indexOf('[', keyIdx)
-        val arrEnd = json.indexOf(']', arrStart)
-        if (arrStart < 0 || arrEnd < 0) return emptyList()
-        val arrContent = json.substring(arrStart + 1, arrEnd).trim()
+        val arrContent = extractArrayContent(json, key)?.trim() ?: return emptyList()
         if (arrContent.isEmpty()) return emptyList()
         return arrContent.split(',').mapNotNull { token ->
             // Handle comma as decimal separator: "1,5" → "1.5"
             val cleaned = token.trim().replace(',', '.')
             cleaned.toFloatOrNull()
         }
+    }
+
+    private fun extractTickArray(json: String, key: String): List<ChartAxisTick> {
+        val arrContent = extractArrayContent(json, key)?.trim() ?: return emptyList()
+        if (arrContent.isEmpty()) return emptyList()
+        return splitJsonObjects(arrContent).mapNotNull { item ->
+            val value = extractFloat(item, "\"value\"")
+                ?: extractString(item, "\"text\"")?.replace(',', '.')?.toFloatOrNull()
+                ?: return@mapNotNull null
+            val position = extractFloat(item, "\"position\"")
+                ?: extractFloat(item, "\"normalized_position\"")
+                ?: extractFloat(item, "\"normalizedPosition\"")
+            if (position != null && position !in -0.03f..1.03f) return@mapNotNull null
+            ChartAxisTick(
+                value = value,
+                text = extractString(item, "\"text\""),
+                position = position?.coerceIn(0f, 1f),
+                confidence = extractFloat(item, "\"confidence\""),
+            )
+        }
+    }
+
+    private fun extractArrayContent(json: String, key: String): String? {
+        val keyIdx = json.indexOf(key)
+        if (keyIdx < 0) return null
+        val arrStart = json.indexOf('[', keyIdx)
+        if (arrStart < 0) return null
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (i in arrStart until json.length) {
+            val ch = json[i]
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            if (ch == '\\' && inString) {
+                escaped = true
+                continue
+            }
+            if (ch == '"') {
+                inString = !inString
+                continue
+            }
+            if (inString) continue
+            when (ch) {
+                '[' -> depth++
+                ']' -> {
+                    depth--
+                    if (depth == 0) return json.substring(arrStart + 1, i)
+                }
+            }
+        }
+        return null
+    }
+
+    private fun splitJsonObjects(content: String): List<String> {
+        val objects = mutableListOf<String>()
+        var start = -1
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (i in content.indices) {
+            val ch = content[i]
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            if (ch == '\\' && inString) {
+                escaped = true
+                continue
+            }
+            if (ch == '"') {
+                inString = !inString
+                continue
+            }
+            if (inString) continue
+            when (ch) {
+                '{' -> {
+                    if (depth == 0) start = i
+                    depth++
+                }
+                '}' -> {
+                    depth--
+                    if (depth == 0 && start >= 0) {
+                        objects += content.substring(start, i + 1)
+                        start = -1
+                    }
+                }
+            }
+        }
+        return objects
     }
 
     private fun extractString(json: String, key: String): String? {

@@ -5,6 +5,7 @@ import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.model.ModelRegistry
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
+import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.ocr.OcrStatus
 
 private const val TAG = "ChromaLabVLM"
@@ -68,7 +69,7 @@ actual class ChartAnalysisReader actual constructor() {
                     (analysis.xValues.isNotEmpty() || analysis.yValues.isNotEmpty())
                 ) {
                     log("Axis extraction success x=${analysis.xValues.size} y=${analysis.yValues.size} confidence=${analysis.confidence}")
-                    return chartAnalysisToOcrResult(analysis)
+                    return chartAnalysisToOcrResult(analysis, graphRegion)
                 }
 
                 val message = "AI axis extraction returned low confidence (${analysis.confidence})"
@@ -218,10 +219,26 @@ actual class ChartAnalysisReader actual constructor() {
         }
     }
 
-    private fun chartAnalysisToOcrResult(analysis: ChartAnalysis): AxisOcrResult {
+    private fun chartAnalysisToOcrResult(
+        analysis: ChartAnalysis,
+        graphRegion: GraphRegion,
+    ): AxisOcrResult {
+        val xElements = analysis.xTicks.mapNotNull { tick ->
+            tick.toOcrElement(
+                graphRegion = graphRegion,
+                axis = AxisTickDirection.X,
+                defaultConfidence = analysis.confidence,
+            )
+        }
+        val yElements = analysis.yTicks.mapNotNull { tick ->
+            tick.toOcrElement(
+                graphRegion = graphRegion,
+                axis = AxisTickDirection.Y,
+                defaultConfidence = analysis.confidence,
+            )
+        }
         return AxisOcrResult(
-            // VLM values do not include reliable pixel boxes. Keep them as value hints only.
-            rawElements = emptyList(),
+            rawElements = xElements + yElements,
             suggestedXValues = analysis.xValues,
             suggestedYValues = analysis.yValues,
             xUnit = analysis.xUnit,
@@ -272,6 +289,39 @@ actual class ChartAnalysisReader actual constructor() {
             selectedModel = VlmEngineHolder.selectedModel,
             executedModel = VlmEngineHolder.executedModel,
         )
+}
+
+private enum class AxisTickDirection {
+    X,
+    Y,
+}
+
+private fun ChartAxisTick.toOcrElement(
+    graphRegion: GraphRegion,
+    axis: AxisTickDirection,
+    defaultConfidence: Float,
+): OcrTextElement? {
+    val normalized = position ?: return null
+    val label = text ?: value.toString()
+    val textWidth = (label.length * 7f).coerceAtLeast(14f)
+    val textHeight = 12f
+    val centerX = when (axis) {
+        AxisTickDirection.X -> graphRegion.x + normalized.coerceIn(0f, 1f) * graphRegion.width
+        AxisTickDirection.Y -> graphRegion.x + graphRegion.width * 0.08f
+    }
+    val centerY = when (axis) {
+        AxisTickDirection.X -> graphRegion.y + graphRegion.height * 0.92f
+        AxisTickDirection.Y -> graphRegion.y + normalized.coerceIn(0f, 1f) * graphRegion.height
+    }
+    return OcrTextElement(
+        text = label,
+        numericValue = value,
+        x = centerX - textWidth / 2f,
+        y = centerY - textHeight / 2f,
+        width = textWidth,
+        height = textHeight,
+        confidence = confidence ?: defaultConfidence,
+    )
 }
 
 private enum class VlmTask {

@@ -97,12 +97,29 @@ data class ChartAnalysis(
     val yValues: List<Float>,
     val xUnit: String? = null,
     val yUnit: String? = null,
+    val xTicks: List<ChartAxisTick> = emptyList(),
+    val yTicks: List<ChartAxisTick> = emptyList(),
     val xLabel: String? = null,
     val yLabel: String? = null,
     val confidence: Float = 0f,
     // Structural analysis
     val graphRegion: GraphBoundsData? = null,
     val numGraphs: Int? = null,
+)
+
+/**
+ * VLM axis tick with an optional normalized position in the selected graph region.
+ *
+ * X tick positions are normalized left-to-right. Y tick positions are normalized
+ * top-to-bottom. Missing positions are allowed for legacy model responses and
+ * force downstream code to use guarded geometry fallback instead of fake boxes.
+ */
+@Serializable
+data class ChartAxisTick(
+    val value: Float,
+    val text: String? = null,
+    val position: Float? = null,
+    val confidence: Float? = null,
 )
 
 /**
