@@ -47,6 +47,7 @@ actual class CurveExtractor actual constructor() {
         var branchColumnCount = 0
         val centerlineCandidateByX = mutableMapOf<Int, Float>()
         val branchCandidateColumns = mutableSetOf<Int>()
+        val lowerContourSamples = mutableListOf<Int>()
 
         for (x in 0 until w) {
             val skeletonCandidates = mutableListOf<Int>()
@@ -72,16 +73,27 @@ actual class CurveExtractor actual constructor() {
                 continue
             }
 
-            val cluster = clusters(candidates).maxByOrNull { it.size } ?: emptyList()
+            val cluster = bestSignalCluster(candidates, h)
+            if (cluster == null) {
+                gapColumns.add(x)
+                continue
+            }
+            lowerContourSamples += cluster.last()
             if (cluster.size > 8) wideClusterColumnCount++
-            val confidence = if (cluster.size <= 5) CurvePoint.HIGH_CONFIDENCE else CurvePoint.LOW_CONFIDENCE
-            rawPoints.add(CurvePoint(x, cluster.average().toFloat(), confidence))
+            rawPoints.add(CurvePoint(x, cluster.first().toFloat(), cluster.confidence()))
             fallbackPointCount++
         }
 
-        val outlierCount = removeOutliers(rawPoints, windowSize = 15, threshold = 3.0f)
-        val allPoints = interpolateGaps(rawPoints, gapColumns, w)
-        val interpolatedCount = allPoints.count { it.confidence == CurvePoint.INTERPOLATED }
+        val outlierCount = 0
+        val shortInterpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
+        val knownPointsByX = (rawPoints + shortInterpolatedPoints).associateBy { it.pixelX }
+        val baselineFilledPoints = fillBaselineGaps(
+            knownPointsByX = knownPointsByX,
+            fillRange = rawPoints.xFillRange(),
+            baselineY = estimateBaselineY(lowerContourSamples, h),
+        )
+        val allPoints = (knownPointsByX.values + baselineFilledPoints).sortedBy { it.pixelX }
+        val interpolatedCount = shortInterpolatedPoints.size + baselineFilledPoints.size
         val branchPrunedCenterline = selectBranchPrunedCenterline(
             centerlineCandidateByX = centerlineCandidateByX,
             branchCandidateColumns = branchCandidateColumns,
@@ -203,6 +215,7 @@ actual class CurveExtractor actual constructor() {
             }
             if (result.isLocalizedSparseTrace) add("curve_extract.sparse_trace_localized_review_required")
             if (outlierCount > result.points.size * 0.1f) add("curve_extract.many_outliers")
+            if (baselineFilledPoints.isNotEmpty()) add("curve_extract.baseline_filled_sparse_columns")
         }
 
         return result.copy(warnings = auditWarnings)
@@ -236,56 +249,76 @@ actual class CurveExtractor actual constructor() {
         return result
     }
 
-    private fun removeOutliers(
-        points: MutableList<CurvePoint>,
-        windowSize: Int,
-        threshold: Float,
-    ): Int {
-        if (points.size < windowSize) return 0
-
-        val toRemove = mutableSetOf<Int>()
-        for (i in points.indices) {
-            val start = maxOf(0, i - windowSize / 2)
-            val end = minOf(points.size, i + windowSize / 2 + 1)
-            val window = points.subList(start, end).map { it.pixelY }.sorted()
-            val median = window[window.size / 2]
-            val mad = window.map { abs(it - median) }.sorted()[window.size / 2]
-            val madScale = if (mad > 0) mad * 1.4826f else 1f
-
-            if (abs(points[i].pixelY - median) > threshold * madScale) {
-                toRemove.add(i)
-            }
+    private fun List<Int>.confidence(): Float =
+        when {
+            size <= 4 -> CurvePoint.HIGH_CONFIDENCE
+            size <= 18 -> 0.8f
+            else -> CurvePoint.LOW_CONFIDENCE
         }
 
-        toRemove.sortedDescending().forEach { points.removeAt(it) }
-        return toRemove.size
+    private fun estimateBaselineY(samples: List<Int>, height: Int): Float {
+        if (height <= 0) return 0f
+        if (samples.isEmpty()) return (height - 1).coerceAtLeast(0).toFloat()
+        val sorted = samples.sorted()
+        val index = ((sorted.size - 1) * 0.85f).roundToInt().coerceIn(sorted.indices)
+        return sorted[index].coerceIn(0, height - 1).toFloat()
     }
 
-    private fun interpolateGaps(
+    private fun fillBaselineGaps(
+        knownPointsByX: Map<Int, CurvePoint>,
+        fillRange: IntRange,
+        baselineY: Float,
+    ): List<CurvePoint> {
+        if (fillRange.isEmpty()) return emptyList()
+        return fillRange.mapNotNull { x ->
+            if (x in knownPointsByX) {
+                null
+            } else {
+                CurvePoint(
+                    pixelX = x,
+                    pixelY = baselineY,
+                    confidence = CurvePoint.INTERPOLATED,
+                )
+            }
+        }
+    }
+
+    private fun List<CurvePoint>.xFillRange(): IntRange {
+        if (isEmpty()) return IntRange.EMPTY
+        return minOf { it.pixelX }..maxOf { it.pixelX }
+    }
+
+    private fun interpolateShortGaps(
         known: List<CurvePoint>,
         gaps: List<Int>,
-        totalWidth: Int,
+        maxGap: Int,
     ): List<CurvePoint> {
-        if (known.isEmpty()) return emptyList()
-
-        val result = known.toMutableList()
-        for (gapX in gaps) {
-            val left = known.lastOrNull { it.pixelX < gapX }
-            val right = known.firstOrNull { it.pixelX > gapX }
-
-            val interpolatedY = when {
-                left != null && right != null -> {
-                    val t = (gapX - left.pixelX).toFloat() / (right.pixelX - left.pixelX)
-                    left.pixelY + t * (right.pixelY - left.pixelY)
-                }
-                left != null -> left.pixelY
-                right != null -> right.pixelY
-                else -> continue
+        if (known.size < 2 || gaps.isEmpty()) return emptyList()
+        val byX = known.associateBy { it.pixelX }
+        val result = mutableListOf<CurvePoint>()
+        var index = 0
+        while (index < gaps.size) {
+            val startX = gaps[index]
+            var endX = startX
+            while (index + 1 < gaps.size && gaps[index + 1] == endX + 1) {
+                index++
+                endX = gaps[index]
             }
-
-            result.add(CurvePoint(gapX, interpolatedY, CurvePoint.INTERPOLATED))
+            val gapWidth = endX - startX + 1
+            val left = byX[startX - 1]
+            val right = byX[endX + 1]
+            if (gapWidth <= maxGap && left != null && right != null) {
+                for (x in startX..endX) {
+                    val t = (x - left.pixelX).toFloat() / (right.pixelX - left.pixelX).toFloat()
+                    result += CurvePoint(
+                        pixelX = x,
+                        pixelY = left.pixelY + t * (right.pixelY - left.pixelY),
+                        confidence = CurvePoint.INTERPOLATED,
+                    )
+                }
+            }
+            index++
         }
-
         return result
     }
 

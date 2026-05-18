@@ -37,6 +37,7 @@ actual class CurveExtractor actual constructor() {
         var branchColumnCount = 0
         val centerlineCandidateByX = mutableMapOf<Int, Float>()
         val branchCandidateColumns = mutableSetOf<Int>()
+        val lowerContourSamples = mutableListOf<Int>()
         for (x in 0 until width) {
             val skeletonCandidates = mutableListOf<Int>()
             val candidates = mutableListOf<Int>()
@@ -66,6 +67,7 @@ actual class CurveExtractor actual constructor() {
                 gapColumns += x
                 continue
             }
+            lowerContourSamples += cluster.last()
             if (cluster.size > 8) wideClusterColumnCount++
             rawPoints += CurvePoint(
                 pixelX = x,
@@ -75,8 +77,15 @@ actual class CurveExtractor actual constructor() {
             fallbackPointCount++
         }
 
-        val interpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
-        val points = (rawPoints + interpolatedPoints).sortedBy { it.pixelX }
+        val shortInterpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
+        val knownPointsByX = (rawPoints + shortInterpolatedPoints).associateBy { it.pixelX }
+        val baselineFilledPoints = fillBaselineGaps(
+            knownPointsByX = knownPointsByX,
+            fillRange = rawPoints.xFillRange(),
+            baselineY = estimateBaselineY(lowerContourSamples, height),
+        )
+        val interpolatedPoints = shortInterpolatedPoints + baselineFilledPoints
+        val points = (knownPointsByX.values + baselineFilledPoints).sortedBy { it.pixelX }
         val branchPrunedCenterline = selectBranchPrunedCenterline(
             centerlineCandidateByX = centerlineCandidateByX,
             branchCandidateColumns = branchCandidateColumns,
@@ -201,11 +210,44 @@ actual class CurveExtractor actual constructor() {
                 add("curve_extract.sparse_trace_low_column_coverage_accepted")
             }
             if (result.isLocalizedSparseTrace) add("curve_extract.sparse_trace_localized_review_required")
-            if (interpolatedPoints.size > rawPoints.size * 0.35f) add("curve_extract.many_short_gap_interpolations")
+            if (shortInterpolatedPoints.size > rawPoints.size * 0.35f) add("curve_extract.many_short_gap_interpolations")
+            if (baselineFilledPoints.isNotEmpty()) add("curve_extract.baseline_filled_sparse_columns")
             if (rawPoints.isEmpty()) add("curve_extract.no_curve_points")
         }
 
         return result.copy(warnings = warnings)
+    }
+
+    private fun estimateBaselineY(samples: List<Int>, height: Int): Float {
+        if (height <= 0) return 0f
+        if (samples.isEmpty()) return (height - 1).coerceAtLeast(0).toFloat()
+        val sorted = samples.sorted()
+        val index = ((sorted.size - 1) * 0.85f).roundToInt().coerceIn(sorted.indices)
+        return sorted[index].coerceIn(0, height - 1).toFloat()
+    }
+
+    private fun fillBaselineGaps(
+        knownPointsByX: Map<Int, CurvePoint>,
+        fillRange: IntRange,
+        baselineY: Float,
+    ): List<CurvePoint> {
+        if (fillRange.isEmpty()) return emptyList()
+        return fillRange.mapNotNull { x ->
+            if (x in knownPointsByX) {
+                null
+            } else {
+                CurvePoint(
+                    pixelX = x,
+                    pixelY = baselineY,
+                    confidence = CurvePoint.INTERPOLATED,
+                )
+            }
+        }
+    }
+
+    private fun List<CurvePoint>.xFillRange(): IntRange {
+        if (isEmpty()) return IntRange.EMPTY
+        return minOf { it.pixelX }..maxOf { it.pixelX }
     }
 
     private fun List<Int>.bestSignalCluster(height: Int): List<Int>? {
