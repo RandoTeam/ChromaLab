@@ -1,7 +1,7 @@
 package com.chromalab.feature.processing.debug
 
-import com.chromalab.feature.processing.storage.IntermediateFileSaver
 import com.chromalab.feature.processing.storage.SessionWriter
+import com.chromalab.feature.reports.ChromatogramReport
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -20,6 +20,9 @@ object DebugPackageExporter {
      * Export debug info to JSON.
      */
     fun exportDebugInfo(info: DebugInfo): String = json.encodeToString(info)
+
+    fun exportRuntimeEvidencePackage(report: ChromatogramReport): String =
+        json.encodeToString(RuntimeEvidencePackageBuilder.build(report))
 
     /**
      * Write full debug package to the session directory.
@@ -43,5 +46,17 @@ object DebugPackageExporter {
         }
 
         return files
+    }
+
+    fun writeRuntimeEvidencePackage(
+        writer: SessionWriter,
+        report: ChromatogramReport,
+        graphIndex: Int? = null,
+    ): String {
+        val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
+        return writer.writeText(
+            filename = "runtime_evidence_package$suffix.json",
+            content = exportRuntimeEvidencePackage(report),
+        )
     }
 }

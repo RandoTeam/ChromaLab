@@ -2,7 +2,14 @@ package com.chromalab.feature.processing.peaks
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.inference.ActiveVisionModelBackend
+import com.chromalab.feature.processing.inference.VisionLocalTextCropContext
+import com.chromalab.feature.processing.inference.VisionLocalTextCropResult
+import com.chromalab.feature.processing.inference.VisionTextRegionType
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -12,6 +19,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 actual class PeakLabelEvidenceReader actual constructor() {
+    private val visionBackend = ActiveVisionModelBackend()
+
     actual suspend fun readPeakLabels(
         imagePath: String,
         outputDir: String,
@@ -39,8 +48,7 @@ actual class PeakLabelEvidenceReader actual constructor() {
                 }
                 if (saved) cropPaths.add(file.absolutePath)
                 val elements = scanCrop(bitmap, crop.region)
-                bitmap.recycle()
-                labels += elements.map { element ->
+                val mlKitLabels = elements.map { element ->
                     val parsed = parsePeakRetentionLabel(element.text)
                     val classification = classifyTextElement(
                         text = element.text,
@@ -76,18 +84,59 @@ actual class PeakLabelEvidenceReader actual constructor() {
                         },
                     )
                 }
+                val vlmLabel = if (saved && shouldUseVlmFallback(mlKitLabels)) {
+                    visionBackend.readLocalTextCrop(
+                        cropImagePath = file.absolutePath,
+                        context = VisionLocalTextCropContext(
+                            cropKind = crop.kind,
+                            insidePlotArea = crop.insidePlotArea,
+                            graphContext = "graphPanel=${graphPanelBounds.width}x${graphPanelBounds.height};plotArea=${plotAreaBounds.width}x${plotAreaBounds.height}",
+                        ),
+                    )?.toPeakLabelEvidence(
+                        crop = crop,
+                        graphPanel = graphPanelBounds,
+                        plotArea = plotAreaBounds,
+                        cropPath = file.absolutePath,
+                    )
+                } else {
+                    null
+                }
+                bitmap.recycle()
+                labels += mergeMlKitAndVlmEvidence(mlKitLabels, vlmLabel)
             }
+            val mergedLabels = labels
+                .distinctBy { "${it.normalizedText}:${it.parsedRetentionTime}:${it.labelBoxPx?.x}:${it.labelBoxPx?.y}:${it.source}" }
+                .sortedBy { it.parsedRetentionTime ?: Double.POSITIVE_INFINITY }
+            val cropOverlay = savePeakLabelOverlay(
+                source = source,
+                outputDir = dir,
+                fileName = "peak_label_crop_bounds_overlay.png",
+                crops = crops,
+                labels = emptyList(),
+                showLabels = false,
+            )
+            val classificationOverlay = savePeakLabelOverlay(
+                source = source,
+                outputDir = dir,
+                fileName = "peak_label_text_classification_overlay.png",
+                crops = crops,
+                labels = mergedLabels,
+                showLabels = true,
+            )
             PeakLabelEvidenceResult(
-                labels = labels
-                    .distinctBy { "${it.normalizedText}:${it.parsedRetentionTime}:${it.labelBoxPx?.x}:${it.labelBoxPx?.y}" }
-                    .sortedBy { it.parsedRetentionTime ?: Double.POSITIVE_INFINITY },
+                labels = mergedLabels,
                 cropPaths = cropPaths.distinct(),
+                cropBoundsOverlayPath = cropOverlay,
+                textClassificationOverlayPath = classificationOverlay,
                 warnings = buildList {
                     if (labels.none { it.textClassification == PeakLabelTextClassification.PEAK_ANNOTATION }) {
                         add("peak_label_ocr.no_peak_annotations")
                     }
                     if (cropPaths.isEmpty()) add("peak_label_ocr.no_crops_written")
                     add("peak_label_ocr.runtime_local_crops_used")
+                    if (labels.any { it.source == PeakLabelEvidenceSource.VLM || it.source == PeakLabelEvidenceSource.BOTH }) {
+                        add("peak_label_ocr.vlm_local_crop_fallback_used")
+                    }
                 }.distinct(),
             )
         } finally {
@@ -139,6 +188,106 @@ private data class PeakLabelTextElement(
     val region: GraphRegion,
     val confidence: Float,
 )
+
+private fun shouldUseVlmFallback(labels: List<PeakLabelEvidence>): Boolean {
+    if (labels.isEmpty()) return true
+    if (labels.none { it.parsedRetentionTime != null && it.textClassification == PeakLabelTextClassification.PEAK_ANNOTATION }) {
+        return true
+    }
+    return labels.any {
+        it.status == PeakLabelEvidenceStatus.AMBIGUOUS_TEXT ||
+            it.confidence < 0.55f ||
+            it.textClassification == PeakLabelTextClassification.UNKNOWN_TEXT
+    }
+}
+
+private fun VisionLocalTextCropResult.toPeakLabelEvidence(
+    crop: PeakLabelCropRegion,
+    graphPanel: GraphRegion,
+    plotArea: GraphRegion,
+    cropPath: String,
+): PeakLabelEvidence {
+    val parsed = parsedRetentionTime ?: parsePeakRetentionLabel(rawText)
+    val classification = textType.toPeakLabelTextClassification(parsed)
+    return PeakLabelEvidence(
+        rawText = rawText,
+        normalizedText = normalizedText.ifBlank { normalizePeakLabelText(rawText) },
+        parsedRetentionTime = parsed,
+        labelBoxPx = crop.region,
+        cropBoundsPx = crop.region,
+        linkedGraphPanelBounds = graphPanel,
+        linkedPlotAreaBounds = plotArea,
+        localCropPath = cropPath,
+        source = PeakLabelEvidenceSource.VLM,
+        confidence = confidence,
+        status = when {
+            rawText.isBlank() -> PeakLabelEvidenceStatus.REJECTED
+            parsed != null && confidence >= 0.50f -> PeakLabelEvidenceStatus.VALID_TEXT
+            parsed != null -> PeakLabelEvidenceStatus.AMBIGUOUS_TEXT
+            else -> PeakLabelEvidenceStatus.REJECTED
+        },
+        textClassification = classification,
+        isRuntimeEvidence = true,
+        warnings = warnings + buildList {
+            add("peak_label_ocr.local_crop:${crop.kind}")
+            add("peak_label_ocr.vlm_text_only_no_peak_metrics")
+            if (crop.insidePlotArea) add("peak_label_ocr.crop_inside_plot_area_requires_signal_verification")
+        },
+    )
+}
+
+private fun VisionTextRegionType.toPeakLabelTextClassification(parsed: Double?): PeakLabelTextClassification =
+    when (this) {
+        VisionTextRegionType.PEAK_ANNOTATION -> PeakLabelTextClassification.PEAK_ANNOTATION
+        VisionTextRegionType.TICK_LABEL -> PeakLabelTextClassification.TICK_LABEL
+        VisionTextRegionType.AXIS_LABEL -> PeakLabelTextClassification.AXIS_LABEL
+        VisionTextRegionType.TITLE_OR_CHANNEL -> PeakLabelTextClassification.TITLE_OR_CHANNEL
+        VisionTextRegionType.PAGE_TEXT -> PeakLabelTextClassification.PAGE_TEXT
+        VisionTextRegionType.UNKNOWN_TEXT -> if (parsed != null) {
+            PeakLabelTextClassification.PEAK_ANNOTATION
+        } else {
+            PeakLabelTextClassification.UNKNOWN_TEXT
+        }
+    }
+
+private fun mergeMlKitAndVlmEvidence(
+    mlKitLabels: List<PeakLabelEvidence>,
+    vlmLabel: PeakLabelEvidence?,
+): List<PeakLabelEvidence> {
+    if (vlmLabel == null) return mlKitLabels
+    val matchingIndex = mlKitLabels.indexOfFirst { ml ->
+        val mlRt = ml.parsedRetentionTime
+        val vlmRt = vlmLabel.parsedRetentionTime
+        if (mlRt != null && vlmRt != null) {
+            kotlin.math.abs(mlRt - vlmRt) <= 0.001
+        } else {
+            ml.normalizedText.equals(vlmLabel.normalizedText, ignoreCase = true)
+        }
+    }
+    if (matchingIndex < 0) {
+        return mlKitLabels + vlmLabel.copy(
+            warnings = vlmLabel.warnings + "peak_label_ocr.vlm_unmatched_mlkit_text",
+        )
+    }
+    return mlKitLabels.mapIndexed { index, ml ->
+        if (index != matchingIndex) {
+            ml
+        } else {
+            ml.copy(
+                source = PeakLabelEvidenceSource.BOTH,
+                confidence = maxOf(ml.confidence, vlmLabel.confidence),
+                status = when {
+                    ml.status == PeakLabelEvidenceStatus.VALID_TEXT ||
+                        vlmLabel.status == PeakLabelEvidenceStatus.VALID_TEXT -> PeakLabelEvidenceStatus.VALID_TEXT
+                    ml.status == PeakLabelEvidenceStatus.AMBIGUOUS_TEXT ||
+                        vlmLabel.status == PeakLabelEvidenceStatus.AMBIGUOUS_TEXT -> PeakLabelEvidenceStatus.AMBIGUOUS_TEXT
+                    else -> PeakLabelEvidenceStatus.REJECTED
+                },
+                warnings = (ml.warnings + vlmLabel.warnings + "peak_label_ocr.mlkit_vlm_agree").distinct(),
+            )
+        }
+    }
+}
 
 private fun buildPeakLabelCropRegions(
     imageWidth: Int,
@@ -217,6 +366,77 @@ private fun classifyTextElement(
 
 private fun normalizePeakLabelText(text: String): String =
     text.trim().replace(Regex("\\s+"), " ")
+
+private fun savePeakLabelOverlay(
+    source: Bitmap,
+    outputDir: File,
+    fileName: String,
+    crops: List<PeakLabelCropRegion>,
+    labels: List<PeakLabelEvidence>,
+    showLabels: Boolean,
+): String? {
+    val bitmap = source.copy(Bitmap.Config.ARGB_8888, true) ?: return null
+    val canvas = Canvas(bitmap)
+    val cropPaint = Paint().apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3f
+        color = Color.argb(220, 33, 150, 243)
+    }
+    val textPaint = Paint().apply {
+        style = Paint.Style.FILL
+        textSize = 22f
+        color = Color.argb(240, 0, 150, 80)
+    }
+    crops.forEachIndexed { index, crop ->
+        canvas.drawRect(
+            crop.region.x.toFloat(),
+            crop.region.y.toFloat(),
+            crop.region.right.toFloat(),
+            crop.region.bottom.toFloat(),
+            cropPaint,
+        )
+        canvas.drawText(
+            "#${index + 1} ${crop.kind}",
+            crop.region.x.toFloat() + 4f,
+            (crop.region.y + 22).toFloat(),
+            textPaint,
+        )
+    }
+    if (showLabels) {
+        val labelPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+        }
+        labels.forEach { label ->
+            val region = label.labelBoxPx ?: return@forEach
+            labelPaint.color = when (label.textClassification) {
+                PeakLabelTextClassification.PEAK_ANNOTATION -> Color.argb(230, 76, 175, 80)
+                PeakLabelTextClassification.TICK_LABEL -> Color.argb(230, 255, 193, 7)
+                PeakLabelTextClassification.AXIS_LABEL -> Color.argb(230, 255, 152, 0)
+                PeakLabelTextClassification.TITLE_OR_CHANNEL -> Color.argb(230, 244, 67, 54)
+                PeakLabelTextClassification.PAGE_TEXT -> Color.argb(230, 156, 39, 176)
+                PeakLabelTextClassification.UNKNOWN_TEXT -> Color.argb(230, 96, 125, 139)
+            }
+            canvas.drawRect(
+                region.x.toFloat(),
+                region.y.toFloat(),
+                region.right.toFloat(),
+                region.bottom.toFloat(),
+                labelPaint,
+            )
+            canvas.drawText(
+                "${label.textClassification.name}:${label.rawText.take(18)}",
+                region.x.toFloat() + 4f,
+                (region.y - 6).coerceAtLeast(18).toFloat(),
+                textPaint,
+            )
+        }
+    }
+    val file = File(outputDir, fileName)
+    val saved = FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+    bitmap.recycle()
+    return file.absolutePath.takeIf { saved }
+}
 
 private fun GraphRegion.clampedTo(imageWidth: Int, imageHeight: Int): GraphRegion {
     val safeX = x.coerceIn(0, (imageWidth - 1).coerceAtLeast(0))

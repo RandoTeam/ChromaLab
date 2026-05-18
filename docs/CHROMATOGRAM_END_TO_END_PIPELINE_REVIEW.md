@@ -190,6 +190,49 @@ Runtime note:
   test-only and cannot increase production reportable peak counts. See
   `docs/CHROMATOGRAM_RUNTIME_PEAK_RECOVERY.md`.
 
+## Runtime Evidence Package And Crop-VLM Update - 2026-05-18
+
+The current runtime slice makes production peak-label recovery auditable on
+Android without changing `CalculationEngine`.
+
+Implemented:
+
+- Android local crop OCR now has an optional crop-only VLM fallback through
+  `VisionModelBackend`. It is used only when ML Kit is missing, low-confidence,
+  ambiguous, or when a full-analysis mode requests stronger crop reading.
+- The VLM fallback receives the saved local crop and context only. It may return
+  text, parsed RT-like text, confidence, region classification, and warnings; it
+  may not return peak height, area, FWHM, S/N, calibration coordinates, or final
+  numeric geometry.
+- ML Kit and VLM evidence are merged as `BOTH` only when they agree on a plausible
+  parsed RT. Disagreements remain separate evidence rows and must pass local
+  signal verification before they can become review-grade recovered peaks.
+- Runtime duplicate recovery is guarded twice: against already detected
+  `CalculationEngine` peaks and against other recovered candidates from the same
+  RT label.
+- `GeometryTrace` now records crop-bounds and text-classification overlays for
+  peak label evidence, plus the curve text-suppression overlay.
+- The report export screen adds `Runtime evidence package (JSON)`. The package
+  includes original/normalized images, graph/plot overlays, OCR crop paths,
+  evidence rows, recovery decisions, curve artifacts, report contract JSON,
+  summary counts, warnings, and runtime/test-only provenance.
+
+Current evidence status:
+
+- `bench_03` remains production-reportable as the three deterministic raw peaks
+  unless real Android ML Kit/VLM crop evidence reads `5.610` and `8.560` and local
+  signal verification accepts them as review-grade recovered peaks. Fixture hints
+  still produce a separate test-only total of five and cannot become production
+  evidence.
+- `bench_08` remains unchanged: raw, validated, and production reportable counts
+  are 19. Recovery cannot add duplicate label-derived peaks or turn candidate
+  lines into peaks without apex evidence.
+
+This slice proves the runtime data path in code and tests, but it does not claim
+that a specific phone image has already been recovered unless the exported runtime
+evidence package contains crop paths with source `ML_KIT`, `VLM`, or `BOTH` and
+accepted/review `RecoveredPeakCandidate` rows.
+
 ## Scope
 
 Reviewed areas:

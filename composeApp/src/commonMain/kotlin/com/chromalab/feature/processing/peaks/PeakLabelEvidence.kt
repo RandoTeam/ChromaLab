@@ -50,6 +50,8 @@ data class PeakLabelEvidence(
 data class PeakLabelEvidenceResult(
     val labels: List<PeakLabelEvidence> = emptyList(),
     val cropPaths: List<String> = emptyList(),
+    val cropBoundsOverlayPath: String? = null,
+    val textClassificationOverlayPath: String? = null,
     val warnings: List<String> = emptyList(),
 )
 

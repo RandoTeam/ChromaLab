@@ -1563,14 +1563,17 @@ private fun GeometryTrace.geometryArtifactCount(): Int =
         selectedPlotAreaOverlayPath,
         axisOverlayPath,
         tickOverlayPath,
+        peakLabelCropBoundsOverlayPath,
+        peakLabelTextClassificationOverlayPath,
         calibrationFitOverlayPath,
         curveMaskRawPath,
         curveMaskCleanPath,
+        curveTextSuppressionOverlayPath,
         curveRejectedComponentsPath,
         curveSelectedComponentPath,
         curveSkeletonPath,
         finalCenterlineOverlayPath,
-    ).size + ocrCropPaths.size
+    ).size + ocrCropPaths.size + peakLabelCropPaths.size
 
 private fun Double?.takeIfUsable(): Double? =
     if (this != null && !isNaN() && !isInfinite()) this else null

@@ -205,6 +205,21 @@ fun ExportCalculationScreen(
             },
         )
 
+        ExportButton(
+            title = "Runtime evidence package (JSON)",
+            subtitle = "runtime_evidence_package.json - OCR crops, overlays, recovery decisions, report contract",
+            icon = Icons.Filled.Code,
+            color = Color(0xFF5C6BC0),
+            onClick = {
+                val evidenceJson = CalculationRunReportExporter.exportRuntimeEvidencePackageJson(run, reportOptions)
+                save("runtime_evidence_package_${run.id}.json", evidenceJson, "application/json")
+            },
+            onShare = {
+                val evidenceJson = CalculationRunReportExporter.exportRuntimeEvidencePackageJson(run, reportOptions)
+                share("runtime_evidence_package_${run.id}.json", evidenceJson, "application/json")
+            },
+        )
+
         // Share button
         ExportButton(
             title = "Поделиться отчётом",

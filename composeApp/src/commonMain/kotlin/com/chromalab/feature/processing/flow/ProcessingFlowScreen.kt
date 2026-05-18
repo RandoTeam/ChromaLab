@@ -482,6 +482,25 @@ fun ProcessingFlowScreen(
                                 mask.maskHeight.takeIf { it > 0 } ?: curveRegion.height,
                                 graphOutputDir,
                             ).scaledCoordinates(mask.coordinateScale)
+                            geometryResult = geometryResult?.let { result ->
+                                result.copy(
+                                    trace = result.trace.copy(
+                                        plotAreaCropPath = mask.plotAreaCropPath ?: result.trace.plotAreaCropPath,
+                                        curveMaskRawPath = mask.rawMaskPath ?: result.trace.curveMaskRawPath,
+                                        curveMaskCleanPath = mask.cleanMaskPath ?: result.trace.curveMaskCleanPath,
+                                        curveTextSuppressionOverlayPath = mask.textSuppressionOverlayPath
+                                            ?: result.trace.curveTextSuppressionOverlayPath,
+                                        curveRejectedComponentsPath = mask.textSuppressionOverlayPath
+                                            ?: mask.traceArtifactAudit.artifactMaskPath
+                                            ?: result.trace.curveRejectedComponentsPath,
+                                        curveSelectedComponentPath = mask.traceArtifactAudit.cleanupHypothesisMaskPath
+                                            ?: result.trace.curveSelectedComponentPath,
+                                        curveSkeletonPath = "$graphOutputDir/centerline_parity_overlay.png",
+                                        finalCenterlineOverlayPath = curveExtractionResult?.maskImagePath
+                                            ?: result.trace.finalCenterlineOverlayPath,
+                                    ),
+                                )
+                            }
                             curvePoints = curveExtractionResult?.points ?: emptyList()
                             println("PIPELINE[CURVE] points=${curvePoints.size}, interpolated=${curveExtractionResult?.interpolatedColumns}")
                         } else {

@@ -1,6 +1,7 @@
 package com.chromalab.feature.calculation.export
 
 import com.chromalab.feature.calculation.core.CalculationRun
+import com.chromalab.feature.processing.debug.DebugPackageExporter
 import com.chromalab.feature.reports.CalculationRunReportMapper
 import com.chromalab.feature.reports.CalculationRunReportOptions
 import com.chromalab.feature.reports.ChromatogramReportUiContract
@@ -63,6 +64,12 @@ object CalculationRunReportExporter {
             uiContract = ChromatogramReportUiContractBuilder.build(report, validation),
         )
     }
+
+    fun exportRuntimeEvidencePackageJson(
+        run: CalculationRun,
+        options: CalculationRunReportOptions = CalculationRunReportOptions(),
+    ): String =
+        DebugPackageExporter.exportRuntimeEvidencePackage(buildReport(run, options))
 }
 
 fun generateExportBundle(run: CalculationRun): Map<String, String> {

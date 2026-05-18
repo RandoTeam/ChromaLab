@@ -720,6 +720,8 @@ class AutoSweepEngine {
                 plotAreaCropPath = mask?.plotAreaCropPath ?: result.trace.plotAreaCropPath,
                 curveMaskRawPath = mask?.rawMaskPath ?: result.trace.curveMaskRawPath,
                 curveMaskCleanPath = mask?.cleanMaskPath ?: result.trace.curveMaskCleanPath,
+                curveTextSuppressionOverlayPath = mask?.textSuppressionOverlayPath
+                    ?: result.trace.curveTextSuppressionOverlayPath,
                 curveRejectedComponentsPath = mask?.textSuppressionOverlayPath
                     ?: mask?.traceArtifactAudit?.artifactMaskPath
                     ?: result.trace.curveRejectedComponentsPath,

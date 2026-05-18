@@ -174,6 +174,8 @@ class GeometryPipelineRunner(
                 ).distinct(),
             peakLabelEvidence = selectedEvaluation?.peakLabelEvidence.orEmpty(),
             peakLabelCropPaths = selectedEvaluation?.peakLabelCropPaths.orEmpty(),
+            peakLabelCropBoundsOverlayPath = selectedEvaluation?.peakLabelCropBoundsOverlayPath,
+            peakLabelTextClassificationOverlayPath = selectedEvaluation?.peakLabelTextClassificationOverlayPath,
             warnings = warnings,
             timings = listOf(
                 GeometryStageTiming(
@@ -319,6 +321,8 @@ class GeometryPipelineRunner(
             tickCropArtifacts = tickCropArtifacts,
             peakLabelEvidence = peakLabelEvidence.labels,
             peakLabelCropPaths = peakLabelEvidence.cropPaths,
+            peakLabelCropBoundsOverlayPath = peakLabelEvidence.cropBoundsOverlayPath,
+            peakLabelTextClassificationOverlayPath = peakLabelEvidence.textClassificationOverlayPath,
             xFit = xFit,
             yFit = yFit,
             reportStatus = reportStatus,
@@ -418,6 +422,8 @@ private data class GeometryCandidateEvaluation(
     val tickCropArtifacts: List<TickOcrCropArtifact>,
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val peakLabelCropPaths: List<String>,
+    val peakLabelCropBoundsOverlayPath: String?,
+    val peakLabelTextClassificationOverlayPath: String?,
     val xFit: AxisCalibrationFit,
     val yFit: AxisCalibrationFit,
     val reportStatus: GeometryReportStatus,

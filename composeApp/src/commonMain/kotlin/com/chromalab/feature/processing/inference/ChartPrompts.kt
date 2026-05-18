@@ -215,6 +215,47 @@ Required response, exactly one JSON object:
     val AXIS_STRUCTURE_RETRY: String = chatML(STRUCTURE_SYSTEM, STRUCTURE_USER_RETRY)
     val AXIS_STRUCTURE_RETRY_RAW: String = "$STRUCTURE_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$STRUCTURE_USER_RETRY"
 
+    private val LOCAL_TEXT_CROP_SYSTEM = """
+You are an OCR verifier for local crops from chromatography charts.
+Read only text visible in the provided crop.
+Do not infer peak metrics, coordinates, heights, areas, widths, or missing peaks.
+""".trimIndent()
+
+    private fun localTextCropUser(context: VisionLocalTextCropContext): String = """
+Read the text in this local crop from a chromatography chart.
+
+Crop kind: ${context.cropKind}
+Inside plot area: ${context.insidePlotArea}
+Graph context: ${context.graphContext ?: "unknown"}
+
+Classify the text as exactly one of:
+PEAK_ANNOTATION, TICK_LABEL, AXIS_LABEL, TITLE_OR_CHANNEL, PAGE_TEXT, UNKNOWN_TEXT.
+
+If the crop contains a printed retention-time-like peak label, copy it exactly and parse it as a number.
+If no readable text is visible, return an empty text string and null parsed_retention_time.
+
+Forbidden:
+- Do not provide peak height.
+- Do not provide peak area.
+- Do not provide FWHM.
+- Do not provide S/N.
+- Do not provide pixel coordinates.
+- Do not invent missing labels.
+
+Respond with ONLY this JSON object:
+{"text":"<visible text or empty>","parsed_retention_time":<number or null>,"text_type":"<one enum value>","confidence":<0..1>}
+""".trimIndent()
+
+    fun localTextCropPrompt(style: PromptStyle, context: VisionLocalTextCropContext): String =
+        when (style) {
+            PromptStyle.CHATML -> chatML(LOCAL_TEXT_CROP_SYSTEM, localTextCropUser(context))
+            PromptStyle.TRIGGER -> PADDLE_OCR
+            PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_OCR_TEXT
+            PromptStyle.DIRECT_QUESTION,
+            PromptStyle.RAW,
+            PromptStyle.LITERT -> "$LOCAL_TEXT_CROP_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n${localTextCropUser(context)}"
+        }
+
     // ─── PaddleOCR-VL trigger prompts ───────────────────────────
     //
     // PaddleOCR-VL 1.5 uses task-specific trigger phrases as the ENTIRE prompt.

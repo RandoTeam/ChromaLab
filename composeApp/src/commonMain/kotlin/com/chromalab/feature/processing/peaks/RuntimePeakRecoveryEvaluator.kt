@@ -50,7 +50,9 @@ class RuntimePeakRecoveryEvaluator {
                     yCalibrationStatus = yCalibrationStatus,
                 )
             }
-        return RuntimePeakRecoveryEvaluation(candidates)
+        return RuntimePeakRecoveryEvaluation(
+            candidates = rejectDuplicateRecoveredCandidates(candidates, sortedSignal),
+        )
     }
 
     private fun evaluateEvidence(
@@ -218,6 +220,45 @@ class RuntimePeakRecoveryEvaluator {
             flags = flags,
             rejectionReason = reason,
         )
+
+    private fun rejectDuplicateRecoveredCandidates(
+        candidates: List<RecoveredPeakCandidate>,
+        signal: List<SignalPoint>,
+    ): List<RecoveredPeakCandidate> {
+        if (candidates.size < 2) return candidates
+        val tolerance = duplicateTolerance(signal)
+        val accepted = mutableListOf<RecoveredPeakCandidate>()
+        return candidates.map { candidate ->
+            if (candidate.status == RecoveredPeakCandidateStatus.REJECTED) {
+                candidate
+            } else {
+                val rt = candidate.nearestLocalMaximumRt ?: candidate.labelRt
+                val duplicate = accepted.any { prior ->
+                    val priorRt = prior.nearestLocalMaximumRt ?: prior.labelRt
+                    abs(priorRt - rt) <= tolerance
+                }
+                if (duplicate) {
+                    candidate.copy(
+                        status = RecoveredPeakCandidateStatus.REJECTED,
+                        flags = (candidate.flags + RecoveredPeakCandidateFlag.DUPLICATE_REJECTED).distinct(),
+                        rejectionReason = "duplicate_recovered_peak",
+                    )
+                } else {
+                    accepted += candidate
+                    candidate
+                }
+            }
+        }
+    }
+
+    private fun duplicateTolerance(signal: List<SignalPoint>): Double {
+        if (signal.size < MIN_SIGNAL_POINTS) return 0.01
+        val firstTime = signal.first().time
+        val lastTime = signal.last().time
+        val avgStep = averageStep(signal)
+        val range = (lastTime - firstTime).coerceAtLeast(avgStep)
+        return max(avgStep * 3.0, range * 0.004)
+    }
 
     private fun averageStep(signal: List<SignalPoint>): Double {
         val steps = signal.zipWithNext { a, b -> b.time - a.time }

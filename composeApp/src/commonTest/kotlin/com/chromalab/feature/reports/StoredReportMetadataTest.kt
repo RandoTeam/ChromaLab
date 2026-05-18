@@ -14,6 +14,8 @@ import com.chromalab.feature.calculation.core.SignalPoint
 import com.chromalab.feature.calculation.core.SignalSource
 import com.chromalab.feature.calculation.core.ValidationResult
 import com.chromalab.feature.calculation.core.WarningSeverity
+import com.chromalab.feature.calculation.export.CalculationRunReportExporter
+import com.chromalab.feature.processing.debug.RuntimeEvidencePackage
 import com.chromalab.feature.processing.report.buildProcessingReportMetadataConfig
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
@@ -27,6 +29,8 @@ import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateFlag
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateStatus
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -34,6 +38,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class StoredReportMetadataTest {
+    private val json = Json {
+        ignoreUnknownKeys = false
+        encodeDefaults = true
+    }
 
     @Test
     fun codecRoundTripsReportMetadataEnvelope() {
@@ -590,6 +598,167 @@ class StoredReportMetadataTest {
         assertEquals(RecoveredPeakCandidateStatus.REJECTED, rejected.status)
         assertTrue(rejected.flags.contains(RecoveredPeakCandidateFlag.CALIBRATION_INVALID_REJECTED))
         assertEquals(0, report.graphs.single().peakRecovery.productionReportablePeaks)
+    }
+
+    @Test
+    fun runtimeEvidencePackageContainsRuntimeCropPathsAndRecoveryCounts() {
+        val run = calculationRun(
+            peaks = emptyList(),
+            rawPoints = localPeakSignal(apexRt = 5.61),
+        )
+        val options = CalculationRunReportOptions(
+            graphSourceMetadata = GraphSourceMetadata(
+                geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                geometryTrace = recoveryTrace(
+                    PeakLabelEvidence(
+                        rawText = "5.610",
+                        parsedRetentionTime = 5.610,
+                        labelBoxPx = GraphRegion(10, 10, 28, 12, "label"),
+                        cropBoundsPx = GraphRegion(8, 8, 80, 40, "crop"),
+                        localCropPath = "/tmp/peak_label_crops/label_5610.png",
+                        source = PeakLabelEvidenceSource.ML_KIT,
+                        confidence = 0.84f,
+                        status = PeakLabelEvidenceStatus.VALID_TEXT,
+                        textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                        isRuntimeEvidence = true,
+                    ),
+                ).copy(
+                    peakLabelCropPaths = listOf("/tmp/peak_label_crops/label_5610.png"),
+                    peakLabelCropBoundsOverlayPath = "/tmp/peak_label_crop_bounds_overlay.png",
+                    peakLabelTextClassificationOverlayPath = "/tmp/peak_label_text_classification_overlay.png",
+                    curveTextSuppressionOverlayPath = "/tmp/mask_text_suppression_overlay.png",
+                ),
+            ),
+        )
+
+        val evidencePackage = json.decodeFromString<RuntimeEvidencePackage>(
+            CalculationRunReportExporter.exportRuntimeEvidencePackageJson(run, options),
+        )
+        val graph = evidencePackage.graphs.single()
+
+        assertEquals(1, graph.peakLabelEvidence.size)
+        assertEquals(PeakLabelEvidenceSource.ML_KIT, graph.peakLabelEvidence.single().source)
+        assertEquals("/tmp/peak_label_crops/label_5610.png", graph.peakLabelEvidence.single().localCropPath)
+        assertEquals(1, graph.runtimeRecoveredPeaks.size)
+        assertEquals(0, graph.testOnlyRecoveredPeaks.size)
+        assertEquals(1, graph.summaryCounts.runtimeRecoveredPeaks)
+        assertEquals(1, graph.summaryCounts.productionReportablePeaks)
+        assertEquals("/tmp/peak_label_crop_bounds_overlay.png", graph.artifactPaths.peakLabelCropBoundsOverlayPath)
+        assertEquals("/tmp/mask_text_suppression_overlay.png", graph.artifactPaths.textSuppressionOverlayPath)
+        assertTrue(graph.productionRuntimeEvidenceOnly)
+    }
+
+    @Test
+    fun vlmLocalCropEvidenceCanRecoverReviewPeakButDoesNotProvidePeakMetrics() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = localPeakSignal(apexRt = 8.56),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "8.560",
+                            parsedRetentionTime = 8.560,
+                            localCropPath = "peak_label_crops/vlm_8560.png",
+                            source = PeakLabelEvidenceSource.VLM,
+                            confidence = 0.72f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                            warnings = listOf("peak_label_ocr.vlm_text_only_no_peak_metrics"),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val recovered = report.graphs.single().peakRecovery.runtimeRecoveredPeaks.single()
+
+        assertEquals(RecoveredPeakCandidateStatus.REVIEW, recovered.status)
+        assertEquals(PeakLabelEvidenceSource.VLM, recovered.sourceEvidence?.source)
+        assertTrue(recovered.flags.contains(RecoveredPeakCandidateFlag.RUNTIME_OCR_VERIFIED))
+        assertTrue(recovered.flags.contains(RecoveredPeakCandidateFlag.LABEL_EVIDENCE_VERIFIED))
+        assertNotNull(recovered.localHeight)
+        assertNotNull(recovered.localSNR)
+        assertNotNull(recovered.localProminence)
+    }
+
+    @Test
+    fun mlKitAndVlmDuplicateLabelDoesNotCreateDuplicateRecoveredPeaks() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = emptyList(),
+                rawPoints = localPeakSignal(apexRt = 5.61),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "5.610",
+                            parsedRetentionTime = 5.610,
+                            source = PeakLabelEvidenceSource.ML_KIT,
+                            confidence = 0.82f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                        ),
+                        PeakLabelEvidence(
+                            rawText = "5.610",
+                            parsedRetentionTime = 5.610,
+                            source = PeakLabelEvidenceSource.VLM,
+                            confidence = 0.76f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val recovery = report.graphs.single().peakRecovery
+
+        assertEquals(1, recovery.runtimeRecoveredPeaks.size)
+        assertEquals(1, recovery.rejectedRecoveredCandidates.size)
+        assertTrue(recovery.rejectedRecoveredCandidates.single().flags.contains(RecoveredPeakCandidateFlag.DUPLICATE_REJECTED))
+        assertEquals(1, recovery.productionReportablePeaks)
+    }
+
+    @Test
+    fun runtimeRecoveryDoesNotDuplicateExistingDetectedPeak() {
+        val report = CalculationRunReportMapper.map(
+            run = calculationRun(
+                peaks = listOf(peakResult(1, 5.61, "existing")),
+                rawPoints = localPeakSignal(apexRt = 5.61),
+            ),
+            options = CalculationRunReportOptions(
+                graphSourceMetadata = GraphSourceMetadata(
+                    geometryReportStatus = GeometryReportStatus.REVIEW_READY,
+                    geometryTrace = recoveryTrace(
+                        PeakLabelEvidence(
+                            rawText = "5.610",
+                            parsedRetentionTime = 5.610,
+                            source = PeakLabelEvidenceSource.ML_KIT,
+                            confidence = 0.90f,
+                            status = PeakLabelEvidenceStatus.VALID_TEXT,
+                            textClassification = PeakLabelTextClassification.PEAK_ANNOTATION,
+                            isRuntimeEvidence = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val recovery = report.graphs.single().peakRecovery
+
+        assertEquals(0, recovery.runtimeRecoveredPeaks.size)
+        assertEquals(1, recovery.rejectedRecoveredCandidates.size)
+        assertTrue(recovery.rejectedRecoveredCandidates.single().flags.contains(RecoveredPeakCandidateFlag.DUPLICATE_REJECTED))
+        assertEquals(1, recovery.productionReportablePeaks)
     }
 
     private fun chromatogramEntity(
