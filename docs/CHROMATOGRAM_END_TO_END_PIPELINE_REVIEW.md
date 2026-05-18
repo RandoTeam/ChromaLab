@@ -100,6 +100,44 @@ Still open:
   failing bench cases are classified in
   `docs/CHROMATOGRAM_GEOMETRY_FAILURE_CLASSIFICATION.md`.
 
+## Fragmented Trace Update - 2026-05-18
+
+The sparse trace slice made the remaining peak-quality failures more explicit:
+
+- `CurveExtractor` now builds a second candidate signal from fragmented skeleton
+  reconstruction. It is selected only when the raw trace is genuinely sparse
+  (`<=20%` raw column coverage), has enough deterministic fragment columns, and
+  keeps a bounded retained-component count. Dense traces continue to use the legacy
+  signal-preserved centerline.
+- Sparse selected traces expose
+  `curve_extract.fragment_reconstruction_selected_for_sparse_trace`; sparse low
+  coverage keeps `curve_extract.sparse_trace_low_column_coverage_accepted` and
+  localized sparse evidence keeps
+  `curve_extract.sparse_trace_localized_review_required`.
+- Offline peak review now filters sparse micro-artifacts, terminal tails, and minor
+  shoulders before computing review peak counts. This does not change
+  `CalculationEngine`; it changes how sparse evidence is reported and gated.
+- Sparse traces explicitly bypass guarded threshold relaxation. A weak sparse XIC
+  panel can be review-grade, but it must not be silently promoted by the completeness
+  tuner.
+- Compact low-resolution plots now suppress right-edge border blocks before trace
+  extraction. On `bench_03_small_tic_export` this removes the false late right-edge
+  peak and leaves the remaining failure as missing low-pixel labeled peaks, not a
+  false artifact peak.
+
+Current bench status:
+
+- `bench_04_stacked_xic_resolution` passes the sparse review contract after
+  fragmented trace selection and sparse artifact filtering.
+- `bench_03_small_tic_export` still fails peak sanity: the two smallest labeled peaks
+  around 5.610 and 8.560 min need a dedicated low-resolution labeled-peak recovery
+  path. Lowering global S/N was checked and rejected because it introduces false
+  positives instead of fixing trace evidence.
+- `bench_08_mz71_duplicate_candidate` still reports 19 accepted default peaks. This is
+  now classified as a production-contract decision: either the dense n-alkane series
+  is valid and the old guarded 5 -> 9 expectation must be replaced with documented
+  evidence, or upstream trace scoring must suppress a specific contaminating source.
+
 ## Scope
 
 Reviewed areas:

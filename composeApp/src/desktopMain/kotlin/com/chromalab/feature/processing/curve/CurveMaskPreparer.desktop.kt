@@ -51,6 +51,8 @@ actual class CurveMaskPreparer actual constructor() {
         suppressions += "border"
         val removedRightFrame = suppressRightFrameLineComponents(cleanMask, width, height)
         if (removedRightFrame) suppressions += "right_frame_lines"
+        val removedCompactRightBlock = suppressCompactRightBorderBlockComponents(cleanMask, width, height)
+        if (removedCompactRightBlock) suppressions += "compact_right_border_blocks"
         val removedFloating = suppressFloatingComponents(cleanMask, width, height, axes, region)
         if (removedFloating) suppressions += "floating_text_components"
         val removedSmall = suppressSmallComponents(cleanMask, width, height, maxSize = 5)
@@ -331,6 +333,52 @@ actual class CurveMaskPreparer actual constructor() {
             .toSet()
         if (removableLabels.isEmpty()) return false
         if (wouldDropBelowUsableCoverage(labels, mask, width, height, removableLabels)) return false
+
+        for (index in labels.indices) {
+            if (labels[index] in removableLabels) {
+                mask[index] = false
+            }
+        }
+        return true
+    }
+
+    private fun suppressCompactRightBorderBlockComponents(
+        mask: BooleanArray,
+        width: Int,
+        height: Int,
+    ): Boolean {
+        if (!isCompactLowResolutionPlot(width, height)) return false
+        val labels = IntArray(width * height)
+        val components = mutableListOf<ComponentBounds>()
+        var nextLabel = 1
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                if (mask[index] && labels[index] == 0) {
+                    components += floodFillBounds(mask, labels, width, height, x, y, nextLabel)
+                    nextLabel++
+                }
+            }
+        }
+
+        val edgeBand = (width * 0.10f).roundToInt().coerceIn(18, 64)
+        val minWidth = (width * 0.08f).roundToInt().coerceIn(18, 72)
+        val minHeight = (height * 0.20f).roundToInt().coerceAtLeast(16)
+        val narrowLineMaxWidth = (width * 0.018f).roundToInt().coerceIn(3, 8)
+        val baselineBandStart = (height * 0.78f).roundToInt().coerceIn(0, height - 1)
+        val removableLabels = components
+            .filter { component ->
+                val nearRightEdge = component.maxX >= width - edgeBand
+                val touchesRightBorder = component.maxX >= width - 2
+                val edgeLine = component.minX >= width - edgeBand && component.width <= narrowLineMaxWidth
+                val blockLike = component.width >= minWidth && component.height >= minHeight
+                val notBaselineTrace = component.minY < baselineBandStart && component.maxY < height - 2
+                nearRightEdge && component.height >= minHeight &&
+                    (blockLike && notBaselineTrace || touchesRightBorder || edgeLine)
+            }
+            .map { it.label }
+            .toSet()
+        if (removableLabels.isEmpty()) return false
 
         for (index in labels.indices) {
             if (labels[index] in removableLabels) {

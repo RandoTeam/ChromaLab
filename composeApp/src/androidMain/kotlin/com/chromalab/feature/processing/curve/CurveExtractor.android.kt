@@ -85,15 +85,20 @@ actual class CurveExtractor actual constructor() {
         }
 
         val outlierCount = 0
+        val baselineY = estimateBaselineY(lowerContourSamples, h)
         val shortInterpolatedPoints = interpolateShortGaps(rawPoints, gapColumns, maxGap = 6)
         val knownPointsByX = (rawPoints + shortInterpolatedPoints).associateBy { it.pixelX }
         val baselineFilledPoints = fillBaselineGaps(
             knownPointsByX = knownPointsByX,
             fillRange = rawPoints.xFillRange(),
-            baselineY = estimateBaselineY(lowerContourSamples, h),
+            baselineY = baselineY,
         )
-        val allPoints = (knownPointsByX.values + baselineFilledPoints).sortedBy { it.pixelX }
-        val interpolatedCount = shortInterpolatedPoints.size + baselineFilledPoints.size
+        val legacyTrace = SelectedTracePoints(
+            points = (knownPointsByX.values + baselineFilledPoints).sortedBy { it.pixelX },
+            extractedColumns = rawPoints.size,
+            interpolatedColumns = shortInterpolatedPoints.size + baselineFilledPoints.size,
+            selectedFragmentReconstruction = false,
+        )
         val branchPrunedCenterline = selectBranchPrunedCenterline(
             centerlineCandidateByX = centerlineCandidateByX,
             branchCandidateColumns = branchCandidateColumns,
@@ -119,6 +124,17 @@ actual class CurveExtractor actual constructor() {
             largeDeltaThresholdPx = CENTERLINE_LARGE_DELTA_THRESHOLD_PX,
             guideMaxDistancePx = fragmentReconstruction.guideMaxDistancePx,
         )
+        val fragmentTrace = buildFragmentReconstructionTrace(
+            fragmentReconstruction = fragmentReconstruction,
+            baselineY = baselineY,
+            evidenceColumnCount = rawPoints.size,
+            width = w,
+        )
+        val selectedTrace = if (shouldSelectFragmentReconstructionTrace(rawPoints, w, fragmentReconstruction)) {
+            fragmentTrace ?: legacyTrace
+        } else {
+            legacyTrace
+        }
         val initialCenterlineAudit = buildCenterlineAudit(
             skeletonMask = skeletonMask,
             totalColumns = w,
@@ -138,7 +154,7 @@ actual class CurveExtractor actual constructor() {
 
         val overlayPath = File(outputDir).also { it.mkdirs() }
             .let { File(it, "curve_overlay.png").absolutePath }
-        saveCurveOverlay(mask, skeletonMask, allPoints, w, h, overlayPath)
+        saveCurveOverlay(mask, skeletonMask, selectedTrace.points, w, h, overlayPath)
         val parityOverlayPath = File(outputDir)
             .let { File(it, "centerline_parity_overlay.png").absolutePath }
         saveCenterlineParityOverlay(
@@ -195,14 +211,15 @@ actual class CurveExtractor actual constructor() {
             branchPrunedOverlayGenerated = true,
             trunkPathOverlayGenerated = true,
             fragmentReconstructionOverlayGenerated = true,
+            fragmentReconstructionSelectedForSignal = selectedTrace.selectedFragmentReconstruction,
         )
 
         val result = CurveExtractionResult(
-            points = allPoints.sortedBy { it.pixelX },
+            points = selectedTrace.points,
             maskImagePath = overlayPath,
             totalColumns = w,
-            extractedColumns = rawPoints.size,
-            interpolatedColumns = interpolatedCount,
+            extractedColumns = selectedTrace.extractedColumns,
+            interpolatedColumns = selectedTrace.interpolatedColumns,
             outlierCount = outlierCount,
             centerlineAudit = centerlineAudit,
             warnings = emptyList(),
@@ -215,10 +232,122 @@ actual class CurveExtractor actual constructor() {
             }
             if (result.isLocalizedSparseTrace) add("curve_extract.sparse_trace_localized_review_required")
             if (outlierCount > result.points.size * 0.1f) add("curve_extract.many_outliers")
-            if (baselineFilledPoints.isNotEmpty()) add("curve_extract.baseline_filled_sparse_columns")
+            if (selectedTrace.interpolatedColumns > 0) add("curve_extract.baseline_filled_sparse_columns")
+            if (selectedTrace.selectedFragmentReconstruction) {
+                add("curve_extract.fragment_reconstruction_selected_for_sparse_trace")
+            }
         }
 
         return result.copy(warnings = auditWarnings)
+    }
+
+    private fun buildFragmentReconstructionTrace(
+        fragmentReconstruction: FragmentedTraceReconstruction,
+        baselineY: Float,
+        evidenceColumnCount: Int,
+        width: Int,
+    ): SelectedTracePoints? {
+        if (!fragmentReconstruction.available || fragmentReconstruction.pointsByX.isEmpty()) return null
+        val fragmentComponents = if (fragmentReconstruction.retainedComponentCount <= 1) {
+            listOf(fragmentReconstruction.pointsByX.entries.sortedBy { it.key })
+        } else {
+            fragmentReconstruction.pointsByX.toSparseComponents()
+        }
+        if (fragmentComponents.isEmpty()) return null
+        val shapedPointsByX = mutableMapOf<Int, CurvePoint>()
+        fragmentComponents.forEach { component ->
+            val minX = component.first().key
+            val maxX = component.last().key
+            val apex = component.minWith(compareBy<Map.Entry<Int, Float>> { it.value }.thenBy { it.key })
+            val singleRetainedComponent = fragmentReconstruction.retainedComponentCount <= 1
+            val halfWidth = if (singleRetainedComponent) {
+                SPARSE_SINGLE_COMPONENT_HALF_WIDTH
+            } else {
+                maxOf(
+                    SPARSE_COMPONENT_MIN_HALF_WIDTH,
+                    minOf(SPARSE_COMPONENT_MAX_HALF_WIDTH, (component.size / 2).coerceAtLeast(1)),
+                )
+            }
+            val leftBase = ((if (singleRetainedComponent) apex.key else minX) - halfWidth).coerceAtLeast(0)
+            val rightBase = ((if (singleRetainedComponent) apex.key else maxX) + halfWidth).coerceAtMost(width - 1)
+            val baselinePadColumns = if (singleRetainedComponent) {
+                SPARSE_SINGLE_COMPONENT_BASELINE_PAD_COLUMNS
+            } else {
+                SPARSE_COMPONENT_BASELINE_PAD_COLUMNS
+            }
+            val leftPad = (leftBase - baselinePadColumns).coerceAtLeast(0)
+            val rightPad = (rightBase + baselinePadColumns).coerceAtMost(width - 1)
+            for (x in leftPad until leftBase) {
+                shapedPointsByX.putIfAbsent(
+                    x,
+                    CurvePoint(
+                        pixelX = x,
+                        pixelY = baselineY,
+                        confidence = CurvePoint.INTERPOLATED,
+                    ),
+                )
+            }
+            for (x in leftBase..rightBase) {
+                val ratio = when {
+                    x <= apex.key -> (x - leftBase).toFloat() / (apex.key - leftBase).coerceAtLeast(1).toFloat()
+                    else -> (rightBase - x).toFloat() / (rightBase - apex.key).coerceAtLeast(1).toFloat()
+                }.coerceIn(0f, 1f)
+                val y = baselineY + (apex.value - baselineY) * ratio
+                shapedPointsByX[x] = CurvePoint(
+                    pixelX = x,
+                    pixelY = y,
+                    confidence = if (x == apex.key) CurvePoint.HIGH_CONFIDENCE else CurvePoint.INTERPOLATED,
+                )
+            }
+            for (x in (rightBase + 1)..rightPad) {
+                shapedPointsByX.putIfAbsent(
+                    x,
+                    CurvePoint(
+                        pixelX = x,
+                        pixelY = baselineY,
+                        confidence = CurvePoint.INTERPOLATED,
+                    ),
+                )
+            }
+        }
+        if (shapedPointsByX.isEmpty()) return null
+        return SelectedTracePoints(
+            points = shapedPointsByX.values.sortedBy { it.pixelX },
+            extractedColumns = evidenceColumnCount,
+            interpolatedColumns = fragmentReconstruction.interpolatedColumnCount,
+            selectedFragmentReconstruction = true,
+        )
+    }
+
+    private fun Map<Int, Float>.toSparseComponents(): List<List<Map.Entry<Int, Float>>> {
+        if (isEmpty()) return emptyList()
+        val sorted = entries.sortedBy { it.key }
+        val components = mutableListOf<List<Map.Entry<Int, Float>>>()
+        var start = 0
+        for (index in 1 until sorted.size) {
+            if (sorted[index].key - sorted[index - 1].key > SPARSE_COMPONENT_MAX_GAP_COLUMNS) {
+                components += sorted.subList(start, index)
+                start = index
+            }
+        }
+        components += sorted.subList(start, sorted.size)
+        return components.filter { it.isNotEmpty() }
+    }
+
+    private fun shouldSelectFragmentReconstructionTrace(
+        rawPoints: List<CurvePoint>,
+        width: Int,
+        fragmentReconstruction: FragmentedTraceReconstruction,
+    ): Boolean {
+        if (width <= 0 || rawPoints.isEmpty() || !fragmentReconstruction.available) return false
+        val rawCoverage = rawPoints.size.toFloat() / width.toFloat()
+        val fragmentCoverage = fragmentReconstruction.pointsByX.size.toFloat() / width.toFloat()
+        val retainedComponents = fragmentReconstruction.retainedComponentCount
+        if (rawCoverage > SPARSE_FRAGMENT_SELECTION_MAX_RAW_COVERAGE) return false
+        if (fragmentCoverage < SPARSE_FRAGMENT_SELECTION_MIN_COVERAGE) return false
+        if (fragmentReconstruction.rawColumnCount < SPARSE_FRAGMENT_SELECTION_MIN_COLUMNS) return false
+        if (retainedComponents !in 1..SPARSE_FRAGMENT_SELECTION_MAX_COMPONENTS) return false
+        return true
     }
 
     private fun bestSignalCluster(sorted: List<Int>, height: Int): List<Int>? {
@@ -1120,6 +1249,13 @@ actual class CurveExtractor actual constructor() {
     )
 }
 
+private data class SelectedTracePoints(
+    val points: List<CurvePoint>,
+    val extractedColumns: Int,
+    val interpolatedColumns: Int,
+    val selectedFragmentReconstruction: Boolean,
+)
+
 private data class BranchPrunedCenterline(
     val pointsByX: Map<Int, Float>,
     val method: String = "not_available",
@@ -1154,5 +1290,15 @@ private data class CenterlineDelta(
 private const val CENTERLINE_LARGE_DELTA_THRESHOLD_PX = 6f
 private const val CENTERLINE_BRANCH_NEAR_RADIUS = 2
 private const val CENTERLINE_BRANCH_INTERPOLATION_MAX_GAP = 18
+private const val SPARSE_FRAGMENT_SELECTION_MAX_RAW_COVERAGE = 0.20f
+private const val SPARSE_FRAGMENT_SELECTION_MIN_COVERAGE = 0.02f
+private const val SPARSE_FRAGMENT_SELECTION_MIN_COLUMNS = 10
+private const val SPARSE_FRAGMENT_SELECTION_MAX_COMPONENTS = 12
+private const val SPARSE_COMPONENT_MAX_GAP_COLUMNS = 8
+private const val SPARSE_COMPONENT_BASELINE_PAD_COLUMNS = 7
+private const val SPARSE_SINGLE_COMPONENT_BASELINE_PAD_COLUMNS = 6
+private const val SPARSE_SINGLE_COMPONENT_HALF_WIDTH = 6
+private const val SPARSE_COMPONENT_MIN_HALF_WIDTH = 6
+private const val SPARSE_COMPONENT_MAX_HALF_WIDTH = 12
 private const val BRANCH_PRUNED_CONTINUITY_METHOD =
     "continuity_interpolated_branch_neighborhood_radius_2_max_gap_18"

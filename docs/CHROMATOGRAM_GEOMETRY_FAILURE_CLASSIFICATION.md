@@ -1,6 +1,6 @@
 # Chromatogram Geometry Failure Classification
 
-Status: runtime geometry follow-up after `b7467e0`.
+Status: runtime geometry follow-up after `6ea7d21`, `5ebe51a`, `49f60e8`.
 Date: 2026-05-18.
 
 This document records the current failure mode for the three bench cases that still
@@ -12,8 +12,8 @@ pipeline must continue to remove.
 
 | Fixture | Expected | Actual | Blocking Origin | Classification |
 | --- | --- | --- | --- | --- |
-| `bench_03_small_tic_export` | at least 5 visible peaks; labeled apexes near 3.244, 3.890, 4.647, 5.610, 8.560 | 4 peaks after guarded completeness; peak sanity blocks | tick localization/OCR anchors plus centerline coverage | Low-resolution clean TIC has valid plot area and usable curve, but deterministic tick geometry finds only 1 X and 1 Y tick, OCR is unavailable, manual calibration allows signal conversion, then peak sanity reports `min_peak_count_not_met` and `expected_apex_missing`. |
-| `bench_04_stacked_xic_resolution` graph 3 | sparse review should cover 4 peaks | 20 reviewed/default peaks | curve mask extraction and centerline selection | Graph/plot/signal conversion succeed, but sparse trace extraction admits too many fragmented/noisy components as peaks. This is not a calibration failure; it is over-detection after curve extraction. |
+| `bench_03_small_tic_export` | at least 5 visible peaks; labeled apexes near 3.244, 3.890, 4.647, 5.610, 8.560 | 3 default peaks after compact right-border suppression; peak sanity blocks | plot-area text/baseline contamination plus low-resolution centerline evidence | The false late right-edge peak is now removed from the mask, but the two smallest labeled peaks remain below the current deterministic trace/peak evidence. This is still upstream image-to-signal quality, not integration math. |
+| `bench_04_stacked_xic_resolution` graph 3 | sparse review should cover 4 peaks | passes sparse review: 4 reviewed peaks | fixed in curve candidate/review layer | Sparse trace extraction now selects fragment reconstruction only for genuinely sparse masks and filters micro/terminal/shoulder artifacts from sparse review counts. Graph 3 reviews 4 peaks; graph 4 reviews 1 localized peak. |
 | `bench_08_mz71_duplicate_candidate` | guarded completeness path: base 5 -> tuned 9 | default path returns 19 peaks; guarded tuning not applied | curve mask extraction / peak candidate quality gate | GraphPanel and plotArea are detected and the X tick geometry is rich, but Y tick geometry is weak and the signal contains many accepted candidates. The guarded under-detection gate does not activate because the base table is already over-detected. |
 
 ## Stage Notes
@@ -21,13 +21,14 @@ pipeline must continue to remove.
 ### `bench_03_small_tic_export`
 
 - GraphPanel detection: full-image fallback accepted; acceptable for this compact screenshot.
-- PlotArea detection: detected `13,1 367x100`; warning `plot_area.signal_extends_above_detected_y_axis`.
+- PlotArea detection: detected approximately `13,2 367x99`; warning `plot_area.signal_extends_above_detected_y_axis`.
 - Axis detection: axes/origin detected with high confidence.
 - Tick localization: weak; only one X tick and one Y tick are found.
 - OCR anchor pairing: unavailable in the default desktop environment; no reliable automatic tick-value anchors.
 - Calibration fit: manual fixture calibration makes signal conversion possible, but automatic calibration remains blocked.
-- Curve extraction: usable, but coverage is marginal for the labeled low-resolution peaks.
-- Peak result: 4 peaks instead of at least 5; failure is upstream tick/curve/centerline evidence, not integration math.
+- Curve extraction: usable, with compact right-border artifact suppression now applied.
+- Peak result: the previous false late peak is removed; the accepted table is cleaner but still has only 3 peaks. The labeled 5.610 and 8.560 peaks need a low-resolution trace reconstruction/OCR-evidence pass instead of lower S/N thresholds.
+- Stable debug artifacts in each bench run include `plot_area_crop.png`, `mask_raw.png`, `mask_clean.png`, `trace_artifacts.png`, `centerline_*_overlay.png`, and `peak_overlay_graph_1.png`.
 
 ### `bench_04_stacked_xic_resolution`
 
@@ -35,8 +36,8 @@ pipeline must continue to remove.
 - PlotArea detection: all four plot areas are detected.
 - Axis/tick localization: deterministic tick evidence remains sparse on several panels.
 - Calibration fit: manual fixture calibration permits signal conversion.
-- Curve extraction: graph 3 has sparse coverage but produces a dense peak table.
-- Peak result: graph 3 returns 20 reviewed peaks where the sparse-quality contract expects 4. This points to fragmented trace/noise being accepted as curve/peak evidence.
+- Curve extraction: graph 3 now routes through sparse/fragmented review rather than treating every small residual as a release-grade peak.
+- Peak result: current targeted test passes. Sparse traces bypass guarded completeness tuning, and review counts are computed after deterministic artifact filtering.
 
 ### `bench_08_mz71_duplicate_candidate`
 
@@ -46,15 +47,18 @@ pipeline must continue to remove.
 - Calibration fit: manual fixture calibration permits signal conversion.
 - Curve extraction: usable but includes artifact risk from top-band text / frame context.
 - Peak result: 19 default peaks. The expected guarded-completeness path is not reached because the base detector is over-detecting, not under-detecting.
+- Next required change: trace candidate scoring must distinguish actual n-alkane series peaks from duplicate/near-duplicate screenshot context and decide whether this fixture should be a guarded-completeness case or a many-peak scientific trace. The current implementation honestly reports the 19 accepted candidates instead of forcing the older 5 -> 9 contract.
 
 ## Immediate Engineering Direction
 
 The current failures are all upstream of final report quality:
 
-- `bench_03`: improve deterministic tick localization/OCR pairing and low-resolution centerline recovery.
-- `bench_04`: improve sparse trace component selection so fragmented artifacts do not become a dense peak table.
-- `bench_08`: improve plot-area/trace artifact suppression and guarded quality rules for over-detected near-duplicate screenshot cases.
+- `bench_03`: add a low-resolution labeled-peak recovery path: deterministic peak-label OCR/local crops for semantic evidence plus trace reconstruction that can preserve 5-8 px peaks without lowering global S/N.
+- `bench_04`: fixed in this slice for sparse stacked panels; keep it as a regression fixture.
+- `bench_08`: decide and implement the production rule for dense n-alkane series vs guarded-completeness review. If the 19 peaks are scientifically valid, the fixture contract should be revised with evidence; if not, the trace mask must suppress the contaminating series before peak detection.
 
-The new runtime changes in this slice move actual curve extraction to `PlotAreaBounds`
-and store plot-area crop/mask/centerline artifacts in `GeometryTrace`. That makes the
-next numerical tuning auditable instead of hidden inside a polished report.
+The new runtime changes in this slice keep curve extraction on `PlotAreaBounds`, select
+fragment reconstruction only for sparse masks, prevent sparse traces from using guarded
+threshold relaxation, and suppress compact right-border blocks before peak detection.
+The remaining failures have saved deterministic artifacts and are not hidden behind a
+polished report.

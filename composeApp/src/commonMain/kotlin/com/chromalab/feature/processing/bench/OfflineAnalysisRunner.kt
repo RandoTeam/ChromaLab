@@ -912,6 +912,7 @@ class OfflineAnalysisRunner(
         }.orEmpty()
         val selectedVariant = variantScores.firstOrNull { it.selected } ?: variantScores.firstOrNull()
         val analysisImagePath = selectedVariant?.imagePath ?: preprocessing.contrastEnhancedPath
+        val plotGeometryImagePath = preprocessing.sourcePath
         val ocrImagePath = preprocessing.sourcePath
         if (variantScores.isEmpty()) {
             graphWarnings += "preprocess_variant_ranking_not_available"
@@ -944,7 +945,7 @@ class OfflineAnalysisRunner(
             },
         ) {
             plotAreaDetector.detect(
-                imagePath = analysisImagePath,
+                imagePath = plotGeometryImagePath,
                 panelRegion = region,
                 imageWidth = imageWidth,
                 imageHeight = imageHeight,
@@ -1953,6 +1954,7 @@ private fun buildPeakDetectionAudit(
         sourceId = sourceId,
         params = params,
         traceArtifactAudit = traceArtifactAudit,
+        sparseTrace = "curve_extract.sparse_trace_low_column_coverage_accepted" in curveWarnings,
     )
     val run = choice.run
     val selectedParams = choice.params
@@ -2058,18 +2060,19 @@ private fun buildSparseTracePeakQualityAudit(
     if (!sparseTrace) return OfflineSparseTracePeakQualityAudit()
 
     val localizedSparseTrace = "curve_extract.sparse_trace_localized_review_required" in curveWarnings
-    val lowSnrCount = peaks.count { it.snr < minSnr }
-    val lowAreaShareCount = peaks.count { it.areaPercent < SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW }
-    val lowConfidenceCount = peaks.count {
+    val reviewPeaks = sparseTraceReviewPeaks(peaks)
+    val filteredArtifactCount = peaks.size - reviewPeaks.size
+    val lowSnrCount = reviewPeaks.count { it.snr < minSnr }
+    val lowAreaShareCount = reviewPeaks.count { it.areaPercent < SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW }
+    val lowConfidenceCount = reviewPeaks.count {
         it.confidence == ConfidenceGrade.LOW || it.confidence == ConfidenceGrade.FAILED
     }
-    val overlapReviewCount = peaks.count {
-        it.overlapStatus == OverlapStatus.SHOULDER || it.overlapStatus == OverlapStatus.UNRESOLVED
-    }
+    val overlapReviewCount = sparseTraceOverlapReviewCount(reviewPeaks, lowAreaShareCount)
     val warnings = buildList {
         add("peak_detection.sparse_trace_report_confidence_required")
         if (localizedSparseTrace) add("peak_detection.sparse_trace_localized_review_required")
-        if (peaks.isEmpty()) add("peak_detection.sparse_trace.no_peaks")
+        if (reviewPeaks.isEmpty()) add("peak_detection.sparse_trace.no_peaks")
+        if (filteredArtifactCount > 0) add("peak_detection.sparse_trace_artifact_peaks_filtered")
         if (lowSnrCount > 0) add("peak_detection.sparse_trace_low_snr_peaks")
         if (lowAreaShareCount > 0) add("peak_detection.sparse_trace_low_area_share_peaks")
         if (lowConfidenceCount > 0) add("peak_detection.sparse_trace_low_confidence_peaks")
@@ -2080,7 +2083,7 @@ private fun buildSparseTracePeakQualityAudit(
         available = true,
         sparseTrace = true,
         localizedSparseTrace = localizedSparseTrace,
-        reviewPeakCount = peaks.size,
+        reviewPeakCount = reviewPeaks.size,
         lowSnrCount = lowSnrCount,
         lowAreaShareCount = lowAreaShareCount,
         lowConfidenceCount = lowConfidenceCount,
@@ -2090,11 +2093,56 @@ private fun buildSparseTracePeakQualityAudit(
     )
 }
 
+private fun sparseTraceReviewPeaks(peaks: List<PeakResult>): List<PeakResult> {
+    if (peaks.size < 3) return peaks
+    return peaks.filterIndexed { index, peak ->
+        !peak.isSparseTraceMicroArtifact() &&
+            !peak.isSparseTraceTerminalTailArtifact(peaks, index) &&
+            !peak.isSparseTraceMinorShoulderArtifact(peaks, index)
+    }
+}
+
+private fun PeakResult.isSparseTraceMicroArtifact(): Boolean =
+    areaPercent < SPARSE_TRACE_MICRO_ARTIFACT_AREA_PERCENT
+
+private fun PeakResult.isSparseTraceTerminalTailArtifact(peaks: List<PeakResult>, index: Int): Boolean {
+    if (index != peaks.lastIndex || index <= 0) return false
+    val previous = peaks[index - 1]
+    val gap = rtApex - previous.rtApex
+    return areaPercent < SPARSE_TRACE_TERMINAL_ARTIFACT_AREA_PERCENT &&
+        widthBase < SPARSE_TRACE_TERMINAL_ARTIFACT_MAX_WIDTH &&
+        gap > previous.widthBase * SPARSE_TRACE_TERMINAL_ARTIFACT_GAP_FACTOR
+}
+
+private fun PeakResult.isSparseTraceMinorShoulderArtifact(peaks: List<PeakResult>, index: Int): Boolean {
+    val next = peaks.getOrNull(index + 1)
+    val previous = peaks.getOrNull(index - 1)
+    val closeToNext = next != null && next.rtApex - rtApex <= maxOf(widthBase, next.widthBase)
+    val closeToPrevious = previous != null && rtApex - previous.rtApex <= maxOf(widthBase, previous.widthBase)
+    return areaPercent in SPARSE_TRACE_MINOR_SHOULDER_MIN_AREA_PERCENT..SPARSE_TRACE_MINOR_SHOULDER_MAX_AREA_PERCENT &&
+        widthBase < SPARSE_TRACE_MINOR_SHOULDER_MAX_WIDTH &&
+        (closeToNext || closeToPrevious)
+}
+
+private fun sparseTraceOverlapReviewCount(
+    reviewPeaks: List<PeakResult>,
+    lowAreaShareCount: Int,
+): Int {
+    if (reviewPeaks.isEmpty()) return 0
+    val unresolvedOrShoulder = reviewPeaks.count {
+        it.overlapStatus == OverlapStatus.SHOULDER || it.overlapStatus == OverlapStatus.UNRESOLVED
+    }
+    if (unresolvedOrShoulder != reviewPeaks.size) return 0
+    if (reviewPeaks.size <= SPARSE_TRACE_FULL_OVERLAP_REVIEW_COUNT) return reviewPeaks.size
+    return (reviewPeaks.size - lowAreaShareCount + 1).coerceAtLeast(0)
+}
+
 private fun choosePeakDetectionRun(
     signal: DigitalSignal,
     sourceId: String,
     params: CalculationParams,
     traceArtifactAudit: CurveTraceArtifactAudit?,
+    sparseTrace: Boolean,
 ): OfflinePeakDetectionChoice {
     val baseRun = CalculationEngine.execute(
         signal = signal,
@@ -2113,6 +2161,7 @@ private fun choosePeakDetectionRun(
         controlledTuningReason = null,
         guardedQualityReview = OfflineGuardedPeakQualityAudit(),
     )
+    if (sparseTrace) return baseChoice
     if (traceArtifactAudit?.thresholdRelaxationAllowed != true) return baseChoice
     if (!baseRun.validation.isValid) return baseChoice
     if (baseRun.peaks.size > CONTROLLED_TUNING_MAX_BASE_PEAKS) return baseChoice
@@ -3297,6 +3346,14 @@ private const val CONTROLLED_TUNING_REFERENCE_MIN_SNR = 3.0
 private const val CONTROLLED_TUNING_MIN_PROMINENCE_REJECTS = 8
 private const val CONTROLLED_TUNING_MIN_AREA_PERCENT_REVIEW = 2.5
 private const val SPARSE_TRACE_MIN_AREA_PERCENT_REVIEW = 2.5
+private const val SPARSE_TRACE_MICRO_ARTIFACT_AREA_PERCENT = 1.0
+private const val SPARSE_TRACE_TERMINAL_ARTIFACT_AREA_PERCENT = 7.0
+private const val SPARSE_TRACE_TERMINAL_ARTIFACT_MAX_WIDTH = 2.0
+private const val SPARSE_TRACE_TERMINAL_ARTIFACT_GAP_FACTOR = 3.0
+private const val SPARSE_TRACE_MINOR_SHOULDER_MIN_AREA_PERCENT = 2.0
+private const val SPARSE_TRACE_MINOR_SHOULDER_MAX_AREA_PERCENT = 5.0
+private const val SPARSE_TRACE_MINOR_SHOULDER_MAX_WIDTH = 0.65
+private const val SPARSE_TRACE_FULL_OVERLAP_REVIEW_COUNT = 4
 private const val CONTROLLED_TUNING_MIN_WIDTH_REVIEW = 0.20
 private const val CONTROLLED_TUNING_MAX_REVIEW_FRACTION = 0.35
 private const val CONTROLLED_TUNING_MAX_BASE_PEAKS = 6
