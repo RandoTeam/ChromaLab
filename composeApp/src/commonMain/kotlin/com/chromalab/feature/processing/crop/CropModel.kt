@@ -1,5 +1,6 @@
 package com.chromalab.feature.processing.crop
 
+import com.chromalab.feature.processing.geometry.GeometryStageStatus
 import kotlinx.serialization.Serializable
 
 /**
@@ -26,6 +27,8 @@ data class CropResult(
     val croppedWidth: Int,
     val croppedHeight: Int,
     val timestamp: Long,
+    val status: GeometryStageStatus = GeometryStageStatus.APPLIED,
+    val warnings: List<String> = emptyList(),
 )
 
 /**

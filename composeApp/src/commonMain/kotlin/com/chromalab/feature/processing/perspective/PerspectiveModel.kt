@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.perspective
 
 import com.chromalab.feature.processing.document.DocumentCorners
 import com.chromalab.feature.processing.document.ImagePoint
+import com.chromalab.feature.processing.geometry.GeometryStageStatus
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,6 +35,8 @@ data class PerspectiveCorrectionResult(
     val correctedAspectRatio: Float,
     val isExcessiveWarp: Boolean,
     val timestamp: Long,
+    val status: GeometryStageStatus = GeometryStageStatus.APPLIED,
+    val warnings: List<String> = emptyList(),
 )
 
 /**

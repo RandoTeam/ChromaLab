@@ -38,6 +38,7 @@ import com.chromalab.feature.processing.graph.GraphSelectionScreen
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.GeometryStageStatus
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.ModelRuntime
@@ -283,20 +284,27 @@ fun ProcessingFlowScreen(
                     ProcessingStep.CROP_REVIEW -> {
                         if (cropResult == null) {
                             currentImagePath = normalizedPath
-                            // Auto-pipeline: skip document detection
-                            // ML Kit images are pre-cropped, gallery images are user-selected
-                            cropResult = fallbackCropResult(currentImagePath, imageWidth, imageHeight)
-                            println("PIPELINE[CROP] skip: using image as-is, w=$imageWidth h=$imageHeight")
+                            cropResult = skippedCropResult(
+                                path = currentImagePath,
+                                w = imageWidth,
+                                h = imageHeight,
+                                status = GeometryStageStatus.SKIPPED_NOT_CONFIDENT,
+                                warning = "crop.no_runtime_document_quad_identity_preserved",
+                            )
+                            println("PIPELINE[CROP] ${cropResult?.status}: using image as-is, w=$imageWidth h=$imageHeight")
                         }
                     }
 
                     ProcessingStep.PERSPECTIVE -> {
                         if (perspectiveResult == null) {
-                            // Auto-pipeline: skip perspective correction
-                            perspectiveResult = fallbackPerspectiveResult(
-                                currentImagePath, imageWidth, imageHeight,
+                            perspectiveResult = skippedPerspectiveResult(
+                                path = currentImagePath,
+                                w = imageWidth,
+                                h = imageHeight,
+                                status = GeometryStageStatus.SKIPPED_NOT_CONFIDENT,
+                                warning = "perspective.no_runtime_quad_identity_preserved",
                             )
-                            println("PIPELINE[PERSPECTIVE] skip")
+                            println("PIPELINE[PERSPECTIVE] ${perspectiveResult?.status}: identity geometry preserved")
                         }
                     }
 
@@ -1076,10 +1084,12 @@ private fun buildReportPreprocessingSteps(
         add("Image orientation normalized: rotated=${it.wasRotated}, exif=${it.exifOrientation}")
     }
     cropResult?.let {
-        add("Crop stage completed: ${it.cropRect.width}x${it.cropRect.height}")
+        add("Crop stage ${it.status}: ${it.cropRect.width}x${it.cropRect.height}")
+        it.warnings.forEach { warning -> add("Crop warning: $warning") }
     }
     perspectiveResult?.let {
-        add("Perspective stage completed: ${it.outputWidth}x${it.outputHeight}, excessiveWarp=${it.isExcessiveWarp}")
+        add("Perspective stage ${it.status}: ${it.outputWidth}x${it.outputHeight}, excessiveWarp=${it.isExcessiveWarp}")
+        it.warnings.forEach { warning -> add("Perspective warning: $warning") }
     }
     preprocessingResult?.let {
         add(
@@ -1344,7 +1354,13 @@ private fun QualityStatus.toReportSeverity(): ReportSeverity =
 private fun List<ReportWarning>.withReportGraphIndex(graphIndex: Int): List<ReportWarning> =
     map { warning -> warning.copy(graphIndex = graphIndex) }
 
-private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
+private fun skippedCropResult(
+    path: String,
+    w: Int,
+    h: Int,
+    status: GeometryStageStatus,
+    warning: String,
+): CropResult {
     val width = w.coerceAtLeast(1)
     val height = h.coerceAtLeast(1)
     return CropResult(
@@ -1353,10 +1369,18 @@ private fun fallbackCropResult(path: String, w: Int, h: Int): CropResult {
         cropRect = CropRect(0, 0, width, height),
         croppedWidth = width, croppedHeight = height,
         timestamp = System.currentTimeMillis(),
+        status = status,
+        warnings = listOf(warning),
     )
 }
 
-private fun fallbackPerspectiveResult(path: String, w: Int, h: Int): PerspectiveCorrectionResult {
+private fun skippedPerspectiveResult(
+    path: String,
+    w: Int,
+    h: Int,
+    status: GeometryStageStatus,
+    warning: String,
+): PerspectiveCorrectionResult {
     val width = w.coerceAtLeast(1)
     val height = h.coerceAtLeast(1)
     val fw = width.toFloat()
@@ -1372,6 +1396,8 @@ private fun fallbackPerspectiveResult(path: String, w: Int, h: Int): Perspective
         maxWarpDistance = 0f,
         correctedAspectRatio = if (height > 0) fw / fh else 1f,
         isExcessiveWarp = false, timestamp = System.currentTimeMillis(),
+        status = status,
+        warnings = listOf(warning),
     )
 }
 

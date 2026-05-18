@@ -6,6 +6,56 @@ Date: 2026-05-17.
 This document audits the real ChromaLab path from image selection to the final
 calculation report. It is a code-grounded revision, not a target-only diagram.
 
+## Implementation Update - 2026-05-18
+
+The first shared geometry-pipeline slice is now implemented in runtime code.
+
+Completed:
+
+- Added shared geometry contracts:
+  `SourceProvenance`, `PageRectificationResult`, `GraphPanelBounds`,
+  `PlotAreaBounds`, `AxisGeometry`, `TickGeometry`, `TickOcrResult`,
+  `AxisCalibrationFit`, `GeometryTrace`, and `GeometryPipelineResult`.
+- Added explicit stage statuses:
+  `SKIPPED_NOT_NEEDED`, `SKIPPED_NOT_CONFIDENT`, `APPLIED`, and `FAILED`.
+- Added `GeometryPipelineRunner` as the common upstream geometry runner used by
+  `AutoSweepEngine`.
+- Added multi-candidate ROI scoring from CV regions, optional VLM hints, full-image
+  fallback, and expanded candidates. VLM candidates are marked as hints and are not
+  treated as pixel truth.
+- Split selected graph evidence into graph-panel bounds and plot-area bounds.
+- Added deterministic tick geometry contract and enabled the Android projection-based
+  tick backend instead of the previous unavailable stub.
+- Added local OCR-to-tick matching: numeric text without a deterministic tick position
+  is marked `SEMANTIC_ONLY` and is not allowed into calibration anchors.
+- Added robust multi-anchor `AxisCalibrationFitter` with outlier rejection,
+  residual metrics, `VALID` / `REVIEW` / `INVALID` statuses, and an adapter back to
+  the existing `PixelCalibration` path.
+- Routed geometry status and trace into saved report metadata, structured report
+  rendering, and report-contract validation.
+- Updated legacy runtime crop and perspective result models so identity/no-op stages
+  can be recorded as `SKIPPED_NOT_CONFIDENT` or `SKIPPED_NOT_NEEDED` instead of
+  being described as successful processing.
+
+Current limits:
+
+- Real page homography selection is still not enabled as a trusted production step.
+  If no reliable quadrilateral exists, the shared runner preserves identity geometry
+  and reports `SKIPPED_NOT_CONFIDENT`.
+- The runtime sweep still uses the existing selected graph region for curve extraction
+  to avoid breaking saved-signal behavior in this slice. The geometry runner now
+  computes `PlotAreaBounds`, but the next slice must make curve extraction consume
+  validated/review plot-area geometry directly.
+- Overlay files for every trace artifact are represented by the contract, but not all
+  runtime artifacts are rendered yet on Android.
+- Manual calibration UI is still the diagnostic fallback for invalid geometry; this
+  slice prevents fake scientific readiness but does not yet finish the full evidence
+  viewer UI.
+
+The important product change is that missing crop/perspective/calibration evidence is
+now visible to the report layer. The app should no longer silently promote identity
+geometry or weak two-point assumptions into a release-quality scientific report.
+
 ## Scope
 
 Reviewed areas:
