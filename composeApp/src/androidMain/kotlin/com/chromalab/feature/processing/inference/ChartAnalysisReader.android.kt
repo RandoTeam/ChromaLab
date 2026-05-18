@@ -60,6 +60,7 @@ actual class ChartAnalysisReader actual constructor() {
                         prompt = prompt,
                         options = optionsFor(VlmTask.AxisExtraction, config),
                     )
+                    log("Axis extraction raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
                     ChartPrompts.parseResponse(rawResponse)
                 } finally {
                     VlmEngineHolder.isInferring = false
@@ -69,7 +70,31 @@ actual class ChartAnalysisReader actual constructor() {
                     (analysis.xValues.isNotEmpty() || analysis.yValues.isNotEmpty())
                 ) {
                     log("Axis extraction success x=${analysis.xValues.size} y=${analysis.yValues.size} confidence=${analysis.confidence}")
-                    return chartAnalysisToOcrResult(analysis, graphRegion)
+                    val vlmResult = chartAnalysisToOcrResult(analysis, graphRegion)
+                    if (vlmResult.hasXSuggestions && vlmResult.hasYSuggestions) {
+                        return vlmResult
+                    }
+
+                    log(
+                        "Axis extraction incomplete; supplementing with ML Kit " +
+                            "x=${vlmResult.suggestedXValues.size} y=${vlmResult.suggestedYValues.size}",
+                    )
+                    val fallbackResult = fallbackOcr.readAxisLabels(imagePath, graphRegion)
+                    val merged = vlmResult.mergeSupplementalAxisOcr(fallbackResult)
+                    log(
+                        "Axis extraction merged x=${merged.suggestedXValues.size} " +
+                            "y=${merged.suggestedYValues.size} warnings=${merged.warnings}",
+                    )
+                    if (merged.hasXSuggestions && merged.hasYSuggestions) {
+                        return merged
+                    }
+
+                    val message = "AI axis extraction returned incomplete axes after supplemental OCR"
+                    log(message)
+                    if (VlmEngineHolder.requireVisionForAnalysis) {
+                        throw IllegalStateException(message)
+                    }
+                    return merged
                 }
 
                 val message = "AI axis extraction returned low confidence (${analysis.confidence})"
@@ -323,6 +348,55 @@ private fun ChartAxisTick.toOcrElement(
         confidence = confidence ?: defaultConfidence,
     )
 }
+
+private fun AxisOcrResult.mergeSupplementalAxisOcr(
+    supplemental: AxisOcrResult,
+): AxisOcrResult {
+    val mergedX = if (hasXSuggestions) {
+        suggestedXValues
+    } else {
+        supplemental.suggestedXValues
+    }.stableAxisValues()
+    val mergedY = if (hasYSuggestions) {
+        suggestedYValues
+    } else {
+        supplemental.suggestedYValues
+    }.stableAxisValues(descending = true)
+    val mergedWarnings = buildList {
+        addAll(warnings)
+        addAll(supplemental.warnings)
+        if (!hasXSuggestions && supplemental.hasXSuggestions) {
+            add("axis_ocr.x_values_supplemented_by_mlkit")
+        }
+        if (!hasYSuggestions && supplemental.hasYSuggestions) {
+            add("axis_ocr.y_values_supplemented_by_mlkit")
+        }
+        if (!hasXSuggestions && !supplemental.hasXSuggestions) {
+            add("axis_ocr.x_values_missing_after_supplemental_mlkit")
+        }
+        if (!hasYSuggestions && !supplemental.hasYSuggestions) {
+            add("axis_ocr.y_values_missing_after_supplemental_mlkit")
+        }
+    }.distinct()
+    return copy(
+        rawElements = rawElements + supplemental.rawElements,
+        suggestedXValues = mergedX,
+        suggestedYValues = mergedY,
+        xUnit = xUnit ?: supplemental.xUnit,
+        yUnit = yUnit ?: supplemental.yUnit,
+        confidence = listOfNotNull(confidence, supplemental.confidence).averageOrNull(),
+        warnings = mergedWarnings,
+        timestamp = System.currentTimeMillis(),
+    )
+}
+
+private fun List<Float>.stableAxisValues(descending: Boolean = false): List<Float> {
+    val values = distinct().sorted()
+    return if (descending) values.asReversed() else values
+}
+
+private fun List<Float>.averageOrNull(): Float? =
+    takeIf { it.isNotEmpty() }?.average()?.toFloat()?.coerceIn(0f, 1f)
 
 private enum class VlmTask {
     GraphRegion,
