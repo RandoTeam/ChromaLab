@@ -50,6 +50,11 @@ compound assignments.
   line after each chromatogram graph is inserted. This is the primary logcat marker
   for Android/device validation because it shows selected model, executed model,
   runtime, device, stage timings, and warning codes in one line.
+- Android VLM chart stages now require structured JSON output. Qwen/ChatML prompts
+  explicitly disable thinking output and prefill an empty thinking block; raw/LiteRT
+  prompts also demand JSON-only output. Graph-region, axis-label, and axis-structure
+  stages each get one structured retry, then fail strict photo analysis if usable
+  evidence is still missing.
 - Report metadata already records selected/executed model, runtime, backend, device,
   and stage timings; those fields remain required evidence for Phase 8 validation.
 

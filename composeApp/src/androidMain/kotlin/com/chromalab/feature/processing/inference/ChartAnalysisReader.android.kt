@@ -53,22 +53,31 @@ actual class ChartAnalysisReader actual constructor() {
                 val prompt = ChartPrompts.axisExtractionPrompt(style)
                 log("Axis extraction promptStyle=$style prompt=${prompt.take(60)}...")
 
-                VlmEngineHolder.isInferring = true
-                val analysis = try {
-                    val rawResponse = engine.inferRaw(
+                var rawResponse = inferStructuredRaw(
+                    engine = engine,
+                    imagePath = imagePath,
+                    prompt = prompt,
+                    task = VlmTask.AxisExtraction,
+                    config = config,
+                )
+                log("Axis extraction raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
+                var analysis = ChartPrompts.parseResponse(rawResponse)
+
+                if (!analysis.hasUsableAxisEvidence()) {
+                    val retryPrompt = ChartPrompts.axisExtractionRetryPrompt(style)
+                    log("Axis extraction retry promptStyle=$style prompt=${retryPrompt.take(60)}...")
+                    rawResponse = inferStructuredRaw(
+                        engine = engine,
                         imagePath = imagePath,
-                        prompt = prompt,
-                        options = optionsFor(VlmTask.AxisExtraction, config),
+                        prompt = retryPrompt,
+                        task = VlmTask.AxisExtraction,
+                        config = config,
                     )
-                    log("Axis extraction raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
-                    ChartPrompts.parseResponse(rawResponse)
-                } finally {
-                    VlmEngineHolder.isInferring = false
+                    log("Axis extraction retry raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
+                    analysis = ChartPrompts.parseResponse(rawResponse)
                 }
 
-                if (analysis.confidence > 0.5f &&
-                    (analysis.xValues.isNotEmpty() || analysis.yValues.isNotEmpty())
-                ) {
+                if (analysis.hasUsableAxisEvidence()) {
                     log("Axis extraction success x=${analysis.xValues.size} y=${analysis.yValues.size} confidence=${analysis.confidence}")
                     val vlmResult = chartAnalysisToOcrResult(analysis, graphRegion)
                     if (vlmResult.hasXSuggestions && vlmResult.hasYSuggestions) {
@@ -160,19 +169,29 @@ actual class ChartAnalysisReader actual constructor() {
             val prompt = ChartPrompts.graphRegionPrompt(style)
             log("Graph region promptStyle=$style prompt=${prompt.take(60)}...")
 
-            VlmEngineHolder.isInferring = true
-            val rawResponse = try {
-                engine.inferRaw(
-                    imagePath = imagePath,
-                    prompt = prompt,
-                    options = optionsFor(VlmTask.GraphRegion, config),
-                )
-            } finally {
-                VlmEngineHolder.isInferring = false
-            }
+            var rawResponse = inferStructuredRaw(
+                engine = engine,
+                imagePath = imagePath,
+                prompt = prompt,
+                task = VlmTask.GraphRegion,
+                config = config,
+            )
             log("Graph region raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
 
-            val bounds = ChartPrompts.parseGraphRegion(rawResponse)
+            var bounds = ChartPrompts.parseGraphRegion(rawResponse)
+            if (bounds == null) {
+                val retryPrompt = ChartPrompts.graphRegionRetryPrompt(style)
+                log("Graph region retry promptStyle=$style prompt=${retryPrompt.take(60)}...")
+                rawResponse = inferStructuredRaw(
+                    engine = engine,
+                    imagePath = imagePath,
+                    prompt = retryPrompt,
+                    task = VlmTask.GraphRegion,
+                    config = config,
+                )
+                log("Graph region retry raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
+                bounds = ChartPrompts.parseGraphRegion(rawResponse)
+            }
             if (bounds != null) {
                 log("Graph region detected left=${bounds.leftPct} top=${bounds.topPct} right=${bounds.rightPct} bottom=${bounds.bottomPct} graphs=${bounds.numGraphs}")
             } else {
@@ -217,19 +236,29 @@ actual class ChartAnalysisReader actual constructor() {
             val prompt = ChartPrompts.axisStructurePrompt(style)
             log("Axis structure promptStyle=$style prompt=${prompt.take(60)}...")
 
-            VlmEngineHolder.isInferring = true
-            val rawResponse = try {
-                engine.inferRaw(
-                    imagePath = imagePath,
-                    prompt = prompt,
-                    options = optionsFor(VlmTask.AxisStructure, config),
-                )
-            } finally {
-                VlmEngineHolder.isInferring = false
-            }
+            var rawResponse = inferStructuredRaw(
+                engine = engine,
+                imagePath = imagePath,
+                prompt = prompt,
+                task = VlmTask.AxisStructure,
+                config = config,
+            )
             log("Axis structure raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
 
-            val structure = ChartPrompts.parseAxisStructure(rawResponse)
+            var structure = ChartPrompts.parseAxisStructure(rawResponse)
+            if (structure == null) {
+                val retryPrompt = ChartPrompts.axisStructureRetryPrompt(style)
+                log("Axis structure retry promptStyle=$style prompt=${retryPrompt.take(60)}...")
+                rawResponse = inferStructuredRaw(
+                    engine = engine,
+                    imagePath = imagePath,
+                    prompt = retryPrompt,
+                    task = VlmTask.AxisStructure,
+                    config = config,
+                )
+                log("Axis structure retry raw response chars=${rawResponse.length} preview=${rawResponse.take(200)}")
+                structure = ChartPrompts.parseAxisStructure(rawResponse)
+            }
             if (structure == null && VlmEngineHolder.requireVisionForAnalysis) {
                 throw IllegalStateException("AI axis structure response was not parseable")
             }
@@ -398,10 +427,32 @@ private fun List<Float>.stableAxisValues(descending: Boolean = false): List<Floa
 private fun List<Float>.averageOrNull(): Float? =
     takeIf { it.isNotEmpty() }?.average()?.toFloat()?.coerceIn(0f, 1f)
 
+private fun ChartAnalysis.hasUsableAxisEvidence(): Boolean =
+    confidence > 0.5f && (xValues.isNotEmpty() || yValues.isNotEmpty())
+
 private enum class VlmTask {
     GraphRegion,
     AxisExtraction,
     AxisStructure,
+}
+
+private suspend fun inferStructuredRaw(
+    engine: InferenceEngine,
+    imagePath: String,
+    prompt: String,
+    task: VlmTask,
+    config: InferenceConfig?,
+): String {
+    VlmEngineHolder.isInferring = true
+    return try {
+        engine.inferRaw(
+            imagePath = imagePath,
+            prompt = prompt,
+            options = optionsFor(task, config),
+        )
+    } finally {
+        VlmEngineHolder.isInferring = false
+    }
 }
 
 private fun optionsFor(task: VlmTask, config: InferenceConfig?): GenerationOptions {

@@ -17,8 +17,8 @@ Current execution point:
 - Active phase: `Phase 8 - Model-Assisted Stages`, using the calibrated
   desktop/emulator bench artifacts, structured report contract, and local knowledge
   pack from earlier phases.
-- Latest completed work slice: `Phase 8.3c.5c.18 - reconstructed trace residual taxonomy and acceptance gate`.
-- Next work slice: `Phase 8.3c.5c.19 - branch-edge residual reduction review`.
+- Latest completed work slice: `Phase 8.3d.1 - Android structured VLM JSON prompt contract`.
+- Next work slice: `Phase 8.3d.2 - Android VLM runtime timeout and device-kill audit`.
 
 From this point forward, every completed bench phase/subphase must be recorded in
 this document before or together with its implementation commit. The shorter fixture
@@ -117,7 +117,8 @@ artifact summary; it is not the primary plan.
 | Phase 8.3c.5c.15 | Done | `0241a4b` | Add an audit-only skeleton graph trunk-path candidate with node/edge/endpoint/junction/fragmentation metrics, write per-graph trunk-path overlays, expose parity metrics in JSON/Markdown/report evidence, and verify that fragmented photographed/rotated traces still cannot safely drive calculation signal. |
 | Phase 8.3c.5c.16 | Done | `8afbcf7` | Add an audit-only fragmentation-aware reconstruction candidate over skeleton components, interpolate only short column gaps, write per-graph fragment reconstruction overlays, expose parity/coverage/component metrics in JSON/Markdown/report evidence, and keep calculation input unchanged. |
 | Phase 8.3c.5c.17 | Done | `a429250` | Add signal-guided guard tuning for fragment reconstruction components and short-gap interpolation, expose guide match/rejection metrics in JSON/Markdown/report evidence, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because hard fixtures still have too many large-delta columns. |
-| Phase 8.3c.5c.18 | Done | `this commit` | Add reconstructed-trace residual taxonomy and acceptance gate fields, color residual classes in fragment reconstruction overlays, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because residuals are dominated by branch/edge ambiguity plus crop/frame-text blockers. |
+| Phase 8.3c.5c.18 | Done | `500f040` | Add reconstructed-trace residual taxonomy and acceptance gate fields, color residual classes in fragment reconstruction overlays, verify clean/two-graph/rotated fixtures, and keep reconstructed traces audit-only because residuals are dominated by branch/edge ambiguity plus crop/frame-text blockers. |
+| Phase 8.3d.1 | Done | `this commit` | Enforce Android VLM graph/axis/structure prompts as JSON-only no-thinking contracts with strict retry parsing, so chart stages reject chatty reasoning output instead of treating it as analysis evidence. |
 
 This document defines the desktop/emulator-first calibration plan for ChromaLab's
 chromatogram image analysis, graph splitting, deterministic calculation, and final
@@ -961,6 +962,8 @@ Goal: add models only where they improve recognition without replacing calculati
 - [x] Fail clearly when a required neural vision stage fails.
 - [x] Validate saved-report propagation for model-stage warnings and timings.
 - [x] Emit a compact Android/logcat marker for saved report audit evidence.
+- [x] Enforce JSON-only/no-thinking prompt contracts for Android VLM graph, axis,
+  and axis-structure stages.
 - [ ] Validate the same audit behavior on Android/device runs.
 
 Completed Phase 8.1 work slice:
@@ -1010,6 +1013,18 @@ Completed Phase 8.3b.1 work slice:
    logcat-visible line.
 4. Keep actual Android model-run validation as Phase 8.3b.2 because it still requires
    running LiteRT/GGUF analysis on a device and capturing the emitted audit line.
+
+Completed Phase 8.3d.1 work slice:
+
+1. Treat chatty VLM reasoning output as a failed structured stage, not as usable
+   graph/axis evidence.
+2. Add JSON-only/no-thinking ChatML and raw prompt contracts for Android graph-region,
+   axis-label, and axis-structure stages.
+3. Add one structured retry for each stage before strict full-analysis failure.
+4. Keep numeric peak calculation deterministic; the model still supplies only
+   recognition evidence, never peak metrics.
+5. Keep the next Android slice focused on runtime timeout/high-CPU kill diagnostics,
+   because prompt structure alone cannot prove device-level stability.
 
 Exit criteria:
 

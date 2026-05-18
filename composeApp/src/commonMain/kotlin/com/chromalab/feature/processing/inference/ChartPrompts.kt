@@ -36,6 +36,8 @@ object ChartPrompts {
     // with parse_special=true will convert them to proper token IDs.
     private const val IM_START = "<|im_start|>"
     private const val IM_END = "<|im_end|>"
+    private const val NO_THINK = "/no_think"
+    private val NO_THINK_PREFILL = "<think>\n\n</think>\n\n"
 
     /**
      * Wrap content in ChatML format for Qwen VL Instruct models.
@@ -50,15 +52,37 @@ object ChartPrompts {
      * The trailing newline after "assistant" is intentional —
      * it primes the model to begin generating immediately.
      */
-    private fun chatML(system: String, user: String): String {
+    private fun chatML(system: String, user: String, noThink: Boolean = true): String {
+        val systemPrompt = if (noThink) {
+            """
+$system
+
+$NO_THINK
+Do not output reasoning, analysis, markdown, prose, or code fences.
+The first generated character after this assistant header must be "{".
+""".trimIndent()
+        } else {
+            system
+        }
+        val userPrompt = if (noThink) {
+            """
+$user
+
+$NO_THINK
+Output only the requested JSON object.
+""".trimIndent()
+        } else {
+            user
+        }
         return buildString {
             append("${IM_START}system\n")
-            append(system)
+            append(systemPrompt)
             append("${IM_END}\n")
             append("${IM_START}user\n")
-            append(user)
+            append(userPrompt)
             append("${IM_END}\n")
             append("${IM_START}assistant\n")
+            if (noThink) append(NO_THINK_PREFILL)
         }
     }
 
@@ -92,8 +116,19 @@ RULES:
    - Y position: 0.0 at the top edge of the graph region, 1.0 at the bottom edge.
 10. If you cannot localize a tick position, keep the value in the axis array but omit it from the tick object array.
 
-Respond with ONLY this JSON, no other text:
+Respond with ONLY this JSON, no other text. The first character of the response must be {:
 {"x":[<numbers>],"y":[<numbers>],"x_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"y_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"x_unit":"<unit or null>","y_unit":"<unit or null>"}
+""".trimIndent()
+
+    private val AXIS_USER_RETRY = """
+JSON repair retry.
+
+Read the same image again. Return axis tick labels only.
+No reasoning. No markdown. No explanation.
+If a value is not visibly printed, do not include it.
+
+Required response, exactly one JSON object:
+{"x":[<printed x tick numbers>],"y":[<printed y tick numbers>],"x_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"y_ticks":[{"text":"<printed>","value":<number>,"position":<0..1>}],"x_unit":"<unit or null>","y_unit":"<unit or null>"}
 """.trimIndent()
 
     /** ChatML-formatted axis extraction prompt for Qwen VL Instruct models. */
@@ -103,7 +138,9 @@ Respond with ONLY this JSON, no other text:
      * Raw axis extraction prompt (no ChatML wrapper).
      * Used for non-Qwen models (Gemma via LiteRT) that don't expect ChatML.
      */
-    val AXIS_EXTRACTION_RAW: String = "$AXIS_SYSTEM\n\n$AXIS_USER"
+    val AXIS_EXTRACTION_RAW: String = "$AXIS_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$AXIS_USER"
+    val AXIS_EXTRACTION_RETRY: String = chatML(AXIS_SYSTEM, AXIS_USER_RETRY)
+    val AXIS_EXTRACTION_RETRY_RAW: String = "$AXIS_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$AXIS_USER_RETRY"
 
     // ─── GRAPH_REGION ───────────────────────────────────────────
     //
@@ -120,14 +157,26 @@ Locate the chart plot area in this image. The plot area is the rectangular regio
 
 If there are multiple separate charts, count them.
 
-Respond with ONLY this JSON, no other text:
+Respond with ONLY this JSON, no other text. The first character of the response must be {:
 {"left_pct": <0-100>, "top_pct": <0-100>, "right_pct": <0-100>, "bottom_pct": <0-100>, "num_graphs": <integer>}
 
 Values are percentages of image width and height from the top-left corner.
 """.trimIndent()
 
+    private val REGION_USER_RETRY = """
+JSON repair retry.
+
+Locate the full visible chromatography graph panel: plot frame, axes, tick labels, and graph content. Exclude phone UI and article body text.
+No reasoning. No markdown. No explanation.
+
+Required response, exactly one JSON object:
+{"left_pct": <0-100>, "top_pct": <0-100>, "right_pct": <0-100>, "bottom_pct": <0-100>, "num_graphs": <integer>}
+""".trimIndent()
+
     val GRAPH_REGION: String = chatML(REGION_SYSTEM, REGION_USER)
-    val GRAPH_REGION_RAW: String = "$REGION_SYSTEM\n\n$REGION_USER"
+    val GRAPH_REGION_RAW: String = "$REGION_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$REGION_USER"
+    val GRAPH_REGION_RETRY: String = chatML(REGION_SYSTEM, REGION_USER_RETRY)
+    val GRAPH_REGION_RETRY_RAW: String = "$REGION_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$REGION_USER_RETRY"
 
     // ─── AXIS_STRUCTURE ─────────────────────────────────────────
     //
@@ -142,7 +191,7 @@ You identify axis positions and visual properties of charts.
     private val STRUCTURE_USER = """
 Describe the axis structure of this chart.
 
-Respond with ONLY this JSON, no other text:
+Respond with ONLY this JSON, no other text. The first character of the response must be {:
 {"x_axis_position": "bottom", "y_axis_position": "left", "has_secondary_y": false, "grid_visible": true}
 
 Valid values:
@@ -152,8 +201,19 @@ Valid values:
 - grid_visible: true if gridlines are drawn on the plot area
 """.trimIndent()
 
+    private val STRUCTURE_USER_RETRY = """
+JSON repair retry.
+
+Return chart axis structure only. No reasoning. No markdown. No explanation.
+
+Required response, exactly one JSON object:
+{"x_axis_position": "bottom", "y_axis_position": "left", "has_secondary_y": false, "grid_visible": true}
+""".trimIndent()
+
     val AXIS_STRUCTURE: String = chatML(STRUCTURE_SYSTEM, STRUCTURE_USER)
-    val AXIS_STRUCTURE_RAW: String = "$STRUCTURE_SYSTEM\n\n$STRUCTURE_USER"
+    val AXIS_STRUCTURE_RAW: String = "$STRUCTURE_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$STRUCTURE_USER"
+    val AXIS_STRUCTURE_RETRY: String = chatML(STRUCTURE_SYSTEM, STRUCTURE_USER_RETRY)
+    val AXIS_STRUCTURE_RETRY_RAW: String = "$STRUCTURE_SYSTEM\n\nDo not output reasoning. Output only JSON.\n\n$STRUCTURE_USER_RETRY"
 
     // ─── PaddleOCR-VL trigger prompts ───────────────────────────
     //
@@ -216,6 +276,15 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
         PromptStyle.LITERT -> GRAPH_REGION_RAW
     }
 
+    fun graphRegionRetryPrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> GRAPH_REGION_RETRY
+        PromptStyle.TRIGGER -> PADDLE_CHART
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_CHART
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_REGION
+        PromptStyle.RAW -> GRAPH_REGION_RETRY_RAW
+        PromptStyle.LITERT -> GRAPH_REGION_RETRY_RAW
+    }
+
     /**
      * Select the axis extraction prompt for this model.
      */
@@ -228,6 +297,15 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
         PromptStyle.LITERT -> AXIS_EXTRACTION_RAW
     }
 
+    fun axisExtractionRetryPrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> AXIS_EXTRACTION_RETRY
+        PromptStyle.TRIGGER -> PADDLE_OCR
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_OCR_TEXT
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_AXIS
+        PromptStyle.RAW -> AXIS_EXTRACTION_RETRY_RAW
+        PromptStyle.LITERT -> AXIS_EXTRACTION_RETRY_RAW
+    }
+
     /**
      * Select the axis structure prompt for this model.
      */
@@ -238,6 +316,15 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
         PromptStyle.DIRECT_QUESTION -> MOONDREAM_STRUCTURE
         PromptStyle.RAW -> AXIS_STRUCTURE_RAW
         PromptStyle.LITERT -> AXIS_STRUCTURE_RAW
+    }
+
+    fun axisStructureRetryPrompt(style: PromptStyle): String = when (style) {
+        PromptStyle.CHATML -> AXIS_STRUCTURE_RETRY
+        PromptStyle.TRIGGER -> PADDLE_CHART
+        PromptStyle.DEEPSEEK_OCR -> DEEPSEEK_CHART
+        PromptStyle.DIRECT_QUESTION -> MOONDREAM_STRUCTURE
+        PromptStyle.RAW -> AXIS_STRUCTURE_RETRY_RAW
+        PromptStyle.LITERT -> AXIS_STRUCTURE_RETRY_RAW
     }
 
     // ─── Response parsing ───────────────────────────────────────

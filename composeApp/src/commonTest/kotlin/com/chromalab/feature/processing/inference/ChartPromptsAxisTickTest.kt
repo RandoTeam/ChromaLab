@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.inference
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ChartPromptsAxisTickTest {
 
@@ -41,5 +42,23 @@ class ChartPromptsAxisTickTest {
 
         assertEquals(listOf(0f, 10f, 15f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 55f), analysis.xValues)
         assertEquals(listOf(0f, 50000f, 100000f), analysis.yValues)
+    }
+
+    @Test
+    fun qwenStructuredPromptsDisableThinkingBeforeJsonOutput() {
+        val prompts = listOf(
+            ChartPrompts.graphRegionPrompt(PromptStyle.CHATML),
+            ChartPrompts.graphRegionRetryPrompt(PromptStyle.CHATML),
+            ChartPrompts.axisExtractionPrompt(PromptStyle.CHATML),
+            ChartPrompts.axisExtractionRetryPrompt(PromptStyle.CHATML),
+            ChartPrompts.axisStructurePrompt(PromptStyle.CHATML),
+            ChartPrompts.axisStructureRetryPrompt(PromptStyle.CHATML),
+        )
+
+        prompts.forEach { prompt ->
+            assertTrue("/no_think" in prompt)
+            assertTrue("<think>\n\n</think>" in prompt)
+            assertTrue("first generated character" in prompt)
+        }
     }
 }
