@@ -23,6 +23,7 @@ class GeometryPipelineRunner(
     private val plotAreaDetector: GraphPlotAreaDetector = GraphPlotAreaDetector(),
     private val axisDetector: AxisDetector = AxisDetector(),
     private val axisTickGeometryDetector: AxisTickGeometryDetector = AxisTickGeometryDetector(),
+    private val tickCropArtifactWriter: TickOcrCropArtifactWriter = TickOcrCropArtifactWriter(),
     private val chartReader: ChartAnalysisReader = ChartAnalysisReader(),
     private val calibrationFitter: AxisCalibrationFitter = AxisCalibrationFitter(),
 ) {
@@ -105,6 +106,7 @@ class GeometryPipelineRunner(
                     candidate = candidate,
                     retryIndex = retryIndex,
                     runTickOcr = runTickOcr,
+                    outputDir = outputDir,
                 )
             }
         val selectedEvaluation = evaluatedCandidates.maxWithOrNull(
@@ -160,7 +162,10 @@ class GeometryPipelineRunner(
             rectifiedImagePath = rectification.rectifiedImagePath,
             selectedGraphPanelOverlayPath = selected?.overlayArtifactPath,
             selectedPlotAreaOverlayPath = selectedPlot?.overlayArtifactPath,
-            ocrCropPaths = tickOcr.items.mapNotNull { it.localCropPath },
+            ocrCropPaths = (
+                selectedEvaluation?.tickCropArtifacts?.map { it.path }.orEmpty() +
+                    tickOcr.items.mapNotNull { it.localCropPath }
+                ).distinct(),
             warnings = warnings,
             timings = listOf(
                 GeometryStageTiming(
@@ -190,6 +195,7 @@ class GeometryPipelineRunner(
         candidate: GraphPanelBounds,
         retryIndex: Int,
         runTickOcr: Boolean,
+        outputDir: String,
     ): GeometryCandidateEvaluation {
         val plot = runCatching {
             plotAreaDetector.detect(imagePath, candidate.region, imageWidth, imageHeight)
@@ -214,12 +220,26 @@ class GeometryPipelineRunner(
         }.getOrNull()
         val axisGeometry = axes.toAxisGeometry(axisTick)
         val tickGeometry = axisTick.toTickGeometry()
+        val tickCropArtifacts = if (plot != null) {
+            runCatching {
+                tickCropArtifactWriter.writeTickCrops(
+                    imagePath = imagePath,
+                    outputDir = outputDir,
+                    panelRegion = candidate.region,
+                    plotRegion = plot.region,
+                    tickGeometry = tickGeometry,
+                    candidateIndex = retryIndex,
+                )
+            }.getOrElse { emptyList() }
+        } else {
+            emptyList()
+        }
         val axisOcr = if (runTickOcr) {
             runCatching { chartReader.readAxisLabels(imagePath, candidate.region) }.getOrNull()
         } else {
             null
         }
-        val tickOcr = axisOcr.toTickOcrResult(candidate.region, tickGeometry)
+        val tickOcr = axisOcr.toTickOcrResult(candidate.region, tickGeometry, tickCropArtifacts)
         val xFit = calibrationFitter.fit(
             axis = GeometryAxis.X,
             anchors = tickOcr.acceptedItems
@@ -270,6 +290,7 @@ class GeometryPipelineRunner(
             axisGeometry = axisGeometry,
             tickGeometry = tickGeometry,
             tickOcr = tickOcr,
+            tickCropArtifacts = tickCropArtifacts,
             xFit = xFit,
             yFit = yFit,
             reportStatus = reportStatus,
@@ -366,6 +387,7 @@ private data class GeometryCandidateEvaluation(
     val axisGeometry: AxisGeometry,
     val tickGeometry: TickGeometry,
     val tickOcr: TickOcrResult,
+    val tickCropArtifacts: List<TickOcrCropArtifact>,
     val xFit: AxisCalibrationFit,
     val yFit: AxisCalibrationFit,
     val reportStatus: GeometryReportStatus,
@@ -524,6 +546,7 @@ private fun AxisTickGeometryResult?.toTickGeometry(): TickGeometry =
 private fun AxisOcrResult?.toTickOcrResult(
     panelRegion: GraphRegion?,
     ticks: TickGeometry,
+    cropArtifacts: List<TickOcrCropArtifact> = emptyList(),
 ): TickOcrResult {
     val ocr = this ?: return TickOcrResult(
         warnings = listOf("tick_ocr.not_available"),
@@ -543,6 +566,7 @@ private fun AxisOcrResult?.toTickOcrResult(
             tolerance = xTolerance,
             coordinate = element.centerX,
             expectedBand = element.centerY >= panel.y + panel.height * 0.45f,
+            cropArtifacts = cropArtifacts,
         )
         val yItem = element.toTickOcrItemOrNull(
             axis = GeometryAxis.Y,
@@ -550,6 +574,7 @@ private fun AxisOcrResult?.toTickOcrResult(
             tolerance = yTolerance,
             coordinate = element.centerY,
             expectedBand = element.centerX <= panel.x + panel.width * 0.42f,
+            cropArtifacts = cropArtifacts,
         )
         val item = listOfNotNull(xItem, yItem).maxByOrNull {
             if (it.status == TickOcrItemStatus.ACCEPTED) 1 else 0
@@ -563,6 +588,9 @@ private fun AxisOcrResult?.toTickOcrResult(
             addAll(ocr.warnings)
             if (ticks.xTicks.size < 2) add("tick_geometry.x_positions_insufficient")
             if (ticks.yTicks.size < 2) add("tick_geometry.y_positions_insufficient")
+            if ((ticks.xTicks.isNotEmpty() || ticks.yTicks.isNotEmpty()) && cropArtifacts.isEmpty()) {
+                add("tick_ocr.local_crops_missing")
+            }
             if (semanticOnlyCount > 0) add("tick_ocr.semantic_only:$semanticOnlyCount")
         }.distinct(),
         timestamp = ocr.timestamp,
@@ -575,6 +603,7 @@ private fun OcrTextElement.toTickOcrItemOrNull(
     tolerance: Float,
     coordinate: Float,
     expectedBand: Boolean,
+    cropArtifacts: List<TickOcrCropArtifact>,
 ): TickOcrItem? {
     if (!expectedBand) return null
     val nearest = ticks.minByOrNull { abs(it - coordinate) }
@@ -587,6 +616,9 @@ private fun OcrTextElement.toTickOcrItemOrNull(
     return TickOcrItem(
         axis = axis,
         tickPixelPosition = nearest?.takeIf { status == TickOcrItemStatus.ACCEPTED },
+        localCropPath = nearest
+            ?.takeIf { status == TickOcrItemStatus.ACCEPTED }
+            ?.let { cropArtifacts.pathFor(axis, it) },
         rawText = text,
         parsedNumericValue = numericValue?.toDouble(),
         ocrEngine = TickOcrEngine.BOTH,
@@ -599,6 +631,11 @@ private fun OcrTextElement.toTickOcrItemOrNull(
         },
     )
 }
+
+private fun List<TickOcrCropArtifact>.pathFor(axis: GeometryAxis, tickPixelPosition: Float): String? =
+    firstOrNull {
+        it.axis == axis && abs(it.tickPixelPosition - tickPixelPosition) <= 0.5f
+    }?.path
 
 private fun com.chromalab.feature.processing.inference.GraphBounds.toGraphRegionResult(
     imageWidth: Int,

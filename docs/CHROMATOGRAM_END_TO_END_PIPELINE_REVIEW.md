@@ -78,6 +78,9 @@ Implemented:
   safety, aspect ratio, and calibration viability.
 - `GeometryTrace` now has a plot-area crop path and receives curve mask / centerline
   artifact paths from the selected sweep variant.
+- Deterministic tick positions now produce local `geometry_tick_crops/candidate_N/*.png`
+  evidence crops on Android and desktop. Accepted tick OCR items can link back to the
+  exact local crop used as evidence.
 
 Invariant preserved:
 
@@ -87,9 +90,9 @@ Invariant preserved:
 
 Still open:
 
-- Local OCR crops around every deterministic tick need a platform artifact writer and
-  OCR call path; the current runner pairs OCR values to deterministic tick positions
-  but does not yet persist every local crop.
+- The platform crop writer exists, but the OCR engines still read axis bands/panel
+  regions. The next step is to route OCR execution itself through the local crop set
+  instead of only attaching local crop evidence after deterministic tick matching.
 - Sparse/fragmented trace component scoring still needs more work. The current
   failing bench cases are classified in
   `docs/CHROMATOGRAM_GEOMETRY_FAILURE_CLASSIFICATION.md`.
