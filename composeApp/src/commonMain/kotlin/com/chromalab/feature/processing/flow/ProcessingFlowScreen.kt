@@ -16,6 +16,7 @@ import com.chromalab.feature.processing.calibration.XAxisCalibration
 import com.chromalab.feature.processing.calibration.YAxisCalibration
 import com.chromalab.feature.processing.calibration.buildAutomaticXAxisCalibration
 import com.chromalab.feature.processing.calibration.buildAutomaticYAxisCalibration
+import com.chromalab.feature.processing.calibration.toLinearCalibrationOrNull
 import com.chromalab.feature.processing.crop.CropRect
 import com.chromalab.feature.processing.crop.CropResult
 import com.chromalab.feature.processing.crop.CropReviewScreen
@@ -34,6 +35,9 @@ import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.graph.GraphRoiEditorScreen
 import com.chromalab.feature.processing.graph.GraphSelectionScreen
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryPipelineResult
+import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.ModelRuntime
@@ -171,6 +175,7 @@ fun ProcessingFlowScreen(
     var pixelCalibration by remember { mutableStateOf<PixelCalibration?>(null) }
     var curveExtractionResult by remember { mutableStateOf<CurveExtractionResult?>(null) }
     var curvePoints by remember { mutableStateOf<List<CurvePoint>>(emptyList()) }
+    var geometryResult by remember { mutableStateOf<GeometryPipelineResult?>(null) }
     var smoothedSignal by remember { mutableStateOf<SmoothedSignal?>(null) }
     var digitizationReport by remember { mutableStateOf<DigitizationQualityReport?>(null) }
 
@@ -210,8 +215,9 @@ fun ProcessingFlowScreen(
                         digitizationReport = digitizationReport,
                         graphResult = graphResult,
                         ocrResult = ocrResult,
-                    ),
+                    ) + geometryResult.toReportWarnings(graphNumber),
                     preparationVariants = sweepPreparationVariants,
+                    geometryResult = geometryResult,
                 ),
             )
         }
@@ -336,6 +342,7 @@ fun ProcessingFlowScreen(
                                 }
                                 ocrResult = best.ocrResult
                                 axesResult = best.axesResult
+                                geometryResult = best.geometryResult
                                 curveExtractionResult = best.curveResult
                                 curvePoints = best.curveResult?.points ?: emptyList()
 
@@ -381,7 +388,19 @@ fun ProcessingFlowScreen(
                         if (xCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
-                            xCalibration = ocr.buildAutomaticXAxisCalibration(selectedRegion, axes)
+                            xCalibration = geometryResult
+                                ?.xCalibrationFit
+                                ?.takeIf { it.status != CalibrationFitStatus.INVALID }
+                                ?.toLinearCalibrationOrNull()
+                                ?.takeIf { it.isValid && it.scale > 0f }
+                                ?.let {
+                                    XAxisCalibration(
+                                        calibration = it,
+                                        unit = ocr?.xUnit ?: "min",
+                                        timestamp = System.currentTimeMillis(),
+                                    )
+                                }
+                                ?: ocr.buildAutomaticXAxisCalibration(selectedRegion, axes)
                             if (xCalibration != null) {
                                 val cal = xCalibration!!.calibration
                                 println("PIPELINE[X_CAL] auto: px1=${cal.point1.pixelPos}->${cal.point1.realValue}, px2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${xCalibration!!.unit}")
@@ -396,7 +415,19 @@ fun ProcessingFlowScreen(
                         if (yCalibration == null) {
                             val ocr = ocrResult
                             val axes = axesResult
-                            yCalibration = ocr.buildAutomaticYAxisCalibration(selectedRegion, axes)
+                            yCalibration = geometryResult
+                                ?.yCalibrationFit
+                                ?.takeIf { it.status != CalibrationFitStatus.INVALID }
+                                ?.toLinearCalibrationOrNull()
+                                ?.takeIf { it.isValid && it.scale < 0f }
+                                ?.let {
+                                    YAxisCalibration(
+                                        calibration = it,
+                                        unit = ocr?.yUnit ?: "counts",
+                                        timestamp = System.currentTimeMillis(),
+                                    )
+                                }
+                                ?: ocr.buildAutomaticYAxisCalibration(selectedRegion, axes)
                             if (yCalibration != null) {
                                 val cal = yCalibration!!.calibration
                                 println("PIPELINE[Y_CAL] auto: py1=${cal.point1.pixelPos}->${cal.point1.realValue}, py2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${yCalibration!!.unit}")
@@ -611,6 +642,8 @@ fun ProcessingFlowScreen(
                                         titleOcrConfidence = null,
                                         axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
                                         tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
+                                        geometryReportStatus = entry.geometryResult?.reportStatus,
+                                        geometryTrace = entry.geometryResult?.trace,
                                         selectedModel = selectedReportModel,
                                         executedModel = executedReportModel,
                                         executedRuntime = executedRuntime,
@@ -692,6 +725,7 @@ fun ProcessingFlowScreen(
                 pixelCalibration = null
                 curveExtractionResult = null
                 curvePoints = emptyList()
+                geometryResult = null
                 smoothedSignal = null
                 digitizationReport = null
                 // Reset sweep so it runs for the new region
@@ -774,6 +808,8 @@ fun ProcessingFlowScreen(
                                     titleOcrConfidence = null,
                                     axisOcrConfidence = entry.ocrResult.toReportAxisOcrConfidence(),
                                     tickOcrConfidence = entry.ocrResult.toReportTickOcrConfidence(),
+                                    geometryReportStatus = entry.geometryResult?.reportStatus,
+                                    geometryTrace = entry.geometryResult?.trace,
                                     selectedModel = selectedReportModel,
                                     executedModel = executedReportModel,
                                     executedRuntime = executedRuntime,
@@ -1158,6 +1194,7 @@ private data class ProcessedGraphSnapshot(
     val bestSweepConfig: String?,
     val warnings: List<ReportWarning>,
     val preparationVariants: List<GraphPreparationVariantMetadata>,
+    val geometryResult: GeometryPipelineResult?,
 )
 
 private fun List<ProcessedGraphSnapshot>.toReportSaveEntries(): List<ProcessedGraphSnapshot> =
@@ -1262,6 +1299,27 @@ private fun buildReportGraphWarnings(
     }
 }.distinctBy { warning ->
     listOf(warning.code, warning.stage.orEmpty(), warning.graphIndex.toString()).joinToString("|")
+}
+
+private fun GeometryPipelineResult?.toReportWarnings(graphIndex: Int): List<ReportWarning> {
+    val result = this ?: return emptyList()
+    val severity = when (result.reportStatus) {
+        GeometryReportStatus.SCIENTIFIC_READY -> ReportSeverity.INFO
+        GeometryReportStatus.REVIEW_READY -> ReportSeverity.WARNING
+        GeometryReportStatus.DIAGNOSTIC_ONLY -> ReportSeverity.FAILED
+    }
+    return result.warnings
+        .ifEmpty { listOf("geometry.${result.reportStatus.name.lowercase()}") }
+        .take(12)
+        .mapIndexed { index, warning ->
+            ReportWarning(
+                code = "geometry.${warning.substringBefore(':').take(48).ifBlank { "warning_${index + 1}" }}",
+                message = warning,
+                severity = severity,
+                stage = "geometry_pipeline",
+                graphIndex = graphIndex,
+            )
+        }
 }
 
 private fun StageQuality.toReportWarnings(stageId: String, graphIndex: Int): List<ReportWarning> =

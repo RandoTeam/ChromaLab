@@ -18,6 +18,10 @@ import com.chromalab.feature.processing.curve.CurvePoint
 import com.chromalab.feature.processing.curve.scaledCoordinates
 import com.chromalab.feature.processing.axis.AxisDetector
 import com.chromalab.feature.processing.axis.AxesResult
+import com.chromalab.feature.processing.axis.AxisOrigin
+import com.chromalab.feature.processing.geometry.GeometryPipelineResult
+import com.chromalab.feature.processing.geometry.GeometryPipelineRunner
+import com.chromalab.feature.processing.geometry.SourceType as GeometrySourceType
 import com.chromalab.feature.processing.pipeline.DetectionMethod
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -62,6 +66,7 @@ class AutoSweepEngine {
         val ocrResult: AxisOcrResult?,
         val axesResult: AxesResult?,
         val curveResult: CurveExtractionResult?,
+        val geometryResult: GeometryPipelineResult? = null,
         val score: Float,
         val scoreBreakdown: String,
     )
@@ -218,6 +223,12 @@ class AutoSweepEngine {
         val graphBoundaryCorrector = GraphRegionBoundaryCorrector()
         val ocrReader = ChartAnalysisReader()
         val axisDetector = AxisDetector()
+        val geometryPipelineRunner = GeometryPipelineRunner(
+            graphDetector = graphDetector,
+            graphBoundaryCorrector = graphBoundaryCorrector,
+            axisDetector = axisDetector,
+            chartReader = ocrReader,
+        )
         val curveMaskPreparer = CurveMaskPreparer()
         val curveExtractor = CurveExtractor()
 
@@ -228,33 +239,8 @@ class AutoSweepEngine {
         val w = imageWidth
         val h = imageHeight
 
-        // === Strategy A: VLM-first graph detection (always try) ===
-        // VLM provides structural understanding of the image;
-        // CV refines with pixel-level precision.
-        var vlmBounds: com.chromalab.feature.processing.inference.GraphBounds? = null
-        var vlmRegion: GraphRegion? = null
-        var vlmGraphResult: GraphRegionResult? = null
-        if (cachedGraphResult == null && overrideRegion == null) try {
-            onProgress(SweepProgress(0, configs.size, "VLM: определение графика", "vlm_region"))
-            vlmBounds = ocrReader.detectGraphRegion(imagePath, w, h)
-            if (vlmBounds != null) {
-                vlmGraphResult = buildVlmGraphResult(vlmBounds, w, h)
-                vlmRegion = vlmGraphResult.selectedRegion
-                if (vlmRegion != null) {
-                    println("SWEEP[VLM] Graph region: ${vlmRegion.x},${vlmRegion.y} ${vlmRegion.width}x${vlmRegion.height} (${vlmBounds.numGraphs} graphs)")
-                }
-            }
-        } catch (e: Exception) {
-            println("SWEEP[VLM] Graph detection failed: ${e.message}")
-            if (requireVlmForAnalysis) return emptyList()
-        }
-
-        // CV graph detection — always run for precision refinement
-        if (requireVlmForAnalysis && cachedGraphResult == null && overrideRegion == null && vlmBounds == null) {
-            println("SWEEP[ABORT] VLM graph detection is required but did not return bounds")
-            return emptyList()
-        }
-
+        // CV remains the source of pixel geometry. VLM is only an optional ROI hint
+        // inside GeometryPipelineRunner and is never used directly as calculation geometry.
         val cvGraphRes = cachedGraphResult ?: run {
             onProgress(SweepProgress(0, configs.size, "CV: определение графика", "detect"))
             try {
@@ -264,6 +250,26 @@ class AutoSweepEngine {
                 null
             }
         }
+        val geometryResult = try {
+            onProgress(SweepProgress(0, configs.size, "CV: geometry evidence", "geometry"))
+            geometryPipelineRunner.run(
+                imagePath = imagePath,
+                outputDir = outputDir,
+                imageWidth = w,
+                imageHeight = h,
+                sourceType = GeometrySourceType.UNKNOWN,
+                cachedGraphResult = cvGraphRes,
+                overridePanel = overrideRegion,
+                preservePanelLabels = preservePanelLabels,
+                runVlmHint = cachedGraphResult == null && overrideRegion == null,
+                runTickOcr = true,
+            )
+        } catch (e: Exception) {
+            println("SWEEP[GEOMETRY] failed: ${e.message}")
+            null
+        }
+        val vlmGraphResult = geometryResult?.toGraphRegionResult(w, h)
+        val vlmRegion = geometryResult?.graphPanelBounds?.region
         val graphRes = selectGraphResult(cvGraphRes, vlmGraphResult)
 
         // Region selection priority: override > CV > VLM fallback.
@@ -370,6 +376,7 @@ class AutoSweepEngine {
                     ocrResult = ocrResult,
                     axesResult = axesRes,
                     curveResult = curveResult,
+                    geometryResult = geometryResult,
                     score = totalScore,
                     scoreBreakdown = breakdown,
                 )
@@ -653,6 +660,29 @@ class AutoSweepEngine {
         confidence = 0f,
         timestamp = System.currentTimeMillis(),
     )
+
+    private fun GeometryPipelineResult.toGraphRegionResult(
+        imageWidth: Int,
+        imageHeight: Int,
+    ): GraphRegionResult? {
+        val regions = trace.roiCandidates
+            .map { it.region }
+            .ifEmpty { graphPanelBounds?.let { listOf(it.region) }.orEmpty() }
+        if (regions.isEmpty()) return null
+        return GraphRegionResult(
+            regions = regions,
+            detectionMethod = DetectionMethod.AUTO,
+            confidence = when {
+                graphPanelBounds?.confidence != null && graphPanelBounds.confidence >= 0.72f -> DetectionConfidence.HIGH
+                graphPanelBounds?.confidence != null && graphPanelBounds.confidence >= 0.45f -> DetectionConfidence.MEDIUM
+                else -> DetectionConfidence.LOW
+            },
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+            warnings = warnings + listOf("graph.regions_from_geometry_pipeline"),
+            timestamp = System.currentTimeMillis(),
+        )
+    }
 
     private fun selectGraphResult(
         cv: GraphRegionResult?,
