@@ -23,6 +23,8 @@ import com.chromalab.core.ui.theme.Spacing
 import com.chromalab.feature.calculation.core.CalculationRun
 import com.chromalab.feature.calculation.export.*
 import com.chromalab.feature.calculation.flow.CalculationToChartMapper
+import com.chromalab.feature.processing.export.ExportFileResult
+import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.reports.CalculationRunReportOptions
 import com.chromalab.feature.reports.StructuredReportPreview
 
@@ -40,13 +42,12 @@ import com.chromalab.feature.reports.StructuredReportPreview
 @Composable
 fun ExportCalculationScreen(
     run: CalculationRun,
-    onFileSave: (fileName: String, content: String) -> Unit,
-    onShare: (fileName: String, content: String) -> Unit,
     modifier: Modifier = Modifier,
     reportOptions: CalculationRunReportOptions = CalculationRunReportOptions(),
+    onFileSave: (fileName: String, content: String, mimeType: String) -> ExportFileResult = FileSharer::saveText,
+    onShare: (fileName: String, content: String, mimeType: String) -> ExportFileResult = FileSharer::shareText,
 ) {
     var exportStatus by remember { mutableStateOf<String?>(null) }
-    var isExporting by remember { mutableStateOf(false) }
     var showStructuredPreview by remember { mutableStateOf(true) }
     var showExportActions by remember { mutableStateOf(false) }
 
@@ -71,6 +72,13 @@ fun ExportCalculationScreen(
                 visibleLayers = setOf("raw", "baseline", "corrected"),
             ),
         )
+    }
+    fun save(fileName: String, content: String, mimeType: String) {
+        exportStatus = onFileSave(fileName, content, mimeType).statusText()
+    }
+
+    fun share(fileName: String, content: String, mimeType: String) {
+        exportStatus = onShare(fileName, content, mimeType).statusText()
     }
 
     Column(
@@ -129,8 +137,11 @@ fun ExportCalculationScreen(
             color = Color(0xFF4CAF50),
             onClick = {
                 val csv = PeaksCsvExporter.export(exportData.peaks)
-                onFileSave("peaks_${run.id}.csv", csv)
-                exportStatus = "✓ peaks.csv сохранён"
+                save("peaks_${run.id}.csv", csv, "text/csv")
+            },
+            onShare = {
+                val csv = PeaksCsvExporter.export(exportData.peaks)
+                share("peaks_${run.id}.csv", csv, "text/csv")
             },
         )
 
@@ -141,8 +152,11 @@ fun ExportCalculationScreen(
             color = Color(0xFF42A5F5),
             onClick = {
                 val json = CalculationJsonExporter.export(exportData)
-                onFileSave("calculation_${run.id}.json", json)
-                exportStatus = "✓ calculation.json сохранён"
+                save("calculation_${run.id}.json", json, "application/json")
+            },
+            onShare = {
+                val json = CalculationJsonExporter.export(exportData)
+                share("calculation_${run.id}.json", json, "application/json")
             },
         )
 
@@ -153,9 +167,11 @@ fun ExportCalculationScreen(
             color = Color(0xFFAB47BC),
             onClick = {
                 val html = CalculationRunReportExporter.exportHtml(run, reportOptions)
-                val validation = CalculationRunReportExporter.validate(run, reportOptions)
-                onFileSave("chromatogram_report_${run.id}.html", html)
-                exportStatus = "Saved chromatogram_report.html - ${validation.errorCount} errors, ${validation.warningCount} warnings"
+                save("chromatogram_report_${run.id}.html", html, "text/html")
+            },
+            onShare = {
+                val html = CalculationRunReportExporter.exportHtml(run, reportOptions)
+                share("chromatogram_report_${run.id}.html", html, "text/html")
             },
         )
 
@@ -166,8 +182,11 @@ fun ExportCalculationScreen(
             color = Color(0xFF26A69A),
             onClick = {
                 val contractJson = CalculationRunReportExporter.exportUiContractJson(run, reportOptions)
-                onFileSave("chromatogram_report_ui_contract_${run.id}.json", contractJson)
-                exportStatus = "Saved chromatogram_report_ui_contract.json"
+                save("chromatogram_report_ui_contract_${run.id}.json", contractJson, "application/json")
+            },
+            onShare = {
+                val contractJson = CalculationRunReportExporter.exportUiContractJson(run, reportOptions)
+                share("chromatogram_report_ui_contract_${run.id}.json", contractJson, "application/json")
             },
         )
 
@@ -178,9 +197,11 @@ fun ExportCalculationScreen(
             color = Color(0xFF7E57C2),
             onClick = {
                 val markdown = CalculationRunReportExporter.exportMarkdown(run, reportOptions)
-                val validation = CalculationRunReportExporter.validate(run, reportOptions)
-                onFileSave("chromatogram_report_${run.id}.md", markdown)
-                exportStatus = "Saved chromatogram_report.md - ${validation.errorCount} errors, ${validation.warningCount} warnings"
+                save("chromatogram_report_${run.id}.md", markdown, "text/markdown")
+            },
+            onShare = {
+                val markdown = CalculationRunReportExporter.exportMarkdown(run, reportOptions)
+                share("chromatogram_report_${run.id}.md", markdown, "text/markdown")
             },
         )
 
@@ -193,8 +214,7 @@ fun ExportCalculationScreen(
             outlined = true,
             onClick = {
                 val html = CalculationRunReportExporter.exportHtml(run, reportOptions)
-                onShare("chromatogram_report_${run.id}.html", html)
-                exportStatus = "✓ Отправлено"
+                share("chromatogram_report_${run.id}.html", html, "text/html")
             },
         )
         }
@@ -227,6 +247,7 @@ private fun ExportButton(
     color: Color,
     outlined: Boolean = false,
     onClick: () -> Unit,
+    onShare: (() -> Unit)? = null,
 ) {
     Surface(
         onClick = onClick,
@@ -262,6 +283,15 @@ private fun ExportButton(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (onShare != null) {
+                IconButton(onClick = onShare) {
+                    Icon(
+                        Icons.Filled.Share,
+                        contentDescription = "Поделиться",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }
@@ -271,3 +301,6 @@ private fun formatExportNumber(value: Double): String = when {
     value >= 1_000 -> "%,.0f".format(value)
     else -> "%.1f".format(value)
 }
+
+private fun ExportFileResult.statusText(): String =
+    if (success) "✓ $message" else "Export failed: $message"

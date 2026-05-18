@@ -343,8 +343,6 @@ fun AnalysisFlowScreen(
                         if (isExport) {
                             ExportCalculationScreen(
                                 run = calculationRun!!,
-                                onFileSave = { _: String, _: String -> },
-                                onShare = { _: String, _: String -> },
                                 modifier = Modifier.fillMaxSize(),
                                 reportOptions = buildCalculationReportOptions(
                                     run = calculationRun!!,

@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
+import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.settings.ModelManagerController
 
 class MainActivity : ComponentActivity() {
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.chromalab.core.data.DatabaseProvider.init(application)
+        FileSharer.contextProvider = { applicationContext }
 
         // Initialize ModelManagerController for VLM lazy loading (25.2B)
         // This must happen at startup so the pipeline can auto-load models

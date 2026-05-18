@@ -129,12 +129,14 @@ fun ExportScreen(
                 exported = exportedPaths.containsKey(csvKey),
                 onExport = {
                     val csv = PointExporter.exportCsv(currentSignal)
-                    val path = sessionWriter.writeText(csvFileName, csv)
-                    exportedPaths = exportedPaths + (csvKey to path)
-                    snackMessage = "CSV сохранён: $csvFileName"
+                    sessionWriter.writeText(csvFileName, csv)
+                    val result = FileSharer.saveText(csvFileName, csv, "text/csv")
+                    result.location?.let { exportedPaths = exportedPaths + (csvKey to it) }
+                    snackMessage = result.message
                 },
                 onShare = {
-                    exportedPaths[csvKey]?.let { FileSharer.share(it, "text/csv") }
+                    val csv = PointExporter.exportCsv(currentSignal)
+                    snackMessage = FileSharer.shareText(csvFileName, csv, "text/csv").message
                 },
             )
 
@@ -150,11 +152,13 @@ fun ExportScreen(
                             val name = "graph_${idx + 1}_points.csv"
                             val csv = PointExporter.exportCsv(sig)
                             sessionWriter.writeText(name, csv)
+                            FileSharer.saveText(name, csv, "text/csv")
                         }
                         exportedPaths = exportedPaths + (allKey to "all")
-                        snackMessage = "Все ${signals.size} графиков сохранены"
+                        snackMessage = "Все ${signals.size} графиков сохранены в Downloads/ChromaLab"
                     },
                     onShare = {},
+                    shareEnabled = false,
                 )
             }
 
@@ -168,12 +172,15 @@ fun ExportScreen(
                 onExport = {
                     val currentBundle = bundle.copy(signal = currentSignal)
                     val jsonStr = PointExporter.exportJson(currentBundle)
-                    val path = sessionWriter.writeText(jsonFileName, jsonStr)
-                    exportedPaths = exportedPaths + (jsonKey to path)
-                    snackMessage = "JSON сохранён: $jsonFileName"
+                    sessionWriter.writeText(jsonFileName, jsonStr)
+                    val result = FileSharer.saveText(jsonFileName, jsonStr, "application/json")
+                    result.location?.let { exportedPaths = exportedPaths + (jsonKey to it) }
+                    snackMessage = result.message
                 },
                 onShare = {
-                    exportedPaths[jsonKey]?.let { FileSharer.share(it, "application/json") }
+                    val currentBundle = bundle.copy(signal = currentSignal)
+                    val jsonStr = PointExporter.exportJson(currentBundle)
+                    snackMessage = FileSharer.shareText(jsonFileName, jsonStr, "application/json").message
                 },
             )
 
@@ -219,6 +226,7 @@ private fun ExportCard(
     exported: Boolean,
     onExport: () -> Unit,
     onShare: () -> Unit,
+    shareEnabled: Boolean = true,
 ) {
     Card {
         Row(
@@ -246,8 +254,10 @@ private fun ExportCard(
                     OutlinedButton(onClick = onExport) {
                         Text("Обновить")
                     }
-                    IconButton(onClick = onShare) {
-                        Icon(Icons.Filled.Share, contentDescription = "Поделиться")
+                    if (shareEnabled) {
+                        IconButton(onClick = onShare) {
+                            Icon(Icons.Filled.Share, contentDescription = "Поделиться")
+                        }
                     }
                 }
             }

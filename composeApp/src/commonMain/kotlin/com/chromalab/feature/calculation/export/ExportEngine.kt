@@ -2,6 +2,8 @@ package com.chromalab.feature.calculation.export
 
 import com.chromalab.feature.calculation.algorithm.*
 import com.chromalab.feature.calculation.core.ManualEditLog
+import kotlin.math.pow
+import kotlin.math.round
 
 /**
  * Export engine for calculation results (§2.30).
@@ -108,38 +110,38 @@ object PeaksCsvExporter {
 
     fun export(peaks: List<ExportPeak>): String {
         val lines = peaks.map { p ->
-            listOf(
-                p.peakId,
+            csvRow(
+                p.peakId.toString(),
                 p.status,
-                "%.4f".format(p.rtApex),
-                "%.4f".format(p.rtCentroid),
-                "%.2f".format(p.height),
-                "%.2f".format(p.area),
-                "%.2f".format(p.areaPercent),
-                "%.4f".format(p.widthBase),
-                "%.4f".format(p.widthHalfHeight),
-                "%.2f".format(p.prominence),
-                "%.2f".format(p.snr),
+                fixed(p.rtApex, 4),
+                fixed(p.rtCentroid, 4),
+                fixed(p.height, 2),
+                fixed(p.area, 2),
+                fixed(p.areaPercent, 2),
+                fixed(p.widthBase, 4),
+                fixed(p.widthHalfHeight, 4),
+                fixed(p.prominence, 2),
+                fixed(p.snr, 2),
                 p.snrMethod,
                 p.baselineMethod,
                 p.integrationMethod,
                 p.confidenceGrade,
-                "%.3f".format(p.confidenceScore),
+                fixed(p.confidenceScore, 3),
                 p.overlapStatus,
                 p.boundaryMethod,
-                "%.4f".format(p.leftBoundary),
-                "%.4f".format(p.rightBoundary),
-                "%.2f".format(p.positiveArea),
-                "%.2f".format(p.negativeArea),
-                "%.3f".format(p.tailingFactor),
-                "%.3f".format(p.asymmetryFactor),
+                fixed(p.leftBoundary, 4),
+                fixed(p.rightBoundary, 4),
+                fixed(p.positiveArea, 2),
+                fixed(p.negativeArea, 2),
+                fixed(p.tailingFactor, 3),
+                fixed(p.asymmetryFactor, 3),
                 p.plateCount?.toString() ?: "",
-                p.resolution?.let { "%.3f".format(it) } ?: "",
+                p.resolution?.let { fixed(it, 3) } ?: "",
                 p.compoundName ?: "",
                 p.compoundSource,
                 if (p.isManuallyEdited) "yes" else "no",
-                "\"${p.warnings.joinToString("; ")}\"",
-            ).joinToString(",")
+                p.warnings.joinToString("; "),
+            )
         }
         return (listOf(HEADER) + lines).joinToString("\n")
     }
@@ -151,9 +153,32 @@ object SignalCsvExporter {
 
     fun export(points: List<ExportPoint>, label: String = "Intensity"): String {
         val header = "Time,$label"
-        val lines = points.map { "%.6f,%.4f".format(it.time, it.intensity) }
+        val lines = points.map { csvRow(fixed(it.time, 6), fixed(it.intensity, 4)) }
         return (listOf(header) + lines).joinToString("\n")
     }
+}
+
+private fun csvRow(vararg cells: String): String =
+    cells.joinToString(",") { cell ->
+        if (cell.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+            "\"${cell.replace("\"", "\"\"")}\""
+        } else {
+            cell
+        }
+    }
+
+private fun fixed(value: Double, decimals: Int): String {
+    if (value.isNaN() || value.isInfinite()) return ""
+    val scale = 10.0.pow(decimals)
+    val rounded = round(value * scale) / scale
+    val sign = if (rounded < 0.0) "-" else ""
+    val absolute = kotlin.math.abs(rounded)
+    val whole = absolute.toLong()
+    if (decimals == 0) return "$sign$whole"
+    val fractionalScale = 10.0.pow(decimals).toLong()
+    val fraction = round((absolute - whole) * fractionalScale).toLong()
+        .coerceIn(0L, fractionalScale - 1L)
+    return "$sign$whole.${fraction.toString().padStart(decimals, '0')}"
 }
 
 // ─── JSON: full calculation ─────────────────────────────────────
