@@ -664,12 +664,50 @@ class AutoSweepEngine {
         val cvCount = cv.filteredRegions.size
         val vlmCount = vlm.filteredRegions.size
         val shouldUseVlmSplit = vlmCount > cvCount && cv.confidence != DetectionConfidence.HIGH
+        val cvRegion = cv.selectedRegion
+        val vlmRegion = vlm.selectedRegion
+        val shouldUseVlmBroadRegion = cvRegion != null &&
+            vlmRegion != null &&
+            cvRegion.isLikelyPartialCropInside(vlmRegion, cv.imageWidth, cv.imageHeight)
         return if (shouldUseVlmSplit) {
             println("SWEEP[MULTI] Using VLM split: cv=$cvCount, vlm=$vlmCount")
             vlm
+        } else if (shouldUseVlmBroadRegion) {
+            println("SWEEP[GRAPH] Using VLM broad ROI over partial CV ROI: cv=$cvRegion, vlm=$vlmRegion")
+            vlm.copy(
+                confidence = DetectionConfidence.MEDIUM,
+                warnings = vlm.warnings + "VLM graph region used because CV selected a nested partial crop.",
+            )
         } else {
             cv
         }
+    }
+
+    private fun GraphRegion.isLikelyPartialCropInside(
+        broad: GraphRegion,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): Boolean {
+        val overlap = overlapAreaWith(broad)
+        if (overlap <= 0) return false
+        val selfOverlap = overlap.toFloat() / area.coerceAtLeast(1).toFloat()
+        val broadAreaRatio = broad.area.toFloat() / (imageWidth.coerceAtLeast(1) * imageHeight.coerceAtLeast(1)).toFloat()
+        val widthRatio = width.toFloat() / broad.width.coerceAtLeast(1).toFloat()
+        val leftCutRatio = (x - broad.x).coerceAtLeast(0).toFloat() / broad.width.coerceAtLeast(1).toFloat()
+        val rightCutRatio = (broad.right - right).coerceAtLeast(0).toFloat() / broad.width.coerceAtLeast(1).toFloat()
+        val heightRatio = height.toFloat() / broad.height.coerceAtLeast(1).toFloat()
+        return selfOverlap >= 0.85f &&
+            broadAreaRatio in 0.08f..0.90f &&
+            heightRatio >= 0.70f &&
+            (widthRatio < 0.78f || leftCutRatio > 0.15f || rightCutRatio > 0.15f)
+    }
+
+    private fun GraphRegion.overlapAreaWith(other: GraphRegion): Int {
+        val left = x.coerceAtLeast(other.x)
+        val top = y.coerceAtLeast(other.y)
+        val rightEdge = right.coerceAtMost(other.right)
+        val bottomEdge = bottom.coerceAtMost(other.bottom)
+        return ((rightEdge - left).coerceAtLeast(0)) * ((bottomEdge - top).coerceAtLeast(0))
     }
 
     private fun buildVlmGraphResult(

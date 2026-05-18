@@ -404,14 +404,14 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
     }
 
     private fun extractFloatArray(json: String, key: String): List<Float> {
-        val arrContent = extractArrayContent(json, key)?.trim() ?: return emptyList()
+        val arrContent = extractArrayContent(json, key, allowPartial = true)?.trim() ?: return emptyList()
         if (arrContent.isEmpty()) return emptyList()
-        return arrContent.split(',').mapNotNull { token ->
-            // Handle comma as decimal separator: "1,5" → "1.5"
-            val cleaned = token.trim().replace(',', '.')
-            cleaned.toFloatOrNull()
-        }
+        return NUMBER_PATTERN.findAll(arrContent).mapNotNull { match ->
+            match.value.toFloatOrNull()
+        }.toList()
     }
+
+    private val NUMBER_PATTERN = Regex("""[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?""")
 
     private fun extractTickArray(json: String, key: String): List<ChartAxisTick> {
         val arrContent = extractArrayContent(json, key)?.trim() ?: return emptyList()
@@ -433,7 +433,7 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
         }
     }
 
-    private fun extractArrayContent(json: String, key: String): String? {
+    private fun extractArrayContent(json: String, key: String, allowPartial: Boolean = false): String? {
         val keyIdx = json.indexOf(key)
         if (keyIdx < 0) return null
         val arrStart = json.indexOf('[', keyIdx)
@@ -464,7 +464,13 @@ Respond with ONLY this JSON: {"x_axis_position": "bottom", "y_axis_position": "l
                 }
             }
         }
-        return null
+        if (!allowPartial) return null
+        val tail = json.substring(arrStart + 1)
+        val nextKey = Regex(""",\s*"[^"]+"\s*:""").find(tail)?.range?.first
+        val objectEnd = tail.indexOf('}').takeIf { it >= 0 }
+        val newline = tail.indexOf('\n').takeIf { it >= 0 }
+        val end = listOfNotNull(nextKey, objectEnd, newline).minOrNull() ?: tail.length
+        return tail.substring(0, end).trim().takeIf { it.isNotEmpty() }
     }
 
     private fun splitJsonObjects(content: String): List<String> {

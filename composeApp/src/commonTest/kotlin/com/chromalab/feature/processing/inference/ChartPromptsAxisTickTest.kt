@@ -32,4 +32,14 @@ class ChartPromptsAxisTickTest {
         assertEquals(emptyList(), analysis.xTicks)
         assertEquals(emptyList(), analysis.yTicks)
     }
+
+    @Test
+    fun parseResponseKeepsVisibleAxisValuesFromTruncatedPrimitiveArray() {
+        val response = """{"x":[0.0,10.0,15.0,20.0,25.0,30.0,35.0,40.0,45.0,50.0,55.0],"y":[0,50000,100000"""
+
+        val analysis = ChartPrompts.parseResponse(response)
+
+        assertEquals(listOf(0f, 10f, 15f, 20f, 25f, 30f, 35f, 40f, 45f, 50f, 55f), analysis.xValues)
+        assertEquals(listOf(0f, 50000f, 100000f), analysis.yValues)
+    }
 }
