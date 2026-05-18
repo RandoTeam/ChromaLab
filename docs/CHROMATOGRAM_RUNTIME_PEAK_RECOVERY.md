@@ -129,6 +129,9 @@ validator is run off-device. Real image success should only be claimed when the
 runtime package and its artifacts validate on the device or in an artifact bundle
 where all referenced paths are present.
 
+Real-device validation checklist:
+`docs/RUNTIME_EVIDENCE_REAL_DEVICE_VALIDATION_CHECKLIST.md`.
+
 ## bench_03 Meaning
 
 The fixture can still have test-only label hints for `5.610` and `8.560`, but
