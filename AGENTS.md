@@ -56,3 +56,17 @@ Primary entry points:
 The root rules in this file remain authoritative for repository behavior. The
 orchestration pack adds workflow structure and role definitions; it must not be used
 to bypass the project-specific analysis, phase, documentation, or commit discipline.
+
+## Expanded Agent and Skill System
+
+The expanded orchestration pack extends the base agent workflow with specialist
+agents, additional skill cards, protocols, and activation matrix rules. Use it as
+an add-on to the base orchestration pack.
+
+Expanded entry points:
+
+- `docs/agent-orchestration/expansion/AGENTS_EXPANSION.md`
+- `docs/agent-orchestration/expansion/SKILLS_EXPANSION.md`
+- `docs/agent-orchestration/expansion/config/expanded_agent_registry.json`
+- `docs/agent-orchestration/expansion/config/expanded_skills_registry.json`
+- `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`

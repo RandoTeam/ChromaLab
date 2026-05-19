@@ -1,0 +1,76 @@
+global_minimum:
+  any_phase:
+  - research_intelligence_agent
+  - qa_regression_agent
+  - product_acceptance_agent
+  if_user_facing:
+  - mobile_ux_architect_agent
+  - visual_design_system_agent
+  - accessibility_localization_agent
+  if_scientific_report:
+  - chromatography_sme_agent
+  - scientific_reporting_validation_agent
+  if_android_runtime_or_vlm:
+  - android_performance_ondevice_ai_agent
+  - vlm_evaluation_agent
+  if_exports_or_logs:
+  - security_privacy_agent
+phase_requirements:
+  phase_0:
+  - research_intelligence_agent
+  - qa_regression_agent
+  - scientific_reporting_validation_agent
+  - product_acceptance_agent
+  - chromatography_sme_agent
+  - vlm_evaluation_agent
+  phase_1:
+  - research_intelligence_agent
+  - mobile_ux_architect_agent
+  - compose_kmp_ui_agent
+  - qa_regression_agent
+  - product_acceptance_agent
+  phase_2:
+  - mobile_ux_architect_agent
+  - visual_design_system_agent
+  - compose_kmp_ui_agent
+  - accessibility_localization_agent
+  - qa_regression_agent
+  - product_acceptance_agent
+  phase_3:
+  - geometry_calibration_core_agent
+  - chromatography_sme_agent
+  - mobile_ux_architect_agent
+  - qa_regression_agent
+  - product_acceptance_agent
+  phase_4:
+  - trace_extraction_peak_review_agent
+  - mobile_ux_architect_agent
+  - visual_design_system_agent
+  - qa_regression_agent
+  - product_acceptance_agent
+  phase_5:
+  - trace_extraction_peak_review_agent
+  - chromatography_sme_agent
+  - scientific_reporting_validation_agent
+  - mobile_ux_architect_agent
+  - qa_regression_agent
+  phase_6:
+  - vlm_evaluation_agent
+  - android_performance_ondevice_ai_agent
+  - research_intelligence_agent
+  - qa_regression_agent
+  - security_privacy_agent
+  phase_7:
+  - scientific_reporting_validation_agent
+  - chromatography_sme_agent
+  - visual_design_system_agent
+  - accessibility_localization_agent
+  - qa_regression_agent
+  phase_8:
+  - qa_regression_agent
+  - product_acceptance_agent
+  - research_intelligence_agent
+  - security_privacy_agent
+closure_rule: Orchestrator must list activated agents and used skills in every phase
+  closeout. If fewer than required agents were used, phase is REVIEW_ONLY and cannot
+  close.

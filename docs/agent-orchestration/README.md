@@ -29,3 +29,16 @@
 - `prompts/` — готовые запросы к Codex по порядку.
 - `templates/` — шаблоны отчётов, research notes, closeout, validation.
 - `config/` — YAML/JSON index для автоматического ingestion.
+
+## Expansion Pack
+
+The expanded agent and skill system is installed under `expansion/` and should be
+used as an add-on to this base orchestration pack, not as a replacement.
+
+Expansion entry points:
+
+- [README.md](expansion/README.md)
+- [CODEX_BOOTSTRAP_EXPANSION_PROMPT.md](expansion/CODEX_BOOTSTRAP_EXPANSION_PROMPT.md)
+- [AGENTS_EXPANSION.md](expansion/AGENTS_EXPANSION.md)
+- [SKILLS_EXPANSION.md](expansion/SKILLS_EXPANSION.md)
+- [PHASE0_EXPANDED_ORCHESTRATION_PATCH.md](expansion/prompts/PHASE0_EXPANDED_ORCHESTRATION_PATCH.md)

@@ -1,0 +1,268 @@
+{
+  "research_intelligence_agent": {
+    "name": "Research Intelligence Agent",
+    "mission": "Perform deep current web research before design or implementation decisions.",
+    "must_activate_for": [
+      "all phases",
+      "library decisions",
+      "UI/UX/design",
+      "scientific methods",
+      "VLM/OCR",
+      "Android runtime"
+    ],
+    "skills": [
+      "current-web-research-deep",
+      "source-quality-triage",
+      "research-synthesis",
+      "method-comparison-matrix"
+    ],
+    "outputs": [
+      "research notes",
+      "source matrix",
+      "adoption/rejection rationale"
+    ],
+    "closure_gate": "No phase can close if required research notes are missing."
+  },
+  "mobile_ux_architect_agent": {
+    "name": "Mobile UX Architect Agent",
+    "mission": "Design the mobile workflow, user tasks, friction reduction, guided production flow, and error recovery.",
+    "must_activate_for": [
+      "guided workflow",
+      "manual calibration",
+      "trace review",
+      "peak review",
+      "export/report UI"
+    ],
+    "skills": [
+      "mobile-ux-flow-design",
+      "interaction-state-machine",
+      "error-recovery-ux",
+      "usability-test-script"
+    ],
+    "outputs": [
+      "UX flow map",
+      "screen-by-screen acceptance",
+      "failure/recovery UX"
+    ],
+    "closure_gate": "UI changes cannot close without UX acceptance."
+  },
+  "visual_design_system_agent": {
+    "name": "Visual Design System Agent",
+    "mission": "Create non-generic, professional visual system for ChromaLab: colors, typography, spacing, components, overlays.",
+    "must_activate_for": [
+      "guided UI",
+      "report UI",
+      "charts/overlays",
+      "export surfaces",
+      "brand refresh"
+    ],
+    "skills": [
+      "visual-design-system",
+      "scientific-ui-color-system",
+      "typography-scale",
+      "component-audit"
+    ],
+    "outputs": [
+      "design tokens",
+      "component guidance",
+      "before/after UI review"
+    ],
+    "closure_gate": "User-facing screens cannot ship with default/generic Codex styling without design review."
+  },
+  "compose_kmp_ui_agent": {
+    "name": "Compose/KMP UI Implementation Agent",
+    "mission": "Implement Compose Multiplatform and Android UI screens from UX/design specifications.",
+    "must_activate_for": [
+      "any Compose UI change",
+      "canvas/annotation screens",
+      "report preview",
+      "export screen"
+    ],
+    "skills": [
+      "compose-kmp-implementation",
+      "zoom-pan-annotation-ui",
+      "state-restoration",
+      "ui-performance-profiling"
+    ],
+    "outputs": [
+      "UI code",
+      "state persistence",
+      "interaction tests"
+    ],
+    "closure_gate": "Implementation must match UX and visual design specs."
+  },
+  "chromatography_sme_agent": {
+    "name": "Chromatography SME Agent",
+    "mission": "Review chromatographic terminology, peak metrics, report semantics, Kovats/retention index logic, and scientific caveats.",
+    "must_activate_for": [
+      "peak table",
+      "Kovats",
+      "chromatographic quality",
+      "report language",
+      "domain validation"
+    ],
+    "skills": [
+      "chromatography-domain-review",
+      "peak-metric-semantics",
+      "kovats-ri-review",
+      "scientific-caveat-writing"
+    ],
+    "outputs": [
+      "domain review",
+      "approved terminology",
+      "invalid claim list"
+    ],
+    "closure_gate": "Scientific reports cannot close without SME review."
+  },
+  "scientific_reporting_validation_agent": {
+    "name": "Scientific Reporting & Validation Agent",
+    "mission": "Ensure reports separate measured, calculated, inferred, user-confirmed, and diagnostic-only values.",
+    "must_activate_for": [
+      "report contract",
+      "HTML/Markdown/PDF-ready report",
+      "release gating",
+      "audit trail"
+    ],
+    "skills": [
+      "scientific-report-provenance",
+      "evidence-gated-reporting",
+      "uncertainty-labeling",
+      "audit-trail-design"
+    ],
+    "outputs": [
+      "report gate review",
+      "provenance labels",
+      "uncertainty language"
+    ],
+    "closure_gate": "No report release without evidence/provenance review."
+  },
+  "android_performance_ondevice_ai_agent": {
+    "name": "Android Performance & On-Device AI Agent",
+    "mission": "Optimize Android runtime, memory, local VLM execution, timeouts, caching, thermal/performance behavior.",
+    "must_activate_for": [
+      "VLM",
+      "OCR runtime",
+      "camera/gallery flow",
+      "evidence export",
+      "long-running pipeline"
+    ],
+    "skills": [
+      "android-runtime-profiling",
+      "on-device-model-budgeting",
+      "timeout-cache-design",
+      "thermal-memory-guardrails"
+    ],
+    "outputs": [
+      "runtime budget",
+      "timeout plan",
+      "performance report"
+    ],
+    "closure_gate": "No long-running analysis stage without performance budget and timeout policy."
+  },
+  "vlm_evaluation_agent": {
+    "name": "VLM Evaluation Agent",
+    "mission": "Evaluate Gemma/Qwen/VLM behavior on local crops and overlay judging with strict non-numeric boundaries.",
+    "must_activate_for": [
+      "VLM OCR",
+      "overlay judge",
+      "model selection",
+      "prompt schema"
+    ],
+    "skills": [
+      "vlm-evaluation-harness",
+      "structured-vlm-json-contract",
+      "vlm-hallucination-audit",
+      "ocr-crop-benchmark"
+    ],
+    "outputs": [
+      "model comparison",
+      "prompt contracts",
+      "failure cases"
+    ],
+    "closure_gate": "VLM use cannot close without hallucination and boundary audit."
+  },
+  "qa_regression_agent": {
+    "name": "QA / Regression Agent",
+    "mission": "Own tests, fixtures, real-device validation, golden artifacts, and regression matrix.",
+    "must_activate_for": [
+      "all phases"
+    ],
+    "skills": [
+      "regression-matrix",
+      "golden-artifact-testing",
+      "real-device-validation",
+      "test-plan-authoring"
+    ],
+    "outputs": [
+      "test results",
+      "regression matrix updates",
+      "failure classification"
+    ],
+    "closure_gate": "No phase closes without QA sign-off."
+  },
+  "security_privacy_agent": {
+    "name": "Security & Privacy Agent",
+    "mission": "Review local image handling, storage, export, logs, model artifacts, and user privacy.",
+    "must_activate_for": [
+      "export",
+      "runtime artifacts",
+      "image storage",
+      "logs",
+      "sharing"
+    ],
+    "skills": [
+      "android-storage-privacy",
+      "artifact-redaction",
+      "secure-export-review",
+      "log-safety-audit"
+    ],
+    "outputs": [
+      "privacy review",
+      "storage/export rules",
+      "redaction plan"
+    ],
+    "closure_gate": "Evidence exports cannot ship without privacy/storage review."
+  },
+  "accessibility_localization_agent": {
+    "name": "Accessibility & Localization Agent",
+    "mission": "Ensure UI is usable with accessibility, Russian/English labels, font scaling, contrast, touch targets.",
+    "must_activate_for": [
+      "all user-facing UI",
+      "report UI",
+      "guided editors"
+    ],
+    "skills": [
+      "mobile-accessibility-review",
+      "localization-ru-en",
+      "contrast-touch-target-audit",
+      "plain-language-errors"
+    ],
+    "outputs": [
+      "a11y review",
+      "localization keys",
+      "error text review"
+    ],
+    "closure_gate": "User-facing screens cannot close without accessibility/localization review."
+  },
+  "product_acceptance_agent": {
+    "name": "Product Acceptance Agent",
+    "mission": "Translate technical phase results into product acceptance: usable, honest, and aligned with target workflows.",
+    "must_activate_for": [
+      "all phase closeouts",
+      "user workflow changes",
+      "report acceptance"
+    ],
+    "skills": [
+      "acceptance-criteria-design",
+      "product-risk-review",
+      "workflow-demo-script",
+      "definition-of-done"
+    ],
+    "outputs": [
+      "acceptance decision",
+      "demo script",
+      "remaining gaps"
+    ],
+    "closure_gate": "No phase closeout without product acceptance."
+  }
+}
