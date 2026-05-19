@@ -40,3 +40,19 @@ These rules are project-specific and override generic speed/shortcut preferences
 - Keep README user-facing and polished.
 - Keep pipeline/roadmap docs current enough that another agent or developer can understand what is done, what is experimental, and what is next.
 - Prefer adding short focused docs over burying important project state only in chat history.
+
+## Agent Orchestration Pack
+
+This repository also carries the ChromaLab orchestration pack for coordinated
+Orchestrator + subagent work. Use it as the bootstrap source for multi-agent
+planning, phase execution, research gates, quality gates, and closeout reports.
+
+Primary entry points:
+
+- `docs/agent-orchestration/README.md`
+- `docs/agent-orchestration/CODEX_BOOTSTRAP_PROMPT.md`
+- `docs/agent-orchestration/prompts/CODEX_REQUEST_ORDER.md`
+
+The root rules in this file remain authoritative for repository behavior. The
+orchestration pack adds workflow structure and role definitions; it must not be used
+to bypass the project-specific analysis, phase, documentation, or commit discipline.

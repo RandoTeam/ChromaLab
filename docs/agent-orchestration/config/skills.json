@@ -1,0 +1,116 @@
+{
+  "skills": [
+    {
+      "file": "SKILL_00_WEB_RESEARCH_PROTOCOL.md",
+      "title": "Web Research Protocol",
+      "use_when": "Before any phase or technical implementation",
+      "research": "current docs, APIs, methods",
+      "output": "research note markdown"
+    },
+    {
+      "file": "SKILL_01_KMP_COMPOSE_ARCHITECTURE.md",
+      "title": "KMP / Compose Architecture",
+      "use_when": "UI/shared architecture changes",
+      "research": "current KMP/Compose docs",
+      "output": "architecture plan + code changes"
+    },
+    {
+      "file": "SKILL_02_STATE_MACHINE_PERSISTENCE.md",
+      "title": "State Machine Persistence",
+      "use_when": "guided workflow state, resume, save/restore",
+      "research": "state patterns and persistence docs",
+      "output": "state contracts + tests"
+    },
+    {
+      "file": "SKILL_03_IMAGE_VIEWER_ROI_EDITOR.md",
+      "title": "Image Viewer ROI Editor",
+      "use_when": "zoom/pan/drag ROI UI",
+      "research": "Compose canvas/image gesture docs",
+      "output": "ROI editor UI + tests"
+    },
+    {
+      "file": "SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT.md",
+      "title": "Geometry & Calibration Robust Fit",
+      "use_when": "axes/ticks/manual anchors/calibration",
+      "research": "graph digitization, robust regression",
+      "output": "calibration fit + residuals"
+    },
+    {
+      "file": "SKILL_05_OCR_LOCAL_CROPS.md",
+      "title": "OCR Local Crops",
+      "use_when": "ML Kit/local OCR around labels/ticks",
+      "research": "ML Kit text recognition docs",
+      "output": "OCR crop evidence"
+    },
+    {
+      "file": "SKILL_06_VLM_SAFE_ASSISTANT.md",
+      "title": "VLM Safe Assistant",
+      "use_when": "Gemma/Qwen local crop OCR and overlay judge",
+      "research": "current VLM runtime docs",
+      "output": "bounded VLM backend"
+    },
+    {
+      "file": "SKILL_07_TRACE_EXTRACTION_MASKS.md",
+      "title": "Trace Extraction & Masks",
+      "use_when": "curve extraction from plotArea",
+      "research": "skeletonization/curve extraction methods",
+      "output": "trace overlay + metrics"
+    },
+    {
+      "file": "SKILL_08_PEAK_REVIEW_INTEGRATION.md",
+      "title": "Peak Review & Integration",
+      "use_when": "peak overlay, edit/merge/split",
+      "research": "chromatography review workflows",
+      "output": "peak edit decisions"
+    },
+    {
+      "file": "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR.md",
+      "title": "Evidence Package Validator",
+      "use_when": "runtime evidence and gates",
+      "research": "QA/golden artifact practices",
+      "output": "validator + diagnostics"
+    },
+    {
+      "file": "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING.md",
+      "title": "Android Runtime Export & Logging",
+      "use_when": "device evidence export, logcat, Downloads",
+      "research": "Android storage/logging docs",
+      "output": "exportable evidence package"
+    },
+    {
+      "file": "SKILL_11_REGRESSION_BENCHMARK_GOLDEN.md",
+      "title": "Regression Benchmark / Golden Fixtures",
+      "use_when": "dataset and regression matrix",
+      "research": "benchmarking image pipelines",
+      "output": "fixture matrix + tests"
+    },
+    {
+      "file": "SKILL_12_REPORT_GATE_PROVENANCE.md",
+      "title": "Report Gate & Provenance",
+      "use_when": "release vs diagnostic reports",
+      "research": "scientific report provenance",
+      "output": "report contract gates"
+    },
+    {
+      "file": "SKILL_13_PERFORMANCE_TIMEOUTS.md",
+      "title": "Performance & Timeouts",
+      "use_when": "VLM/CV timing, blocking, caching",
+      "research": "Android performance docs",
+      "output": "timeouts/caches/metrics"
+    },
+    {
+      "file": "SKILL_14_SECURITY_PRIVACY_STORAGE.md",
+      "title": "Security, Privacy, Storage",
+      "use_when": "file export and user data handling",
+      "research": "Android storage/privacy docs",
+      "output": "safe storage/export policy"
+    },
+    {
+      "file": "SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md",
+      "title": "Git Branch / Review Protocol",
+      "use_when": "multi-agent branches, merges, reviews",
+      "research": "git best practices",
+      "output": "merge plan + review checklist"
+    }
+  ]
+}

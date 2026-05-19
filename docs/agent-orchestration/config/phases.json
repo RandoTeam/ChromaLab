@@ -1,0 +1,58 @@
+{
+  "phases": [
+    {
+      "index": 0,
+      "file": "PHASE_00_FREEZE_AUTO_DIAGNOSTIC.md",
+      "title": "Freeze Full Auto as AUTO_DIAGNOSTIC",
+      "goal": "Stop treating current full-auto as production path."
+    },
+    {
+      "index": 1,
+      "file": "PHASE_01_SHARED_CONTRACTS_STATE.md",
+      "title": "Shared Contracts + GuidedDigitizationState",
+      "goal": "Create stable guided workflow contracts and persistent state machine."
+    },
+    {
+      "index": 2,
+      "file": "PHASE_02_GUIDED_GRAPH_PANEL_PLOT_AREA_EDITOR.md",
+      "title": "Guided GraphPanel / PlotArea Editor",
+      "goal": "User confirms/edits graphPanel and plotArea."
+    },
+    {
+      "index": 3,
+      "file": "PHASE_03_GUIDED_XY_CALIBRATION.md",
+      "title": "Guided X/Y Calibration",
+      "goal": "User places calibration anchors and validates residuals."
+    },
+    {
+      "index": 4,
+      "file": "PHASE_04_TRACE_OVERLAY_CONFIRMATION.md",
+      "title": "Trace Overlay Confirmation",
+      "goal": "Trace extraction is reviewed/confirmed before calculations."
+    },
+    {
+      "index": 5,
+      "file": "PHASE_05_PEAK_REVIEW_EDIT_WORKFLOW.md",
+      "title": "Peak Review and Edit Workflow",
+      "goal": "User reviews/adds/removes/merges/splits peaks and boundaries."
+    },
+    {
+      "index": 6,
+      "file": "PHASE_06_SAFE_VLM_ASSISTANT_LAYER.md",
+      "title": "Safe VLM Assistant Layer",
+      "goal": "Use VLM as OCR/semantic/judge assistant only."
+    },
+    {
+      "index": 7,
+      "file": "PHASE_07_EVIDENCE_BASED_RELEASE_REPORT.md",
+      "title": "Evidence-Based Release Report",
+      "goal": "Final report only after gates pass; otherwise diagnostic/review."
+    },
+    {
+      "index": 8,
+      "file": "PHASE_08_FULL_REGRESSION_ALL_GRAPHS.md",
+      "title": "Full Regression Across All Graphs",
+      "goal": "Run all known graph types through all modes and close gaps."
+    }
+  ]
+}

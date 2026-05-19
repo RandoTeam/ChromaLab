@@ -1,0 +1,87 @@
+{
+  "agents": [
+    {
+      "id": "AGENT_00_ORCHESTRATOR",
+      "title": "Orchestrator / Lead Architect",
+      "skills": [
+        "SKILL_00_WEB_RESEARCH_PROTOCOL",
+        "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
+        "SKILL_11_REGRESSION_BENCHMARK_GOLDEN",
+        "SKILL_12_REPORT_GATE_PROVENANCE",
+        "SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL"
+      ]
+    },
+    {
+      "id": "AGENT_01_GUIDED_WORKFLOW_UI",
+      "title": "Guided Workflow / UI / State Machine",
+      "skills": [
+        "SKILL_01_KMP_COMPOSE_ARCHITECTURE",
+        "SKILL_02_STATE_MACHINE_PERSISTENCE",
+        "SKILL_03_IMAGE_VIEWER_ROI_EDITOR",
+        "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING"
+      ]
+    },
+    {
+      "id": "AGENT_02_GEOMETRY_CALIBRATION",
+      "title": "Geometry / Calibration Core",
+      "skills": [
+        "SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT",
+        "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
+        "SKILL_11_REGRESSION_BENCHMARK_GOLDEN"
+      ]
+    },
+    {
+      "id": "AGENT_03_OCR_VLM_TEXT",
+      "title": "OCR / VLM / Text Semantics",
+      "skills": [
+        "SKILL_05_OCR_LOCAL_CROPS",
+        "SKILL_06_VLM_SAFE_ASSISTANT",
+        "SKILL_13_PERFORMANCE_TIMEOUTS"
+      ]
+    },
+    {
+      "id": "AGENT_04_TRACE_PEAK_REVIEW",
+      "title": "Trace Extraction / Peak Review",
+      "skills": [
+        "SKILL_07_TRACE_EXTRACTION_MASKS",
+        "SKILL_08_PEAK_REVIEW_INTEGRATION",
+        "SKILL_12_REPORT_GATE_PROVENANCE"
+      ]
+    },
+    {
+      "id": "AGENT_05_QA_EVIDENCE_RELEASE",
+      "title": "QA / Evidence / Benchmark / Release Gate",
+      "skills": [
+        "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
+        "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING",
+        "SKILL_11_REGRESSION_BENCHMARK_GOLDEN",
+        "SKILL_12_REPORT_GATE_PROVENANCE"
+      ]
+    },
+    {
+      "id": "AGENT_06_ANDROID_RUNTIME_PERFORMANCE",
+      "title": "Android Runtime / Performance / Storage",
+      "skills": [
+        "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING",
+        "SKILL_13_PERFORMANCE_TIMEOUTS",
+        "SKILL_14_SECURITY_PRIVACY_STORAGE"
+      ]
+    },
+    {
+      "id": "AGENT_07_SCIENTIFIC_REPORT_PROVENANCE",
+      "title": "Scientific Report / Provenance",
+      "skills": [
+        "SKILL_12_REPORT_GATE_PROVENANCE",
+        "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR"
+      ]
+    },
+    {
+      "id": "AGENT_08_SECURITY_PRIVACY",
+      "title": "Security / Privacy / Data Handling",
+      "skills": [
+        "SKILL_14_SECURITY_PRIVACY_STORAGE",
+        "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING"
+      ]
+    }
+  ]
+}

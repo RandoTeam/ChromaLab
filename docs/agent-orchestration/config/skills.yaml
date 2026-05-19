@@ -1,0 +1,48 @@
+- file: SKILL_00_WEB_RESEARCH_PROTOCOL.md
+  title: Web Research Protocol
+  use_when: Before any phase or technical implementation
+- file: SKILL_01_KMP_COMPOSE_ARCHITECTURE.md
+  title: KMP / Compose Architecture
+  use_when: UI/shared architecture changes
+- file: SKILL_02_STATE_MACHINE_PERSISTENCE.md
+  title: State Machine Persistence
+  use_when: guided workflow state, resume, save/restore
+- file: SKILL_03_IMAGE_VIEWER_ROI_EDITOR.md
+  title: Image Viewer ROI Editor
+  use_when: zoom/pan/drag ROI UI
+- file: SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT.md
+  title: Geometry & Calibration Robust Fit
+  use_when: axes/ticks/manual anchors/calibration
+- file: SKILL_05_OCR_LOCAL_CROPS.md
+  title: OCR Local Crops
+  use_when: ML Kit/local OCR around labels/ticks
+- file: SKILL_06_VLM_SAFE_ASSISTANT.md
+  title: VLM Safe Assistant
+  use_when: Gemma/Qwen local crop OCR and overlay judge
+- file: SKILL_07_TRACE_EXTRACTION_MASKS.md
+  title: Trace Extraction & Masks
+  use_when: curve extraction from plotArea
+- file: SKILL_08_PEAK_REVIEW_INTEGRATION.md
+  title: Peak Review & Integration
+  use_when: peak overlay, edit/merge/split
+- file: SKILL_09_EVIDENCE_PACKAGE_VALIDATOR.md
+  title: Evidence Package Validator
+  use_when: runtime evidence and gates
+- file: SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING.md
+  title: Android Runtime Export & Logging
+  use_when: device evidence export, logcat, Downloads
+- file: SKILL_11_REGRESSION_BENCHMARK_GOLDEN.md
+  title: Regression Benchmark / Golden Fixtures
+  use_when: dataset and regression matrix
+- file: SKILL_12_REPORT_GATE_PROVENANCE.md
+  title: Report Gate & Provenance
+  use_when: release vs diagnostic reports
+- file: SKILL_13_PERFORMANCE_TIMEOUTS.md
+  title: Performance & Timeouts
+  use_when: VLM/CV timing, blocking, caching
+- file: SKILL_14_SECURITY_PRIVACY_STORAGE.md
+  title: Security, Privacy, Storage
+  use_when: file export and user data handling
+- file: SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md
+  title: Git Branch / Review Protocol
+  use_when: multi-agent branches, merges, reviews
