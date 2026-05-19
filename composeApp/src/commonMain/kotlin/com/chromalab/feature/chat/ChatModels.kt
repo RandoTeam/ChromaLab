@@ -21,7 +21,7 @@ data class ChatSettings(
     val repeatLastN: Int = 128,
     val enableThinking: Boolean = false,
     val enableMtp: Boolean = true,
-    val mtpDraftTokens: Int = 6,
+    val mtpDraftTokens: Int = ChatMtpRuntimeProfile.DefaultDraftTokens,
 )
 
 @Serializable
@@ -117,6 +117,61 @@ data class ChatModelResourceProfile(
             0L
         }
         return baseModelBytes + targetKvBytes + draftKvBytes + runtimeOverheadBytes
+    }
+}
+
+object ChatMtpRuntimeProfile {
+    const val DefaultDraftTokens = 3
+    const val MaxMobileDraftTokens = 3
+    const val MaxMobileVulkanDraftTokens = 2
+    const val MaxConservativeDraftTokens = 2
+    const val MaxMobileMtpContextTokens = 4096
+    const val MaxConservativeMtpContextTokens = 2048
+    const val MaxMobileMtpBatchTokens = 128
+    const val MaxConservativeMtpBatchTokens = 64
+
+    fun maxDraftTokens(
+        selectedAccelerator: ChatRuntimeAccelerator,
+        isConservativeDevice: Boolean,
+    ): Int = when {
+        isConservativeDevice -> MaxConservativeDraftTokens
+        selectedAccelerator == ChatRuntimeAccelerator.VULKAN -> MaxMobileVulkanDraftTokens
+        else -> MaxMobileDraftTokens
+    }
+
+    fun coerceDraftTokens(
+        requestedDraftTokens: Int,
+        selectedAccelerator: ChatRuntimeAccelerator,
+        isConservativeDevice: Boolean,
+    ): Int =
+        requestedDraftTokens.coerceIn(
+            1,
+            maxDraftTokens(selectedAccelerator, isConservativeDevice),
+        )
+
+    fun coerceContextTokens(
+        requestedContextTokens: Int,
+        modelContextLimit: Int,
+        isConservativeDevice: Boolean,
+    ): Int {
+        val mobileLimit = if (isConservativeDevice) {
+            MaxConservativeMtpContextTokens
+        } else {
+            MaxMobileMtpContextTokens
+        }
+        return requestedContextTokens.coerceIn(1024, minOf(modelContextLimit, mobileLimit))
+    }
+
+    fun coerceBatchTokens(
+        requestedBatchTokens: Int,
+        isConservativeDevice: Boolean,
+    ): Int {
+        val mobileLimit = if (isConservativeDevice) {
+            MaxConservativeMtpBatchTokens
+        } else {
+            MaxMobileMtpBatchTokens
+        }
+        return requestedBatchTokens.coerceIn(64, mobileLimit)
     }
 }
 

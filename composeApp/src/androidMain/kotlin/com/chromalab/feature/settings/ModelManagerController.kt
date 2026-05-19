@@ -3,6 +3,7 @@ package com.chromalab.feature.settings
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.chromalab.feature.chat.ChatMtpRuntimeProfile
 import com.chromalab.feature.chat.ChatRuntimeAccelerator
 import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.InferenceEngine
@@ -244,17 +245,33 @@ class ModelManagerController(
         val loadedId = VlmEngineHolder.executedModel?.modelId ?: VlmEngineHolder.selectedModel?.modelId
         val requestedModel = manager.getDownloadedModels().find { it.info.id == modelId }
         val requestedInfo = requestedModel?.info
-        val requestedContextSize = requestedInfo?.let { info ->
+        val rawRequestedContextSize = requestedInfo?.let { info ->
             (contextSize ?: info.defaultChatContextSize).coerceIn(1024, info.chatContextLimit)
         } ?: (contextSize ?: 4096).coerceIn(1024, 32768)
+        val isConservativeDevice = manager.isConservativeDevice()
         val requestedMtpDraftTokens =
             if (requestedInfo?.supportsMtp == true) {
-                mtpDraftTokens
+                val modelDraftTokens = mtpDraftTokens
                     .takeIf { it > 0 }
                     ?.coerceIn(1, requestedInfo.maxMtpDraftTokens.coerceAtLeast(1))
                     ?: requestedInfo.defaultMtpDraftTokens.coerceAtLeast(1)
+                ChatMtpRuntimeProfile.coerceDraftTokens(
+                    requestedDraftTokens = modelDraftTokens,
+                    selectedAccelerator = runtimeAccelerator,
+                    isConservativeDevice = isConservativeDevice,
+                )
             } else {
                 0
+            }
+        val requestedContextSize =
+            if (requestedInfo?.supportsMtp == true && requestedMtpDraftTokens > 0) {
+                ChatMtpRuntimeProfile.coerceContextTokens(
+                    requestedContextTokens = rawRequestedContextSize,
+                    modelContextLimit = requestedInfo.chatContextLimit,
+                    isConservativeDevice = isConservativeDevice,
+                )
+            } else {
+                rawRequestedContextSize
             }
         if (
             loadedId == modelId &&
@@ -313,6 +330,22 @@ class ModelManagerController(
             val preferAccelerated = model.info.preferAcceleratedForChat(runtimeAccelerator)
             val effectiveMtpDraftTokens =
                 if (model.info.supportsMtp) requestedMtpDraftTokens else 0
+            val rawBatchSize = manager.llamaBatchSize(model.info, forVision = false)
+            val effectiveBatchSize = if (effectiveMtpDraftTokens > 0) {
+                ChatMtpRuntimeProfile.coerceBatchTokens(
+                    requestedBatchTokens = rawBatchSize,
+                    isConservativeDevice = isConservativeDevice,
+                )
+            } else {
+                rawBatchSize
+            }
+            if (model.info.supportsMtp) {
+                logModel(
+                    "MTP Android profile: accelerator=$runtimeAccelerator preferAccelerated=$preferAccelerated " +
+                        "conservative=$isConservativeDevice ctx=$requestedContextSize " +
+                        "batch=$effectiveBatchSize draft=$effectiveMtpDraftTokens",
+                )
+            }
 
             // Create engine based on runtime. Chat loads text-only to keep memory lower than
             // chromatogram vision analysis, which loads its own model/mmproj later.
@@ -326,7 +359,7 @@ class ModelManagerController(
                             threads = manager.threadCount,
                             modelFamily = model.info.family,
                             contextSize = requestedContextSize,
-                            batchSize = manager.llamaBatchSize(model.info, forVision = false),
+                            batchSize = effectiveBatchSize,
                             preferAccelerated = preferAccelerated,
                             mtpDraftTokens = effectiveMtpDraftTokens,
                         )

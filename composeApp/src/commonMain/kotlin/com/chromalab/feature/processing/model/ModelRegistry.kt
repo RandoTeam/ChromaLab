@@ -73,13 +73,12 @@ data class ModelInfo(
             ModelRuntime.LITERT_LM -> 512L * 1024L * 1024L
             ModelRuntime.LLAMA_CPP -> if (supportsMtp) 768L * 1024L * 1024L else 512L * 1024L * 1024L
         }
-    val maxMtpDraftTokens: Int get() = if (supportsMtp) 16 else 0
+    val maxMtpDraftTokens: Int get() = if (supportsMtp) 6 else 0
     val defaultMtpDraftTokens: Int
         get() = when {
             !supportsMtp -> 0
-            family.equals("qwen3.5-mtp", ignoreCase = true) -> 6
             id.contains("27b", ignoreCase = true) -> 2
-            else -> 6
+            else -> 3
         }
     val supportsMtp: Boolean
         get() {

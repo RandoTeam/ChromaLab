@@ -513,6 +513,54 @@ Next validation:
 - A future native profiling slice should add a dedicated short MTP backend probe
   per device/model/quant before allowing AUTO to pick Vulkan.
 
+## 2026-05-19 MTP Device-Safe Profile
+
+Follow-up source scan after the phone freeze changed the Android defaults again.
+The important upstream/forum points are:
+
+- llama.cpp MTP PR #22673 reports good steady-state speed with small draft
+  windows, especially `--spec-draft-n-max 2` or `3`, and explicitly notes that
+  MTP hurts prompt processing speed because of device-to-host embedding
+  transfers.
+- Unsloth Qwen3.5 4B/9B MTP examples still show `-fa on -np 1` and
+  `--spec-draft-n-max 6`, but those examples target desktop/server runtimes.
+- Current user reports for Qwen3.6 MTP commonly use draft windows around `2` or
+  `3`; some looping/stability reports were fixed only after newer llama.cpp
+  builds and smaller/lower quant settings.
+- Android Vulkan can be useful for plain GGUF decode on newer devices, but the
+  available evidence is for small non-MTP models and does not prove that
+  Android Vulkan MTP prompt prefill is safe.
+- llama.cpp issue #22867 confirms MTP + multimodal/mmproj remains a dangerous
+  combination; ChromaLab must keep MTP text-only.
+
+Implemented Android profile:
+
+- Default chat MTP draft window is now `3`, not `6` or `10`.
+- Built-in MTP model registry exposes a maximum draft slider value of `6`, but
+  Android runtime caps the effective value:
+  - normal mobile profile: max `3`;
+  - explicit Vulkan profile: max `2`;
+  - conservative/low-RAM device profile: max `2`.
+- MTP context is capped on Android before load:
+  - normal mobile profile: max `4096`;
+  - conservative/low-RAM profile: max `2048`.
+- MTP prompt-prefill batch is capped on Android:
+  - normal mobile profile: max `128`;
+  - conservative/low-RAM profile: max `64`.
+- CPU remains the safe default for MTP models. Vulkan remains user-selectable,
+  but it is bounded and logged as experimental.
+
+Rationale:
+
+- The previous real-device stall happened inside `llama_mtp_prompt_eval`, before
+  first token output, so increasing GPU offload or widening draft windows is the
+  wrong first response.
+- Smaller draft/context/batch settings reduce prompt-prefill pressure and phone
+  thermal load without changing model output semantics.
+- This is still not the final optimization layer. The next runtime slice should
+  add a short per-device MTP probe that records first-token latency, acceptance,
+  and tokens/second before allowing Vulkan/MTP to be treated as stable.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.
@@ -548,3 +596,11 @@ Next validation:
   https://huggingface.co/unsloth/Qwen3.5-4B-MTP-GGUF
 - Unsloth Qwen3.6 27B MTP GGUF model card:
   https://huggingface.co/unsloth/Qwen3.6-27B-MTP-GGUF
+- llama.cpp MTP support PR #22673:
+  https://github.com/ggml-org/llama.cpp/pull/22673
+- llama.cpp MTP + multimodal issue #22867:
+  https://github.com/ggml-org/llama.cpp/issues/22867
+- Android llama.cpp Vulkan field report:
+  https://www.reddit.com/r/termux/comments/1tfhppq/guide_running_llamacpp_with_vulkan_gpu/
+- Qwen3.6 MTP looping/stability field report:
+  https://www.reddit.com/r/unsloth/comments/1tct6df/looping_issue_with_mtp_on_qwen36/

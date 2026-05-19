@@ -89,7 +89,7 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
             modelId = modelId,
             runtimeAccelerator = runtimeAccelerator,
             contextSize = settings.contextSize,
-            mtpDraftTokens = if (settings.enableMtp) settings.mtpDraftTokens.coerceIn(1, 16) else 0,
+            mtpDraftTokens = if (settings.enableMtp) settings.mtpDraftTokens.coerceIn(1, 6) else 0,
         )
         if (!loaded) {
             error("Unable to load chat model: ${modelName ?: modelId}")
@@ -141,5 +141,5 @@ private fun ChatSettings.toGenerationOptions(): GenerationOptions =
         topK = topK.coerceIn(1, 256),
         repeatPenalty = repeatPenalty.coerceIn(0.8f, 1.5f),
         repeatLastN = repeatLastN.coerceIn(0, contextSize.coerceAtLeast(1024)),
-        mtpDraftTokens = if (enableMtp) mtpDraftTokens.coerceIn(1, 16) else 0,
+        mtpDraftTokens = if (enableMtp) mtpDraftTokens.coerceIn(1, 6) else 0,
     )

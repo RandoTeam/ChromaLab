@@ -128,6 +128,8 @@ class ModelRegistryVisionPackageTest {
             assertEquals(1, model.files.size)
             assertEquals(ModelFileType.GGUF_BASE, model.files.single().type)
             assertTrue(model.supportsMtp)
+            assertEquals(3, model.defaultMtpDraftTokens)
+            assertEquals(6, model.maxMtpDraftTokens)
         }
 
         assertEquals(21, fourBGroup.variants.size)
