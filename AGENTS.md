@@ -51,11 +51,14 @@ Primary entry points:
 
 - `docs/agent-orchestration/README.md`
 - `docs/agent-orchestration/CODEX_BOOTSTRAP_PROMPT.md`
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
 - `docs/agent-orchestration/prompts/CODEX_REQUEST_ORDER.md`
 
 The root rules in this file remain authoritative for repository behavior. The
 orchestration pack adds workflow structure and role definitions; it must not be used
 to bypass the project-specific analysis, phase, documentation, or commit discipline.
+The Orchestrator definition is the mandatory source for agent activation rules and
+phase governance.
 
 ## Expanded Agent and Skill System
 

@@ -11,7 +11,12 @@ Core entry points:
 
 - `docs/agent-orchestration/README.md`
 - `docs/agent-orchestration/CODEX_BOOTSTRAP_PROMPT.md`
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
 - `docs/agent-orchestration/prompts/CODEX_REQUEST_ORDER.md`
+
+`docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md` is the source of
+truth for agent activation, phase gates, web research requirements, regression
+policy, evidence policy, VLM boundaries, and stop conditions.
 
 ## Operating Notes
 
