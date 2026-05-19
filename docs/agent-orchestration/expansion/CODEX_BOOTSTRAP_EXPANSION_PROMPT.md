@@ -1,84 +1,86 @@
-# Codex Bootstrap Prompt — Agent & Skill Expansion Pack
+# Prompt: CODEX_BOOTSTRAP_EXPANSION_PROMPT
 
-You are working in the ChromaLab repository.
+## Context
 
-An add-on ZIP pack is provided:
+You are working in the ChromaLab repository using the installed agent orchestration system.
 
-`chromalab_agent_skill_expansion_pack.zip`
+## Goal
 
-Goal:
-Install this pack as an extension to the existing ChromaLab agent orchestration system.
+Execute `CODEX_BOOTSTRAP_EXPANSION_PROMPT` with Orchestrator governance and phase-specific gates.
 
-This is a documentation/configuration/bootstrap task only.
-Do not modify application logic.
-Do not modify CalculationEngine.
-Do not start a phase implementation.
+## Scope
 
-Steps:
+- Use required agents from the activation matrix.
+- Keep work within the named phase or setup task.
+- Produce evidence, validation, and closeout notes.
 
-1. Locate and unpack the ZIP into a temporary folder.
+## Out Of Scope
 
-2. Install the pack into:
+- Application code changes when documentation/configuration-only.
+- CalculationEngine rewrite.
+- Geometry, OCR, VLM, Android runtime, report, UI, or scientific calculation changes unless the active phase explicitly allows them.
+- Phase jumping.
 
-`docs/agent-orchestration-expansion/`
+## Required Agents
 
-3. Verify these files exist:
+- AGENT_00_ORCHESTRATOR
+- research_intelligence_agent
+- qa_regression_agent
+- product_acceptance_agent
+- Additional domain agents required by activation matrix.
 
-- `docs/agent-orchestration-expansion/README.md`
-- `docs/agent-orchestration-expansion/AGENTS_EXPANSION.md`
-- `docs/agent-orchestration-expansion/SKILLS_EXPANSION.md`
-- `docs/agent-orchestration-expansion/config/additional_agent_registry.json`
-- `docs/agent-orchestration-expansion/config/additional_skills_registry.json`
-- `docs/agent-orchestration-expansion/config/agent_activation_matrix.yaml`
-- `docs/agent-orchestration-expansion/prompts/PHASE0_EXPANDED_ORCHESTRATION_PATCH.md`
-- `docs/agent-orchestration-expansion/prompts/ORCHESTRATOR_AGENT_ACTIVATION_RULES.md`
+## Required Skills
 
-4. Update root `AGENTS.md` carefully.
+- current-web-research-deep
+- source-quality-triage
+- definition-of-done
+- test-plan-authoring
 
-Do not overwrite existing instructions.
-Add a section:
+## Required Web Research
 
-`## ChromaLab Expanded Agent Orchestration`
+Current web research requirement:
+Assume model knowledge is outdated. Before changing behavior or approving a technical direction, use current-web-research-deep and source-quality-triage, prefer official docs and maintained repositories, save notes under docs/research/, and document adoption/rejection rationale.
 
-Reference:
-- `docs/agent-orchestration-expansion/README.md`
-- `docs/agent-orchestration-expansion/AGENTS_EXPANSION.md`
-- `docs/agent-orchestration-expansion/SKILLS_EXPANSION.md`
-- `docs/agent-orchestration-expansion/config/agent_activation_matrix.yaml`
+## Files To Inspect
 
-5. Update or create root note:
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
+- Relevant phase, protocol, prompt, skill, and registry files.
 
-`CODEX_AGENT_ORCHESTRATION_EXPANSION.md`
+## Required Changes
 
-It must say:
-- complex phases must not be handled by only 1-2 agents;
-- every phase must declare activated agents and used skills;
-- current web research is mandatory for every technical/design/domain phase;
-- product/UI phases require UX + visual design review;
-- scientific/reporting phases require chromatography SME review;
-- Android/VLM/runtime phases require performance/on-device-AI review;
-- every phase requires QA and regression review;
-- phase closure requires cross-agent sign-off.
+- Make only changes allowed by the active phase.
+- Update docs/contracts/registries when behavior expectations change.
+- Preserve previous phase guarantees.
 
-6. Do not begin Phase 0 implementation.
-Only install and prepare.
+## Tests
 
-7. Run:
-- `git diff --check`
+- Always run `git diff --check` for docs/config changes.
+- Parse JSON/YAML registries when edited.
+- Run Gradle/runtime tests only when product behavior changes.
 
-Optional:
-- run Gradle only if repository policy requires it for doc/config changes.
+## Validation
 
-8. Commit changes.
+Record changed files, evidence artifacts, research notes, tests, failures, and risk classification.
 
-Suggested commit message:
-`Add expanded ChromaLab agent and skill orchestration pack`
+## Commit Instructions
 
-Final response:
-- installed path;
-- files added;
-- whether root `AGENTS.md` was merged;
-- whether `CODEX_AGENT_ORCHESTRATION_EXPANSION.md` was created;
-- validation result;
-- commit hash;
-- confirmation that no application logic was modified.
+Create one focused commit. Do not stage unrelated dirty files.
+
+## Final Response Format
+
+Changed:
+- ...
+
+Files:
+- ...
+
+Validation:
+- ...
+
+Notes:
+- ...
+
+## Anti-Overfit Rules
+
+No fixture-specific hacks, no hardcoded image coordinates, no VLM numeric truth, no weakened regression expectations, and no production-ready claims without evidence gates.

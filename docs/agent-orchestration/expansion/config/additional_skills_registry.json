@@ -1,8 +1,11 @@
 {
   "current-web-research-deep": {
+    "id": "current-web-research-deep",
+    "display_name": "Current Web Research Deep",
     "file": "docs/agent-orchestration/expansion/skills/current-web-research-deep.md",
+    "owner_group": "expanded_skills",
     "description": "Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact.",
-    "mandatory_for": [
+    "required_activation_conditions": [
       "all phases",
       "all agents before implementation",
       "Android/KMP/Compose changes",
@@ -12,12 +15,29 @@
       "security/privacy changes",
       "UX/design changes",
       "scientific/chromatography claims"
+    ],
+    "related_agents": [
+      "research_intelligence_agent"
+    ],
+    "related_phases": [
+      "phase_0",
+      "phase_1",
+      "phase_2",
+      "phase_3",
+      "phase_4",
+      "phase_5",
+      "phase_6",
+      "phase_7",
+      "phase_8"
     ]
   },
   "source-quality-triage": {
+    "id": "source-quality-triage",
+    "display_name": "Source Quality Triage",
     "file": "docs/agent-orchestration/expansion/skills/source-quality-triage.md",
+    "owner_group": "expanded_skills",
     "description": "Grade sources by authority, recency, relevance, implementation maturity, and risk.",
-    "mandatory_when": [
+    "required_activation_conditions": [
       "current-web-research-deep is used",
       "Android/KMP/Compose changes",
       "OCR/VLM changes",
@@ -26,51 +46,474 @@
       "security/privacy changes",
       "UX/design changes",
       "scientific/chromatography claims"
+    ],
+    "related_agents": [
+      "research_intelligence_agent"
+    ],
+    "related_phases": [
+      "phase_0",
+      "phase_1",
+      "phase_2",
+      "phase_3",
+      "phase_4",
+      "phase_5",
+      "phase_6",
+      "phase_7",
+      "phase_8"
     ]
   },
-  "research-synthesis": "Convert research into implementable project decisions with adoption/rejection rationale.",
-  "method-comparison-matrix": "Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance.",
-  "mobile-ux-flow-design": "Design mobile task flows, friction points, recovery paths, and mode-specific workflows.",
-  "interaction-state-machine": "Model user workflow states, transitions, blocked states, persistence, and rollback.",
-  "error-recovery-ux": "Design clear error states, retry/fallback paths, and diagnostic messaging.",
-  "usability-test-script": "Create scripts for manual validation on real devices with expected observations.",
-  "visual-design-system": "Define design tokens: colors, typography, spacing, shape, elevation, components.",
-  "scientific-ui-color-system": "Define color palette for diagnostic/review/valid/invalid scientific UI states with high contrast.",
-  "typography-scale": "Define type scale for mobile report, forms, overlays, and dense data tables.",
-  "component-audit": "Audit screens for default/generic styles, inconsistent spacing, poor hierarchy.",
-  "compose-kmp-implementation": "Implement Compose/KMP UI components respecting state and design contracts.",
-  "zoom-pan-annotation-ui": "Implement image annotation interactions: zoom, pan, draggable ROI boxes, handles, anchors.",
-  "state-restoration": "Persist and restore state across process death, rotation, and navigation.",
-  "ui-performance-profiling": "Check recomposition, large bitmap handling, memory, frame pacing.",
-  "chromatography-domain-review": "Review chromatographic terminology, constraints, and scientific validity.",
-  "peak-metric-semantics": "Validate meaning and reporting of RT, height, area, FWHM, S/N, asymmetry, resolution.",
-  "kovats-ri-review": "Review Kovats/retention index requirements and valid/invalid computation conditions.",
-  "scientific-caveat-writing": "Write precise caveats for review-grade, diagnostic, inferred, and user-confirmed values.",
-  "scientific-report-provenance": "Label report values by source: measured, calculated, inferred, OCR, VLM, user-confirmed, test-only.",
-  "evidence-gated-reporting": "Design report gates so missing evidence cannot become release-quality output.",
-  "uncertainty-labeling": "Define user-facing uncertainty/status labels for scientific outputs.",
-  "audit-trail-design": "Design durable audit record of all inputs, decisions, artifacts, and warnings.",
-  "android-runtime-profiling": "Profile Android stages, memory, CPU, thermal behavior, and long-running jobs.",
-  "on-device-model-budgeting": "Define model size, timeout, caching, quantization/runtime constraints.",
-  "timeout-cache-design": "Add timeouts, caching, cancellation, fallback, and progress heartbeats.",
-  "thermal-memory-guardrails": "Prevent memory spikes, model loops, thermal throttling, and UI hangs.",
-  "vlm-evaluation-harness": "Benchmark local VLM behavior on local crops and overlays with expected JSON outputs.",
-  "structured-vlm-json-contract": "Create strict VLM prompt schemas and parse/validate outputs.",
-  "vlm-hallucination-audit": "Identify where VLM invents values, geometry, labels, or confidence.",
-  "ocr-crop-benchmark": "Benchmark OCR/VLM on tick labels, peak labels, title/ion text, low-resolution crops.",
-  "golden-artifact-testing": "Compare output artifacts/overlays/JSON to expected golden files.",
-  "real-device-validation": "Run and document real Android device validation with artifact exports.",
-  "test-plan-authoring": "Write phase test plans and regression checklists.",
-  "android-storage-privacy": "Review Android private/public storage, MediaStore, FileProvider, cleanup, and permissions.",
-  "artifact-redaction": "Remove or flag sensitive source filenames, paths, user data, logs, and images when needed.",
-  "secure-export-review": "Review export/sharing behavior and safety.",
-  "log-safety-audit": "Ensure logs do not leak private data or huge artifacts.",
-  "mobile-accessibility-review": "Check touch targets, scaling, focus order, screen reader labels, contrast.",
-  "localization-ru-en": "Create Russian/English localization keys and verify terminology consistency.",
-  "contrast-touch-target-audit": "Audit visual contrast and tap target size.",
-  "plain-language-errors": "Rewrite technical errors into actionable user-facing language.",
-  "acceptance-criteria-design": "Define precise acceptance criteria per phase and feature.",
-  "product-risk-review": "Identify product risk, misleading output risk, and user harm/confusion risk.",
-  "workflow-demo-script": "Define demo steps for validation by user/product owner.",
-  "definition-of-done": "Create closure checklist for phases/features."
+  "research-synthesis": {
+    "id": "research-synthesis",
+    "display_name": "Research Synthesis",
+    "file": "docs/agent-orchestration/expansion/skills/research-synthesis.md",
+    "owner_group": "expanded_skills",
+    "description": "Convert research into implementable project decisions with adoption/rejection rationale.",
+    "required_activation_conditions": [],
+    "related_agents": [
+      "research_intelligence_agent"
+    ],
+    "related_phases": []
+  },
+  "method-comparison-matrix": {
+    "id": "method-comparison-matrix",
+    "display_name": "Method Comparison Matrix",
+    "file": "docs/agent-orchestration/expansion/skills/method-comparison-matrix.md",
+    "owner_group": "expanded_skills",
+    "description": "Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance.",
+    "required_activation_conditions": [],
+    "related_agents": [
+      "research_intelligence_agent"
+    ],
+    "related_phases": []
+  },
+  "mobile-ux-flow-design": {
+    "id": "mobile-ux-flow-design",
+    "display_name": "Mobile Ux Flow Design",
+    "file": "docs/agent-orchestration/expansion/skills/mobile-ux-flow-design.md",
+    "owner_group": "expanded_skills",
+    "description": "Design mobile task flows, friction points, recovery paths, and mode-specific workflows.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "interaction-state-machine": {
+    "id": "interaction-state-machine",
+    "display_name": "Interaction State Machine",
+    "file": "docs/agent-orchestration/expansion/skills/interaction-state-machine.md",
+    "owner_group": "expanded_skills",
+    "description": "Model user workflow states, transitions, blocked states, persistence, and rollback.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "error-recovery-ux": {
+    "id": "error-recovery-ux",
+    "display_name": "Error Recovery Ux",
+    "file": "docs/agent-orchestration/expansion/skills/error-recovery-ux.md",
+    "owner_group": "expanded_skills",
+    "description": "Design clear error states, retry/fallback paths, and diagnostic messaging.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "usability-test-script": {
+    "id": "usability-test-script",
+    "display_name": "Usability Test Script",
+    "file": "docs/agent-orchestration/expansion/skills/usability-test-script.md",
+    "owner_group": "expanded_skills",
+    "description": "Create scripts for manual validation on real devices with expected observations.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "visual-design-system": {
+    "id": "visual-design-system",
+    "display_name": "Visual Design System",
+    "file": "docs/agent-orchestration/expansion/skills/visual-design-system.md",
+    "owner_group": "expanded_skills",
+    "description": "Define design tokens: colors, typography, spacing, shape, elevation, components.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "scientific-ui-color-system": {
+    "id": "scientific-ui-color-system",
+    "display_name": "Scientific Ui Color System",
+    "file": "docs/agent-orchestration/expansion/skills/scientific-ui-color-system.md",
+    "owner_group": "expanded_skills",
+    "description": "Define color palette for diagnostic/review/valid/invalid scientific UI states with high contrast.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "typography-scale": {
+    "id": "typography-scale",
+    "display_name": "Typography Scale",
+    "file": "docs/agent-orchestration/expansion/skills/typography-scale.md",
+    "owner_group": "expanded_skills",
+    "description": "Define type scale for mobile report, forms, overlays, and dense data tables.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "component-audit": {
+    "id": "component-audit",
+    "display_name": "Component Audit",
+    "file": "docs/agent-orchestration/expansion/skills/component-audit.md",
+    "owner_group": "expanded_skills",
+    "description": "Audit screens for default/generic styles, inconsistent spacing, poor hierarchy.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "compose-kmp-implementation": {
+    "id": "compose-kmp-implementation",
+    "display_name": "Compose Kmp Implementation",
+    "file": "docs/agent-orchestration/expansion/skills/compose-kmp-implementation.md",
+    "owner_group": "expanded_skills",
+    "description": "Implement Compose/KMP UI components respecting state and design contracts.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "zoom-pan-annotation-ui": {
+    "id": "zoom-pan-annotation-ui",
+    "display_name": "Zoom Pan Annotation Ui",
+    "file": "docs/agent-orchestration/expansion/skills/zoom-pan-annotation-ui.md",
+    "owner_group": "expanded_skills",
+    "description": "Implement image annotation interactions: zoom, pan, draggable ROI boxes, handles, anchors.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "state-restoration": {
+    "id": "state-restoration",
+    "display_name": "State Restoration",
+    "file": "docs/agent-orchestration/expansion/skills/state-restoration.md",
+    "owner_group": "expanded_skills",
+    "description": "Persist and restore state across process death, rotation, and navigation.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "ui-performance-profiling": {
+    "id": "ui-performance-profiling",
+    "display_name": "Ui Performance Profiling",
+    "file": "docs/agent-orchestration/expansion/skills/ui-performance-profiling.md",
+    "owner_group": "expanded_skills",
+    "description": "Check recomposition, large bitmap handling, memory, frame pacing.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "chromatography-domain-review": {
+    "id": "chromatography-domain-review",
+    "display_name": "Chromatography Domain Review",
+    "file": "docs/agent-orchestration/expansion/skills/chromatography-domain-review.md",
+    "owner_group": "expanded_skills",
+    "description": "Review chromatographic terminology, constraints, and scientific validity.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "peak-metric-semantics": {
+    "id": "peak-metric-semantics",
+    "display_name": "Peak Metric Semantics",
+    "file": "docs/agent-orchestration/expansion/skills/peak-metric-semantics.md",
+    "owner_group": "expanded_skills",
+    "description": "Validate meaning and reporting of RT, height, area, FWHM, S/N, asymmetry, resolution.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "kovats-ri-review": {
+    "id": "kovats-ri-review",
+    "display_name": "Kovats Ri Review",
+    "file": "docs/agent-orchestration/expansion/skills/kovats-ri-review.md",
+    "owner_group": "expanded_skills",
+    "description": "Review Kovats/retention index requirements and valid/invalid computation conditions.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "scientific-caveat-writing": {
+    "id": "scientific-caveat-writing",
+    "display_name": "Scientific Caveat Writing",
+    "file": "docs/agent-orchestration/expansion/skills/scientific-caveat-writing.md",
+    "owner_group": "expanded_skills",
+    "description": "Write precise caveats for review-grade, diagnostic, inferred, and user-confirmed values.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "scientific-report-provenance": {
+    "id": "scientific-report-provenance",
+    "display_name": "Scientific Report Provenance",
+    "file": "docs/agent-orchestration/expansion/skills/scientific-report-provenance.md",
+    "owner_group": "expanded_skills",
+    "description": "Label report values by source: measured, calculated, inferred, OCR, VLM, user-confirmed, test-only.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "evidence-gated-reporting": {
+    "id": "evidence-gated-reporting",
+    "display_name": "Evidence Gated Reporting",
+    "file": "docs/agent-orchestration/expansion/skills/evidence-gated-reporting.md",
+    "owner_group": "expanded_skills",
+    "description": "Design report gates so missing evidence cannot become release-quality output.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "uncertainty-labeling": {
+    "id": "uncertainty-labeling",
+    "display_name": "Uncertainty Labeling",
+    "file": "docs/agent-orchestration/expansion/skills/uncertainty-labeling.md",
+    "owner_group": "expanded_skills",
+    "description": "Define user-facing uncertainty/status labels for scientific outputs.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "audit-trail-design": {
+    "id": "audit-trail-design",
+    "display_name": "Audit Trail Design",
+    "file": "docs/agent-orchestration/expansion/skills/audit-trail-design.md",
+    "owner_group": "expanded_skills",
+    "description": "Design durable audit record of all inputs, decisions, artifacts, and warnings.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "android-runtime-profiling": {
+    "id": "android-runtime-profiling",
+    "display_name": "Android Runtime Profiling",
+    "file": "docs/agent-orchestration/expansion/skills/android-runtime-profiling.md",
+    "owner_group": "expanded_skills",
+    "description": "Profile Android stages, memory, CPU, thermal behavior, and long-running jobs.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "on-device-model-budgeting": {
+    "id": "on-device-model-budgeting",
+    "display_name": "On Device Model Budgeting",
+    "file": "docs/agent-orchestration/expansion/skills/on-device-model-budgeting.md",
+    "owner_group": "expanded_skills",
+    "description": "Define model size, timeout, caching, quantization/runtime constraints.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "timeout-cache-design": {
+    "id": "timeout-cache-design",
+    "display_name": "Timeout Cache Design",
+    "file": "docs/agent-orchestration/expansion/skills/timeout-cache-design.md",
+    "owner_group": "expanded_skills",
+    "description": "Add timeouts, caching, cancellation, fallback, and progress heartbeats.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "thermal-memory-guardrails": {
+    "id": "thermal-memory-guardrails",
+    "display_name": "Thermal Memory Guardrails",
+    "file": "docs/agent-orchestration/expansion/skills/thermal-memory-guardrails.md",
+    "owner_group": "expanded_skills",
+    "description": "Prevent memory spikes, model loops, thermal throttling, and UI hangs.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "vlm-evaluation-harness": {
+    "id": "vlm-evaluation-harness",
+    "display_name": "Vlm Evaluation Harness",
+    "file": "docs/agent-orchestration/expansion/skills/vlm-evaluation-harness.md",
+    "owner_group": "expanded_skills",
+    "description": "Benchmark local VLM behavior on local crops and overlays with expected JSON outputs.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "structured-vlm-json-contract": {
+    "id": "structured-vlm-json-contract",
+    "display_name": "Structured Vlm Json Contract",
+    "file": "docs/agent-orchestration/expansion/skills/structured-vlm-json-contract.md",
+    "owner_group": "expanded_skills",
+    "description": "Create strict VLM prompt schemas and parse/validate outputs.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "vlm-hallucination-audit": {
+    "id": "vlm-hallucination-audit",
+    "display_name": "Vlm Hallucination Audit",
+    "file": "docs/agent-orchestration/expansion/skills/vlm-hallucination-audit.md",
+    "owner_group": "expanded_skills",
+    "description": "Identify where VLM invents values, geometry, labels, or confidence.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "ocr-crop-benchmark": {
+    "id": "ocr-crop-benchmark",
+    "display_name": "Ocr Crop Benchmark",
+    "file": "docs/agent-orchestration/expansion/skills/ocr-crop-benchmark.md",
+    "owner_group": "expanded_skills",
+    "description": "Benchmark OCR/VLM on tick labels, peak labels, title/ion text, low-resolution crops.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "golden-artifact-testing": {
+    "id": "golden-artifact-testing",
+    "display_name": "Golden Artifact Testing",
+    "file": "docs/agent-orchestration/expansion/skills/golden-artifact-testing.md",
+    "owner_group": "expanded_skills",
+    "description": "Compare output artifacts/overlays/JSON to expected golden files.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "real-device-validation": {
+    "id": "real-device-validation",
+    "display_name": "Real Device Validation",
+    "file": "docs/agent-orchestration/expansion/skills/real-device-validation.md",
+    "owner_group": "expanded_skills",
+    "description": "Run and document real Android device validation with artifact exports.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "test-plan-authoring": {
+    "id": "test-plan-authoring",
+    "display_name": "Test Plan Authoring",
+    "file": "docs/agent-orchestration/expansion/skills/test-plan-authoring.md",
+    "owner_group": "expanded_skills",
+    "description": "Write phase test plans and regression checklists.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "android-storage-privacy": {
+    "id": "android-storage-privacy",
+    "display_name": "Android Storage Privacy",
+    "file": "docs/agent-orchestration/expansion/skills/android-storage-privacy.md",
+    "owner_group": "expanded_skills",
+    "description": "Review Android private/public storage, MediaStore, FileProvider, cleanup, and permissions.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "artifact-redaction": {
+    "id": "artifact-redaction",
+    "display_name": "Artifact Redaction",
+    "file": "docs/agent-orchestration/expansion/skills/artifact-redaction.md",
+    "owner_group": "expanded_skills",
+    "description": "Remove or flag sensitive source filenames, paths, user data, logs, and images when needed.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "secure-export-review": {
+    "id": "secure-export-review",
+    "display_name": "Secure Export Review",
+    "file": "docs/agent-orchestration/expansion/skills/secure-export-review.md",
+    "owner_group": "expanded_skills",
+    "description": "Review export/sharing behavior and safety.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "log-safety-audit": {
+    "id": "log-safety-audit",
+    "display_name": "Log Safety Audit",
+    "file": "docs/agent-orchestration/expansion/skills/log-safety-audit.md",
+    "owner_group": "expanded_skills",
+    "description": "Ensure logs do not leak private data or huge artifacts.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "mobile-accessibility-review": {
+    "id": "mobile-accessibility-review",
+    "display_name": "Mobile Accessibility Review",
+    "file": "docs/agent-orchestration/expansion/skills/mobile-accessibility-review.md",
+    "owner_group": "expanded_skills",
+    "description": "Check touch targets, scaling, focus order, screen reader labels, contrast.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "localization-ru-en": {
+    "id": "localization-ru-en",
+    "display_name": "Localization Ru En",
+    "file": "docs/agent-orchestration/expansion/skills/localization-ru-en.md",
+    "owner_group": "expanded_skills",
+    "description": "Create Russian/English localization keys and verify terminology consistency.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "contrast-touch-target-audit": {
+    "id": "contrast-touch-target-audit",
+    "display_name": "Contrast Touch Target Audit",
+    "file": "docs/agent-orchestration/expansion/skills/contrast-touch-target-audit.md",
+    "owner_group": "expanded_skills",
+    "description": "Audit visual contrast and tap target size.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "plain-language-errors": {
+    "id": "plain-language-errors",
+    "display_name": "Plain Language Errors",
+    "file": "docs/agent-orchestration/expansion/skills/plain-language-errors.md",
+    "owner_group": "expanded_skills",
+    "description": "Rewrite technical errors into actionable user-facing language.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "acceptance-criteria-design": {
+    "id": "acceptance-criteria-design",
+    "display_name": "Acceptance Criteria Design",
+    "file": "docs/agent-orchestration/expansion/skills/acceptance-criteria-design.md",
+    "owner_group": "expanded_skills",
+    "description": "Define precise acceptance criteria per phase and feature.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "product-risk-review": {
+    "id": "product-risk-review",
+    "display_name": "Product Risk Review",
+    "file": "docs/agent-orchestration/expansion/skills/product-risk-review.md",
+    "owner_group": "expanded_skills",
+    "description": "Identify product risk, misleading output risk, and user harm/confusion risk.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "workflow-demo-script": {
+    "id": "workflow-demo-script",
+    "display_name": "Workflow Demo Script",
+    "file": "docs/agent-orchestration/expansion/skills/workflow-demo-script.md",
+    "owner_group": "expanded_skills",
+    "description": "Define demo steps for validation by user/product owner.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  },
+  "definition-of-done": {
+    "id": "definition-of-done",
+    "display_name": "Definition Of Done",
+    "file": "docs/agent-orchestration/expansion/skills/definition-of-done.md",
+    "owner_group": "expanded_skills",
+    "description": "Create closure checklist for phases/features.",
+    "required_activation_conditions": [],
+    "related_agents": [],
+    "related_phases": []
+  }
 }

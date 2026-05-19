@@ -1,116 +1,385 @@
 {
   "skills": [
     {
-      "file": "SKILL_00_WEB_RESEARCH_PROTOCOL.md",
-      "title": "Web Research Protocol",
-      "use_when": "Before any phase or technical implementation",
-      "research": "current docs, APIs, methods",
-      "output": "research note markdown"
+      "id": "SKILL_00_WEB_RESEARCH_PROTOCOL",
+      "display_name": "Web Research Protocol",
+      "file": "docs/agent-orchestration/skills/SKILL_00_WEB_RESEARCH_PROTOCOL.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "Before any phase or technical implementation"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_01_KMP_COMPOSE_ARCHITECTURE.md",
-      "title": "KMP / Compose Architecture",
-      "use_when": "UI/shared architecture changes",
-      "research": "current KMP/Compose docs",
-      "output": "architecture plan + code changes"
+      "id": "SKILL_01_KMP_COMPOSE_ARCHITECTURE",
+      "display_name": "KMP / Compose Architecture",
+      "file": "docs/agent-orchestration/skills/SKILL_01_KMP_COMPOSE_ARCHITECTURE.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "UI/shared architecture changes"
+      ],
+      "related_agents": [
+        "AGENT_01_GUIDED_WORKFLOW_UI"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_02_STATE_MACHINE_PERSISTENCE.md",
-      "title": "State Machine Persistence",
-      "use_when": "guided workflow state, resume, save/restore",
-      "research": "state patterns and persistence docs",
-      "output": "state contracts + tests"
+      "id": "SKILL_02_STATE_MACHINE_PERSISTENCE",
+      "display_name": "State Machine Persistence",
+      "file": "docs/agent-orchestration/skills/SKILL_02_STATE_MACHINE_PERSISTENCE.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "guided workflow state, resume, save/restore"
+      ],
+      "related_agents": [
+        "AGENT_01_GUIDED_WORKFLOW_UI"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_03_IMAGE_VIEWER_ROI_EDITOR.md",
-      "title": "Image Viewer ROI Editor",
-      "use_when": "zoom/pan/drag ROI UI",
-      "research": "Compose canvas/image gesture docs",
-      "output": "ROI editor UI + tests"
+      "id": "SKILL_03_IMAGE_VIEWER_ROI_EDITOR",
+      "display_name": "Image Viewer ROI Editor",
+      "file": "docs/agent-orchestration/skills/SKILL_03_IMAGE_VIEWER_ROI_EDITOR.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "zoom/pan/drag ROI UI"
+      ],
+      "related_agents": [
+        "AGENT_01_GUIDED_WORKFLOW_UI"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT.md",
-      "title": "Geometry & Calibration Robust Fit",
-      "use_when": "axes/ticks/manual anchors/calibration",
-      "research": "graph digitization, robust regression",
-      "output": "calibration fit + residuals"
+      "id": "SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT",
+      "display_name": "Geometry & Calibration Robust Fit",
+      "file": "docs/agent-orchestration/skills/SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "axes/ticks/manual anchors/calibration"
+      ],
+      "related_agents": [
+        "AGENT_02_GEOMETRY_CALIBRATION"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_05_OCR_LOCAL_CROPS.md",
-      "title": "OCR Local Crops",
-      "use_when": "ML Kit/local OCR around labels/ticks",
-      "research": "ML Kit text recognition docs",
-      "output": "OCR crop evidence"
+      "id": "SKILL_05_OCR_LOCAL_CROPS",
+      "display_name": "OCR Local Crops",
+      "file": "docs/agent-orchestration/skills/SKILL_05_OCR_LOCAL_CROPS.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "ML Kit/local OCR around labels/ticks"
+      ],
+      "related_agents": [
+        "AGENT_03_OCR_VLM_TEXT"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_06_VLM_SAFE_ASSISTANT.md",
-      "title": "VLM Safe Assistant",
-      "use_when": "Gemma/Qwen local crop OCR and overlay judge",
-      "research": "current VLM runtime docs",
-      "output": "bounded VLM backend"
+      "id": "SKILL_06_VLM_SAFE_ASSISTANT",
+      "display_name": "VLM Safe Assistant",
+      "file": "docs/agent-orchestration/skills/SKILL_06_VLM_SAFE_ASSISTANT.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "Gemma/Qwen local crop OCR and overlay judge"
+      ],
+      "related_agents": [
+        "AGENT_03_OCR_VLM_TEXT"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_07_TRACE_EXTRACTION_MASKS.md",
-      "title": "Trace Extraction & Masks",
-      "use_when": "curve extraction from plotArea",
-      "research": "skeletonization/curve extraction methods",
-      "output": "trace overlay + metrics"
+      "id": "SKILL_07_TRACE_EXTRACTION_MASKS",
+      "display_name": "Trace Extraction & Masks",
+      "file": "docs/agent-orchestration/skills/SKILL_07_TRACE_EXTRACTION_MASKS.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "curve extraction from plotArea"
+      ],
+      "related_agents": [
+        "AGENT_04_TRACE_PEAK_REVIEW"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_08_PEAK_REVIEW_INTEGRATION.md",
-      "title": "Peak Review & Integration",
-      "use_when": "peak overlay, edit/merge/split",
-      "research": "chromatography review workflows",
-      "output": "peak edit decisions"
+      "id": "SKILL_08_PEAK_REVIEW_INTEGRATION",
+      "display_name": "Peak Review & Integration",
+      "file": "docs/agent-orchestration/skills/SKILL_08_PEAK_REVIEW_INTEGRATION.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "peak overlay, edit/merge/split"
+      ],
+      "related_agents": [
+        "AGENT_04_TRACE_PEAK_REVIEW"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR.md",
-      "title": "Evidence Package Validator",
-      "use_when": "runtime evidence and gates",
-      "research": "QA/golden artifact practices",
-      "output": "validator + diagnostics"
+      "id": "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
+      "display_name": "Evidence Package Validator",
+      "file": "docs/agent-orchestration/skills/SKILL_09_EVIDENCE_PACKAGE_VALIDATOR.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "runtime evidence and gates"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "AGENT_02_GEOMETRY_CALIBRATION",
+        "AGENT_05_QA_EVIDENCE_RELEASE",
+        "AGENT_07_SCIENTIFIC_REPORT_PROVENANCE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING.md",
-      "title": "Android Runtime Export & Logging",
-      "use_when": "device evidence export, logcat, Downloads",
-      "research": "Android storage/logging docs",
-      "output": "exportable evidence package"
+      "id": "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING",
+      "display_name": "Android Runtime Export & Logging",
+      "file": "docs/agent-orchestration/skills/SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "device evidence export, logcat, Downloads"
+      ],
+      "related_agents": [
+        "AGENT_01_GUIDED_WORKFLOW_UI",
+        "AGENT_05_QA_EVIDENCE_RELEASE",
+        "AGENT_06_ANDROID_RUNTIME_PERFORMANCE",
+        "AGENT_08_SECURITY_PRIVACY"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_11_REGRESSION_BENCHMARK_GOLDEN.md",
-      "title": "Regression Benchmark / Golden Fixtures",
-      "use_when": "dataset and regression matrix",
-      "research": "benchmarking image pipelines",
-      "output": "fixture matrix + tests"
+      "id": "SKILL_11_REGRESSION_BENCHMARK_GOLDEN",
+      "display_name": "Regression Benchmark / Golden Fixtures",
+      "file": "docs/agent-orchestration/skills/SKILL_11_REGRESSION_BENCHMARK_GOLDEN.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "dataset and regression matrix"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "AGENT_02_GEOMETRY_CALIBRATION",
+        "AGENT_05_QA_EVIDENCE_RELEASE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_12_REPORT_GATE_PROVENANCE.md",
-      "title": "Report Gate & Provenance",
-      "use_when": "release vs diagnostic reports",
-      "research": "scientific report provenance",
-      "output": "report contract gates"
+      "id": "SKILL_12_REPORT_GATE_PROVENANCE",
+      "display_name": "Report Gate & Provenance",
+      "file": "docs/agent-orchestration/skills/SKILL_12_REPORT_GATE_PROVENANCE.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "release vs diagnostic reports"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "AGENT_04_TRACE_PEAK_REVIEW",
+        "AGENT_05_QA_EVIDENCE_RELEASE",
+        "AGENT_07_SCIENTIFIC_REPORT_PROVENANCE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_13_PERFORMANCE_TIMEOUTS.md",
-      "title": "Performance & Timeouts",
-      "use_when": "VLM/CV timing, blocking, caching",
-      "research": "Android performance docs",
-      "output": "timeouts/caches/metrics"
+      "id": "SKILL_13_PERFORMANCE_TIMEOUTS",
+      "display_name": "Performance & Timeouts",
+      "file": "docs/agent-orchestration/skills/SKILL_13_PERFORMANCE_TIMEOUTS.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "VLM/CV timing, blocking, caching"
+      ],
+      "related_agents": [
+        "AGENT_03_OCR_VLM_TEXT",
+        "AGENT_06_ANDROID_RUNTIME_PERFORMANCE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_14_SECURITY_PRIVACY_STORAGE.md",
-      "title": "Security, Privacy, Storage",
-      "use_when": "file export and user data handling",
-      "research": "Android storage/privacy docs",
-      "output": "safe storage/export policy"
+      "id": "SKILL_14_SECURITY_PRIVACY_STORAGE",
+      "display_name": "Security, Privacy, Storage",
+      "file": "docs/agent-orchestration/skills/SKILL_14_SECURITY_PRIVACY_STORAGE.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "file export and user data handling"
+      ],
+      "related_agents": [
+        "AGENT_06_ANDROID_RUNTIME_PERFORMANCE",
+        "AGENT_08_SECURITY_PRIVACY"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     },
     {
-      "file": "SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md",
-      "title": "Git Branch / Review Protocol",
-      "use_when": "multi-agent branches, merges, reviews",
-      "research": "git best practices",
-      "output": "merge plan + review checklist"
+      "id": "SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL",
+      "display_name": "Git Branch / Review Protocol",
+      "file": "docs/agent-orchestration/skills/SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "multi-agent branches, merges, reviews"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
+      ]
     }
   ]
 }

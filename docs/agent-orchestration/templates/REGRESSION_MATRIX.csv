@@ -1,5 +1,9 @@
-image_id,source_type,expected_graph_count,auto_status,guided_status,manual_status,graphPanel_expected,plotArea_expected,calibration_expected,trace_expected,peak_expected,evidence_expected,notes
-clean_screenshot,screenshot,1,REVIEW_OR_PASS,PASS,PASS,full_chart,inside_panel,valid_or_user_confirmed,valid_or_user_confirmed,reviewed,exported,
-phone_screenshot,screenshot,1,REVIEW,PASS,PASS,full_chart,inside_panel,valid_or_user_confirmed,review,reviewed,exported,
-weak_peaks,photo_or_screenshot,1,REVIEW,PASS,PASS,full_chart,inside_panel,user_confirmed,review,user_reviewed,exported,
-multi_graph_page,document,>1,REVIEW,PASS,PASS,separate_panels,separate_plot_areas,valid_or_user_confirmed,review,reviewed,exported,
+case_id,graph_class,expected_mode_behavior,release_allowed,required_artifacts,known_previous_bugs,current_status,owner_agent,validation_notes
+bench_01,printed two graphs,multi-graph review,conditional,"graphPanel, plotArea, axes, calibration, trace, peaks",multi-graph segmentation risk,covered,qa_regression_agent,validate physical graph count
+bench_02,m/z 92 screenshot,single graph,yes when gates pass,full evidence package,screenshot crop risk,covered,qa_regression_agent,preserve title/ion classification
+bench_03,low-resolution labeled TIC,review-grade recovered labels only,review for recovered peaks,"label crops, local windows, overlay",fixture hint misuse,covered,trace_extraction_peak_review_agent,runtime OCR required
+bench_04,stacked XIC,multi-panel if distinct,conditional,panel separation evidence,stacked graph separation,covered,geometry_calibration_core_agent,do not merge real panels
+bench_05,TIC plus ions,multi-panel review,conditional,panel hierarchy evidence,report grouping risk,covered,scientific_reporting_validation_agent,separate TIC and ion channels
+bench_06,photo two graphs,guided review expected,no until confirmed,"photo provenance, rectification, calibration",perspective/axis loss,covered,mobile_ux_architect_agent,requires confirmation path
+bench_07,rotated page,orientation correction then review,conditional,"rotation provenance, ROI overlays",orientation bug,covered,android_performance_ondevice_ai_agent,no auto-rotate side effect
+bench_08,dense m/z 71 screenshot,single graph with raw/validated peaks,yes when gates pass,"dense peak table, apex evidence","six pseudo-graphs, right-side crop",covered,qa_regression_agent,one physical graph

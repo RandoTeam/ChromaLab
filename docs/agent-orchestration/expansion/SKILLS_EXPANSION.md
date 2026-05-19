@@ -1,61 +1,49 @@
-# Additional ChromaLab Skills
+# Expanded ChromaLab Skills
 
-## source-quality-triage
-
-- Authoritative definition: `docs/agent-orchestration/expansion/skills/source-quality-triage.md`
-- Owner agent: `research_intelligence_agent`
-- Mandatory whenever `current-web-research-deep` is used, especially for Android/KMP/Compose, OCR/VLM, geometry/calibration, report/evidence, security/privacy, UX/design, and scientific/chromatography work.
-
-## current-web-research-deep
-
-- Authoritative definition: `docs/agent-orchestration/expansion/skills/current-web-research-deep.md`
-- Owner agent: `research_intelligence_agent`
-- Mandatory for: all phases, all agents before implementation, Android/KMP/Compose changes, OCR/VLM changes, geometry/calibration changes, report/evidence changes, security/privacy changes, UX/design changes, and scientific/chromatography claims.
-
-- `current-web-research-deep` — Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact.
-- `source-quality-triage` — Grade sources by authority, recency, relevance, implementation maturity, and risk.
-- `research-synthesis` — Convert research into implementable project decisions with adoption/rejection rationale.
-- `method-comparison-matrix` — Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance.
-- `mobile-ux-flow-design` — Design mobile task flows, friction points, recovery paths, and mode-specific workflows.
-- `interaction-state-machine` — Model user workflow states, transitions, blocked states, persistence, and rollback.
-- `error-recovery-ux` — Design clear error states, retry/fallback paths, and diagnostic messaging.
-- `usability-test-script` — Create scripts for manual validation on real devices with expected observations.
-- `visual-design-system` — Define design tokens: colors, typography, spacing, shape, elevation, components.
-- `scientific-ui-color-system` — Define color palette for diagnostic/review/valid/invalid scientific UI states with high contrast.
-- `typography-scale` — Define type scale for mobile report, forms, overlays, and dense data tables.
-- `component-audit` — Audit screens for default/generic styles, inconsistent spacing, poor hierarchy.
-- `compose-kmp-implementation` — Implement Compose/KMP UI components respecting state and design contracts.
-- `zoom-pan-annotation-ui` — Implement image annotation interactions: zoom, pan, draggable ROI boxes, handles, anchors.
-- `state-restoration` — Persist and restore state across process death, rotation, and navigation.
-- `ui-performance-profiling` — Check recomposition, large bitmap handling, memory, frame pacing.
-- `chromatography-domain-review` — Review chromatographic terminology, constraints, and scientific validity.
-- `peak-metric-semantics` — Validate meaning and reporting of RT, height, area, FWHM, S/N, asymmetry, resolution.
-- `kovats-ri-review` — Review Kovats/retention index requirements and valid/invalid computation conditions.
-- `scientific-caveat-writing` — Write precise caveats for review-grade, diagnostic, inferred, and user-confirmed values.
-- `scientific-report-provenance` — Label report values by source: measured, calculated, inferred, OCR, VLM, user-confirmed, test-only.
-- `evidence-gated-reporting` — Design report gates so missing evidence cannot become release-quality output.
-- `uncertainty-labeling` — Define user-facing uncertainty/status labels for scientific outputs.
-- `audit-trail-design` — Design durable audit record of all inputs, decisions, artifacts, and warnings.
-- `android-runtime-profiling` — Profile Android stages, memory, CPU, thermal behavior, and long-running jobs.
-- `on-device-model-budgeting` — Define model size, timeout, caching, quantization/runtime constraints.
-- `timeout-cache-design` — Add timeouts, caching, cancellation, fallback, and progress heartbeats.
-- `thermal-memory-guardrails` — Prevent memory spikes, model loops, thermal throttling, and UI hangs.
-- `vlm-evaluation-harness` — Benchmark local VLM behavior on local crops and overlays with expected JSON outputs.
-- `structured-vlm-json-contract` — Create strict VLM prompt schemas and parse/validate outputs.
-- `vlm-hallucination-audit` — Identify where VLM invents values, geometry, labels, or confidence.
-- `ocr-crop-benchmark` — Benchmark OCR/VLM on tick labels, peak labels, title/ion text, low-resolution crops.
-- `golden-artifact-testing` — Compare output artifacts/overlays/JSON to expected golden files.
-- `real-device-validation` — Run and document real Android device validation with artifact exports.
-- `test-plan-authoring` — Write phase test plans and regression checklists.
-- `android-storage-privacy` — Review Android private/public storage, MediaStore, FileProvider, cleanup, and permissions.
-- `artifact-redaction` — Remove or flag sensitive source filenames, paths, user data, logs, and images when needed.
-- `secure-export-review` — Review export/sharing behavior and safety.
-- `log-safety-audit` — Ensure logs do not leak private data or huge artifacts.
-- `mobile-accessibility-review` — Check touch targets, scaling, focus order, screen reader labels, contrast.
-- `localization-ru-en` — Create Russian/English localization keys and verify terminology consistency.
-- `contrast-touch-target-audit` — Audit visual contrast and tap target size.
-- `plain-language-errors` — Rewrite technical errors into actionable user-facing language.
-- `acceptance-criteria-design` — Define precise acceptance criteria per phase and feature.
-- `product-risk-review` — Identify product risk, misleading output risk, and user harm/confusion risk.
-- `workflow-demo-script` — Define demo steps for validation by user/product owner.
-- `definition-of-done` — Create closure checklist for phases/features.
+- `current-web-research-deep`: Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact. -> `skills/current-web-research-deep.md`
+- `source-quality-triage`: Grade sources by authority, recency, relevance, implementation maturity, and risk. -> `skills/source-quality-triage.md`
+- `research-synthesis`: Convert research into implementable project decisions with adoption/rejection rationale. -> `skills/research-synthesis.md`
+- `method-comparison-matrix`: Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance. -> `skills/method-comparison-matrix.md`
+- `mobile-ux-flow-design`: Design mobile task flows, friction points, recovery paths, and mode-specific workflows. -> `skills/mobile-ux-flow-design.md`
+- `interaction-state-machine`: Model user workflow states, transitions, blocked states, persistence, and rollback. -> `skills/interaction-state-machine.md`
+- `error-recovery-ux`: Design clear error states, retry/fallback paths, and diagnostic messaging. -> `skills/error-recovery-ux.md`
+- `usability-test-script`: Create scripts for manual validation on real devices with expected observations. -> `skills/usability-test-script.md`
+- `visual-design-system`: Define design tokens: colors, typography, spacing, shape, elevation, components. -> `skills/visual-design-system.md`
+- `scientific-ui-color-system`: Define color palette for diagnostic/review/valid/invalid scientific UI states with high contrast. -> `skills/scientific-ui-color-system.md`
+- `typography-scale`: Define type scale for mobile report, forms, overlays, and dense data tables. -> `skills/typography-scale.md`
+- `component-audit`: Audit screens for default/generic styles, inconsistent spacing, poor hierarchy. -> `skills/component-audit.md`
+- `compose-kmp-implementation`: Implement Compose/KMP UI components respecting state and design contracts. -> `skills/compose-kmp-implementation.md`
+- `zoom-pan-annotation-ui`: Implement image annotation interactions: zoom, pan, draggable ROI boxes, handles, anchors. -> `skills/zoom-pan-annotation-ui.md`
+- `state-restoration`: Persist and restore state across process death, rotation, and navigation. -> `skills/state-restoration.md`
+- `ui-performance-profiling`: Check recomposition, large bitmap handling, memory, frame pacing. -> `skills/ui-performance-profiling.md`
+- `chromatography-domain-review`: Review chromatographic terminology, constraints, and scientific validity. -> `skills/chromatography-domain-review.md`
+- `peak-metric-semantics`: Validate meaning and reporting of RT, height, area, FWHM, S/N, asymmetry, resolution. -> `skills/peak-metric-semantics.md`
+- `kovats-ri-review`: Review Kovats/retention index requirements and valid/invalid computation conditions. -> `skills/kovats-ri-review.md`
+- `scientific-caveat-writing`: Write precise caveats for review-grade, diagnostic, inferred, and user-confirmed values. -> `skills/scientific-caveat-writing.md`
+- `scientific-report-provenance`: Label report values by source: measured, calculated, inferred, OCR, VLM, user-confirmed, test-only. -> `skills/scientific-report-provenance.md`
+- `evidence-gated-reporting`: Design report gates so missing evidence cannot become release-quality output. -> `skills/evidence-gated-reporting.md`
+- `uncertainty-labeling`: Define user-facing uncertainty/status labels for scientific outputs. -> `skills/uncertainty-labeling.md`
+- `audit-trail-design`: Design durable audit record of all inputs, decisions, artifacts, and warnings. -> `skills/audit-trail-design.md`
+- `android-runtime-profiling`: Profile Android stages, memory, CPU, thermal behavior, and long-running jobs. -> `skills/android-runtime-profiling.md`
+- `on-device-model-budgeting`: Define model size, timeout, caching, quantization/runtime constraints. -> `skills/on-device-model-budgeting.md`
+- `timeout-cache-design`: Add timeouts, caching, cancellation, fallback, and progress heartbeats. -> `skills/timeout-cache-design.md`
+- `thermal-memory-guardrails`: Prevent memory spikes, model loops, thermal throttling, and UI hangs. -> `skills/thermal-memory-guardrails.md`
+- `vlm-evaluation-harness`: Benchmark local VLM behavior on local crops and overlays with expected JSON outputs. -> `skills/vlm-evaluation-harness.md`
+- `structured-vlm-json-contract`: Create strict VLM prompt schemas and parse/validate outputs. -> `skills/structured-vlm-json-contract.md`
+- `vlm-hallucination-audit`: Identify where VLM invents values, geometry, labels, or confidence. -> `skills/vlm-hallucination-audit.md`
+- `ocr-crop-benchmark`: Benchmark OCR/VLM on tick labels, peak labels, title/ion text, low-resolution crops. -> `skills/ocr-crop-benchmark.md`
+- `golden-artifact-testing`: Compare output artifacts/overlays/JSON to expected golden files. -> `skills/golden-artifact-testing.md`
+- `real-device-validation`: Run and document real Android device validation with artifact exports. -> `skills/real-device-validation.md`
+- `test-plan-authoring`: Write phase test plans and regression checklists. -> `skills/test-plan-authoring.md`
+- `android-storage-privacy`: Review Android private/public storage, MediaStore, FileProvider, cleanup, and permissions. -> `skills/android-storage-privacy.md`
+- `artifact-redaction`: Remove or flag sensitive source filenames, paths, user data, logs, and images when needed. -> `skills/artifact-redaction.md`
+- `secure-export-review`: Review export/sharing behavior and safety. -> `skills/secure-export-review.md`
+- `log-safety-audit`: Ensure logs do not leak private data or huge artifacts. -> `skills/log-safety-audit.md`
+- `mobile-accessibility-review`: Check touch targets, scaling, focus order, screen reader labels, contrast. -> `skills/mobile-accessibility-review.md`
+- `localization-ru-en`: Create Russian/English localization keys and verify terminology consistency. -> `skills/localization-ru-en.md`
+- `contrast-touch-target-audit`: Audit visual contrast and tap target size. -> `skills/contrast-touch-target-audit.md`
+- `plain-language-errors`: Rewrite technical errors into actionable user-facing language. -> `skills/plain-language-errors.md`
+- `acceptance-criteria-design`: Define precise acceptance criteria per phase and feature. -> `skills/acceptance-criteria-design.md`
+- `product-risk-review`: Identify product risk, misleading output risk, and user harm/confusion risk. -> `skills/product-risk-review.md`
+- `workflow-demo-script`: Define demo steps for validation by user/product owner. -> `skills/workflow-demo-script.md`
+- `definition-of-done`: Create closure checklist for phases/features. -> `skills/definition-of-done.md`

@@ -2,85 +2,229 @@
   "agents": [
     {
       "id": "AGENT_00_ORCHESTRATOR",
-      "title": "Orchestrator / Lead Architect",
-      "skills": [
+      "display_name": "Orchestrator / Lead Architect",
+      "file": "docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "all phases"
+      ],
+      "related_skills": [
         "SKILL_00_WEB_RESEARCH_PROTOCOL",
         "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
         "SKILL_11_REGRESSION_BENCHMARK_GOLDEN",
         "SKILL_12_REPORT_GATE_PROVENANCE",
         "SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_01_GUIDED_WORKFLOW_UI",
-      "title": "Guided Workflow / UI / State Machine",
-      "skills": [
+      "display_name": "Guided Workflow / UI / State Machine",
+      "file": "docs/agent-orchestration/agents/AGENT_01_GUIDED_WORKFLOW_UI.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_01_KMP_COMPOSE_ARCHITECTURE",
         "SKILL_02_STATE_MACHINE_PERSISTENCE",
         "SKILL_03_IMAGE_VIEWER_ROI_EDITOR",
         "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_02_GEOMETRY_CALIBRATION",
-      "title": "Geometry / Calibration Core",
-      "skills": [
+      "display_name": "Geometry / Calibration Core",
+      "file": "docs/agent-orchestration/agents/AGENT_02_GEOMETRY_CALIBRATION.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_04_GEOMETRY_CALIBRATION_ROBUST_FIT",
         "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
         "SKILL_11_REGRESSION_BENCHMARK_GOLDEN"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_03_OCR_VLM_TEXT",
-      "title": "OCR / VLM / Text Semantics",
-      "skills": [
+      "display_name": "OCR / VLM / Text Semantics",
+      "file": "docs/agent-orchestration/agents/AGENT_03_OCR_VLM_TEXT.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_05_OCR_LOCAL_CROPS",
         "SKILL_06_VLM_SAFE_ASSISTANT",
         "SKILL_13_PERFORMANCE_TIMEOUTS"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_04_TRACE_PEAK_REVIEW",
-      "title": "Trace Extraction / Peak Review",
-      "skills": [
+      "display_name": "Trace Extraction / Peak Review",
+      "file": "docs/agent-orchestration/agents/AGENT_04_TRACE_PEAK_REVIEW.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_07_TRACE_EXTRACTION_MASKS",
         "SKILL_08_PEAK_REVIEW_INTEGRATION",
         "SKILL_12_REPORT_GATE_PROVENANCE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_05_QA_EVIDENCE_RELEASE",
-      "title": "QA / Evidence / Benchmark / Release Gate",
-      "skills": [
+      "display_name": "QA / Evidence / Benchmark / Release Gate",
+      "file": "docs/agent-orchestration/agents/AGENT_05_QA_EVIDENCE_RELEASE.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR",
         "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING",
         "SKILL_11_REGRESSION_BENCHMARK_GOLDEN",
         "SKILL_12_REPORT_GATE_PROVENANCE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_06_ANDROID_RUNTIME_PERFORMANCE",
-      "title": "Android Runtime / Performance / Storage",
-      "skills": [
+      "display_name": "Android Runtime / Performance / Storage",
+      "file": "docs/agent-orchestration/agents/AGENT_06_ANDROID_RUNTIME_PERFORMANCE.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING",
         "SKILL_13_PERFORMANCE_TIMEOUTS",
         "SKILL_14_SECURITY_PRIVACY_STORAGE"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_07_SCIENTIFIC_REPORT_PROVENANCE",
-      "title": "Scientific Report / Provenance",
-      "skills": [
+      "display_name": "Scientific Report / Provenance",
+      "file": "docs/agent-orchestration/agents/AGENT_07_SCIENTIFIC_REPORT_PROVENANCE.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_12_REPORT_GATE_PROVENANCE",
         "SKILL_09_EVIDENCE_PACKAGE_VALIDATOR"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     },
     {
       "id": "AGENT_08_SECURITY_PRIVACY",
-      "title": "Security / Privacy / Data Handling",
-      "skills": [
+      "display_name": "Security / Privacy / Data Handling",
+      "file": "docs/agent-orchestration/agents/AGENT_08_SECURITY_PRIVACY.md",
+      "owner_group": "base_orchestration_agents",
+      "required_activation_conditions": [
+        "phase scope matches ownership"
+      ],
+      "related_skills": [
         "SKILL_14_SECURITY_PRIVACY_STORAGE",
         "SKILL_10_ANDROID_RUNTIME_EXPORT_LOGGING"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8"
       ]
     }
   ]

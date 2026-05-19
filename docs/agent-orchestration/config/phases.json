@@ -1,58 +1,193 @@
 {
   "phases": [
     {
+      "id": "phase_0",
       "index": 0,
-      "file": "PHASE_00_FREEZE_AUTO_DIAGNOSTIC.md",
-      "title": "Freeze Full Auto as AUTO_DIAGNOSTIC",
-      "goal": "Stop treating current full-auto as production path."
+      "display_name": "Freeze Full Auto as AUTO_DIAGNOSTIC",
+      "file": "docs/agent-orchestration/phases/PHASE_00_FREEZE_AUTO_DIAGNOSTIC.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_1",
       "index": 1,
-      "file": "PHASE_01_SHARED_CONTRACTS_STATE.md",
-      "title": "Shared Contracts + GuidedDigitizationState",
-      "goal": "Create stable guided workflow contracts and persistent state machine."
+      "display_name": "Shared Contracts + GuidedDigitizationState",
+      "file": "docs/agent-orchestration/phases/PHASE_01_SHARED_CONTRACTS_STATE.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_2",
       "index": 2,
-      "file": "PHASE_02_GUIDED_GRAPH_PANEL_PLOT_AREA_EDITOR.md",
-      "title": "Guided GraphPanel / PlotArea Editor",
-      "goal": "User confirms/edits graphPanel and plotArea."
+      "display_name": "Guided GraphPanel / PlotArea Editor",
+      "file": "docs/agent-orchestration/phases/PHASE_02_GUIDED_GRAPH_PANEL_PLOT_AREA_EDITOR.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_3",
       "index": 3,
-      "file": "PHASE_03_GUIDED_XY_CALIBRATION.md",
-      "title": "Guided X/Y Calibration",
-      "goal": "User places calibration anchors and validates residuals."
+      "display_name": "Guided X/Y Calibration",
+      "file": "docs/agent-orchestration/phases/PHASE_03_GUIDED_XY_CALIBRATION.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_4",
       "index": 4,
-      "file": "PHASE_04_TRACE_OVERLAY_CONFIRMATION.md",
-      "title": "Trace Overlay Confirmation",
-      "goal": "Trace extraction is reviewed/confirmed before calculations."
+      "display_name": "Trace Overlay Confirmation",
+      "file": "docs/agent-orchestration/phases/PHASE_04_TRACE_OVERLAY_CONFIRMATION.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_5",
       "index": 5,
-      "file": "PHASE_05_PEAK_REVIEW_EDIT_WORKFLOW.md",
-      "title": "Peak Review and Edit Workflow",
-      "goal": "User reviews/adds/removes/merges/splits peaks and boundaries."
+      "display_name": "Peak Review and Edit Workflow",
+      "file": "docs/agent-orchestration/phases/PHASE_05_PEAK_REVIEW_EDIT_WORKFLOW.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_6",
       "index": 6,
-      "file": "PHASE_06_SAFE_VLM_ASSISTANT_LAYER.md",
-      "title": "Safe VLM Assistant Layer",
-      "goal": "Use VLM as OCR/semantic/judge assistant only."
+      "display_name": "Safe VLM Assistant Layer",
+      "file": "docs/agent-orchestration/phases/PHASE_06_SAFE_VLM_ASSISTANT_LAYER.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_7",
       "index": 7,
-      "file": "PHASE_07_EVIDENCE_BASED_RELEASE_REPORT.md",
-      "title": "Evidence-Based Release Report",
-      "goal": "Final report only after gates pass; otherwise diagnostic/review."
+      "display_name": "Evidence-Based Release Report",
+      "file": "docs/agent-orchestration/phases/PHASE_07_EVIDENCE_BASED_RELEASE_REPORT.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     },
     {
+      "id": "phase_8",
       "index": 8,
-      "file": "PHASE_08_FULL_REGRESSION_ALL_GRAPHS.md",
-      "title": "Full Regression Across All Graphs",
-      "goal": "Run all known graph types through all modes and close gaps."
+      "display_name": "Full Regression Across All Graphs",
+      "file": "docs/agent-orchestration/phases/PHASE_08_FULL_REGRESSION_ALL_GRAPHS.md",
+      "owner_group": "phase_contracts",
+      "required_activation_conditions": [
+        "sequential phase execution"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_skills": [
+        "current-web-research-deep",
+        "source-quality-triage",
+        "test-plan-authoring"
+      ]
     }
   ]
 }

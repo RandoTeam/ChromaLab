@@ -1,43 +1,13 @@
-# ChromaLab Agent System
+# ChromaLab Orchestration Agents
 
-## Core agents
+- `AGENT_00_ORCHESTRATOR`: Orchestrator / Lead Architect -> `agents/AGENT_00_ORCHESTRATOR.md`
+- `AGENT_01_GUIDED_WORKFLOW_UI`: Guided Workflow / UI / State Machine -> `agents/AGENT_01_GUIDED_WORKFLOW_UI.md`
+- `AGENT_02_GEOMETRY_CALIBRATION`: Geometry / Calibration Core -> `agents/AGENT_02_GEOMETRY_CALIBRATION.md`
+- `AGENT_03_OCR_VLM_TEXT`: OCR / VLM / Text Semantics -> `agents/AGENT_03_OCR_VLM_TEXT.md`
+- `AGENT_04_TRACE_PEAK_REVIEW`: Trace Extraction / Peak Review -> `agents/AGENT_04_TRACE_PEAK_REVIEW.md`
+- `AGENT_05_QA_EVIDENCE_RELEASE`: QA / Evidence / Benchmark / Release Gate -> `agents/AGENT_05_QA_EVIDENCE_RELEASE.md`
+- `AGENT_06_ANDROID_RUNTIME_PERFORMANCE`: Android Runtime / Performance / Storage -> `agents/AGENT_06_ANDROID_RUNTIME_PERFORMANCE.md`
+- `AGENT_07_SCIENTIFIC_REPORT_PROVENANCE`: Scientific Report / Provenance -> `agents/AGENT_07_SCIENTIFIC_REPORT_PROVENANCE.md`
+- `AGENT_08_SECURITY_PRIVACY`: Security / Privacy / Data Handling -> `agents/AGENT_08_SECURITY_PRIVACY.md`
 
-1. **Orchestrator / Lead Architect**
-   - Владение архитектурой, контрактами, фазами, merge order, regression gates.
-
-2. **Agent 1 — Guided Workflow / UI / State Machine**
-   - Guided flow, Compose UI, zoom/pan, draggable ROI, state persistence.
-
-3. **Agent 2 — Geometry / Calibration Core**
-   - graphPanel, plotArea, axes, ticks, calibration anchors, robust fits, residuals.
-
-4. **Agent 3 — OCR / VLM / Text Semantics**
-   - ML Kit OCR, VLM local crop OCR, text classification, prompt contracts, safety boundaries.
-
-5. **Agent 4 — Trace Extraction / Peak Review**
-   - trace masks, text suppression, trace confirmation, peak overlay, user peak edits.
-
-6. **Agent 5 — QA / Evidence / Benchmark / Release Gate**
-   - evidence packages, validators, regression matrix, Android artifact validation, release gates.
-
-## Support agents, activated when needed
-
-7. **Agent 6 — Android Runtime / Performance / Storage**
-   - timeouts, threading, storage, Downloads export, logcat, device validation, performance.
-
-8. **Agent 7 — Scientific Report / Provenance**
-   - report contract, audit trail, provenance, diagnostic vs release report, user-facing clarity.
-
-9. **Agent 8 — Security / Privacy / Data Handling**
-   - local files, private storage, export hygiene, no sensitive leakage, cleanup policies.
-
-## Common rule
-
-Каждый агент обязан:
-
-- выбрать нужные skills из `skills/SKILL_INDEX.md`;
-- выполнить web research до реализации;
-- записать research notes;
-- добавить tests;
-- обновить evidence/validator при изменении runtime behavior;
-- не закрывать задачу без acceptance evidence.
+This is an orchestration document. Do not modify application logic, CalculationEngine, geometry, OCR, VLM runtime, Android runtime, report rendering, UI implementation, tests, or chromatographic math unless a later active phase explicitly allows it.

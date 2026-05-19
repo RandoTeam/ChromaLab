@@ -1,55 +1,86 @@
-# Phase 0 Expansion Patch Prompt
+# Prompt: PHASE0_EXPANDED_ORCHESTRATION_PATCH
 
-Use this prompt after installing the expansion pack if Phase 0 used too few agents.
+## Context
 
-You are working in the ChromaLab repository.
+You are working in the ChromaLab repository using the installed agent orchestration system.
 
-Phase 0 previously used too few agents. Re-open Phase 0 as REVIEW and run an expanded cross-agent pass.
+## Goal
 
-Do not modify application logic unless a specific missing gate/test/doc requires a minimal safe change.
-Do not rewrite CalculationEngine.
-Do not start Phase 1.
+Execute `PHASE0_EXPANDED_ORCHESTRATION_PATCH` with Orchestrator governance and phase-specific gates.
 
-Activate at least:
-- Research Intelligence Agent
-- QA / Regression Agent
-- Scientific Reporting & Validation Agent
-- Chromatography SME Agent
-- VLM Evaluation Agent
-- Product Acceptance Agent
-- Security & Privacy Agent if runtime evidence/export is touched
-- Mobile UX Architect if UI text/mode naming is touched
-- Visual Design System Agent if any UI/report styling is touched
+## Scope
 
-Required checks:
-1. Verify Phase 0 research notes exist and are current.
-2. Verify AUTO_DIAGNOSTIC / GUIDED_PRODUCTION / MANUAL_ADVANCED are documented.
-3. Verify release gates prevent false release-quality claims.
-4. Verify RuntimeEvidencePackage terminal-state guarantees are documented/tested.
-5. Verify VLM boundary rules are documented/tested.
-6. Verify chromatographic terminology and report caveats are SME-reviewed.
-7. Verify validator/report gate tests exist.
-8. Verify product acceptance criteria are explicit.
-9. Verify privacy/storage/export risks for evidence packages are recorded.
+- Use required agents from the activation matrix.
+- Keep work within the named phase or setup task.
+- Produce evidence, validation, and closeout notes.
 
-Create:
-- docs/PHASE0_EXPANDED_AGENT_REVIEW.md
-- docs/PHASE0_PRODUCT_ACCEPTANCE_REVIEW.md
-- docs/PHASE0_SME_SCIENTIFIC_REVIEW.md
-- docs/PHASE0_VLM_BOUNDARY_REVIEW.md
-- docs/PHASE0_QA_REGRESSION_REVIEW.md
+## Out Of Scope
 
-Run:
-- git diff --check
-- compileKotlinDesktop
-- assembleAndroidMain
-- desktopTest --rerun-tasks if feasible
-- targeted validator/report gate tests
+- Application code changes when documentation/configuration-only.
+- CalculationEngine rewrite.
+- Geometry, OCR, VLM, Android runtime, report, UI, or scientific calculation changes unless the active phase explicitly allows them.
+- Phase jumping.
 
-Final response:
-- agents activated;
-- skills used;
-- files changed;
-- tests run;
-- whether Phase 0 can close;
-- commit hash.
+## Required Agents
+
+- AGENT_00_ORCHESTRATOR
+- research_intelligence_agent
+- qa_regression_agent
+- product_acceptance_agent
+- Additional domain agents required by activation matrix.
+
+## Required Skills
+
+- current-web-research-deep
+- source-quality-triage
+- definition-of-done
+- test-plan-authoring
+
+## Required Web Research
+
+Current web research requirement:
+Assume model knowledge is outdated. Before changing behavior or approving a technical direction, use current-web-research-deep and source-quality-triage, prefer official docs and maintained repositories, save notes under docs/research/, and document adoption/rejection rationale.
+
+## Files To Inspect
+
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
+- Relevant phase, protocol, prompt, skill, and registry files.
+
+## Required Changes
+
+- Make only changes allowed by the active phase.
+- Update docs/contracts/registries when behavior expectations change.
+- Preserve previous phase guarantees.
+
+## Tests
+
+- Always run `git diff --check` for docs/config changes.
+- Parse JSON/YAML registries when edited.
+- Run Gradle/runtime tests only when product behavior changes.
+
+## Validation
+
+Record changed files, evidence artifacts, research notes, tests, failures, and risk classification.
+
+## Commit Instructions
+
+Create one focused commit. Do not stage unrelated dirty files.
+
+## Final Response Format
+
+Changed:
+- ...
+
+Files:
+- ...
+
+Validation:
+- ...
+
+Notes:
+- ...
+
+## Anti-Overfit Rules
+
+No fixture-specific hacks, no hardcoded image coordinates, no VLM numeric truth, no weakened regression expectations, and no production-ready claims without evidence gates.

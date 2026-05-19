@@ -1,129 +1,33 @@
+orchestrator:
+  mandatory_for: [every phase, every phase closeout, any scope change, any release gate decision]
 global_minimum:
-  any_phase:
-  - research_intelligence_agent
-  - qa_regression_agent
-  - product_acceptance_agent
-  all_tasks_requiring_current_technical_methods:
-  - research_intelligence_agent
-  if_user_facing:
-  - research_intelligence_agent
-  - mobile_ux_architect_agent
-  - visual_design_system_agent
-  - accessibility_localization_agent
-  if_android_kmp_compose_changes:
-  - research_intelligence_agent
-  if_geometry_or_calibration:
-  - research_intelligence_agent
-  if_ocr_or_vlm:
-  - research_intelligence_agent
-  if_scientific_report:
-  - research_intelligence_agent
-  - chromatography_sme_agent
-  - scientific_reporting_validation_agent
-  if_android_runtime_or_vlm:
-  - research_intelligence_agent
-  - android_performance_ondevice_ai_agent
-  - vlm_evaluation_agent
-  if_exports_or_logs:
-  - research_intelligence_agent
-  - security_privacy_agent
-  if_report_or_evidence:
-  - research_intelligence_agent
-  if_ux_or_design:
-  - research_intelligence_agent
-  if_scientific_or_chromatography_claims:
-  - research_intelligence_agent
-research_intelligence_agent_mandatory_for:
-- all phases
-- all tasks requiring current technical methods
-- Android/KMP/Compose changes
-- OCR/VLM changes
-- geometry/calibration changes
-- report/evidence changes
-- security/privacy changes
-- UX/design changes
-- scientific/chromatography claims
+  any_phase: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, qa_regression_agent, product_acceptance_agent]
+  all_technical_changes: [research_intelligence_agent, qa_regression_agent]
+  before_phase_closeout: [AGENT_00_ORCHESTRATOR, qa_regression_agent, product_acceptance_agent]
+conditional_mandatory_agents:
+  report_evidence_scientific_claims_release_gates: [scientific_reporting_validation_agent, chromatography_sme_agent, qa_regression_agent]
+  peak_baseline_rt_kovats_sn_area_integration: [chromatography_sme_agent, scientific_reporting_validation_agent, qa_regression_agent]
+  guided_workflow_user_confirmation_error_recovery_mobile_flow: [mobile_ux_architect_agent, accessibility_localization_agent, qa_regression_agent]
+  ui_report_visual_style_colors_typography_layout: [visual_design_system_agent, mobile_ux_architect_agent, accessibility_localization_agent]
+  jetpack_compose_kmp_ui_implementation: [compose_kmp_ui_agent, mobile_ux_architect_agent, visual_design_system_agent, accessibility_localization_agent]
+  ocr_vlm_model_behavior: [vlm_evaluation_agent, android_performance_ondevice_ai_agent, security_privacy_agent]
+  android_runtime_latency_memory_thermal_local_model_inference: [android_performance_ondevice_ai_agent, qa_regression_agent]
+  exports_images_logs_evidence_packages_report_sharing: [security_privacy_agent, scientific_reporting_validation_agent]
+  user_facing_ui_report_text: [accessibility_localization_agent, mobile_ux_architect_agent]
+aliases:
+  geometry_calibration_core_agent: AGENT_02_GEOMETRY_CALIBRATION
+  trace_extraction_peak_review_agent: AGENT_04_TRACE_PEAK_REVIEW
 mandatory_skills:
-  current-web-research-deep:
-  - all phases
-  - all agents before implementation
-  - Android/KMP/Compose changes
-  - OCR/VLM changes
-  - geometry/calibration changes
-  - report/evidence changes
-  - security/privacy changes
-  - UX/design changes
-  - scientific/chromatography claims
-  source-quality-triage:
-  - whenever current-web-research-deep is used
-  - Android/KMP/Compose changes
-  - OCR/VLM changes
-  - geometry/calibration changes
-  - report/evidence changes
-  - security/privacy changes
-  - UX/design changes
-  - scientific/chromatography claims
+  current-web-research-deep: [all phases, all agents before implementation, Android/KMP/Compose changes, OCR/VLM changes, geometry/calibration changes, report/evidence changes, security/privacy changes, UX/design changes, scientific/chromatography claims]
+  source-quality-triage: [whenever current-web-research-deep is used, Android/KMP/Compose changes, OCR/VLM changes, geometry/calibration changes, report/evidence changes, security/privacy changes, UX/design changes, scientific/chromatography claims]
 phase_requirements:
-  phase_0:
-  - research_intelligence_agent
-  - qa_regression_agent
-  - scientific_reporting_validation_agent
-  - product_acceptance_agent
-  - chromatography_sme_agent
-  - vlm_evaluation_agent
-  phase_1:
-  - research_intelligence_agent
-  - mobile_ux_architect_agent
-  - compose_kmp_ui_agent
-  - qa_regression_agent
-  - product_acceptance_agent
-  phase_2:
-  - research_intelligence_agent
-  - mobile_ux_architect_agent
-  - visual_design_system_agent
-  - compose_kmp_ui_agent
-  - accessibility_localization_agent
-  - qa_regression_agent
-  - product_acceptance_agent
-  phase_3:
-  - research_intelligence_agent
-  - geometry_calibration_core_agent
-  - chromatography_sme_agent
-  - mobile_ux_architect_agent
-  - qa_regression_agent
-  - product_acceptance_agent
-  phase_4:
-  - research_intelligence_agent
-  - trace_extraction_peak_review_agent
-  - mobile_ux_architect_agent
-  - visual_design_system_agent
-  - qa_regression_agent
-  - product_acceptance_agent
-  phase_5:
-  - research_intelligence_agent
-  - trace_extraction_peak_review_agent
-  - chromatography_sme_agent
-  - scientific_reporting_validation_agent
-  - mobile_ux_architect_agent
-  - qa_regression_agent
-  phase_6:
-  - vlm_evaluation_agent
-  - android_performance_ondevice_ai_agent
-  - research_intelligence_agent
-  - qa_regression_agent
-  - security_privacy_agent
-  phase_7:
-  - research_intelligence_agent
-  - scientific_reporting_validation_agent
-  - chromatography_sme_agent
-  - visual_design_system_agent
-  - accessibility_localization_agent
-  - qa_regression_agent
-  phase_8:
-  - qa_regression_agent
-  - product_acceptance_agent
-  - research_intelligence_agent
-  - security_privacy_agent
-closure_rule: Orchestrator must list activated agents and used skills in every phase
-  closeout. If fewer than required agents were used, phase is REVIEW_ONLY and cannot
-  close.
+  phase_0: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, qa_regression_agent, scientific_reporting_validation_agent, chromatography_sme_agent, vlm_evaluation_agent, security_privacy_agent, product_acceptance_agent]
+  phase_1: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, mobile_ux_architect_agent, compose_kmp_ui_agent, qa_regression_agent, product_acceptance_agent]
+  phase_2: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, mobile_ux_architect_agent, visual_design_system_agent, compose_kmp_ui_agent, accessibility_localization_agent, qa_regression_agent, product_acceptance_agent]
+  phase_3: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, AGENT_02_GEOMETRY_CALIBRATION, chromatography_sme_agent, scientific_reporting_validation_agent, mobile_ux_architect_agent, qa_regression_agent, product_acceptance_agent]
+  phase_4: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, AGENT_04_TRACE_PEAK_REVIEW, chromatography_sme_agent, scientific_reporting_validation_agent, mobile_ux_architect_agent, visual_design_system_agent, qa_regression_agent, product_acceptance_agent]
+  phase_5: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, AGENT_04_TRACE_PEAK_REVIEW, chromatography_sme_agent, scientific_reporting_validation_agent, mobile_ux_architect_agent, qa_regression_agent, product_acceptance_agent]
+  phase_6: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, vlm_evaluation_agent, android_performance_ondevice_ai_agent, security_privacy_agent, qa_regression_agent, product_acceptance_agent]
+  phase_7: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, scientific_reporting_validation_agent, chromatography_sme_agent, visual_design_system_agent, accessibility_localization_agent, security_privacy_agent, qa_regression_agent, product_acceptance_agent]
+  phase_8: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, qa_regression_agent, product_acceptance_agent, security_privacy_agent, scientific_reporting_validation_agent]
+closure_rule: Orchestrator must list activated agents and used skills in every phase closeout. If fewer than required agents were used, phase is REVIEW_ONLY and cannot close.

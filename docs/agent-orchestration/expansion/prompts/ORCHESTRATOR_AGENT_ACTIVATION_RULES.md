@@ -1,27 +1,86 @@
-# Orchestrator Agent Activation Rules
+# Prompt: ORCHESTRATOR_AGENT_ACTIVATION_RULES
 
-## Mandatory activation
-Codex/Orchestrator must not run major phases with only 1-2 agents.
+## Context
 
-Minimum per phase:
-- Research Intelligence Agent
-- Domain implementation/review agent
-- QA / Regression Agent
-- Product Acceptance Agent
+You are working in the ChromaLab repository using the installed agent orchestration system.
 
-Additional:
-- UI-facing work: Mobile UX + Visual Design + Accessibility/Localization.
-- Scientific/report work: Chromatography SME + Scientific Reporting.
-- Android/runtime/VLM work: Android Performance + VLM Evaluation.
-- Export/log/artifact work: Security & Privacy.
+## Goal
 
-## Phase closeout must state
-- activated agents;
-- skills used;
-- research notes produced;
-- tests run;
-- regression status;
-- unresolved risks;
-- product acceptance result.
+Execute `ORCHESTRATOR_AGENT_ACTIVATION_RULES` with Orchestrator governance and phase-specific gates.
 
-If this section is missing, the phase is not closed.
+## Scope
+
+- Use required agents from the activation matrix.
+- Keep work within the named phase or setup task.
+- Produce evidence, validation, and closeout notes.
+
+## Out Of Scope
+
+- Application code changes when documentation/configuration-only.
+- CalculationEngine rewrite.
+- Geometry, OCR, VLM, Android runtime, report, UI, or scientific calculation changes unless the active phase explicitly allows them.
+- Phase jumping.
+
+## Required Agents
+
+- AGENT_00_ORCHESTRATOR
+- research_intelligence_agent
+- qa_regression_agent
+- product_acceptance_agent
+- Additional domain agents required by activation matrix.
+
+## Required Skills
+
+- current-web-research-deep
+- source-quality-triage
+- definition-of-done
+- test-plan-authoring
+
+## Required Web Research
+
+Current web research requirement:
+Assume model knowledge is outdated. Before changing behavior or approving a technical direction, use current-web-research-deep and source-quality-triage, prefer official docs and maintained repositories, save notes under docs/research/, and document adoption/rejection rationale.
+
+## Files To Inspect
+
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
+- Relevant phase, protocol, prompt, skill, and registry files.
+
+## Required Changes
+
+- Make only changes allowed by the active phase.
+- Update docs/contracts/registries when behavior expectations change.
+- Preserve previous phase guarantees.
+
+## Tests
+
+- Always run `git diff --check` for docs/config changes.
+- Parse JSON/YAML registries when edited.
+- Run Gradle/runtime tests only when product behavior changes.
+
+## Validation
+
+Record changed files, evidence artifacts, research notes, tests, failures, and risk classification.
+
+## Commit Instructions
+
+Create one focused commit. Do not stage unrelated dirty files.
+
+## Final Response Format
+
+Changed:
+- ...
+
+Files:
+- ...
+
+Validation:
+- ...
+
+Notes:
+- ...
+
+## Anti-Overfit Rules
+
+No fixture-specific hacks, no hardcoded image coordinates, no VLM numeric truth, no weakened regression expectations, and no production-ready claims without evidence gates.

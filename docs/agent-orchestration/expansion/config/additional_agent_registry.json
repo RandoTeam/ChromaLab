@@ -1,9 +1,11 @@
 {
   "research_intelligence_agent": {
-    "name": "Research Intelligence Agent",
+    "id": "research_intelligence_agent",
+    "display_name": "Research Intelligence Agent",
     "file": "docs/agent-orchestration/expansion/agents/research_intelligence_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Perform deep current web research before design or implementation decisions.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "all phases",
       "all tasks requiring current technical methods",
       "library decisions",
@@ -19,7 +21,7 @@
       "OCR/VLM changes",
       "Android runtime"
     ],
-    "skills": [
+    "related_skills": [
       "current-web-research-deep",
       "source-quality-triage",
       "research-synthesis",
@@ -33,16 +35,19 @@
     "closure_gate": "No phase can close if required research notes are missing."
   },
   "mobile_ux_architect_agent": {
-    "name": "Mobile UX Architect Agent",
+    "id": "mobile_ux_architect_agent",
+    "display_name": "Mobile UX Architect Agent",
+    "file": "docs/agent-orchestration/expansion/agents/mobile_ux_architect_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Design the mobile workflow, user tasks, friction reduction, guided production flow, and error recovery.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "guided workflow",
       "manual calibration",
       "trace review",
       "peak review",
       "export/report UI"
     ],
-    "skills": [
+    "related_skills": [
       "mobile-ux-flow-design",
       "interaction-state-machine",
       "error-recovery-ux",
@@ -56,16 +61,19 @@
     "closure_gate": "UI changes cannot close without UX acceptance."
   },
   "visual_design_system_agent": {
-    "name": "Visual Design System Agent",
+    "id": "visual_design_system_agent",
+    "display_name": "Visual Design System Agent",
+    "file": "docs/agent-orchestration/expansion/agents/visual_design_system_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Create non-generic, professional visual system for ChromaLab: colors, typography, spacing, components, overlays.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "guided UI",
       "report UI",
       "charts/overlays",
       "export surfaces",
       "brand refresh"
     ],
-    "skills": [
+    "related_skills": [
       "visual-design-system",
       "scientific-ui-color-system",
       "typography-scale",
@@ -79,15 +87,18 @@
     "closure_gate": "User-facing screens cannot ship with default/generic Codex styling without design review."
   },
   "compose_kmp_ui_agent": {
-    "name": "Compose/KMP UI Implementation Agent",
+    "id": "compose_kmp_ui_agent",
+    "display_name": "Compose/KMP UI Implementation Agent",
+    "file": "docs/agent-orchestration/expansion/agents/compose_kmp_ui_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Implement Compose Multiplatform and Android UI screens from UX/design specifications.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "any Compose UI change",
       "canvas/annotation screens",
       "report preview",
       "export screen"
     ],
-    "skills": [
+    "related_skills": [
       "compose-kmp-implementation",
       "zoom-pan-annotation-ui",
       "state-restoration",
@@ -101,16 +112,19 @@
     "closure_gate": "Implementation must match UX and visual design specs."
   },
   "chromatography_sme_agent": {
-    "name": "Chromatography SME Agent",
+    "id": "chromatography_sme_agent",
+    "display_name": "Chromatography SME Agent",
+    "file": "docs/agent-orchestration/expansion/agents/chromatography_sme_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Review chromatographic terminology, peak metrics, report semantics, Kovats/retention index logic, and scientific caveats.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "peak table",
       "Kovats",
       "chromatographic quality",
       "report language",
       "domain validation"
     ],
-    "skills": [
+    "related_skills": [
       "chromatography-domain-review",
       "peak-metric-semantics",
       "kovats-ri-review",
@@ -124,15 +138,18 @@
     "closure_gate": "Scientific reports cannot close without SME review."
   },
   "scientific_reporting_validation_agent": {
-    "name": "Scientific Reporting & Validation Agent",
+    "id": "scientific_reporting_validation_agent",
+    "display_name": "Scientific Reporting & Validation Agent",
+    "file": "docs/agent-orchestration/expansion/agents/scientific_reporting_validation_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Ensure reports separate measured, calculated, inferred, user-confirmed, and diagnostic-only values.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "report contract",
       "HTML/Markdown/PDF-ready report",
       "release gating",
       "audit trail"
     ],
-    "skills": [
+    "related_skills": [
       "scientific-report-provenance",
       "evidence-gated-reporting",
       "uncertainty-labeling",
@@ -146,16 +163,19 @@
     "closure_gate": "No report release without evidence/provenance review."
   },
   "android_performance_ondevice_ai_agent": {
-    "name": "Android Performance & On-Device AI Agent",
+    "id": "android_performance_ondevice_ai_agent",
+    "display_name": "Android Performance & On-Device AI Agent",
+    "file": "docs/agent-orchestration/expansion/agents/android_performance_ondevice_ai_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Optimize Android runtime, memory, local VLM execution, timeouts, caching, thermal/performance behavior.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "VLM",
       "OCR runtime",
       "camera/gallery flow",
       "evidence export",
       "long-running pipeline"
     ],
-    "skills": [
+    "related_skills": [
       "android-runtime-profiling",
       "on-device-model-budgeting",
       "timeout-cache-design",
@@ -169,15 +189,18 @@
     "closure_gate": "No long-running analysis stage without performance budget and timeout policy."
   },
   "vlm_evaluation_agent": {
-    "name": "VLM Evaluation Agent",
+    "id": "vlm_evaluation_agent",
+    "display_name": "VLM Evaluation Agent",
+    "file": "docs/agent-orchestration/expansion/agents/vlm_evaluation_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Evaluate Gemma/Qwen/VLM behavior on local crops and overlay judging with strict non-numeric boundaries.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "VLM OCR",
       "overlay judge",
       "model selection",
       "prompt schema"
     ],
-    "skills": [
+    "related_skills": [
       "vlm-evaluation-harness",
       "structured-vlm-json-contract",
       "vlm-hallucination-audit",
@@ -191,12 +214,15 @@
     "closure_gate": "VLM use cannot close without hallucination and boundary audit."
   },
   "qa_regression_agent": {
-    "name": "QA / Regression Agent",
+    "id": "qa_regression_agent",
+    "display_name": "QA / Regression Agent",
+    "file": "docs/agent-orchestration/expansion/agents/qa_regression_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Own tests, fixtures, real-device validation, golden artifacts, and regression matrix.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "all phases"
     ],
-    "skills": [
+    "related_skills": [
       "regression-matrix",
       "golden-artifact-testing",
       "real-device-validation",
@@ -210,16 +236,19 @@
     "closure_gate": "No phase closes without QA sign-off."
   },
   "security_privacy_agent": {
-    "name": "Security & Privacy Agent",
+    "id": "security_privacy_agent",
+    "display_name": "Security & Privacy Agent",
+    "file": "docs/agent-orchestration/expansion/agents/security_privacy_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Review local image handling, storage, export, logs, model artifacts, and user privacy.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "export",
       "runtime artifacts",
       "image storage",
       "logs",
       "sharing"
     ],
-    "skills": [
+    "related_skills": [
       "android-storage-privacy",
       "artifact-redaction",
       "secure-export-review",
@@ -233,14 +262,17 @@
     "closure_gate": "Evidence exports cannot ship without privacy/storage review."
   },
   "accessibility_localization_agent": {
-    "name": "Accessibility & Localization Agent",
+    "id": "accessibility_localization_agent",
+    "display_name": "Accessibility & Localization Agent",
+    "file": "docs/agent-orchestration/expansion/agents/accessibility_localization_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Ensure UI is usable with accessibility, Russian/English labels, font scaling, contrast, touch targets.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "all user-facing UI",
       "report UI",
       "guided editors"
     ],
-    "skills": [
+    "related_skills": [
       "mobile-accessibility-review",
       "localization-ru-en",
       "contrast-touch-target-audit",
@@ -254,14 +286,17 @@
     "closure_gate": "User-facing screens cannot close without accessibility/localization review."
   },
   "product_acceptance_agent": {
-    "name": "Product Acceptance Agent",
+    "id": "product_acceptance_agent",
+    "display_name": "Product Acceptance Agent",
+    "file": "docs/agent-orchestration/expansion/agents/product_acceptance_agent.md",
+    "owner_group": "expanded_specialist_agents",
     "mission": "Translate technical phase results into product acceptance: usable, honest, and aligned with target workflows.",
-    "must_activate_for": [
+    "required_activation_conditions": [
       "all phase closeouts",
       "user workflow changes",
       "report acceptance"
     ],
-    "skills": [
+    "related_skills": [
       "acceptance-criteria-design",
       "product-risk-review",
       "workflow-demo-script",

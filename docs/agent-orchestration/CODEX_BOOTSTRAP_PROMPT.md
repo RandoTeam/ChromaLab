@@ -1,43 +1,86 @@
-# Codex Bootstrap Prompt — ChromaLab Guided Production Architecture
+# Prompt: CODEX_BOOTSTRAP_PROMPT
 
-Ты — Orchestrator / Lead Architect проекта ChromaLab Android/KMP.
+## Context
 
-Прочитай весь пакет инструкций:
+You are working in the ChromaLab repository using the installed agent orchestration system.
 
-1. `AGENTS.md`
-2. `protocols/GLOBAL_RULES.md`
-3. `protocols/QUALITY_GATES.md`
-4. `protocols/WEB_RESEARCH_PROTOCOL.md`
-5. `protocols/VLM_BOUNDARIES.md`
-6. `protocols/REGRESSION_POLICY.md`
-7. `skills/SKILL_INDEX.md`
-8. `phases/PHASE_00_FREEZE_AUTO_DIAGNOSTIC.md`
-9. `prompts/CODEX_REQUEST_ORDER.md`
+## Goal
 
-Цель: перестать пытаться сделать fully-auto фото-анализ основным production path. Создать управляемую архитектуру:
+Execute `CODEX_BOOTSTRAP_PROMPT` with Orchestrator governance and phase-specific gates.
 
-- `AUTO_DIAGNOSTIC` — черновик/диагностика;
-- `GUIDED_PRODUCTION` — основной режим с пользовательским подтверждением геометрии, calibration, trace и peaks;
-- `MANUAL_ADVANCED` — fallback для сложных графиков.
+## Scope
 
-Критические правила:
+- Use required agents from the activation matrix.
+- Keep work within the named phase or setup task.
+- Produce evidence, validation, and closeout notes.
 
-- Не переписывать `CalculationEngine`, если нет доказанного бага.
-- Не использовать VLM/LLM как источник численных координат и метрик.
-- Не claims release-quality report без валидной или user-confirmed geometry/calibration/trace/peaks.
-- Не hardcode координаты, размеры, имена файлов, run ids или частные кейсы.
-- Каждый пункт требует web research, потому что знания модели могут быть устаревшими.
-- Research notes сохранять в `docs/research/YYYY-MM-DD_<topic>.md`.
-- После Phase 2 и далее каждый новый пункт проверять регрессией по всем предыдущим фазам.
+## Out Of Scope
 
-Начни с Phase 0 и Phase 1. Не приступай к Phase 2, пока не будут зафиксированы shared contracts и state machine.
+- Application code changes when documentation/configuration-only.
+- CalculationEngine rewrite.
+- Geometry, OCR, VLM, Android runtime, report, UI, or scientific calculation changes unless the active phase explicitly allows them.
+- Phase jumping.
 
-Ожидаемый первый ответ:
+## Required Agents
 
-1. Какие агенты активированы.
-2. Какие skills они используют.
-3. План Phase 0 и Phase 1.
-4. Какие web research темы будут проверены.
-5. Какие файлы будут созданы/изменены.
-6. Какие тесты будут добавлены.
-7. Как будет доказано отсутствие регрессии.
+- AGENT_00_ORCHESTRATOR
+- research_intelligence_agent
+- qa_regression_agent
+- product_acceptance_agent
+- Additional domain agents required by activation matrix.
+
+## Required Skills
+
+- current-web-research-deep
+- source-quality-triage
+- definition-of-done
+- test-plan-authoring
+
+## Required Web Research
+
+Current web research requirement:
+Assume model knowledge is outdated. Before changing behavior or approving a technical direction, use current-web-research-deep and source-quality-triage, prefer official docs and maintained repositories, save notes under docs/research/, and document adoption/rejection rationale.
+
+## Files To Inspect
+
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
+- Relevant phase, protocol, prompt, skill, and registry files.
+
+## Required Changes
+
+- Make only changes allowed by the active phase.
+- Update docs/contracts/registries when behavior expectations change.
+- Preserve previous phase guarantees.
+
+## Tests
+
+- Always run `git diff --check` for docs/config changes.
+- Parse JSON/YAML registries when edited.
+- Run Gradle/runtime tests only when product behavior changes.
+
+## Validation
+
+Record changed files, evidence artifacts, research notes, tests, failures, and risk classification.
+
+## Commit Instructions
+
+Create one focused commit. Do not stage unrelated dirty files.
+
+## Final Response Format
+
+Changed:
+- ...
+
+Files:
+- ...
+
+Validation:
+- ...
+
+Notes:
+- ...
+
+## Anti-Overfit Rules
+
+No fixture-specific hacks, no hardcoded image coordinates, no VLM numeric truth, no weakened regression expectations, and no production-ready claims without evidence gates.
