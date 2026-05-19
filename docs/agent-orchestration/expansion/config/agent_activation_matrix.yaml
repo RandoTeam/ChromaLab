@@ -3,18 +3,46 @@ global_minimum:
   - research_intelligence_agent
   - qa_regression_agent
   - product_acceptance_agent
+  all_tasks_requiring_current_technical_methods:
+  - research_intelligence_agent
   if_user_facing:
+  - research_intelligence_agent
   - mobile_ux_architect_agent
   - visual_design_system_agent
   - accessibility_localization_agent
+  if_android_kmp_compose_changes:
+  - research_intelligence_agent
+  if_geometry_or_calibration:
+  - research_intelligence_agent
+  if_ocr_or_vlm:
+  - research_intelligence_agent
   if_scientific_report:
+  - research_intelligence_agent
   - chromatography_sme_agent
   - scientific_reporting_validation_agent
   if_android_runtime_or_vlm:
+  - research_intelligence_agent
   - android_performance_ondevice_ai_agent
   - vlm_evaluation_agent
   if_exports_or_logs:
+  - research_intelligence_agent
   - security_privacy_agent
+  if_report_or_evidence:
+  - research_intelligence_agent
+  if_ux_or_design:
+  - research_intelligence_agent
+  if_scientific_or_chromatography_claims:
+  - research_intelligence_agent
+research_intelligence_agent_mandatory_for:
+- all phases
+- all tasks requiring current technical methods
+- Android/KMP/Compose changes
+- OCR/VLM changes
+- geometry/calibration changes
+- report/evidence changes
+- security/privacy changes
+- UX/design changes
+- scientific/chromatography claims
 phase_requirements:
   phase_0:
   - research_intelligence_agent
@@ -30,6 +58,7 @@ phase_requirements:
   - qa_regression_agent
   - product_acceptance_agent
   phase_2:
+  - research_intelligence_agent
   - mobile_ux_architect_agent
   - visual_design_system_agent
   - compose_kmp_ui_agent
@@ -37,18 +66,21 @@ phase_requirements:
   - qa_regression_agent
   - product_acceptance_agent
   phase_3:
+  - research_intelligence_agent
   - geometry_calibration_core_agent
   - chromatography_sme_agent
   - mobile_ux_architect_agent
   - qa_regression_agent
   - product_acceptance_agent
   phase_4:
+  - research_intelligence_agent
   - trace_extraction_peak_review_agent
   - mobile_ux_architect_agent
   - visual_design_system_agent
   - qa_regression_agent
   - product_acceptance_agent
   phase_5:
+  - research_intelligence_agent
   - trace_extraction_peak_review_agent
   - chromatography_sme_agent
   - scientific_reporting_validation_agent
@@ -61,6 +93,7 @@ phase_requirements:
   - qa_regression_agent
   - security_privacy_agent
   phase_7:
+  - research_intelligence_agent
   - scientific_reporting_validation_agent
   - chromatography_sme_agent
   - visual_design_system_agent

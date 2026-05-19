@@ -1,5 +1,11 @@
 # Additional ChromaLab Agents
 
+## Research Intelligence Agent
+
+- Registry id: `research_intelligence_agent`
+- Authoritative definition: `docs/agent-orchestration/expansion/agents/research_intelligence_agent.md`
+- Role: mandatory source-quality and current-method research gatekeeper for all phases and any task touching technical methods, Android/KMP/Compose, OCR/VLM, geometry/calibration, report/evidence, security/privacy, UX/design, or scientific/chromatography claims.
+
 - `research_intelligence_agent` — Research Intelligence Agent: Perform deep current web research before design or implementation decisions.
 - `mobile_ux_architect_agent` — Mobile UX Architect Agent: Design the mobile workflow, user tasks, friction reduction, guided production flow, and error recovery.
 - `visual_design_system_agent` — Visual Design System Agent: Create non-generic, professional visual system for ChromaLab: colors, typography, spacing, components, overlays.

@@ -1,13 +1,22 @@
 {
   "research_intelligence_agent": {
     "name": "Research Intelligence Agent",
+    "file": "docs/agent-orchestration/expansion/agents/research_intelligence_agent.md",
     "mission": "Perform deep current web research before design or implementation decisions.",
     "must_activate_for": [
       "all phases",
+      "all tasks requiring current technical methods",
       "library decisions",
+      "Android/KMP/Compose changes",
       "UI/UX/design",
+      "UX/design changes",
       "scientific methods",
+      "scientific/chromatography claims",
+      "geometry/calibration changes",
+      "report/evidence changes",
+      "security/privacy changes",
       "VLM/OCR",
+      "OCR/VLM changes",
       "Android runtime"
     ],
     "skills": [
