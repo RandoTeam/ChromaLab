@@ -1,5 +1,11 @@
 # Additional ChromaLab Skills
 
+## current-web-research-deep
+
+- Authoritative definition: `docs/agent-orchestration/expansion/skills/current-web-research-deep.md`
+- Owner agent: `research_intelligence_agent`
+- Mandatory for: all phases, all agents before implementation, Android/KMP/Compose changes, OCR/VLM changes, geometry/calibration changes, report/evidence changes, security/privacy changes, UX/design changes, and scientific/chromatography claims.
+
 - `current-web-research-deep` — Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact.
 - `source-quality-triage` — Grade sources by authority, recency, relevance, implementation maturity, and risk.
 - `research-synthesis` — Convert research into implementable project decisions with adoption/rejection rationale.

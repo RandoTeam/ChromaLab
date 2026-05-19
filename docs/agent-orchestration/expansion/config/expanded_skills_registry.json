@@ -1,5 +1,19 @@
 {
-  "current-web-research-deep": "Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact.",
+  "current-web-research-deep": {
+    "file": "docs/agent-orchestration/expansion/skills/current-web-research-deep.md",
+    "description": "Perform structured web research using official docs, maintained repos, peer-reviewed or high-quality sources; produce source matrix and decision impact.",
+    "mandatory_for": [
+      "all phases",
+      "all agents before implementation",
+      "Android/KMP/Compose changes",
+      "OCR/VLM changes",
+      "geometry/calibration changes",
+      "report/evidence changes",
+      "security/privacy changes",
+      "UX/design changes",
+      "scientific/chromatography claims"
+    ]
+  },
   "source-quality-triage": "Grade sources by authority, recency, relevance, implementation maturity, and risk.",
   "research-synthesis": "Convert research into implementable project decisions with adoption/rejection rationale.",
   "method-comparison-matrix": "Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance.",

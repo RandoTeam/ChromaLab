@@ -43,6 +43,17 @@ research_intelligence_agent_mandatory_for:
 - security/privacy changes
 - UX/design changes
 - scientific/chromatography claims
+mandatory_skills:
+  current-web-research-deep:
+  - all phases
+  - all agents before implementation
+  - Android/KMP/Compose changes
+  - OCR/VLM changes
+  - geometry/calibration changes
+  - report/evidence changes
+  - security/privacy changes
+  - UX/design changes
+  - scientific/chromatography claims
 phase_requirements:
   phase_0:
   - research_intelligence_agent
