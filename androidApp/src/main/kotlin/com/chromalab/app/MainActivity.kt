@@ -2,6 +2,7 @@ package com.chromalab.app
 
 import android.content.Intent
 import android.content.pm.ApplicationInfo
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        lockToPortrait()
         com.chromalab.core.data.DatabaseProvider.init(application)
         FileSharer.contextProvider = { applicationContext }
 
@@ -35,6 +37,11 @@ class MainActivity : ComponentActivity() {
         }
 
         handleDebugIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lockToPortrait()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -86,6 +93,12 @@ class MainActivity : ComponentActivity() {
                 requestedImagePath = imagePath,
                 requestedBackend = backend,
             )
+        }
+    }
+
+    private fun lockToPortrait() {
+        if (requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
 }
