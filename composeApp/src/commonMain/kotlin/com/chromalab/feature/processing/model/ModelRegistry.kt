@@ -77,8 +77,9 @@ data class ModelInfo(
     val defaultMtpDraftTokens: Int
         get() = when {
             !supportsMtp -> 0
-            id.contains("9b", ignoreCase = true) -> 8
-            else -> 10
+            family.equals("qwen3.5-mtp", ignoreCase = true) -> 6
+            id.contains("27b", ignoreCase = true) -> 2
+            else -> 6
         }
     val supportsMtp: Boolean
         get() {

@@ -465,6 +465,54 @@ Open validation:
 - For weak devices, prefer 4B low/medium quants and smaller context windows; do
   not weaken model output quality to hide hardware limits.
 
+## 2026-05-19 MTP Vulkan Freeze Audit
+
+The follow-up real-device run disproved the previous assumption that the main
+problem was only CPU fallback. The model loaded as:
+
+- `llama.cpp Vulkan (16 layers) + MTP draft-mtp(n=10)`.
+- Prompt was small: 341 chars / 85 tokens, `ctx=4096`, `batch=512`.
+- The run stalled in `llama_mtp_prompt_eval` before the first token; watchdog
+  logs continued past 90 seconds and the phone UI became nearly unresponsive.
+
+Upstream/current findings checked against llama.cpp and Unsloth on 2026-05-19:
+
+- llama.cpp names the method `draft-mtp` and exposes it via
+  `--spec-type draft-mtp`.
+- Unsloth Qwen3.5 4B/9B MTP model cards recommend `-fa on -np 1` and
+  `--spec-draft-n-max 6`.
+- Unsloth Qwen3.6 27B MTP currently recommends a smaller
+  `--spec-draft-n-max 2`, confirming that large draft windows are not a safe
+  universal default.
+- llama.cpp notes `--mmproj` is not supported with MTP, which matches the app's
+  text-only GGUF chat restriction.
+- Android Vulkan does not expose a usable ggml backend abort callback in this
+  llama.cpp tree, so a bad Vulkan prompt-prefill cannot be reliably interrupted
+  from the current JNI bridge.
+
+Implemented follow-up:
+
+- Qwen3.5 MTP default draft window is reduced to 6, matching Unsloth's current
+  4B/9B command line instead of the earlier app default of 10.
+- Chat `AUTO` for llama.cpp no longer silently selects Vulkan. Users can still
+  select Vulkan explicitly, but CPU is now the safe default for MTP models on
+  Android until a device/backend profile proves Vulkan stable.
+- Native MTP contexts now force `flash_attn=enabled`, matching the upstream
+  `-fa on` recommendation.
+- Native logs now include `n_ubatch` and `flash_attn` for target and MTP draft
+  contexts.
+- MTP prompt prefill is chunked through a bounded `n_ubatch` path to avoid a
+  single large prefill dispatch dominating UI responsiveness.
+
+Next validation:
+
+- Run Qwen3.5 MTP 4B/9B with CPU default first and record first-token latency,
+  acceptance, and tokens/second.
+- Then explicitly select Vulkan and compare. If Vulkan stalls before first token
+  again, keep it marked experimental for MTP on that device.
+- A future native profiling slice should add a dedicated short MTP backend probe
+  per device/model/quant before allowing AUTO to pick Vulkan.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.
@@ -492,3 +540,11 @@ Open validation:
   https://github.com/a-ghorbani/pocketpal-ai
 - Google AI Edge Gallery repository:
   https://github.com/google-ai-edge/gallery
+- llama.cpp speculative decoding documentation:
+  https://github.com/ggml-org/llama.cpp/blob/master/docs/speculative.md
+- Unsloth Qwen3.5 9B MTP GGUF model card:
+  https://huggingface.co/unsloth/Qwen3.5-9B-MTP-GGUF
+- Unsloth Qwen3.5 4B MTP GGUF model card:
+  https://huggingface.co/unsloth/Qwen3.5-4B-MTP-GGUF
+- Unsloth Qwen3.6 27B MTP GGUF model card:
+  https://huggingface.co/unsloth/Qwen3.6-27B-MTP-GGUF

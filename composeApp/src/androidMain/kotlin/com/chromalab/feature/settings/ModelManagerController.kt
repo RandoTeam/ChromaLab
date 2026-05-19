@@ -770,7 +770,11 @@ private fun ModelInfo.preferAcceleratedForChat(
 ): Boolean =
     when (runtime) {
         ModelRuntime.LITERT_LM -> runtimeAccelerator != ChatRuntimeAccelerator.CPU
-        ModelRuntime.LLAMA_CPP -> runtimeAccelerator != ChatRuntimeAccelerator.CPU
+        ModelRuntime.LLAMA_CPP -> if (supportsMtp) {
+            runtimeAccelerator == ChatRuntimeAccelerator.VULKAN
+        } else {
+            runtimeAccelerator != ChatRuntimeAccelerator.CPU
+        }
     }
 
 private fun ModelDownloadUiState.isRunningDownload(): Boolean =

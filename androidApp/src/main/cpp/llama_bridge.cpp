@@ -48,6 +48,7 @@ struct ModelContext {
     mtmd_context  *mtmd    = nullptr;   // null if no mmproj provided
     int            n_ctx   = 0;
     int            n_batch = 512;
+    int            n_ubatch = 512;
     int            mtp_draft_tokens = 0;
     std::string    backend_label = "llama.cpp CPU";
 };
@@ -1059,8 +1060,8 @@ static std::string run_text_completion_mtp(
         return "";
     }
 
-    LOGI("MTP text prompt tokenized: chars=%d tokens=%d n_predict=%d ctx=%d batch=%d draft_n_max=%d preview=%s",
-         prompt_len, n_tokens, n_predict, mc->n_ctx, mc->n_batch, mc->mtp_draft_tokens,
+    LOGI("MTP text prompt tokenized: chars=%d tokens=%d n_predict=%d ctx=%d batch=%d ubatch=%d draft_n_max=%d preview=%s",
+         prompt_len, n_tokens, n_predict, mc->n_ctx, mc->n_batch, mc->n_ubatch, mc->mtp_draft_tokens,
          one_line_preview(std::string(prompt)).c_str());
 
     const llama_seq_id seq_id = 0;
@@ -1107,7 +1108,11 @@ static std::string run_text_completion_mtp(
     prompt_tgt.reserve((size_t)mc->n_ctx);
 
     int n_past = 0;
-    const int batch_size = (mc->n_batch > 0) ? mc->n_batch : 512;
+    const int batch_size = std::clamp(
+        (mc->n_ubatch > 0) ? mc->n_ubatch : ((mc->n_batch > 0) ? mc->n_batch : 128),
+        32,
+        128
+    );
     const auto prompt_eval_started = std::chrono::steady_clock::now();
     for (int offset = 0; offset < (int)prompt_tgt.size(); offset += batch_size) {
         const int n_chunk = std::min(batch_size, (int)prompt_tgt.size() - offset);
@@ -1394,6 +1399,9 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
         env->ReleaseStringUTFChars(mmprojPath, mmproj);
         return 0;
     }
+    if (use_mtp && use_accelerated) {
+        LOGW("MTP with accelerated backend is experimental on Android Vulkan; CPU is the safe default unless Vulkan is selected explicitly");
+    }
 
     auto *mc = new ModelContext();
     mc->backend_label = use_accelerated ? accelerated_backend_label() : "llama.cpp CPU";
@@ -1447,12 +1455,20 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     llama_context_params ctx_params = llama_context_default_params();
     ctx_params.n_ctx     = std::clamp((int)contextSize, 1024, 32768);
     ctx_params.n_batch   = std::clamp((int)batchSize, 64, 512);
+    ctx_params.n_ubatch  = use_mtp
+        ? (uint32_t)std::clamp((int)ctx_params.n_batch, 64, 128)
+        : std::min<uint32_t>(ctx_params.n_batch, 512u);
     ctx_params.n_rs_seq  = use_mtp ? (uint32_t)requested_mtp_draft_tokens : 0u;
+    if (use_mtp) {
+        ctx_params.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
+    }
     ctx_params.n_threads = (threads > 0) ? threads : 4;
     ctx_params.n_threads_batch = ctx_params.n_threads;
-    LOGI("GGUF context params: n_ctx=%d n_batch=%d n_rs_seq=%d n_threads=%d n_threads_batch=%d",
+    LOGI("GGUF context params: n_ctx=%d n_batch=%d n_ubatch=%d n_rs_seq=%d flash_attn=%s n_threads=%d n_threads_batch=%d",
          (int)ctx_params.n_ctx, (int)ctx_params.n_batch,
+         (int)ctx_params.n_ubatch,
          (int)ctx_params.n_rs_seq,
+         llama_flash_attn_type_name(ctx_params.flash_attn_type),
          (int)ctx_params.n_threads, (int)ctx_params.n_threads_batch);
     {
         NativeStageWatchdog watchdog("llama_context_init", 30000, 30000);
@@ -1468,16 +1484,19 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeLoadModel(
     }
     mc->n_ctx = (int)llama_n_ctx(mc->ctx);
     mc->n_batch = (int)ctx_params.n_batch;
-    LOGI("Context created: n_ctx=%d", mc->n_ctx);
+    mc->n_ubatch = (int)llama_n_ubatch(mc->ctx);
+    LOGI("Context created: n_ctx=%d n_batch=%d n_ubatch=%d", mc->n_ctx, mc->n_batch, mc->n_ubatch);
 
     if (use_mtp) {
         llama_context_params mtp_params = ctx_params;
         mtp_params.ctx_type = LLAMA_CONTEXT_TYPE_MTP;
         mtp_params.n_rs_seq = 0;
 
-        LOGI("MTP draft context params: n_ctx=%d n_batch=%d draft_n_max=%d",
+        LOGI("MTP draft context params: n_ctx=%d n_batch=%d n_ubatch=%d flash_attn=%s draft_n_max=%d",
              (int)mtp_params.n_ctx,
              (int)mtp_params.n_batch,
+             (int)mtp_params.n_ubatch,
+             llama_flash_attn_type_name(mtp_params.flash_attn_type),
              requested_mtp_draft_tokens);
         {
             NativeStageWatchdog watchdog("llama_mtp_context_init", 30000, 30000);

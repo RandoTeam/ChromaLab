@@ -21,7 +21,7 @@ data class ChatSettings(
     val repeatLastN: Int = 128,
     val enableThinking: Boolean = false,
     val enableMtp: Boolean = true,
-    val mtpDraftTokens: Int = 10,
+    val mtpDraftTokens: Int = 6,
 )
 
 @Serializable
