@@ -2,6 +2,8 @@ package com.chromalab.feature.chat
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ChatMtpRuntimeProfileTest {
     @Test
@@ -28,6 +30,34 @@ class ChatMtpRuntimeProfileTest {
                 requestedDraftTokens = 6,
                 selectedAccelerator = ChatRuntimeAccelerator.CPU,
                 isConservativeDevice = true,
+            ),
+        )
+    }
+
+    @Test
+    fun androidMtpIsOnlyAutomaticForExplicitVulkanProfile() {
+        assertFalse(
+            ChatMtpRuntimeProfile.shouldEnableMtp(
+                selectedAccelerator = ChatRuntimeAccelerator.CPU,
+                isConservativeDevice = false,
+            ),
+        )
+        assertFalse(
+            ChatMtpRuntimeProfile.shouldEnableMtp(
+                selectedAccelerator = ChatRuntimeAccelerator.AUTO,
+                isConservativeDevice = false,
+            ),
+        )
+        assertFalse(
+            ChatMtpRuntimeProfile.shouldEnableMtp(
+                selectedAccelerator = ChatRuntimeAccelerator.VULKAN,
+                isConservativeDevice = true,
+            ),
+        )
+        assertTrue(
+            ChatMtpRuntimeProfile.shouldEnableMtp(
+                selectedAccelerator = ChatRuntimeAccelerator.VULKAN,
+                isConservativeDevice = false,
             ),
         )
     }

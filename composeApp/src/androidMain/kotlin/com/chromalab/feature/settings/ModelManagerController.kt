@@ -249,8 +249,13 @@ class ModelManagerController(
             (contextSize ?: info.defaultChatContextSize).coerceIn(1024, info.chatContextLimit)
         } ?: (contextSize ?: 4096).coerceIn(1024, 32768)
         val isConservativeDevice = manager.isConservativeDevice()
+        val androidMtpAllowed = requestedInfo?.supportsMtp == true &&
+            ChatMtpRuntimeProfile.shouldEnableMtp(
+                selectedAccelerator = runtimeAccelerator,
+                isConservativeDevice = isConservativeDevice,
+            )
         val requestedMtpDraftTokens =
-            if (requestedInfo?.supportsMtp == true) {
+            if (androidMtpAllowed) {
                 val modelDraftTokens = mtpDraftTokens
                     .takeIf { it > 0 }
                     ?.coerceIn(1, requestedInfo.maxMtpDraftTokens.coerceAtLeast(1))
@@ -261,6 +266,12 @@ class ModelManagerController(
                     isConservativeDevice = isConservativeDevice,
                 )
             } else {
+                if (requestedInfo?.supportsMtp == true && mtpDraftTokens > 0) {
+                    logModel(
+                        "MTP disabled by Android runtime profile: accelerator=$runtimeAccelerator " +
+                            "conservative=$isConservativeDevice reason=cpu_auto_mtp_ab_slow",
+                    )
+                }
                 0
             }
         val requestedContextSize =

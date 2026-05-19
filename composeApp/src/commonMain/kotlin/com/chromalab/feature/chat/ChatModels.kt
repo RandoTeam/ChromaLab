@@ -149,6 +149,12 @@ object ChatMtpRuntimeProfile {
             maxDraftTokens(selectedAccelerator, isConservativeDevice),
         )
 
+    fun shouldEnableMtp(
+        selectedAccelerator: ChatRuntimeAccelerator,
+        isConservativeDevice: Boolean,
+    ): Boolean =
+        !isConservativeDevice && selectedAccelerator == ChatRuntimeAccelerator.VULKAN
+
     fun coerceContextTokens(
         requestedContextTokens: Int,
         modelContextLimit: Int,

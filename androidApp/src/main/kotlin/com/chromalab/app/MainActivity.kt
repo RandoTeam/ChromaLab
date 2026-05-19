@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
+import com.chromalab.feature.processing.inference.MtpAbDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.settings.ModelManagerController
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "ChromaLabMain"
         private const val ACTION_DEBUG_GGUF_PARITY = "com.chromalab.app.DEBUG_GGUF_PARITY"
+        private const val ACTION_DEBUG_MTP_AB = "com.chromalab.app.DEBUG_MTP_AB"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,6 +74,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDebugIntent(intent: Intent?) {
+        if (intent?.action == ACTION_DEBUG_MTP_AB) {
+            handleMtpAbDebugIntent(intent)
+            return
+        }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
         val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (!isDebuggable) {
@@ -92,6 +98,39 @@ class MainActivity : ComponentActivity() {
                 requestedModelId = modelId,
                 requestedImagePath = imagePath,
                 requestedBackend = backend,
+            )
+        }
+    }
+
+    private fun handleMtpAbDebugIntent(intent: Intent) {
+        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (!isDebuggable) {
+            Log.w(TAG, "Ignoring MTP A/B diagnostics intent in non-debug build")
+            return
+        }
+
+        val modelId = intent.getStringExtra("modelId")
+        val prompt = intent.getStringExtra("prompt")
+        val backend = intent.getStringExtra("backend")
+        val draft = intent.getIntExtra("draft", -1).takeIf { it > 0 }
+        val ctx = intent.getIntExtra("ctx", -1).takeIf { it > 0 }
+        val batch = intent.getIntExtra("batch", -1).takeIf { it > 0 }
+        val maxTokens = intent.getIntExtra("maxTokens", -1).takeIf { it > 0 }
+        Log.i(
+            TAG,
+            "Starting MTP A/B diagnostics modelId=${modelId.orEmpty()} " +
+                "backend=${backend.orEmpty()} draft=${draft ?: 0} ctx=${ctx ?: 0} " +
+                "batch=${batch ?: 0} maxTokens=${maxTokens ?: 0}",
+        )
+        lifecycleScope.launch {
+            MtpAbDiagnostics(applicationContext).run(
+                requestedModelId = modelId,
+                requestedPrompt = prompt,
+                requestedBackend = backend,
+                requestedDraftTokens = draft,
+                requestedContextTokens = ctx,
+                requestedBatchTokens = batch,
+                requestedMaxTokens = maxTokens,
             )
         }
     }

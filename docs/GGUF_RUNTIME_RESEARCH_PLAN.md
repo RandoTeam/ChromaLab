@@ -561,6 +561,25 @@ Rationale:
   add a short per-device MTP probe that records first-token latency, acceptance,
   and tokens/second before allowing Vulkan/MTP to be treated as stable.
 
+2026-05-19 real-device A/B result:
+
+- Device/model: Android `qwen35-mtp-4b-q4km`, CPU, `ctx=4096`,
+  `batch=128`, `maxTokens=32`.
+- No-MTP baseline: first token about `2.0s`, total about `11.3s`.
+- MTP draft-mtp `n=3`: first token about `5.4s`, total about `30.8s`,
+  acceptance about `45%`.
+- Verdict: CPU MTP is slower on this device/model. Production chat must not
+  auto-enable MTP for CPU/AUTO profiles. MTP remains available for explicit
+  Vulkan diagnostics and future per-device probes.
+
+Implemented follow-up:
+
+- Added debug intent `com.chromalab.app.DEBUG_MTP_AB` for one-command A/B
+  testing of the same prompt without MTP and with MTP.
+- Android runtime now allows automatic MTP only for explicit non-conservative
+  Vulkan profile. CPU/AUTO MTP is disabled by runtime profile and logged with
+  `reason=cpu_auto_mtp_ab_slow`.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.
