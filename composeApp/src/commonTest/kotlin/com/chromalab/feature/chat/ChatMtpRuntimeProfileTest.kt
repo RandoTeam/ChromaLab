@@ -17,7 +17,7 @@ class ChatMtpRuntimeProfileTest {
             ),
         )
         assertEquals(
-            2,
+            6,
             ChatMtpRuntimeProfile.coerceDraftTokens(
                 requestedDraftTokens = 6,
                 selectedAccelerator = ChatRuntimeAccelerator.VULKAN,

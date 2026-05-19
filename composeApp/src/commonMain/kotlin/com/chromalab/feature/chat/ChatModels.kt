@@ -123,7 +123,7 @@ data class ChatModelResourceProfile(
 object ChatMtpRuntimeProfile {
     const val DefaultDraftTokens = 3
     const val MaxMobileDraftTokens = 3
-    const val MaxMobileVulkanDraftTokens = 2
+    const val MaxMobileVulkanDraftTokens = 6
     const val MaxConservativeDraftTokens = 2
     const val MaxMobileMtpContextTokens = 4096
     const val MaxConservativeMtpContextTokens = 2048

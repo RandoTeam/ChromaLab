@@ -579,6 +579,17 @@ Implemented follow-up:
 - Android runtime now allows automatic MTP only for explicit non-conservative
   Vulkan profile. CPU/AUTO MTP is disabled by runtime profile and logged with
   `reason=cpu_auto_mtp_ab_slow`.
+- The A/B diagnostic now treats an explicitly requested `modelId` as strict:
+  if the exact model is not downloaded, the run aborts instead of silently
+  falling back to another MTP model.
+- The A/B diagnostic no longer applies the production safety clamp to an
+  explicitly requested draft value. This allows probing upstream-recommended
+  Qwen3.5 MTP values such as `draft=6` while production CPU/AUTO remains
+  guarded by the runtime profile.
+- Explicit Vulkan MTP now permits up to `6` draft tokens so that the app can
+  match the Unsloth/llama.cpp Qwen3.5 MTP guidance during device probes. This
+  must still be treated as experimental on Android until a per-device A/B run
+  proves speedup and no Vulkan driver crash.
 
 ## Do Not Do
 

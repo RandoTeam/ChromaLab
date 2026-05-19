@@ -8,6 +8,7 @@ import com.chromalab.feature.chat.ChatRuntimeAccelerator
 import com.chromalab.feature.processing.model.DownloadedModel
 import com.chromalab.feature.processing.model.ModelManager
 import com.chromalab.feature.processing.model.ModelRegistry
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,7 +39,7 @@ class MtpAbDiagnostics(
     ) = withContext(Dispatchers.IO) {
         val runId = System.currentTimeMillis().toString()
         val backendMode = MtpAbBackendMode.from(requestedBackend)
-        val model = resolveModel(requestedModelId)
+        val model = resolveModel(runId, requestedModelId)
         if (model == null) {
             mtpAbError("ABORT runId=$runId reason=no_downloaded_mtp_gguf_model")
             return@withContext
@@ -70,21 +71,20 @@ class MtpAbDiagnostics(
                 requestedBatchTokens = manager.llamaBatchSize(model.info, forVision = false),
                 isConservativeDevice = conservative,
             )
-        val draftTokens = requestedDraftTokens
-            ?.takeIf { it > 0 }
-            ?.coerceIn(1, model.info.maxMtpDraftTokens.coerceAtLeast(1))
-            ?: model.info.defaultMtpDraftTokens.coerceAtLeast(1)
-        val effectiveDraftTokens = ChatMtpRuntimeProfile.coerceDraftTokens(
-            requestedDraftTokens = draftTokens,
-            selectedAccelerator = backendMode.accelerator,
-            isConservativeDevice = conservative,
+        val effectiveDraftTokens = resolveDiagnosticDraftTokens(
+            model = model,
+            requestedDraftTokens = requestedDraftTokens,
+            backendMode = backendMode,
+            conservative = conservative,
         )
         val maxTokens = requestedMaxTokens?.coerceIn(4, 256) ?: 32
 
         mtpAbLog(
             "START runId=$runId model=${model.info.id} backend=${backendMode.logName} " +
                 "threads=${manager.threadCount} ctx=$contextTokens batch=$batchTokens " +
-                "draft=$effectiveDraftTokens maxTokens=$maxTokens conservative=$conservative " +
+                "draft=$effectiveDraftTokens requestedDraft=${requestedDraftTokens ?: 0} " +
+                "profileDraftLimit=${ChatMtpRuntimeProfile.maxDraftTokens(backendMode.accelerator, conservative)} " +
+                "maxTokens=$maxTokens conservative=$conservative " +
                 "promptChars=${prompt.length}",
         )
 
@@ -111,6 +111,11 @@ class MtpAbDiagnostics(
             backendMode = backendMode,
         )
 
+        val speedup = if (mtp.elapsedMs > 0L && baseline.elapsedMs > 0L) {
+            baseline.elapsedMs.toDouble() / mtp.elapsedMs.toDouble()
+        } else {
+            0.0
+        }
         val verdict = when {
             baseline.error != null || mtp.error != null -> "INCONCLUSIVE"
             baseline.firstTokenMs == null || mtp.firstTokenMs == null -> "INCONCLUSIVE"
@@ -124,17 +129,26 @@ class MtpAbDiagnostics(
                 "no_mtp_loadMs=${baseline.loadMs} no_mtp_firstMs=${baseline.firstTokenMs} " +
                 "no_mtp_elapsedMs=${baseline.elapsedMs} no_mtp_chars=${baseline.chars} " +
                 "mtp_loadMs=${mtp.loadMs} mtp_firstMs=${mtp.firstTokenMs} " +
-                "mtp_elapsedMs=${mtp.elapsedMs} mtp_chars=${mtp.chars}",
+                "mtp_elapsedMs=${mtp.elapsedMs} mtp_chars=${mtp.chars} speedup=${String.format(Locale.US, "%.2f", speedup)}x",
         )
         mtpAbLog("DONE runId=$runId")
     }
 
-    private fun resolveModel(requestedModelId: String?): DownloadedModel? {
+    private fun resolveModel(runId: String, requestedModelId: String?): DownloadedModel? {
         val downloaded = manager.getDownloadedModels()
-        val requested = requestedModelId
-            ?.takeIf { it.isNotBlank() }
-            ?.let { id -> downloaded.find { it.info.id == id } }
-        if (requested?.info?.runtime == ModelRuntime.LLAMA_CPP) return requested
+        val requestedId = requestedModelId?.takeIf { it.isNotBlank() }
+        if (requestedId != null) {
+            val requested = downloaded.find { it.info.id == requestedId }
+            if (requested == null) {
+                mtpAbError("ABORT runId=$runId reason=requested_model_not_downloaded model=$requestedId")
+                return null
+            }
+            if (requested.info.runtime != ModelRuntime.LLAMA_CPP) {
+                mtpAbError("ABORT runId=$runId reason=requested_model_not_llama_cpp model=$requestedId")
+                return null
+            }
+            return requested
+        }
 
         val active = manager.getActiveModelId()
             ?.let { id -> downloaded.find { it.info.id == id } }
@@ -144,6 +158,28 @@ class MtpAbDiagnostics(
             it.info.runtime == ModelRuntime.LLAMA_CPP &&
                 it.info.supportsMtp &&
                 ModelRegistry.isChatModel(it.info)
+        }
+    }
+
+    private fun resolveDiagnosticDraftTokens(
+        model: DownloadedModel,
+        requestedDraftTokens: Int?,
+        backendMode: MtpAbBackendMode,
+        conservative: Boolean,
+    ): Int {
+        val modelMax = model.info.maxMtpDraftTokens.coerceAtLeast(1)
+        val requested = requestedDraftTokens?.takeIf { it > 0 }
+        return if (requested != null) {
+            // Diagnostics must be able to probe upstream-recommended values
+            // such as Qwen3.5 MTP draft=6, even when production Android uses
+            // a safer per-device runtime profile.
+            requested.coerceIn(1, modelMax)
+        } else {
+            ChatMtpRuntimeProfile.coerceDraftTokens(
+                requestedDraftTokens = model.info.defaultMtpDraftTokens.coerceAtLeast(1),
+                selectedAccelerator = backendMode.accelerator,
+                isConservativeDevice = conservative,
+            )
         }
     }
 
