@@ -13,6 +13,10 @@ import java.io.File
 
 actual fun chatNowMillis(): Long = System.currentTimeMillis()
 
+actual fun chatRuntimeLog(message: String) {
+    println("ChromaLabChat: $message")
+}
+
 @Composable
 actual fun rememberChatState(
     activeModelId: String?,

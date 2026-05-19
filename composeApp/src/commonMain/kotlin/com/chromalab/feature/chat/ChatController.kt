@@ -137,8 +137,20 @@ class ChatController(
 
     fun sendMessage(text: String) {
         val content = text.trim()
-        val chatId = state.value.selectedChatId ?: return
-        if (content.isEmpty() || state.value.isGenerating) return
+        val chatId = state.value.selectedChatId
+        if (chatId == null) {
+            chatRuntimeLog("send.ignored reason=no_selected_chat")
+            return
+        }
+        if (content.isEmpty()) {
+            chatRuntimeLog("send.ignored reason=empty_message chatId=$chatId")
+            return
+        }
+        if (state.value.isGenerating) {
+            chatRuntimeLog("send.ignored reason=already_generating chatId=$chatId")
+            return
+        }
+        chatRuntimeLog("send.accepted chatId=$chatId chars=${content.length}")
 
         generationJob = scope.launch {
             var currentAssistantId: String? = null
@@ -148,10 +160,15 @@ class ChatController(
             val selectedModelName = session?.modelName ?: state.value.activeModelName
             val selectedRuntimeAccelerator = session?.runtimeAccelerator ?: ChatRuntimeAccelerator.AUTO
             if (selectedModelId == null) {
+                chatRuntimeLog("send.failed reason=no_model chatId=$chatId")
                 generationJob = null
                 publish(chatId, error = "Выберите модель чата перед отправкой сообщения.")
                 return@launch
             }
+            chatRuntimeLog(
+                "send.model chatId=$chatId modelId=$selectedModelId " +
+                    "modelName=${selectedModelName ?: "<unknown>"} accelerator=$selectedRuntimeAccelerator",
+            )
 
             val assistantId = "msg_${now}_assistant"
             currentAssistantId = assistantId
@@ -195,6 +212,12 @@ class ChatController(
             val contextMessages = archive.messages.filter { it.chatId == chatId && it.id != assistantId }
             val promptTokens = estimatePromptTokens(contextMessages, settings)
             val startedAt = chatNowMillis()
+            chatRuntimeLog(
+                "generation.start chatId=$chatId assistantId=$assistantId " +
+                    "contextMessages=${contextMessages.size} promptTokensEstimate=$promptTokens " +
+                    "ctx=${settings.contextSize} maxTokens=${settings.maxTokens} " +
+                    "mtp=${settings.enableMtp}/${settings.mtpDraftTokens}",
+            )
 
             try {
             val response = runCatching {
@@ -235,6 +258,10 @@ class ChatController(
                     }
                     val completionTokens = estimateTokens(finalAnswer)
                     val durationMs = (done - startedAt).coerceAtLeast(1)
+                    chatRuntimeLog(
+                        "generation.success chatId=$chatId chars=${finalAnswer.length} " +
+                            "completionTokensEstimate=$completionTokens durationMs=$durationMs",
+                    )
                     val stats = ChatMessageStats(
                         promptTokens = promptTokens,
                         completionTokens = completionTokens,
@@ -269,6 +296,7 @@ class ChatController(
                 onFailure = { error ->
                     if (assistantId in stoppedAssistantIds) return@fold
                     val message = error.message ?: "Ошибка генерации"
+                    chatRuntimeLog("generation.failure chatId=$chatId ${error::class.simpleName}: $message")
                     updateMessage(chatId, assistantId) {
                         it.copy(
                             content = "Ошибка генерации: $message",
@@ -285,12 +313,14 @@ class ChatController(
                     generationJob = null
                 }
                 stoppedAssistantIds.remove(currentAssistantId)
+                chatRuntimeLog("generation.end chatId=$chatId assistantId=$currentAssistantId")
             }
         }
     }
 
     fun stopGeneration() {
         val generation = activeGeneration ?: return
+        chatRuntimeLog("generation.stop_requested chatId=${generation.chatId} assistantId=${generation.assistantId}")
         stoppedAssistantIds += generation.assistantId
         generationJob?.cancel()
         generationJob = null

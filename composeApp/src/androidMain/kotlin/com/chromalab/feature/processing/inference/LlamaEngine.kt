@@ -359,6 +359,12 @@ class LlamaEngine : InferenceEngine {
         repeatLastN: Int,
         onPartial: ((String) -> Unit)?,
     ): String {
+        val startedAt = System.currentTimeMillis()
+        log(
+            "Text inference start streaming=${onPartial != null} promptChars=${prompt.length} " +
+                "maxTokens=$maxTokens temperature=$temperature topP=$topP topK=$topK " +
+                "repeatPenalty=$repeatPenalty repeatLastN=$repeatLastN backend=$backendName",
+        )
         val chatPrompt = prompt.toNativeChatPromptOrNull(config)
         if (chatPrompt != null) {
             log(
@@ -376,8 +382,11 @@ class LlamaEngine : InferenceEngine {
                     topK,
                     repeatPenalty,
                     repeatLastN,
-                )
+                ).also { result ->
+                    log("Text inference complete mode=chat chars=${result.length} elapsedMs=${System.currentTimeMillis() - startedAt}")
+                }
             } else {
+                var callbackCount = 0
                 nativeInferChatStreaming(
                     modelHandle,
                     chatPrompt.roles,
@@ -390,10 +399,21 @@ class LlamaEngine : InferenceEngine {
                     repeatLastN,
                     object : NativeTokenCallback {
                         override fun onToken(text: String, generatedTokens: Int, elapsedMs: Long) {
+                            callbackCount += 1
+                            if (callbackCount == 1) {
+                                log("Text first token generatedTokens=$generatedTokens nativeElapsedMs=$elapsedMs wallMs=${System.currentTimeMillis() - startedAt}")
+                            } else if (callbackCount % 32 == 0) {
+                                log("Text streaming progress callbacks=$callbackCount generatedTokens=$generatedTokens nativeElapsedMs=$elapsedMs")
+                            }
                             onPartial(text)
                         }
                     },
-                )
+                ).also { result ->
+                    log(
+                        "Text inference complete mode=chat_stream chars=${result.length} " +
+                            "callbacks=$callbackCount elapsedMs=${System.currentTimeMillis() - startedAt}",
+                    )
+                }
             }
         }
 
@@ -410,7 +430,9 @@ class LlamaEngine : InferenceEngine {
             topK,
             repeatPenalty,
             repeatLastN,
-        )
+        ).also { result ->
+            log("Text inference complete mode=text chars=${result.length} elapsedMs=${System.currentTimeMillis() - startedAt}")
+        }
     }
 }
 

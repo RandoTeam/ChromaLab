@@ -1,5 +1,6 @@
 package com.chromalab.feature.chat
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +16,12 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 actual fun chatNowMillis(): Long = System.currentTimeMillis()
+
+private const val CHAT_TAG = "ChromaLabChat"
+
+actual fun chatRuntimeLog(message: String) {
+    Log.i(CHAT_TAG, message)
+}
 
 @Composable
 actual fun rememberChatState(
@@ -83,6 +90,12 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
         runtimeAccelerator: ChatRuntimeAccelerator,
         onPartial: (ChatGenerationPartial) -> Unit,
     ): String {
+        chatRuntimeLog(
+            "generate.start modelId=$modelId modelName=${modelName ?: "<unknown>"} " +
+                "messages=${messages.size} accelerator=$runtimeAccelerator " +
+                "ctx=${settings.contextSize} maxTokens=${settings.maxTokens} " +
+                "mtpEnabled=${settings.enableMtp} requestedDraft=${settings.mtpDraftTokens}",
+        )
         val controller = VlmEngineHolder.controller
             ?: error("Model controller is not ready.")
         val loaded = controller.activateForChat(
@@ -91,6 +104,7 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
             contextSize = settings.contextSize,
             mtpDraftTokens = if (settings.enableMtp) settings.mtpDraftTokens.coerceIn(1, 6) else 0,
         )
+        chatRuntimeLog("generate.activate.complete loaded=$loaded active=${VlmEngineHolder.activeModelDiagnostics()}")
         if (!loaded) {
             error("Unable to load chat model: ${modelName ?: modelId}")
         }
@@ -99,17 +113,40 @@ private class AndroidChatTextGenerator : ChatTextGenerator {
             ?: error("Chat model is not loaded: ${modelName ?: modelId}")
 
         VlmEngineHolder.isInferring = true
+        var partialCount = 0
+        val startedAt = System.currentTimeMillis()
+        val prompt = buildChatPrompt(messages, settings)
         return try {
+            chatRuntimeLog(
+                "generate.infer.start backend=${engine.getBackendName()} " +
+                    "supportsImage=${engine.supportsImageInput()} promptChars=${prompt.length}",
+            )
             engine.inferRawStreaming(
                 imagePath = "__chromalab_text_only__",
-                prompt = buildChatPrompt(messages, settings),
+                prompt = prompt,
                 options = settings.toGenerationOptions(),
                 onPartial = { chunk ->
+                    partialCount += 1
+                    if (partialCount == 1 || partialCount % 32 == 0) {
+                        chatRuntimeLog(
+                            "generate.partial count=$partialCount chars=${chunk.length} " +
+                                "elapsedMs=${System.currentTimeMillis() - startedAt}",
+                        )
+                    }
                     onPartial(ChatGenerationPartial(contentDelta = chunk))
                 },
-            )
+            ).also { result ->
+                chatRuntimeLog(
+                    "generate.complete chars=${result.length} partials=$partialCount " +
+                        "elapsedMs=${System.currentTimeMillis() - startedAt}",
+                )
+            }
+        } catch (t: Throwable) {
+            chatRuntimeLog("generate.error ${t::class.simpleName}: ${t.message}")
+            throw t
         } finally {
             VlmEngineHolder.isInferring = false
+            chatRuntimeLog("generate.end inferring=false partials=$partialCount elapsedMs=${System.currentTimeMillis() - startedAt}")
         }
     }
 }

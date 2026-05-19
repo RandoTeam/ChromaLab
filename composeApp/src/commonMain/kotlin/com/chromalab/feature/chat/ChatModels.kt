@@ -271,6 +271,8 @@ interface ChatTextGenerator {
 
 expect fun chatNowMillis(): Long
 
+expect fun chatRuntimeLog(message: String)
+
 @Composable
 expect fun rememberChatState(
     activeModelId: String?,
