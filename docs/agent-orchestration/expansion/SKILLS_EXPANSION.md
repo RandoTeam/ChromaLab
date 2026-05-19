@@ -1,5 +1,11 @@
 # Additional ChromaLab Skills
 
+## source-quality-triage
+
+- Authoritative definition: `docs/agent-orchestration/expansion/skills/source-quality-triage.md`
+- Owner agent: `research_intelligence_agent`
+- Mandatory whenever `current-web-research-deep` is used, especially for Android/KMP/Compose, OCR/VLM, geometry/calibration, report/evidence, security/privacy, UX/design, and scientific/chromatography work.
+
 ## current-web-research-deep
 
 - Authoritative definition: `docs/agent-orchestration/expansion/skills/current-web-research-deep.md`

@@ -14,7 +14,20 @@
       "scientific/chromatography claims"
     ]
   },
-  "source-quality-triage": "Grade sources by authority, recency, relevance, implementation maturity, and risk.",
+  "source-quality-triage": {
+    "file": "docs/agent-orchestration/expansion/skills/source-quality-triage.md",
+    "description": "Grade sources by authority, recency, relevance, implementation maturity, and risk.",
+    "mandatory_when": [
+      "current-web-research-deep is used",
+      "Android/KMP/Compose changes",
+      "OCR/VLM changes",
+      "geometry/calibration changes",
+      "report/evidence changes",
+      "security/privacy changes",
+      "UX/design changes",
+      "scientific/chromatography claims"
+    ]
+  },
   "research-synthesis": "Convert research into implementable project decisions with adoption/rejection rationale.",
   "method-comparison-matrix": "Compare competing algorithms/libraries/methods by constraints, accuracy, device cost, licensing, maintenance.",
   "mobile-ux-flow-design": "Design mobile task flows, friction points, recovery paths, and mode-specific workflows.",

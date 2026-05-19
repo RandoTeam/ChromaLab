@@ -54,6 +54,15 @@ mandatory_skills:
   - security/privacy changes
   - UX/design changes
   - scientific/chromatography claims
+  source-quality-triage:
+  - whenever current-web-research-deep is used
+  - Android/KMP/Compose changes
+  - OCR/VLM changes
+  - geometry/calibration changes
+  - report/evidence changes
+  - security/privacy changes
+  - UX/design changes
+  - scientific/chromatography claims
 phase_requirements:
   phase_0:
   - research_intelligence_agent
