@@ -9,6 +9,7 @@ data class ChromatogramReportUiContract(
     val schemaVersion: String = CURRENT_CHROMATOGRAM_REPORT_UI_SCHEMA,
     val reportId: String,
     val graphCount: Int,
+    val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
     val markdownArtifactPath: String = "chromatogram_report.md",
     val htmlArtifactPath: String = "chromatogram_report.html",
     val rawMarkdownIsFinalUi: Boolean = false,
@@ -81,12 +82,20 @@ object ChromatogramReportUiContractBuilder {
     fun build(
         report: ChromatogramReport,
         validation: ReportContractValidationResult = ReportContractValidator.validate(report),
-    ): ChromatogramReportUiContract =
-        ChromatogramReportUiContract(
+    ): ChromatogramReportUiContract {
+        val gate = ReportReleaseGateEvaluator.evaluate(report, validation)
+        return ChromatogramReportUiContract(
             reportId = report.metadata.reportId,
             graphCount = report.graphs.size,
+            reportGateStatus = gate.status,
             primarySurface = ReportSurfaceContract(
                 sections = listOf(
+                    primarySection(
+                        sectionId = "release_gate",
+                        title = "Release gate",
+                        sourceContractSection = "release_gate",
+                        contractStatus = gate.status.name,
+                    ),
                     primarySection(
                         sectionId = "overview",
                         title = "Overview",
@@ -168,6 +177,7 @@ object ChromatogramReportUiContractBuilder {
                 ),
             ),
         )
+    }
 
     private fun primarySection(
         sectionId: String,

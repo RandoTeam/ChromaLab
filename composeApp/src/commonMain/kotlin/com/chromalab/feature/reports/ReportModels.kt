@@ -67,6 +67,9 @@ enum class InputSourceType {
 
 @Serializable
 enum class ProcessingMode {
+    AUTO_DIAGNOSTIC,
+    GUIDED_PRODUCTION,
+    MANUAL_ADVANCED,
     FULL_ANALYSIS,
     DIAGNOSTIC,
     MANUAL_REVIEW,

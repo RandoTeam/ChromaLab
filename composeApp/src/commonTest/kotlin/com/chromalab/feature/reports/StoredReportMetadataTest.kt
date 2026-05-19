@@ -375,7 +375,7 @@ class StoredReportMetadataTest {
         val report = CalculationRunReportMapper.map(run = run, options = options)
         val warningCodes = report.warnings.map { it.code }
 
-        assertEquals(ProcessingMode.FULL_ANALYSIS, options.processingMode)
+        assertEquals(ProcessingMode.AUTO_DIAGNOSTIC, options.processingMode)
         assertEquals(ExecutedRuntime.UNKNOWN, options.executedRuntime)
         assertEquals("qwen3-vl-2b-q4km", options.selectedModel?.modelId)
         assertEquals("Xiaomi Mi 8", options.deviceName)

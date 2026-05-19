@@ -11,6 +11,8 @@ import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateFlag
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateStatus
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.ReportPeak
+import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -74,6 +76,8 @@ data class RuntimeEvidenceValidationSummary(
     val schemaVersion: String = "runtime-evidence-validation-1.0",
     val packageSchemaVersion: String? = null,
     val reportId: String? = null,
+    val terminalState: RuntimeTerminalState? = null,
+    val reportGateStatus: ReportGateStatus? = null,
     val verdict: RuntimeEvidenceValidationVerdict,
     val blockingIssues: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val warnings: List<RuntimeEvidenceValidationIssue> = emptyList(),
@@ -139,6 +143,8 @@ object RuntimeEvidencePackageValidator {
         return RuntimeEvidenceValidationSummary(
             packageSchemaVersion = evidencePackage.schemaVersion,
             reportId = evidencePackage.reportId,
+            terminalState = evidencePackage.terminalState,
+            reportGateStatus = evidencePackage.reportGateStatus,
             verdict = when {
                 blocking.isNotEmpty() -> RuntimeEvidenceValidationVerdict.FAIL
                 warnings.isNotEmpty() -> RuntimeEvidenceValidationVerdict.REVIEW
@@ -191,6 +197,8 @@ object RuntimeEvidencePackageValidator {
         return RuntimeEvidenceValidationSummary(
             packageSchemaVersion = evidencePackage.schemaVersion,
             reportId = "ROI_FAILURE",
+            terminalState = evidencePackage.terminalState,
+            reportGateStatus = ReportGateStatus.BLOCKED,
             verdict = when {
                 blocking.isNotEmpty() -> RuntimeEvidenceValidationVerdict.FAIL
                 warnings.isNotEmpty() -> RuntimeEvidenceValidationVerdict.REVIEW
@@ -206,6 +214,8 @@ object RuntimeEvidencePackageValidator {
         appendLine("# Runtime Evidence Package Validation")
         appendLine()
         appendLine("- Verdict: `${summary.verdict}`")
+        appendLine("- Terminal state: `${summary.terminalState ?: "missing"}`")
+        appendLine("- Report gate: `${summary.reportGateStatus ?: "missing"}`")
         appendLine("- Package schema: `${summary.packageSchemaVersion ?: "missing"}`")
         appendLine("- Report id: `${summary.reportId ?: "missing"}`")
         appendLine("- Blocking issues: ${summary.blockingIssues.size}")
@@ -261,6 +271,22 @@ object RuntimeEvidencePackageValidator {
         }
         if (evidencePackage.graphs.isEmpty()) {
             issues.block("package.graphs_missing", "Runtime evidence package contains no graph packages.")
+        }
+        if (evidencePackage.terminalState == RuntimeTerminalState.PASS &&
+            evidencePackage.reportGateStatus != ReportGateStatus.RELEASE_READY
+        ) {
+            issues.block(
+                "package.pass_without_release_gate",
+                "Runtime package is PASS but reportGateStatus is not RELEASE_READY.",
+            )
+        }
+        if (evidencePackage.reportGateStatus == ReportGateStatus.RELEASE_READY &&
+            evidencePackage.terminalState != RuntimeTerminalState.PASS
+        ) {
+            issues.block(
+                "package.release_gate_without_pass_terminal",
+                "Runtime package is RELEASE_READY but terminalState is not PASS.",
+            )
         }
     }
 

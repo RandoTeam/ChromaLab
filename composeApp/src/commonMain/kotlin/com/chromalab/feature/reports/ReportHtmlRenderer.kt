@@ -73,6 +73,12 @@ object ReportHtmlRenderer {
     ) {
         uiContract.primarySurface.sections.forEachIndexed { index, section ->
             when (section.sectionId) {
+                "release_gate" -> {
+                    appendLine("<section class=\"report-section\" data-section=\"release_gate\">")
+                    appendLine("<h2>${index + 1}. ${section.title.escapeHtml()}</h2>")
+                    renderReleaseGate(report, uiContract)
+                    appendLine("</section>")
+                }
                 "overview" -> {
                     appendLine("<section class=\"report-section\" data-section=\"overview\">")
                     appendLine("<h2>${index + 1}. ${section.title.escapeHtml()}</h2>")
@@ -93,6 +99,24 @@ object ReportHtmlRenderer {
                 }
             }
         }
+    }
+
+    private fun StringBuilder.renderReleaseGate(
+        report: ChromatogramReport,
+        uiContract: ChromatogramReportUiContract,
+    ) {
+        renderTable(
+            headers = listOf("Field", "Value"),
+            rows = listOf(
+                "Report gate" to uiContract.reportGateStatus.name,
+                "Processing mode" to report.metadata.processingMode.name,
+                "Release-quality claim" to if (uiContract.reportGateStatus == ReportGateStatus.RELEASE_READY) {
+                    "allowed by current evidence gate"
+                } else {
+                    "blocked; use as review or diagnostic evidence only"
+                },
+            ).map { listOf(it.first, it.second) },
+        )
     }
 
     private fun StringBuilder.renderGraphReport(

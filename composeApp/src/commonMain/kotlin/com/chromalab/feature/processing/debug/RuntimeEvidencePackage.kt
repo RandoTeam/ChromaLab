@@ -6,8 +6,13 @@ import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.reports.ChromatogramReport
+import com.chromalab.feature.reports.EvidenceGateStatus
+import com.chromalab.feature.reports.GateEvidence
 import com.chromalab.feature.reports.GraphReport
 import com.chromalab.feature.reports.ReportWarning
+import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.ReportReleaseGateEvaluator
+import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -20,6 +25,9 @@ data class RuntimeEvidencePackage(
     val selectedModelId: String? = null,
     val executedModelId: String? = null,
     val executedRuntime: String,
+    val terminalState: RuntimeTerminalState = RuntimeTerminalState.DIAGNOSTIC_ONLY,
+    val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
+    val gateEvidence: GateEvidence = GateEvidence(),
     val graphs: List<RuntimeEvidenceGraphPackage>,
     val reportContract: ChromatogramReport,
 )
@@ -79,6 +87,7 @@ data class RuntimeEvidenceSummaryCounts(
 data class RuntimeRoiFailureEvidencePackage(
     val schemaVersion: String = "runtime-evidence-roi-failure-1.0",
     val generatedAtEpochMillis: Long,
+    val terminalState: RuntimeTerminalState = RuntimeTerminalState.ROI_FAILURE,
     val stageId: String,
     val failureReason: String,
     val originalImagePath: String? = null,
@@ -92,8 +101,12 @@ data class RuntimeRoiFailureEvidencePackage(
 )
 
 object RuntimeEvidencePackageBuilder {
-    fun build(report: ChromatogramReport): RuntimeEvidencePackage =
-        RuntimeEvidencePackage(
+    fun build(report: ChromatogramReport): RuntimeEvidencePackage {
+        val gate = ReportReleaseGateEvaluator.evaluate(
+            report = report,
+            evidencePackageStatus = EvidenceGateStatus.VALID,
+        )
+        return RuntimeEvidencePackage(
             generatedAtEpochMillis = currentTimeMillis(),
             reportId = report.metadata.reportId,
             sourceName = report.metadata.sourceName,
@@ -101,9 +114,13 @@ object RuntimeEvidencePackageBuilder {
             selectedModelId = report.metadata.selectedModel?.modelId,
             executedModelId = report.metadata.executedModel?.modelId,
             executedRuntime = report.metadata.executedRuntime.name,
+            terminalState = ReportReleaseGateEvaluator.terminalStateFor(gate.status),
+            reportGateStatus = gate.status,
+            gateEvidence = gate.evidence,
             graphs = report.graphs.map(::buildGraphPackage),
             reportContract = report,
         )
+    }
 
     private fun buildGraphPackage(graph: GraphReport): RuntimeEvidenceGraphPackage {
         val trace = graph.source.geometryTrace

@@ -170,7 +170,7 @@ object ModelAssistedAnalysisContract {
         stageTimings: List<ReportStageTiming>,
         graphIndex: Int? = null,
     ): List<ReportWarning> {
-        if (processingMode != ProcessingMode.FULL_ANALYSIS) return emptyList()
+        if (processingMode !in auditedAnalysisModes) return emptyList()
 
         val resolvedRuntime = executedModel?.runtime?.takeIf { it != ExecutedRuntime.UNKNOWN } ?: executedRuntime
         val stageIds = stageTimings.map { it.stageId }.toSet()
@@ -254,6 +254,11 @@ object ModelAssistedAnalysisContract {
         "paddleocr-vl",
         "dots-mocr",
         "deepseek-ocr",
+    )
+
+    private val auditedAnalysisModes = setOf(
+        ProcessingMode.AUTO_DIAGNOSTIC,
+        ProcessingMode.FULL_ANALYSIS,
     )
 
     private fun ExecutedRuntime.isVisionRuntime(): Boolean =

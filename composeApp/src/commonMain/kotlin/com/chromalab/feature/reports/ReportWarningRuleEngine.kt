@@ -34,7 +34,9 @@ object ReportWarningRuleEngine {
     ): List<ReportWarning> = buildList {
         val executedRuntime = metadata.resolvedExecutedRuntime()
 
-        if (metadata.processingMode == ProcessingMode.FULL_ANALYSIS) {
+        if (metadata.processingMode == ProcessingMode.FULL_ANALYSIS ||
+            metadata.processingMode == ProcessingMode.AUTO_DIAGNOSTIC
+        ) {
             when (executedRuntime) {
                 ExecutedRuntime.DETERMINISTIC -> add(
                     ReportWarning(

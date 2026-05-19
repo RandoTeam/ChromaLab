@@ -153,7 +153,7 @@ fun buildProcessingStoredReportMetadata(
         .filterNot { it == selectedPreparationVariant }
         .sortedBy { it.rank }
     val ocrExtraction = axisOcrResult.toProcessingOcrReportExtraction(detectedGraphBounds)
-    val processingMode = ProcessingMode.FULL_ANALYSIS
+    val processingMode = ProcessingMode.AUTO_DIAGNOSTIC
     val modelStageTimings = ModelAssistedAnalysisContract.augmentStageTimings(
         stageTimings = stageTimings,
         executedRuntime = executedRuntime,

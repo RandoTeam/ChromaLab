@@ -101,7 +101,7 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals("LiteRT GPU", metadata.executedModel?.backendLabel)
         assertEquals(ExecutedRuntime.LITERT, metadata.executedRuntime)
         assertEquals("Pixel Test", metadata.deviceName)
-        assertEquals(ProcessingMode.FULL_ANALYSIS, metadata.processingMode)
+        assertEquals(ProcessingMode.AUTO_DIAGNOSTIC, metadata.processingMode)
         assertEquals(4, metadata.stageTimings.size)
         assertEquals(450L, metadata.stageTimings.single { it.stageId == "OCR_SUGGESTION" }.durationMillis)
         assertEquals(450L, metadata.stageTimings.single { it.stageId == "model.title_ion_axis" }.durationMillis)
