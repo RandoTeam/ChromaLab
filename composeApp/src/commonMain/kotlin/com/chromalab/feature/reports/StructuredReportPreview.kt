@@ -772,7 +772,7 @@ private fun GateEvidenceSummary(uiContract: ChromatogramReportUiContract) {
     SectionBlock(title = "Release evidence gates") {
         val rows = uiContract.reportGateEvidence.rows()
         MetricGrid(
-            rows = rows.take(8).map { row -> row.label to row.status.name },
+            rows = rows.map { row -> row.label to row.status.name },
         )
         val reasons = uiContract.reportGateBlockingReasons + uiContract.reportGateReviewReasons
         if (reasons.isNotEmpty()) {
@@ -942,13 +942,23 @@ private fun EvidenceChip(evidence: ReportVisualEvidenceContract) {
             MaterialTheme.colorScheme.onSurfaceVariant
         },
     ) {
-        Text(
-            text = evidence.label,
+        Column(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        ) {
+            Text(
+                text = evidence.label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = evidence.generatedStatus.name,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

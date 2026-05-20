@@ -6,12 +6,13 @@ Full Regression Across All Graphs
 
 ## Product Goal
 
-Run all known graph types through all modes and close gaps. This phase must move ChromaLab toward honest, evidence-gated mobile chromatogram digitization without pretending fully automatic photo analysis is production-ready by default.
+Run all known graph types through the autonomous production path and close or classify gaps with evidence. This phase proves whether ChromaLab can automatically process real chromatogram images without pretending incomplete evidence is release-ready.
 
 Product modes:
-- AUTO_DIAGNOSTIC: automatic attempt, diagnostic by default, every terminal state exports evidence.
-- GUIDED_PRODUCTION: reliable target workflow, user confirms graphPanel, plotArea, calibration anchors, trace, and peaks before release-quality output.
-- MANUAL_ADVANCED: fallback for difficult images, user can manually define geometry, calibration, trace, and peak decisions.
+- AUTONOMOUS_PRODUCTION: primary product target for normal analyzable images.
+- AUTO_DIAGNOSTIC: automatic attempt where evidence is incomplete.
+- ASSISTED_REVIEW: user review/correction only after autonomous evidence gates fail.
+- MANUAL_ADVANCED: expert fallback for difficult images.
 
 ## Scope
 
@@ -55,6 +56,8 @@ Assume model knowledge is outdated. Before changing behavior or approving a tech
 - Current pipeline audit and regression matrix.
 - Known Android failures and bench fixture failures.
 - Existing contracts, report gates, evidence package validator output, and runtime artifacts.
+- `docs/CHROMATOGRAM_REGRESSION_DATASET.md`.
+- `docs/CHROMATOGRAM_FAILURE_TAXONOMY.md`.
 
 ## Implementation Workstreams
 
@@ -69,7 +72,7 @@ Assume model knowledge is outdated. Before changing behavior or approving a tech
 - Phase brief and closeout report.
 - Updated protocol or contract files if this phase changes policy.
 - Research notes under `docs/research/` when modern methods/APIs are involved.
-- Updated regression matrix rows for new failure classes.
+- Updated regression dataset and failure taxonomy rows for new failure classes.
 
 ## Evidence Requirements
 
@@ -103,7 +106,7 @@ If this phase touches peak metrics, RT, baseline, S/N, area, FWHM, Kovats/retent
 
 - Documentation/config: `git diff --check`, registry parse, link/file existence audit.
 - Implementation: targeted tests plus the minimum regression set from Orchestrator.
-- Runtime: real Android evidence package, validator JSON/Markdown, final report contract, overlays, timings, and logcat.
+- Runtime: real Android evidence package, validator JSON/Markdown, final report contract, overlays, timings, logcat, and device/model profile.
 
 ## Regression Requirements
 

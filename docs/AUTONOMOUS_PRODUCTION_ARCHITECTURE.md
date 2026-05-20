@@ -87,3 +87,9 @@ Knowledge Pack non-responsibilities:
 - no cloud lookup.
 
 Assisted Review and Manual Advanced may use the same knowledge snippets to explain why a gate failed, but manual/user intervention remains visible in provenance.
+
+## Phase 8 Regression Gate
+
+Phase 8 adds the proof layer for autonomous production. A run is not considered production-ready merely because a report can be rendered. It must appear in the regression dataset, produce the required evidence package and validator artifacts, preserve per-graph gate status, pass report/export privacy checks, and classify any non-release terminal state using the failure taxonomy.
+
+The current desktop regression layer proves contract, report, evidence, and fixture behavior. Real Android validation remains required before the autonomous path can be called fully closed for Phase 8.

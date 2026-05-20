@@ -208,3 +208,19 @@ Date: 2026-05-20
 | Knowledge-only compound name | Rendered as candidate hypothesis, not identified compound. | Peak table and validator warning. | Covered by report validator test. |
 | Kovats without reference series | RI is caveated/rejected; no release-quality RI claim. | Kovats section and validator finding. | Covered by report validator test. |
 | Multi-graph report | Graph overview and per-graph sections preserve graph order and per-graph evidence. | UI contract graph sequence. | Structurally supported; broad golden export deferred to Phase 8. |
+
+# Phase 8 Full Regression Additions
+
+Date: 2026-05-20
+
+Phase 8 converts the regression matrix into an explicit dataset and failure-taxonomy gate:
+
+- dataset inventory: `docs/CHROMATOGRAM_REGRESSION_DATASET.md`;
+- failure taxonomy: `docs/CHROMATOGRAM_FAILURE_TAXONOMY.md`;
+- regression runner contract: `docs/PHASE8_REGRESSION_RUNNER.md`;
+- visual/text goldens: `docs/PHASE8_VISUAL_GOLDENS.md`;
+- Android validation checklist: `docs/PHASE8_REAL_ANDROID_VALIDATION.md`.
+
+Phase 8 must not upgrade any dataset row to `RELEASE_READY` unless its evidence package, validator JSON/Markdown, report JSON, overlays, privacy manifest, and report gate all pass. The current desktop fixture suite still keeps autonomous calibration and downstream signal/peak gates blocked where calibration is unavailable; that remains correct diagnostic behavior, not a failure to be hidden.
+
+Real Android validation was not completed in the Phase 8 desktop slice because no device was attached to `adb`. Until the documented Android checklist is executed or Product Acceptance explicitly accepts a deferral, Phase 8 remains review-ready rather than fully closed.

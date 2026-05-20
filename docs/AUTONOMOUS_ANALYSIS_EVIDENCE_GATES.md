@@ -89,3 +89,21 @@ Phase 7 makes the evidence gates visible in the professional report layer:
 - User-facing exports are separated from diagnostic evidence packages and raw logs.
 - Knowledge/model-only compound labels are rendered as hypotheses unless explicit identity evidence exists.
 - Calculated Kovats/RI values require explicit reference-series retention times.
+
+## Phase 8 Regression Evidence Gate
+
+For full regression, every dataset item must have an explicit expected autonomous status and required artifact list. The release gate may pass only when these artifacts exist and agree:
+
+- RuntimeEvidencePackage JSON;
+- validator JSON and Markdown;
+- final report contract JSON;
+- HTML/Markdown export when report generation is available;
+- graphPanel/plotArea overlays;
+- axis/tick/calibration evidence;
+- trace overlay;
+- peak overlay and peak evidence table;
+- Knowledge/VLM citation or rejection records when used;
+- privacy manifest;
+- stage timings and model/runtime profile.
+
+If any terminal state lacks evidence, the dataset item is `DIAGNOSTIC_ONLY` or `BLOCKED`. If Android validation is unavailable, Phase 8 remains review-ready until the real-device checklist is executed or Product Acceptance signs off on the deferral.
