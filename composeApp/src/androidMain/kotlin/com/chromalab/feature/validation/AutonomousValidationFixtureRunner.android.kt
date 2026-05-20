@@ -15,7 +15,10 @@ class AutonomousValidationFixtureRunner(
         encodeDefaults = true
     }
 
-    fun prepareFixture(fixtureId: String = WHITE_TIGER_ION71_FIXTURE_ID): Result<AutonomousValidationRunStart> =
+    fun prepareFixture(
+        fixtureId: String = WHITE_TIGER_ION71_FIXTURE_ID,
+        modelMode: AutonomousValidationModelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+    ): Result<AutonomousValidationRunStart> =
         runCatching {
             if (!AutonomousValidationFixtureContracts.isSupportedFixture(fixtureId)) {
                 error("Unsupported validation fixture: $fixtureId")
@@ -39,6 +42,7 @@ class AutonomousValidationFixtureRunner(
                 runId = runId,
                 fixtureId = metadata.fixtureId,
                 fixtureDisplayName = metadata.displayName,
+                modelMode = modelMode,
                 sourceImagePath = targetImage.absolutePath,
                 workingDirectory = runDir.absolutePath,
                 publicArtifactDirectory = "/sdcard/Download/ChromaLab/validation/$runId",

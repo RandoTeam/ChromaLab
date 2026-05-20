@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.validation.AutonomousValidationArtifactExporter
 import com.chromalab.feature.validation.AutonomousValidationFixtureRunner
+import com.chromalab.feature.validation.AutonomousValidationModelMode
 import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
 import com.chromalab.feature.processing.inference.MtpAbDiagnostics
@@ -28,6 +29,7 @@ class MainActivity : ComponentActivity() {
         private const val ACTION_DEBUG_MTP_AB = "com.chromalab.app.DEBUG_MTP_AB"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
+        private const val EXTRA_MODEL_MODE = "modelMode"
     }
 
     private var pendingProcessingRequestState: MutableState<InitialProcessingRequest?>? = null
@@ -60,6 +62,7 @@ class MainActivity : ComponentActivity() {
                     {
                         pendingProcessingRequest.value = validationFixtureRequest(
                             WHITE_TIGER_ION71_FIXTURE_ID,
+                            AutonomousValidationModelMode.DETERMINISTIC_ONLY,
                         )
                     }
                 } else {
@@ -178,12 +181,16 @@ class MainActivity : ComponentActivity() {
             return null
         }
         val fixtureId = intent.getStringExtra(EXTRA_FIXTURE) ?: WHITE_TIGER_ION71_FIXTURE_ID
-        return validationFixtureRequest(fixtureId)
+        val modelMode = AutonomousValidationModelMode.parse(intent.getStringExtra(EXTRA_MODEL_MODE))
+        return validationFixtureRequest(fixtureId, modelMode)
     }
 
-    private fun validationFixtureRequest(fixtureId: String): InitialProcessingRequest? {
+    private fun validationFixtureRequest(
+        fixtureId: String,
+        modelMode: AutonomousValidationModelMode,
+    ): InitialProcessingRequest? {
         val prepared = AutonomousValidationFixtureRunner(applicationContext)
-            .prepareFixture(fixtureId)
+            .prepareFixture(fixtureId, modelMode)
             .onFailure { error ->
                 activeValidationRunId = null
                 Log.e(TAG, "Validation fixture preparation failed", error)
@@ -194,11 +201,13 @@ class MainActivity : ComponentActivity() {
         Log.i(
             TAG,
             "Validation fixture ready id=${prepared.fixtureId} runId=${prepared.runId} " +
-                "imagePath=${prepared.sourceImagePath} artifacts=${prepared.publicArtifactDirectory}",
+                "modelMode=${prepared.modelMode} imagePath=${prepared.sourceImagePath} " +
+                "artifacts=${prepared.publicArtifactDirectory}",
         )
         return InitialProcessingRequest(
             imagePath = prepared.sourceImagePath,
             sourceType = SourceType.VALIDATION_FIXTURE,
+            validationModelMode = prepared.modelMode,
         )
     }
 

@@ -8,6 +8,21 @@ const val WHITE_TIGER_ION71_FIXTURE_ID = "white_tiger_ion71"
 const val WHITE_TIGER_ION71_FIXTURE_METADATA_ASSET = "validation/white_tiger_ion71_fixture.metadata.json"
 
 @Serializable
+enum class AutonomousValidationModelMode {
+    DETERMINISTIC_ONLY,
+    MODEL_ENABLED;
+
+    companion object {
+        fun parse(value: String?): AutonomousValidationModelMode =
+            when (value?.trim()?.lowercase()) {
+                "model_enabled", "model-enabled", "model", "full", "full_analysis", "vlm", "gemma" -> MODEL_ENABLED
+                "deterministic", "deterministic_only", "deterministic-only", "no_model", "no-model", "disabled" -> DETERMINISTIC_ONLY
+                else -> DETERMINISTIC_ONLY
+            }
+    }
+}
+
+@Serializable
 data class AutonomousValidationFixtureMetadata(
     val fixtureId: String,
     val displayName: String,
@@ -24,6 +39,7 @@ data class AutonomousValidationRunStart(
     val runId: String,
     val fixtureId: String,
     val fixtureDisplayName: String,
+    val modelMode: AutonomousValidationModelMode,
     val sourceImagePath: String,
     val workingDirectory: String,
     val publicArtifactDirectory: String,

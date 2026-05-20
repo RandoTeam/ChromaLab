@@ -104,6 +104,7 @@ import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.RuntimeFailureClass
+import com.chromalab.feature.validation.AutonomousValidationModelMode
 import com.chromalab.feature.validation.AutonomousValidationTerminalFailureExporter
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
@@ -133,6 +134,7 @@ fun ProcessingFlowScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     sourceType: SourceType = SourceType.PHOTO,
+    validationModelMode: AutonomousValidationModelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
 ) {
     val flowStartedAt = remember(imagePath) { System.currentTimeMillis() }
     val stageDurationMillis = remember(imagePath) { mutableStateMapOf<ProcessingStep, Long>() }
@@ -259,21 +261,36 @@ fun ProcessingFlowScreen(
             withContext(Dispatchers.Default) {
                 when (currentStep) {
                     ProcessingStep.IMAGE_QUALITY -> {
-                        // Lazy VLM loading; validation fixtures defer it until deterministic CV has run.
-                            if (sourceType == SourceType.VALIDATION_FIXTURE && modelAvailabilityDiagnostics.isEmpty()) {
+                        // Lazy VLM loading; validation fixtures can explicitly run either
+                        // deterministic baseline or model-enabled comparison mode.
+                            if (
+                                sourceType == SourceType.VALIDATION_FIXTURE &&
+                                modelAvailabilityDiagnostics.isEmpty()
+                            ) {
                                 val modelSnapshot = chartReader.currentModelSnapshot()
+                                val deferredMessage = when (validationModelMode) {
+                                    AutonomousValidationModelMode.DETERMINISTIC_ONLY ->
+                                        "Validation fixture ran deterministic no-model baseline; graphPanel, plotArea, axis, and tick stages still executed."
+                                    AutonomousValidationModelMode.MODEL_ENABLED ->
+                                        "Validation fixture defers Gemma model activation until deterministic calibration completes; model output cannot affect graphPanel, plotArea, tick, or calibration geometry."
+                                }
                                 val diagnostic = modelSnapshot.toModelAvailabilityDiagnostic(
                                     ready = false,
                                     mode = sourceType.toModelAvailabilityMode(),
                                     loadAttempted = false,
                                     forcedStatus = ModelAvailabilityStatus.DISABLED,
-                                    forcedMessage = "Validation fixture skipped startup VLM loading so deterministic graphPanel, plotArea, axis, and tick stages can run first.",
+                                    forcedMessage = deferredMessage,
                                 )
                                 modelAvailabilityDiagnostics = listOf(diagnostic)
-                                vlmLoadingStatus = "AI model deferred for validation fixture; deterministic CV is running"
+                                vlmLoadingStatus = when (validationModelMode) {
+                                    AutonomousValidationModelMode.DETERMINISTIC_ONLY ->
+                                        "AI model deferred for validation fixture; deterministic CV is running"
+                                    AutonomousValidationModelMode.MODEL_ENABLED ->
+                                        "AI model activation scheduled after deterministic calibration"
+                                }
                                 println(
                                     "PIPELINE[VLM] startup load deferred for validation fixture " +
-                                        "status=${diagnostic.status} deterministicFallback=continue",
+                                        "mode=$validationModelMode status=${diagnostic.status} deterministicFallback=continue",
                                 )
                             } else if (!vlmReady) {
                                 vlmLoadingStatus = "Загрузка AI модели..."
@@ -502,6 +519,33 @@ fun ProcessingFlowScreen(
                                 axesResult = axes,
                                 selectedRegion = calibrationRegion,
                             ) ?: failAutomaticAxisCalibration("confirmed X and Y calibration are required before signal conversion")
+
+                            if (
+                                sourceType == SourceType.VALIDATION_FIXTURE &&
+                                validationModelMode == AutonomousValidationModelMode.MODEL_ENABLED &&
+                                !vlmReady
+                            ) {
+                                vlmLoadingStatus = "Loading AI model after deterministic calibration..."
+                                vlmReady = chartReader.ensureModelLoaded { status ->
+                                    vlmLoadingStatus = status
+                                }
+                                val modelSnapshot = chartReader.currentModelSnapshot()
+                                val diagnostic = modelSnapshot.toModelAvailabilityDiagnostic(
+                                    ready = vlmReady,
+                                    mode = sourceType.toModelAvailabilityMode(),
+                                    loadAttempted = true,
+                                )
+                                modelAvailabilityDiagnostics = listOf(diagnostic)
+                                vlmLoadingStatus = if (vlmReady) {
+                                    "AI model ready after deterministic calibration"
+                                } else {
+                                    "AI model unavailable after deterministic calibration; deterministic report continues"
+                                }
+                                println(
+                                    "PIPELINE[VLM] post-calibration model ready: $vlmReady " +
+                                        "status=${diagnostic.status} deterministicFallback=preserved",
+                                )
+                            }
                         }
                     }
 

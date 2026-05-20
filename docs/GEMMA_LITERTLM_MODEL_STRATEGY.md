@@ -80,3 +80,17 @@ Model output must include:
 - `explanation`
 
 If scientific explanation lacks `used_entry_ids`, the output is REVIEW or rejected. If the model uses a knowledge entry for a forbidden purpose, the output is rejected. Knowledge never creates measured chromatographic metrics.
+
+## Phase 9 Android Validation Update
+
+Date: 2026-05-20
+
+Real-device validation on `com.chromalab.app.validation` found `Gemma-4-E2B LiteRT-LM` installed at:
+
+```text
+files/models/gemma4-e2b/gemma-4-E2B-it.litertlm
+```
+
+`Gemma-4-E4B LiteRT-LM` was not installed in the validation package during Phase 9, so E4B FULL_ANALYSIS remains a required follow-up validation item.
+
+The validation fixture model-enabled path now defers Gemma activation until deterministic X/Y calibration completes. This preserves the hard boundary that model loading or VLM timeout cannot change graphPanel, plotArea, tick, calibration, trace, peak, or report numeric evidence.

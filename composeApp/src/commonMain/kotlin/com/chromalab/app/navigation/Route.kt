@@ -20,6 +20,7 @@ sealed interface Route {
     @Serializable data class Processing(
         val imageUri: String,
         val sourceType: String = "PHOTO",
+        val validationModelMode: String = "DETERMINISTIC_ONLY",
     ) : Route
 
     @Serializable data class Analysis(val signalId: String) : Route

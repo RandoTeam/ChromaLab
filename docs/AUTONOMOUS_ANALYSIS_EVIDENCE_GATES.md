@@ -107,3 +107,15 @@ For full regression, every dataset item must have an explicit expected autonomou
 - stage timings and model/runtime profile.
 
 If any terminal state lacks evidence, the dataset item is `DIAGNOSTIC_ONLY` or `BLOCKED`. If Android validation is unavailable, Phase 8 remains review-ready until the real-device checklist is executed or Product Acceptance signs off on the deferral.
+
+## Phase 9 Model Evidence Gate
+
+Model-enabled Android validation may pass review only when:
+
+- deterministic graphPanel, plotArea, tick, calibration, trace, and peak evidence are still present;
+- selected and executed model ids are recorded when a model loads;
+- model unavailability or timeout is represented as semantic/model evidence, not as fabricated numeric evidence;
+- no VLM/Knowledge output creates RT, height, area, FWHM, S/N, baseline, Kovats, calibration coefficients, or integration boundaries;
+- report gate status remains review/diagnostic unless all deterministic release gates pass.
+
+Phase 9 E2B fallback evidence meets this gate. E4B FULL_ANALYSIS remains unvalidated on the attached device.

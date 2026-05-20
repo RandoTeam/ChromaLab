@@ -60,6 +60,18 @@ For every fixture or real-device case used to close a phase:
 - Stage timings.
 - Final report contract JSON.
 
+## Phase 9 Addendum
+
+Phase 9 adds real-device validation of deterministic no-model and model-enabled fixture paths.
+
+Current Android fixture evidence:
+
+- deterministic baseline `white_tiger_ion71_20260520_192547`: graph count 1, X/Y calibration valid, report gate `REVIEW_ONLY`, validator `REVIEW`, zero blocking issues;
+- model-enabled E2B fallback `white_tiger_ion71_20260520_192400`: graph count 1, X/Y calibration valid, report gate `REVIEW_ONLY`, validator `PASS`, zero blocking issues;
+- E4B FULL_ANALYSIS was not installed and remains a follow-up validation gap.
+
+Regression rule: model activation must not run before deterministic calibration in validation fixture comparison mode, because the model is not the source of graphPanel, plotArea, tick, calibration, trace, or peak metric evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

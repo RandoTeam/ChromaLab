@@ -10,8 +10,11 @@ import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.validation.AutonomousValidationArtifactRecord
 import com.chromalab.feature.validation.AutonomousValidationFixtureContracts
 import com.chromalab.feature.validation.AutonomousValidationFixtureMetadata
+import com.chromalab.feature.validation.AutonomousValidationModelMode
+import com.chromalab.feature.validation.AutonomousValidationRunStart
 import com.chromalab.feature.validation.AutonomousValidationRunArtifactManifest
 import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -53,6 +56,44 @@ class AutonomousValidationFixtureContractTest {
                 .validateMetadata(metadata)
                 .any { it.startsWith("fixture_id_unsupported") },
         )
+    }
+
+    @Test
+    fun validationModelModeParsesAdbExtras() {
+        assertEquals(
+            AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+            AutonomousValidationModelMode.parse(null),
+        )
+        assertEquals(
+            AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+            AutonomousValidationModelMode.parse("no_model"),
+        )
+        assertEquals(
+            AutonomousValidationModelMode.MODEL_ENABLED,
+            AutonomousValidationModelMode.parse("model_enabled"),
+        )
+        assertEquals(
+            AutonomousValidationModelMode.MODEL_ENABLED,
+            AutonomousValidationModelMode.parse("gemma"),
+        )
+    }
+
+    @Test
+    fun validationRunStartPreservesModelMode() {
+        val runStart = AutonomousValidationRunStart(
+            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            runId = "white_tiger_ion71_20260520_120000",
+            fixtureDisplayName = "White Tiger Ion 71 validation chromatogram",
+            sourceImagePath = "/app/files/captures/validation/fixture.jpg",
+            workingDirectory = "/app/files/captures/validation/white_tiger_ion71_20260520_120000",
+            publicArtifactDirectory = "/sdcard/Download/ChromaLab/validation/white_tiger_ion71_20260520_120000",
+            modelMode = AutonomousValidationModelMode.MODEL_ENABLED,
+        )
+
+        val encoded = Json.encodeToString(AutonomousValidationRunStart.serializer(), runStart)
+        val decoded = Json.decodeFromString(AutonomousValidationRunStart.serializer(), encoded)
+
+        assertEquals(AutonomousValidationModelMode.MODEL_ENABLED, decoded.modelMode)
     }
 
     @Test

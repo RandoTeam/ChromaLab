@@ -42,6 +42,7 @@ import com.chromalab.feature.chat.rememberChatState
 import com.chromalab.feature.processing.inference.ModelRuntime
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelRegistry
+import com.chromalab.feature.validation.AutonomousValidationModelMode
 
 import com.chromalab.feature.settings.LanguageScreen
 import com.chromalab.feature.settings.AboutScreen
@@ -67,6 +68,7 @@ fun App(
                 Route.Processing(
                     imageUri = request.imagePath,
                     sourceType = request.sourceType.name,
+                    validationModelMode = request.validationModelMode.name,
                 ),
             ) {
                 popUpTo(Route.Capture) { inclusive = false }
@@ -222,6 +224,7 @@ fun App(
                     val imageUri = route.imageUri
                     val sourceType = runCatching { SourceType.valueOf(route.sourceType) }
                         .getOrDefault(SourceType.PHOTO)
+                    val validationModelMode = AutonomousValidationModelMode.parse(route.validationModelMode)
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = { signalId ->
@@ -235,6 +238,7 @@ fun App(
                             navController.popBackStack(Route.Capture, inclusive = false)
                         },
                         sourceType = sourceType,
+                        validationModelMode = validationModelMode,
                     )
                 }
 
@@ -297,6 +301,7 @@ fun App(
 data class InitialProcessingRequest(
     val imagePath: String,
     val sourceType: SourceType = SourceType.PHOTO,
+    val validationModelMode: AutonomousValidationModelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
 )
 
 private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {

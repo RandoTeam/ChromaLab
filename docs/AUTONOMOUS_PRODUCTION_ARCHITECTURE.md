@@ -93,3 +93,14 @@ Assisted Review and Manual Advanced may use the same knowledge snippets to expla
 Phase 8 adds the proof layer for autonomous production. A run is not considered production-ready merely because a report can be rendered. It must appear in the regression dataset, produce the required evidence package and validator artifacts, preserve per-graph gate status, pass report/export privacy checks, and classify any non-release terminal state using the failure taxonomy.
 
 The current desktop regression layer proves contract, report, evidence, and fixture behavior. Real Android validation remains required before the autonomous path can be called fully closed for Phase 8.
+
+## Phase 9 Android Model Hardening
+
+Phase 9 validates the real Android fixture path with and without a local Gemma model. The architecture rule is:
+
+- deterministic CV/OCR/calibration must run first and remain authoritative;
+- model activation in validation fixture comparison mode occurs after deterministic X/Y calibration;
+- model diagnostics are exported with the evidence package;
+- missing E4B or unavailable VLM semantic evidence can keep a report review-grade, but cannot block graphPanel, plotArea, tick, calibration, trace, or peak attempts.
+
+The attached device validated E2B fallback activation without graph/calibration regression. E4B FULL_ANALYSIS still requires installation and validation.
