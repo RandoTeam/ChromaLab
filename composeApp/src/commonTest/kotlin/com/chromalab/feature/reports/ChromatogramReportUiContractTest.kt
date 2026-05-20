@@ -23,6 +23,8 @@ class ChromatogramReportUiContractTest {
         assertTrue(contract.technicalAppendix.rawWarningCodesVisible)
         assertTrue(contract.primarySurface.sections.none { it.rawWarningCodesVisible })
         assertTrue(contract.graphs.flatMap { it.sections }.none { it.rawWarningCodesVisible })
+        assertEquals(EvidenceGateStatus.MISSING, contract.reportGateEvidence.evidencePackageStatus)
+        assertTrue(contract.reportGateBlockingReasons.contains("evidence_package.missing"))
     }
 
     @Test
@@ -32,7 +34,7 @@ class ChromatogramReportUiContractTest {
         val graph = contract.graphs.single()
 
         assertVisualEvidence(graph, "graph_focus", "source_and_graph_preparation")
-        assertVisualEvidence(graph, "manual_calibration_focus", "axis_calibration")
+        assertVisualEvidence(graph, "calibration_evidence_focus", "axis_calibration")
         assertVisualEvidence(graph, "curve_overlay", "interactive_or_rendered_graph")
         assertVisualEvidence(graph, "peak_overlay", "peak_table")
     }
@@ -47,8 +49,23 @@ class ChromatogramReportUiContractTest {
 
         assertNotNull(uiArtifact)
         assertFalse(uiArtifact.userFacing)
+        assertEquals(ReportExportPrivacyClass.TECHNICAL_EVIDENCE, uiArtifact.privacyClass)
         assertTrue(contract.exportArtifacts.any { it.artifactPath == "chromatogram_report.html" && it.userFacing })
         assertTrue(contract.exportArtifacts.any { it.artifactPath == "chromatogram_report.md" && it.userFacing })
+        assertTrue(
+            contract.exportArtifacts.any {
+                it.artifactPath == "runtime_evidence_package.json" &&
+                    it.privacyClass == ReportExportPrivacyClass.DIAGNOSTIC_BUNDLE &&
+                    it.diagnosticOnly
+            },
+        )
+        assertTrue(
+            contract.exportArtifacts.any {
+                it.artifactPath == "raw_device_logs.txt" &&
+                    it.privacyClass == ReportExportPrivacyClass.NEVER_SHARED_BY_DEFAULT &&
+                    it.diagnosticOnly
+            },
+        )
     }
 
     private fun assertVisualEvidence(

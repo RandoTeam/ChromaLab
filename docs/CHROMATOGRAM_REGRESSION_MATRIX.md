@@ -195,3 +195,16 @@ Add these knowledge-specific checks to every future release gate that touches VL
 | Knowledge-grounded VLM explanation without `used_entry_ids` | REVIEW/REJECTED. |
 | Knowledge entry used to create numeric metric | REJECTED and validator issue. |
 | Source with `NEEDS_REVIEW` license | Cannot contribute bundled production entries. |
+
+# Phase 7 Report Regression Additions
+
+Date: 2026-05-20
+
+| Case | Expected report behavior | Evidence artifacts | Status |
+|---|---|---|---|
+| Release-ready complete evidence | HTML/Markdown/Compose show `RELEASE_READY`, complete gate matrix, and peak evidence columns. | UI contract v2, HTML, Markdown, validator report, evidence package. | Covered by report renderer tests with explicit valid evidence package. |
+| Missing evidence package | Report remains `DIAGNOSTIC_ONLY`; release-quality claim is blocked. | Gate matrix shows `Evidence package = MISSING`. | Covered by Markdown/contract tests. |
+| Review-only trace/calibration warning | Report displays review gate and review reasons before peak metrics. | Gate matrix, graph warnings, validator reasons. | Covered by existing gate/validator tests; fixture expansion remains Phase 8. |
+| Knowledge-only compound name | Rendered as candidate hypothesis, not identified compound. | Peak table and validator warning. | Covered by report validator test. |
+| Kovats without reference series | RI is caveated/rejected; no release-quality RI claim. | Kovats section and validator finding. | Covered by report validator test. |
+| Multi-graph report | Graph overview and per-graph sections preserve graph order and per-graph evidence. | UI contract graph sequence. | Structurally supported; broad golden export deferred to Phase 8. |

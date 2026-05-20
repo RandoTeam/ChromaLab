@@ -78,3 +78,14 @@ Knowledge-grounded VLM/OCR/report outputs must satisfy these checks:
 - Knowledge never creates RT, height, area, FWHM, S/N, baseline, Kovats, calibration, integration, or final compound identity.
 
 Passing this gate does not by itself make a report RELEASE_READY. It only proves semantic explanations and text classifications are grounded safely.
+
+## Phase 7 Report Surface Enforcement
+
+Phase 7 makes the evidence gates visible in the professional report layer:
+
+- Mobile, HTML, and Markdown surfaces show report gate status and release-quality claim state.
+- The report UI contract exposes the full `GateEvidence` matrix and reason codes.
+- Peak tables include evidence status and gate status before numeric metrics.
+- User-facing exports are separated from diagnostic evidence packages and raw logs.
+- Knowledge/model-only compound labels are rendered as hypotheses unless explicit identity evidence exists.
+- Calculated Kovats/RI values require explicit reference-series retention times.

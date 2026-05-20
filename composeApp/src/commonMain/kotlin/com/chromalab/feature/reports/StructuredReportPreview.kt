@@ -31,6 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,8 +64,8 @@ fun StructuredReportPreview(
         ChromatogramReportUiContractBuilder.build(report, validation)
     }
     val allWarnings = remember(report) { report.allWarnings() }
-    val qualityState = remember(report, validation) {
-        buildQualityState(validation, allWarnings)
+    val qualityState = remember(report, validation, reportUiContract) {
+        buildQualityState(reportUiContract, validation, allWarnings)
     }
     val graphsByIndex = remember(report) { report.graphs.associateBy { it.graphIndex } }
 
@@ -75,6 +78,7 @@ fun StructuredReportPreview(
             validation = validation,
             qualityState = qualityState,
             warnings = allWarnings,
+            uiContract = reportUiContract,
         )
 
         CompactReportMetadata(
@@ -99,6 +103,7 @@ fun StructuredReportPreview(
             report = report,
             qualityState = qualityState,
             warnings = allWarnings,
+            uiContract = reportUiContract,
         )
 
         reportUiContract.graphs.forEach { graphContract ->
@@ -289,6 +294,7 @@ private fun ReportHeader(
     validation: ReportContractValidationResult,
     qualityState: QualityState,
     warnings: List<ReportWarning>,
+    uiContract: ChromatogramReportUiContract,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -325,7 +331,7 @@ private fun ReportHeader(
                 }
                 Spacer(modifier = Modifier.width(Spacing.sm))
                 SeverityBadge(
-                    label = qualityState.label,
+                    label = uiContract.reportGateStatus.name,
                     severity = qualityState.severity,
                 )
             }
@@ -341,6 +347,7 @@ private fun ReportHeader(
                     "Detected peaks" to report.totalPeakCount().toString(),
                     "Critical warnings" to warnings.count { it.severity == ReportSeverity.FAILED || it.severity == ReportSeverity.SERIOUS }.toString(),
                     "Validation" to "${validation.errorCount} errors / ${validation.warningCount} warnings",
+                    "Gate reasons" to (uiContract.reportGateBlockingReasons.size + uiContract.reportGateReviewReasons.size).toString(),
                     "Input" to report.metadata.inputSourceType.name,
                 ),
             )
@@ -370,7 +377,7 @@ private fun GraphReportSection(
         )
         HorizontalDivider()
         PeakTable(
-            peaks = graph.peaks,
+            graph = graph,
             visualEvidence = uiContract.visualEvidenceFor("peak_table"),
         )
         HorizontalDivider()
@@ -543,15 +550,17 @@ private fun OverlayLegend(layers: List<ChartLayer>) {
 
 @Composable
 private fun PeakTable(
-    peaks: List<ReportPeak>,
+    graph: GraphReport,
     visualEvidence: List<ReportVisualEvidenceContract>,
 ) {
     SectionBlock(title = "Peak table") {
         VisualEvidenceStrip(visualEvidence)
+        val peaks = graph.peaks
         if (peaks.isEmpty()) {
             EmptyText("No peaks available.")
             return@SectionBlock
         }
+        val evidenceByPeak = graph.peakRecovery.peakEvidenceTable.associateBy { it.peakNumber }
 
         Column(
             modifier = Modifier
@@ -560,23 +569,26 @@ private fun PeakTable(
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             TableRow(
-                cells = listOf("#", "RT", "Height", "Area %", "S/N", "Overlap", "Compound", "Flags"),
-                widths = listOf(44.dp, 82.dp, 98.dp, 82.dp, 78.dp, 136.dp, 170.dp, 180.dp),
+                cells = listOf("#", "Evidence", "Gate", "RT", "Height", "Area %", "S/N", "Overlap", "Compound", "Flags"),
+                widths = listOf(44.dp, 118.dp, 76.dp, 82.dp, 98.dp, 82.dp, 78.dp, 136.dp, 170.dp, 180.dp),
                 header = true,
             )
             peaks.forEach { peak ->
+                val evidence = evidenceByPeak[peak.number]
                 TableRow(
                     cells = listOf(
                         peak.number.toString(),
+                        evidence?.status?.name ?: "UNKNOWN",
+                        evidence?.gateStatus?.name ?: "MISSING",
                         peak.retentionTime.renderNumber(),
                         peak.heightAboveBaseline.renderNumber(),
                         peak.areaPercent.renderNumber(),
                         peak.signalToNoise.renderNumber(),
                         peak.overlapClass.renderText(),
-                        peak.compound?.probableName?.renderText() ?: "not assigned",
+                        peak.compound.renderCompoundAssignment(),
                         peak.flags.joinToString("; ").ifBlank { peak.warningSummary() },
                     ),
-                    widths = listOf(44.dp, 82.dp, 98.dp, 82.dp, 78.dp, 136.dp, 170.dp, 180.dp),
+                    widths = listOf(44.dp, 118.dp, 76.dp, 82.dp, 98.dp, 82.dp, 78.dp, 136.dp, 170.dp, 180.dp),
                     header = false,
                 )
             }
@@ -718,6 +730,7 @@ private fun QualitySummary(
     report: ChromatogramReport,
     qualityState: QualityState,
     warnings: List<ReportWarning>,
+    uiContract: ChromatogramReportUiContract,
 ) {
     ReportSection(title = "Quality summary") {
         QualityNotice(
@@ -728,12 +741,15 @@ private fun QualitySummary(
 
         MetricGrid(
             rows = listOf(
+                "Report gate" to uiContract.reportGateStatus.name,
                 "Critical issues" to warnings.countCritical().toString(),
                 "Review items" to warnings.countReviewItems().toString(),
                 "Graph checks" to report.graphs.count { it.graphPreviewSeverity().rank() >= ReportSeverity.WARNING.rank() }.toString(),
                 "Peak checks" to warnings.count { it.peakNumber != null }.toString(),
             ),
         )
+
+        GateEvidenceSummary(uiContract)
 
         report.userQualityItems(warnings).forEach { item ->
             QualityNotice(
@@ -748,6 +764,26 @@ private fun QualitySummary(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun GateEvidenceSummary(uiContract: ChromatogramReportUiContract) {
+    SectionBlock(title = "Release evidence gates") {
+        val rows = uiContract.reportGateEvidence.rows()
+        MetricGrid(
+            rows = rows.take(8).map { row -> row.label to row.status.name },
+        )
+        val reasons = uiContract.reportGateBlockingReasons + uiContract.reportGateReviewReasons
+        if (reasons.isNotEmpty()) {
+            Text(
+                text = reasons.take(4).joinToString("; "),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -850,7 +886,7 @@ private fun TechnicalAppendix(
             uiContract.exportArtifacts.forEach { artifact ->
                 DetailLine(
                     label = artifact.label,
-                    value = "${artifact.artifactPath} / ${if (artifact.userFacing) "user-facing" else "technical"}",
+                    value = "${artifact.artifactPath} / ${artifact.privacyClass.name} / ${if (artifact.userFacing) "user-facing" else "technical"}",
                 )
             }
         }
@@ -878,6 +914,9 @@ private fun VisualEvidenceStrip(visualEvidence: List<ReportVisualEvidenceContrac
 private fun EvidenceChip(evidence: ReportVisualEvidenceContract) {
     val ready = evidence.generatedStatus == "rendered" || evidence.generatedStatus == "generated"
     Surface(
+        modifier = Modifier.semantics {
+            contentDescription = "${evidence.label}, ${evidence.generatedStatus}"
+        },
         shape = RoundedCornerShape(6.dp),
         color = if (ready) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.70f)
@@ -914,11 +953,12 @@ private fun ReportSection(
             modifier = Modifier.padding(Spacing.md),
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
+        Text(
+            text = title,
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+        )
             content()
         }
     }
@@ -1170,25 +1210,33 @@ private fun EmptyText(text: String) {
 }
 
 private fun buildQualityState(
+    uiContract: ChromatogramReportUiContract,
     validation: ReportContractValidationResult,
     warnings: List<ReportWarning>,
 ): QualityState {
     val failed = warnings.count { it.severity == ReportSeverity.FAILED }
     val serious = warnings.count { it.severity == ReportSeverity.SERIOUS }
     return when {
-        validation.errorCount > 0 || failed > 0 -> QualityState(
+        uiContract.reportGateStatus == ReportGateStatus.RELEASE_READY -> QualityState(
+            label = "Release ready",
+            message = "All required graph, calibration, trace, peak, provenance, and validator gates passed.",
+            severity = ReportSeverity.INFO,
+        )
+        validation.errorCount > 0 || failed > 0 || uiContract.reportGateStatus == ReportGateStatus.BLOCKED -> QualityState(
             label = "Blocked",
             message = "The report has failed validation or failed analysis stages. Treat it as not release-ready.",
             severity = ReportSeverity.FAILED,
         )
-        serious > 0 -> QualityState(
+        serious > 0 || uiContract.reportGateStatus == ReportGateStatus.DIAGNOSTIC_ONLY -> QualityState(
             label = "Review",
-            message = "Critical analytical warnings are present. Review graph preparation, runtime, baseline, and peak integration before using conclusions.",
+            message = "Required release evidence is missing or invalid. Use this report as diagnostic evidence only.",
             severity = ReportSeverity.SERIOUS,
         )
-        validation.warningCount > 0 || warnings.any { it.severity == ReportSeverity.WARNING } -> QualityState(
+        validation.warningCount > 0 ||
+            warnings.any { it.severity == ReportSeverity.WARNING } ||
+            uiContract.reportGateStatus == ReportGateStatus.REVIEW_ONLY -> QualityState(
             label = "Caution",
-            message = "The report is structured, but warnings remain in the analytical audit trail.",
+            message = "The report is structured, but one or more evidence gates require review before release use.",
             severity = ReportSeverity.WARNING,
         )
         else -> QualityState(
@@ -1281,6 +1329,27 @@ private fun GraphReport.toMetricOverlayState(): ChromatogramChartState {
 
 private fun GraphReportUiContract.visualEvidenceFor(sectionId: String): List<ReportVisualEvidenceContract> =
     visualEvidence.filter { it.nearSectionId == sectionId && it.placement == ReportUiPlacement.MAIN_REPORT }
+
+private data class GateEvidenceRow(
+    val label: String,
+    val status: EvidenceGateStatus,
+)
+
+private fun GateEvidence.rows(): List<GateEvidenceRow> =
+    listOf(
+        GateEvidenceRow("Graph panel", graphPanelStatus),
+        GateEvidenceRow("Plot area", plotAreaStatus),
+        GateEvidenceRow("Axis geometry", axisStatus),
+        GateEvidenceRow("Tick labels", tickStatus),
+        GateEvidenceRow("X calibration", xCalibrationStatus),
+        GateEvidenceRow("Y calibration", yCalibrationStatus),
+        GateEvidenceRow("Trace", traceStatus),
+        GateEvidenceRow("Peak evidence", peakReviewStatus),
+        GateEvidenceRow("Evidence package", evidencePackageStatus),
+        GateEvidenceRow("Source provenance", sourceProvenanceStatus),
+        GateEvidenceRow("User confirmation", userConfirmationStatus),
+        GateEvidenceRow("VLM/OCR semantic evidence", vlmEvidenceStatus),
+    )
 
 private fun ReportPeak.toMetricSignalPoints(defaultBaseline: Double): List<ChartPoint> {
     val apexTime = retentionTime.value.takeIfUsable() ?: return emptyList()
@@ -1501,6 +1570,25 @@ private fun ReportTextValue.renderText(): String {
         text != null && status.isUsable() -> text
         text != null -> "${status.missingLabel()} ($text)"
         else -> status.missingLabel()
+    }
+}
+
+private fun CompoundAssignment?.renderCompoundAssignment(): String {
+    val compound = this ?: return "not assigned"
+    val name = compound.probableName.renderText()
+    val source = compound.probableName.source
+    val status = compound.probableName.status
+    val evidenceBasis = compound.assignmentBasis.orEmpty().lowercase()
+    val explicitEvidence = listOf("library", "spectrum", "spectral", "reference", "retention index", "user")
+        .any { it in evidenceBasis }
+    return if (
+        status == ReportValueStatus.INFERRED &&
+        source in setOf(ReportValueSource.LOCAL_KNOWLEDGE, ReportValueSource.MODEL_SUGGESTED, ReportValueSource.VISION_MODEL) &&
+        !explicitEvidence
+    ) {
+        "not assigned; candidate: $name"
+    } else {
+        name
     }
 }
 

@@ -230,6 +230,16 @@ object ReportContractValidator {
                 message = "Kovats analysis is not calculated and no missing-data note is provided.",
             )
         }
+        if (graph.kovats.results.any { it.calculatedIndex.isAvailable() } &&
+            graph.kovats.referenceRetentionTimes.isEmpty()
+        ) {
+            findings += error(
+                code = "kovats.reference_series_missing_for_calculated_index",
+                graphIndex = graph.graphIndex,
+                section = "kovats_index_analysis",
+                message = "Calculated Kovats/retention index values require explicit same-method reference retention times.",
+            )
+        }
 
         if (!graph.interpretation.likelyCompoundClass.isAvailable() &&
             graph.interpretation.homologSeriesNotes.isEmpty() &&
@@ -337,6 +347,35 @@ object ReportContractValidator {
                 peakNumber = peak.number,
                 section = "peak_table",
                 message = "Compound assignment block is missing.",
+            )
+        } else {
+            validateCompoundAssignment(graphIndex, peak.number, peak.compound, findings)
+        }
+    }
+
+    private fun validateCompoundAssignment(
+        graphIndex: Int,
+        peakNumber: Int,
+        compound: CompoundAssignment,
+        findings: MutableList<ReportContractFinding>,
+    ) {
+        val source = compound.probableName.source
+        val status = compound.probableName.status
+        val basis = compound.assignmentBasis.orEmpty().lowercase()
+        val hasExplicitIdentityEvidence = listOf("library", "spectrum", "spectral", "reference", "retention index", "user")
+            .any { it in basis }
+        if (
+            compound.probableName.isAvailable() &&
+            status == ReportValueStatus.INFERRED &&
+            source in setOf(ReportValueSource.LOCAL_KNOWLEDGE, ReportValueSource.MODEL_SUGGESTED, ReportValueSource.VISION_MODEL) &&
+            !hasExplicitIdentityEvidence
+        ) {
+            findings += warning(
+                code = "peak.compound_assignment_evidence_missing",
+                graphIndex = graphIndex,
+                peakNumber = peakNumber,
+                section = "peak_table",
+                message = "Compound name is a hypothesis from semantic knowledge/model context, not an identified compound.",
             )
         }
     }

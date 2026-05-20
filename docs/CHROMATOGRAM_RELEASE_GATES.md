@@ -210,3 +210,16 @@ The autonomous-first release-gate contract is accepted when:
 - review/manual intervention is visible in provenance;
 - current pipeline risks are documented;
 - regression matrix exists and is updated by future phases.
+
+## Phase 7 Report and Export Gate Additions
+
+Phase 7 adds professional report-surface gates on top of the Phase 0 evidence gates:
+
+| Gate | Release-ready requirement | Review/diagnostic behavior |
+| --- | --- | --- |
+| Report UI contract | `chromalab.chromatogram_report_ui.v2` includes report gate status, evidence matrix, blocking reasons, and review reasons. | Missing evidence remains visible in mobile, HTML, and Markdown. |
+| Peak table presentation | Every reportable peak shows peak evidence status and peak gate status before numeric metrics. | Missing or weak peak evidence is `REVIEW` or `MISSING`, not hidden. |
+| Export privacy | Each export artifact has privacy class, redaction policy, and diagnostic-only marker where needed. | Runtime evidence and raw logs are excluded from user-facing exports by default. |
+| Knowledge/VLM explanations | Scientific/domain explanations require supported evidence and cannot create numeric metrics. | Unsupported claims are caveated or rejected before user-facing reporting. |
+| Compound assignment | Compound names require explicit identity evidence to be shown as assigned. | Knowledge/model-only names render as candidate hypotheses. |
+| Kovats/RI | Calculated RI requires same-method reference retention times. | Missing reference series keeps RI caveated or invalid for release claims. |

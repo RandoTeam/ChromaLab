@@ -63,6 +63,7 @@ object ReportHtmlRenderer {
         metaTile("Duration", metadata.totalAnalysisDurationMillis.renderDuration())
         metaTile("Device", metadata.deviceName ?: "not recorded")
         metaTile("Mode", metadata.processingMode.name)
+        metaTile("Report gate", uiContract.reportGateStatus.name)
         appendLine("</div>")
         appendLine("</header>")
     }
@@ -105,6 +106,10 @@ object ReportHtmlRenderer {
         report: ChromatogramReport,
         uiContract: ChromatogramReportUiContract,
     ) {
+        appendLine("<div class=\"gate-callout ${uiContract.reportGateStatus.cssClass()}\">")
+        appendLine("<strong>${uiContract.reportGateStatus.name.escapeHtml()}</strong>")
+        appendLine("<span>${uiContract.reportGateStatus.userMessage().escapeHtml()}</span>")
+        appendLine("</div>")
         renderTable(
             headers = listOf("Field", "Value"),
             rows = listOf(
@@ -117,6 +122,26 @@ object ReportHtmlRenderer {
                 },
             ).map { listOf(it.first, it.second) },
         )
+        renderGateEvidenceMatrix(uiContract.reportGateEvidence)
+        renderGateReasonList("Blocking reasons", uiContract.reportGateBlockingReasons)
+        renderGateReasonList("Review reasons", uiContract.reportGateReviewReasons)
+    }
+
+    private fun StringBuilder.renderGateEvidenceMatrix(evidence: GateEvidence) {
+        renderTable(
+            headers = listOf("Evidence gate", "Status", "Release impact"),
+            rows = evidence.rows().map { row ->
+                listOf(row.label, row.status.name, row.status.releaseImpact())
+            },
+        )
+    }
+
+    private fun StringBuilder.renderGateReasonList(title: String, reasons: List<String>) {
+        if (reasons.isEmpty()) return
+        appendLine("<h3>${title.escapeHtml()}</h3>")
+        appendLine("<ul>")
+        reasons.forEach { reason -> appendLine("<li>${reason.escapeHtml()}</li>") }
+        appendLine("</ul>")
     }
 
     private fun StringBuilder.renderGraphReport(
@@ -191,7 +216,7 @@ object ReportHtmlRenderer {
     ) {
         val graphsByIndex = report.graphs.associateBy { it.graphIndex }
         renderTable(
-            headers = listOf("Graph", "Title", "Ion/channel", "Peaks", "Status"),
+            headers = listOf("Graph", "Title", "Ion/channel", "Peaks", "Calibration", "Trace", "Peak evidence", "Status"),
             rows = uiContract.graphs.mapNotNull { graphContract ->
                 val graph = graphsByIndex[graphContract.graphIndex] ?: return@mapNotNull null
                 listOf(
@@ -199,6 +224,9 @@ object ReportHtmlRenderer {
                     graph.identification.chromatogramTitle.renderTextValue(),
                     graph.identification.ionOrChannel.renderTextValue(),
                     (graph.quality.totalDetectedPeaks ?: graph.peaks.size).toString(),
+                    graph.calibrationSummaryStatus(),
+                    graph.traceSummaryStatus(),
+                    graph.peakEvidenceSummaryStatus(),
                     graphContract.sections.maxStatus(),
                 )
             },
@@ -305,11 +333,15 @@ object ReportHtmlRenderer {
         if (graph.peaks.isEmpty()) {
             appendLine("<p class=\"muted\">No peaks available.</p>")
         } else {
+            val evidenceByPeak = graph.peakRecovery.peakEvidenceTable.associateBy { it.peakNumber }
             renderTable(
-                headers = listOf("#", "RT", "Height", "Area", "Area %", "FWHM", "W_base", "S/N", "Asymmetry", "Compound", "C#", "Kovats", "Confidence", "Flags"),
+                headers = listOf("#", "Evidence", "Gate", "RT", "Height", "Area", "Area %", "FWHM", "W_base", "S/N", "Asymmetry", "Compound", "C#", "Kovats", "Confidence", "Flags"),
                 rows = graph.peaks.sortedBy { it.retentionTime.value ?: Double.MAX_VALUE }.map { peak ->
+                    val evidence = evidenceByPeak[peak.number]
                     listOf(
                         peak.number.toString(),
+                        evidence?.status?.name ?: "UNKNOWN",
+                        evidence?.gateStatus?.name ?: "MISSING",
                         peak.retentionTime.renderNumber(),
                         peak.heightAboveBaseline.renderNumber(),
                         peak.integratedArea.renderNumber(),
@@ -318,7 +350,7 @@ object ReportHtmlRenderer {
                         peak.widthAtBase.renderNumber(),
                         peak.signalToNoise.renderNumber(),
                         peak.asymmetry.renderNumber(),
-                        peak.compound?.probableName.renderTextValue(),
+                        peak.compound.renderCompoundAssignment(),
                         peak.compound?.carbonNumber.renderTextValue(),
                         peak.compound?.kovatsIndex.renderNumber(),
                         peak.confidence.renderPercent(),
@@ -432,6 +464,11 @@ object ReportHtmlRenderer {
                 },
             )
         }
+        if (graph.kovats.missingDataNotes.isNotEmpty()) {
+            appendLine("<ul>")
+            graph.kovats.missingDataNotes.forEach { note -> appendLine("<li>${note.escapeHtml()}</li>") }
+            appendLine("</ul>")
+        }
         appendLine("</section>")
     }
 
@@ -533,6 +570,12 @@ object ReportHtmlRenderer {
             )
         }
         appendLine("</section>")
+        appendLine("<section data-section=\"report_gate_evidence\">")
+        appendLine("<h3>Report gate evidence</h3>")
+        renderGateEvidenceMatrix(uiContract.reportGateEvidence)
+        renderGateReasonList("Blocking reasons", uiContract.reportGateBlockingReasons)
+        renderGateReasonList("Review reasons", uiContract.reportGateReviewReasons)
+        appendLine("</section>")
         appendLine("<section data-section=\"raw_warning_codes\">")
         appendLine("<h3>Raw warning codes</h3>")
         renderRawWarningCodes(report)
@@ -544,12 +587,14 @@ object ReportHtmlRenderer {
         appendLine("<section data-section=\"export_manifest\">")
         appendLine("<h3>Export manifest</h3>")
         renderTable(
-            headers = listOf("Artifact", "Purpose", "Visibility"),
+            headers = listOf("Artifact", "Purpose", "Visibility", "Privacy class", "Policy"),
             rows = uiContract.exportArtifacts.map { artifact ->
                 listOf(
                     artifact.artifactPath,
                     artifact.purpose,
                     if (artifact.userFacing) "user-facing" else "technical",
+                    artifact.privacyClass.name,
+                    artifact.redactionPolicy,
                 )
             },
         )
@@ -684,6 +729,73 @@ object ReportHtmlRenderer {
             else -> "READY"
         }
 
+    private fun ReportGateStatus.cssClass(): String =
+        name.lowercase().replace('_', '-')
+
+    private fun ReportGateStatus.userMessage(): String =
+        when (this) {
+            ReportGateStatus.RELEASE_READY -> "All required graph, calibration, trace, peak, provenance, and validator gates passed."
+            ReportGateStatus.REVIEW_ONLY -> "Use as a review report. At least one evidence gate needs human or scientific review."
+            ReportGateStatus.DIAGNOSTIC_ONLY -> "Use as diagnostic evidence only. Required release evidence is missing or invalid."
+            ReportGateStatus.BLOCKED -> "Report generation is blocked by failed evidence or validation checks."
+        }
+
+    private fun EvidenceGateStatus.releaseImpact(): String =
+        when (this) {
+            EvidenceGateStatus.VALID -> "satisfies autonomous gate"
+            EvidenceGateStatus.USER_CONFIRMED -> "satisfies assisted/manual gate with visible provenance"
+            EvidenceGateStatus.REVIEW -> "allows review-only output"
+            EvidenceGateStatus.INVALID -> "blocks release-ready output"
+            EvidenceGateStatus.MISSING -> "blocks release-ready output"
+            EvidenceGateStatus.NOT_APPLICABLE -> "not required for this report mode"
+        }
+
+    private data class GateEvidenceRow(
+        val label: String,
+        val status: EvidenceGateStatus,
+    )
+
+    private fun GateEvidence.rows(): List<GateEvidenceRow> =
+        listOf(
+            GateEvidenceRow("Graph panel", graphPanelStatus),
+            GateEvidenceRow("Plot area", plotAreaStatus),
+            GateEvidenceRow("Axis geometry", axisStatus),
+            GateEvidenceRow("Tick labels", tickStatus),
+            GateEvidenceRow("X calibration", xCalibrationStatus),
+            GateEvidenceRow("Y calibration", yCalibrationStatus),
+            GateEvidenceRow("Trace", traceStatus),
+            GateEvidenceRow("Peak evidence", peakReviewStatus),
+            GateEvidenceRow("Evidence package", evidencePackageStatus),
+            GateEvidenceRow("Source provenance", sourceProvenanceStatus),
+            GateEvidenceRow("User confirmation", userConfirmationStatus),
+            GateEvidenceRow("VLM/OCR semantic evidence", vlmEvidenceStatus),
+        )
+
+    private fun GraphReport.calibrationSummaryStatus(): String =
+        listOfNotNull(
+            axisCalibration.xCalibrationFit?.status?.name,
+            axisCalibration.yCalibrationFit?.status?.name,
+        ).takeIf { it.isNotEmpty() }?.joinToString("/") ?: "MISSING"
+
+    private fun GraphReport.traceSummaryStatus(): String =
+        when {
+            source.geometryTrace?.finalCenterlineOverlayPath != null -> "VALID"
+            source.geometryTrace?.curveSelectedComponentPath != null -> "VALID"
+            signal.pointCount?.let { it > 0 } == true -> "REVIEW"
+            else -> "MISSING"
+        }
+
+    private fun GraphReport.peakEvidenceSummaryStatus(): String {
+        val evidence = peakRecovery.peakEvidenceTable
+        return when {
+            evidence.isEmpty() -> "MISSING"
+            evidence.any { it.gateStatus == PeakGateStatus.INVALID } -> "INVALID"
+            evidence.any { it.gateStatus == PeakGateStatus.REVIEW } -> "REVIEW"
+            evidence.all { it.gateStatus == PeakGateStatus.VALID } -> "VALID"
+            else -> "MISSING"
+        }
+    }
+
     private fun GraphReportUiContract.visualEvidenceFor(sectionId: String): List<ReportVisualEvidenceContract> =
         visualEvidence.filter { it.nearSectionId == sectionId && it.placement == ReportUiPlacement.MAIN_REPORT }
 
@@ -789,6 +901,25 @@ object ReportHtmlRenderer {
         if (this == null) return "not calculated"
         val text = value?.takeIf { it.isNotBlank() } ?: return status.renderMissing()
         return if (status.isUsable()) text else "${status.renderMissing()} ($text)"
+    }
+
+    private fun CompoundAssignment?.renderCompoundAssignment(): String {
+        val compound = this ?: return "not assigned"
+        val name = compound.probableName.renderTextValue()
+        val source = compound.probableName.source
+        val status = compound.probableName.status
+        val evidenceBasis = compound.assignmentBasis.orEmpty().lowercase()
+        val explicitEvidence = listOf("library", "spectrum", "spectral", "reference", "retention index", "user")
+            .any { it in evidenceBasis }
+        return if (
+            status == ReportValueStatus.INFERRED &&
+            source in setOf(ReportValueSource.LOCAL_KNOWLEDGE, ReportValueSource.MODEL_SUGGESTED, ReportValueSource.VISION_MODEL) &&
+            !explicitEvidence
+        ) {
+            "not assigned; candidate hypothesis: $name"
+        } else {
+            name
+        }
     }
 
     private fun ReportDoubleValue?.renderNumber(): String {
@@ -971,6 +1102,30 @@ object ReportHtmlRenderer {
             font-size: 11px;
             font-weight: 700;
           }
+          .gate-callout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            align-items: baseline;
+            margin: 10px 0 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-left: 5px solid var(--accent);
+            border-radius: 8px;
+            background: #fbfdff;
+          }
+          .gate-callout strong {
+            font-size: 13px;
+            letter-spacing: 0;
+          }
+          .gate-callout span {
+            color: var(--muted);
+            font-size: 13px;
+          }
+          .gate-callout.release-ready { border-left-color: var(--good); background: #f2f9f5; }
+          .gate-callout.review-only { border-left-color: #b7791f; background: #fff8ec; }
+          .gate-callout.diagnostic-only,
+          .gate-callout.blocked { border-left-color: #b42318; background: #fff5f3; }
           .evidence-strip {
             display: flex;
             flex-wrap: wrap;

@@ -2,7 +2,7 @@ package com.chromalab.feature.reports
 
 import kotlinx.serialization.Serializable
 
-const val CURRENT_CHROMATOGRAM_REPORT_UI_SCHEMA = "chromalab.chromatogram_report_ui.v1"
+const val CURRENT_CHROMATOGRAM_REPORT_UI_SCHEMA = "chromalab.chromatogram_report_ui.v2"
 
 @Serializable
 data class ChromatogramReportUiContract(
@@ -10,6 +10,9 @@ data class ChromatogramReportUiContract(
     val reportId: String,
     val graphCount: Int,
     val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
+    val reportGateEvidence: GateEvidence = GateEvidence(),
+    val reportGateBlockingReasons: List<String> = emptyList(),
+    val reportGateReviewReasons: List<String> = emptyList(),
     val markdownArtifactPath: String = "chromatogram_report.md",
     val htmlArtifactPath: String = "chromatogram_report.html",
     val rawMarkdownIsFinalUi: Boolean = false,
@@ -68,7 +71,18 @@ data class ReportExportArtifactContract(
     val label: String,
     val purpose: String,
     val userFacing: Boolean,
+    val privacyClass: ReportExportPrivacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+    val redactionPolicy: String = "No raw logs or model prompts are included by default.",
+    val diagnosticOnly: Boolean = false,
 )
+
+@Serializable
+enum class ReportExportPrivacyClass {
+    USER_REPORT,
+    TECHNICAL_EVIDENCE,
+    DIAGNOSTIC_BUNDLE,
+    NEVER_SHARED_BY_DEFAULT,
+}
 
 @Serializable
 enum class ReportUiPlacement {
@@ -82,12 +96,22 @@ object ChromatogramReportUiContractBuilder {
     fun build(
         report: ChromatogramReport,
         validation: ReportContractValidationResult = ReportContractValidator.validate(report),
+        evidencePackageStatus: EvidenceGateStatus = EvidenceGateStatus.MISSING,
+        userConfirmationStatus: EvidenceGateStatus = EvidenceGateStatus.NOT_APPLICABLE,
     ): ChromatogramReportUiContract {
-        val gate = ReportReleaseGateEvaluator.evaluate(report, validation)
+        val gate = ReportReleaseGateEvaluator.evaluate(
+            report = report,
+            validation = validation,
+            evidencePackageStatus = evidencePackageStatus,
+            userConfirmationStatus = userConfirmationStatus,
+        )
         return ChromatogramReportUiContract(
             reportId = report.metadata.reportId,
             graphCount = report.graphs.size,
             reportGateStatus = gate.status,
+            reportGateEvidence = gate.evidence,
+            reportGateBlockingReasons = gate.blockingReasons,
+            reportGateReviewReasons = gate.reviewReasons,
             primarySurface = ReportSurfaceContract(
                 sections = listOf(
                     primarySection(
@@ -125,6 +149,12 @@ object ChromatogramReportUiContractBuilder {
                 sections = listOf(
                     technicalSection("raw_warning_codes", "Raw warning codes"),
                     technicalSection(
+                        sectionId = "report_gate_evidence",
+                        title = "Report gate evidence",
+                        sourceContractSection = "release_gate",
+                        contractStatus = gate.status.name,
+                    ),
+                    technicalSection(
                         sectionId = "stage_timeline",
                         title = "Stage timeline",
                         sourceContractSection = "technical_appendix",
@@ -156,24 +186,66 @@ object ChromatogramReportUiContractBuilder {
                     label = "Report UI contract",
                     purpose = "Structured rendering contract for mobile UI and export surfaces.",
                     userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                    redactionPolicy = "Contains section IDs and artifact references; keep in diagnostic exports unless explicitly requested.",
                 ),
                 ReportExportArtifactContract(
                     artifactPath = "chromatogram_report.html",
                     label = "Final report HTML",
                     purpose = "User-facing report rendered from the structured UI contract.",
                     userFacing = true,
+                    privacyClass = ReportExportPrivacyClass.USER_REPORT,
+                    redactionPolicy = "Contains user-visible sample/source labels and summarized evidence, but not raw logs or full prompts.",
                 ),
                 ReportExportArtifactContract(
                     artifactPath = "chromatogram_report.md",
                     label = "Portable report Markdown",
                     purpose = "Portable text export. It is not the final phone UI surface.",
                     userFacing = true,
+                    privacyClass = ReportExportPrivacyClass.USER_REPORT,
+                    redactionPolicy = "Contains user-visible report text and summarized provenance, but not raw logs or full prompts.",
                 ),
                 ReportExportArtifactContract(
                     artifactPath = "calculation.json",
                     label = "Calculation JSON",
                     purpose = "Reproducible calculation data and algorithm parameters.",
                     userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                    redactionPolicy = "Technical export; may include deterministic metrics and algorithm settings but must not include private debug logs.",
+                ),
+                ReportExportArtifactContract(
+                    artifactPath = "runtime_evidence_package.json",
+                    label = "Runtime evidence package",
+                    purpose = "Diagnostic evidence package with gate inputs, validator details, model runtime summaries, and artifact links.",
+                    userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.DIAGNOSTIC_BUNDLE,
+                    redactionPolicy = "Diagnostic-only by default; raw image/crop paths and internal model details require explicit evidence export.",
+                    diagnosticOnly = true,
+                ),
+                ReportExportArtifactContract(
+                    artifactPath = "validator_report.json",
+                    label = "Validator report JSON",
+                    purpose = "Machine-readable report gate and evidence validation result.",
+                    userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                    redactionPolicy = "Contains validation codes and evidence statuses, not raw logs.",
+                ),
+                ReportExportArtifactContract(
+                    artifactPath = "validator_report.md",
+                    label = "Validator report Markdown",
+                    purpose = "Human-readable validation summary for review and audit.",
+                    userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                    redactionPolicy = "Contains validation summaries and warning codes, not full prompt text or raw logs.",
+                ),
+                ReportExportArtifactContract(
+                    artifactPath = "raw_device_logs.txt",
+                    label = "Raw device logs",
+                    purpose = "Developer-only debugging artifact. It is never included in normal report sharing.",
+                    userFacing = false,
+                    privacyClass = ReportExportPrivacyClass.NEVER_SHARED_BY_DEFAULT,
+                    redactionPolicy = "Exclude from user-facing exports; redact identifiers before any diagnostic sharing.",
+                    diagnosticOnly = true,
                 ),
             ),
         )
@@ -298,8 +370,8 @@ object ChromatogramReportUiContractBuilder {
                 generatedStatus = if (source.detectedGraphBounds != null) "rendered" else "not_available",
             ),
             visualEvidence(
-                evidenceId = "manual_calibration_focus",
-                label = "Manual calibration focus",
+                evidenceId = "calibration_evidence_focus",
+                label = "Calibration evidence focus",
                 renderSurfaceId = "graph_${graphIndex}_axis_focus",
                 nearSectionId = "axis_calibration",
                 generatedStatus = if (axisCalibration.pixelToUnitTransform != null) "rendered" else "not_available",

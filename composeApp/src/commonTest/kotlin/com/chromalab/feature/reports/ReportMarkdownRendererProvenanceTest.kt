@@ -10,6 +10,9 @@ class ReportMarkdownRendererProvenanceTest {
     fun rendererIncludesValueProvenanceAuditRows() {
         val markdown = ReportMarkdownRenderer.render(BelyiTigrIon92ReportFixture.buildReport())
 
+        assertTrue(markdown.contains("| Report gate | DIAGNOSTIC_ONLY |"), markdown)
+        assertTrue(markdown.contains("Report gate evidence:"), markdown)
+        assertTrue(markdown.contains("| Evidence package | MISSING | blocks release-ready output |"), markdown)
         assertTrue(markdown.contains("### Value provenance"), markdown)
         assertTrue(
             markdown.contains("| 1 | identification.ionOrChannel | DETECTED | OCR | 93.00% |"),

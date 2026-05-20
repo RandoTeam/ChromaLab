@@ -54,11 +54,22 @@ object ReportMarkdownRenderer {
     private fun StringBuilder.renderOverview(report: ChromatogramReport) {
         val metadata = report.metadata
         val firstGraph = report.graphs.firstOrNull()
+        val validation = ReportContractValidator.validate(report)
+        val gate = ReportReleaseGateEvaluator.evaluate(report, validation)
 
         appendLine("| Field | Value |")
         appendLine("| --- | --- |")
         row("Report ID", metadata.reportId)
         row("Schema", metadata.schemaVersion)
+        row("Report gate", gate.status.name)
+        row(
+            "Release-quality claim",
+            if (gate.status == ReportGateStatus.RELEASE_READY) {
+                "allowed by current evidence gate"
+            } else {
+                "blocked; use as review or diagnostic evidence only"
+            },
+        )
         row("Source", metadata.sourceName ?: metadata.inputSourceType.name)
         row("Graphs detected", metadata.detectedGraphCount.toString())
         row("Chromatogram title", firstGraph?.identification?.chromatogramTitle.render())
@@ -73,6 +84,16 @@ object ReportMarkdownRenderer {
         row("Selected model", metadata.selectedModel.render())
         row("Executed model", metadata.executedModel.render())
         row("Executed runtime", metadata.executedRuntime.name)
+
+        appendLine()
+        appendLine("Report gate evidence:")
+        appendLine("| Evidence gate | Status | Release impact |")
+        appendLine("| --- | --- | --- |")
+        gate.evidence.rows().forEach { row ->
+            appendLine("| ${row.label.escapeTable()} | ${row.status.name} | ${row.status.releaseImpact().escapeTable()} |")
+        }
+        renderGateReasonList("Blocking reasons", gate.blockingReasons)
+        renderGateReasonList("Review reasons", gate.reviewReasons)
     }
 
     private fun StringBuilder.renderGraphPreparation(graph: GraphReport, showGraphHeader: Boolean) {
@@ -113,13 +134,17 @@ object ReportMarkdownRenderer {
             return
         }
 
-        appendLine("| # | RT | Height | Area | Area % | FWHM | W_base | S/N | Asymmetry | Compound | Formula | C# | Kovats | Confidence | Flags |")
-        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        val evidenceByPeak = graph.peakRecovery.peakEvidenceTable.associateBy { it.peakNumber }
+        appendLine("| # | Evidence | Gate | RT | Height | Area | Area % | FWHM | W_base | S/N | Asymmetry | Compound | Formula | C# | Kovats | Confidence | Flags |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         graph.peaks.sortedBy { it.retentionTime.value ?: Double.MAX_VALUE }.forEach { peak ->
             val compound = peak.compound
+            val evidence = evidenceByPeak[peak.number]
             appendLine(
                 listOf(
                     peak.number.toString(),
+                    evidence?.status?.name ?: "UNKNOWN",
+                    evidence?.gateStatus?.name ?: "MISSING",
                     peak.retentionTime.render(),
                     peak.heightAboveBaseline.render(),
                     peak.integratedArea.render(),
@@ -128,7 +153,7 @@ object ReportMarkdownRenderer {
                     peak.widthAtBase.render(),
                     peak.signalToNoise.render(),
                     peak.asymmetry.render(),
-                    compound?.probableName.render(),
+                    compound.renderCompoundAssignment(),
                     compound?.formula.render(),
                     compound?.carbonNumber.render(),
                     compound?.kovatsIndex.render(),
@@ -559,6 +584,44 @@ object ReportMarkdownRenderer {
         appendLine("| ${label.escapeTable()} | ${(value ?: notCalculated()).escapeTable()} |")
     }
 
+    private fun StringBuilder.renderGateReasonList(title: String, reasons: List<String>) {
+        if (reasons.isEmpty()) return
+        appendLine()
+        appendLine("$title:")
+        reasons.forEach { reason -> appendLine("- ${reason.escapeMarkdown()}") }
+    }
+
+    private data class GateEvidenceRow(
+        val label: String,
+        val status: EvidenceGateStatus,
+    )
+
+    private fun GateEvidence.rows(): List<GateEvidenceRow> =
+        listOf(
+            GateEvidenceRow("Graph panel", graphPanelStatus),
+            GateEvidenceRow("Plot area", plotAreaStatus),
+            GateEvidenceRow("Axis geometry", axisStatus),
+            GateEvidenceRow("Tick labels", tickStatus),
+            GateEvidenceRow("X calibration", xCalibrationStatus),
+            GateEvidenceRow("Y calibration", yCalibrationStatus),
+            GateEvidenceRow("Trace", traceStatus),
+            GateEvidenceRow("Peak evidence", peakReviewStatus),
+            GateEvidenceRow("Evidence package", evidencePackageStatus),
+            GateEvidenceRow("Source provenance", sourceProvenanceStatus),
+            GateEvidenceRow("User confirmation", userConfirmationStatus),
+            GateEvidenceRow("VLM/OCR semantic evidence", vlmEvidenceStatus),
+        )
+
+    private fun EvidenceGateStatus.releaseImpact(): String =
+        when (this) {
+            EvidenceGateStatus.VALID -> "satisfies autonomous gate"
+            EvidenceGateStatus.USER_CONFIRMED -> "satisfies assisted/manual gate with visible provenance"
+            EvidenceGateStatus.REVIEW -> "allows review-only output"
+            EvidenceGateStatus.INVALID -> "blocks release-ready output"
+            EvidenceGateStatus.MISSING -> "blocks release-ready output"
+            EvidenceGateStatus.NOT_APPLICABLE -> "not required for this report mode"
+        }
+
     private fun StringBuilder.graphHeader(graph: GraphReport, showGraphHeader: Boolean) {
         if (showGraphHeader) {
             appendLine()
@@ -576,6 +639,25 @@ object ReportMarkdownRenderer {
             text
         } else {
             "${status.renderMissing()} ($text)"
+        }
+    }
+
+    private fun CompoundAssignment?.renderCompoundAssignment(): String {
+        val compound = this ?: return "not assigned"
+        val name = compound.probableName.render()
+        val source = compound.probableName.source
+        val status = compound.probableName.status
+        val evidenceBasis = compound.assignmentBasis.orEmpty().lowercase()
+        val explicitEvidence = listOf("library", "spectrum", "spectral", "reference", "retention index", "user")
+            .any { it in evidenceBasis }
+        return if (
+            status == ReportValueStatus.INFERRED &&
+            source in setOf(ReportValueSource.LOCAL_KNOWLEDGE, ReportValueSource.MODEL_SUGGESTED, ReportValueSource.VISION_MODEL) &&
+            !explicitEvidence
+        ) {
+            "not assigned; candidate hypothesis: $name"
+        } else {
+            name
         }
     }
 
