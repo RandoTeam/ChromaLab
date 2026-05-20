@@ -135,3 +135,30 @@ The editor must not set:
 - `REPORT_READY`.
 
 Two anchors per axis allow a review-grade linear transform. Three or more anchors per axis may validate the transform when residual checks pass. `AUTO_DIAGNOSTIC` still cannot treat user anchors as release evidence.
+
+## Phase 4 Addendum: Trace Overlay Confirmation
+
+Phase 4 implements trace overlay review and may set:
+
+- `TRACE_EXTRACTED`;
+- `TRACE_CONFIRMED`.
+
+The trace overlay editor consumes:
+
+- confirmed graphPanel and plotArea;
+- confirmed calibration when calibrated trace review is required;
+- auto-extracted trace points and quality metrics.
+
+It writes:
+
+- `TraceConfirmationEvidence`;
+- `UserConfirmedTrace`;
+- trace source, decision, quality metrics, warnings, artifact paths, and audit trail entries.
+
+It must not set:
+
+- `PEAKS_DETECTED`;
+- `PEAKS_CONFIRMED`;
+- `REPORT_READY`.
+
+Accepted valid trace can satisfy the trace gate in guided/manual modes. Review-grade trace stays review-grade. Rejected trace blocks release. `AUTO_DIAGNOSTIC` still cannot use guided trace confirmation objects as release evidence.

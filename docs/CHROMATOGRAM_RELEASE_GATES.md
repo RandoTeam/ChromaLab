@@ -202,3 +202,17 @@ Mapping rules:
 - `AUTO_DIAGNOSTIC` ignores guided calibration objects and uses only auto diagnostic gate evidence.
 
 Phase 3 still cannot make a report `RELEASE_READY` by itself because trace and peak review gates remain missing until later phases.
+
+## Phase 4 Guided Trace Gate Mapping
+
+Phase 4 can satisfy the trace gate in `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` through `UserConfirmedTrace`.
+
+Mapping rules:
+
+- accepted valid trace maps to `EvidenceGateStatus.USER_CONFIRMED`;
+- accepted review-grade trace maps to `EvidenceGateStatus.REVIEW`;
+- rejected or invalid trace maps to `EvidenceGateStatus.INVALID`;
+- missing trace maps to `EvidenceGateStatus.MISSING`;
+- `AUTO_DIAGNOSTIC` ignores guided trace confirmation objects and uses only automatic diagnostic evidence.
+
+Trace confirmation requires confirmed plotArea and, for calibrated trace review, confirmed calibration. Phase 4 does not implement peak review; peak-specific claims must still wait for Phase 5 evidence.

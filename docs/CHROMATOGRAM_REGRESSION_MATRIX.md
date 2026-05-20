@@ -110,3 +110,28 @@ Future regression rows that exercise guided calibration should record:
 - serialized `CalibrationAnchorEditorSnapshot` or guided state roundtrip result.
 
 Guided calibration cannot be used to upgrade `AUTO_DIAGNOSTIC` output. If a regression case needs manual anchors, the mode must explicitly change to guided/manual and the report provenance must show the user-confirmed calibration.
+
+## Phase 4 Addendum
+
+Phase 4 adds guided trace overlay confirmation. No fixture expectations, auto trace extraction algorithms, peak detection, integration math, VLM behavior, or `CalculationEngine` code changed.
+
+Future regression rows that exercise guided trace confirmation should record:
+
+- source trace id;
+- trace point count;
+- column coverage ratio;
+- max gap columns;
+- component count;
+- branch point count;
+- selected component coverage;
+- text contamination score;
+- frame touch ratio;
+- trace confidence;
+- trace confirmation decision;
+- trace gate status;
+- trace overlay artifact path;
+- rejected/review warning codes;
+- calibration set id linked to trace evidence;
+- serialized `TraceOverlayEditorSnapshot` or guided state roundtrip result.
+
+Guided trace confirmation cannot upgrade `AUTO_DIAGNOSTIC` output. If an auto trace is rejected, release output must remain diagnostic or blocked until a later guided/manual workflow supplies acceptable trace evidence.

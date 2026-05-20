@@ -311,6 +311,25 @@ enum class TraceEditDecision {
 }
 
 @Serializable
+enum class TraceOverlaySource {
+    AUTO_EXTRACTED,
+    USER_CONFIRMED,
+    USER_REVIEW_CONFIRMED,
+    USER_REJECTED,
+    IMPORTED_TRACE,
+}
+
+@Serializable
+enum class TraceConfirmationStatus {
+    AUTO_SUGGESTED,
+    USER_CONFIRMED_VALID,
+    USER_CONFIRMED_REVIEW,
+    USER_REJECTED,
+    INVALID,
+    MISSING,
+}
+
+@Serializable
 enum class TraceGateStatus {
     USER_CONFIRMED,
     REVIEW_REQUIRED,
@@ -325,8 +344,19 @@ data class TraceQualitySummary(
     val maxGapColumns: Int? = null,
     val componentCount: Int? = null,
     val branchPointCount: Int? = null,
+    val selectedComponentCoverage: Double? = null,
     val textContaminationScore: Double? = null,
+    val baselineTouchRatio: Double? = null,
+    val frameTouchRatio: Double? = null,
+    val traceConfidence: Double? = null,
     val confidence: Double? = null,
+)
+
+@Serializable
+data class TraceOverlayPoint(
+    val x: Float,
+    val y: Float,
+    val confidence: Float = 1f,
 )
 
 @Serializable
@@ -338,6 +368,11 @@ data class TraceConfirmationEvidence(
     val qualityStatus: TraceQualityStatus = TraceQualityStatus.MISSING,
     val qualitySummary: TraceQualitySummary = TraceQualitySummary(),
     val warnings: List<String> = emptyList(),
+    val source: TraceOverlaySource = TraceOverlaySource.AUTO_EXTRACTED,
+    val tracePoints: List<TraceOverlayPoint> = emptyList(),
+    val plotAreaBounds: GraphRegion? = null,
+    val calibrationSetId: String? = null,
+    val rejectionReason: String? = null,
 )
 
 @Serializable
@@ -350,6 +385,13 @@ data class UserConfirmedTrace(
     val userProvenance: GuidedUserProvenance,
     val validationWarnings: List<String> = emptyList(),
     val gateStatus: TraceGateStatus = TraceGateStatus.MISSING,
+    val source: TraceOverlaySource = evidence.source,
+    val traceConfirmationStatus: TraceConfirmationStatus = when (gateStatus) {
+        TraceGateStatus.USER_CONFIRMED -> TraceConfirmationStatus.USER_CONFIRMED_VALID
+        TraceGateStatus.REVIEW_REQUIRED -> TraceConfirmationStatus.USER_CONFIRMED_REVIEW
+        TraceGateStatus.INVALID -> TraceConfirmationStatus.INVALID
+        TraceGateStatus.MISSING -> TraceConfirmationStatus.MISSING
+    },
 )
 
 @Serializable

@@ -132,3 +132,19 @@ Reducer operations:
 Confirmation writes `UserConfirmedCalibration` and advances the guided state to `CALIBRATION_VALIDATED`. The confirmation preserves timestamp, user/session provenance, source, anchor statuses, residual reports, warnings, and optional overlay artifact path.
 
 Two-anchor calibration remains review-grade. Three or more accepted anchors per axis can become `USER_CONFIRMED` when residual checks pass. `AUTO_DIAGNOSTIC` cannot use these confirmation objects as release evidence.
+
+## Phase 4 Addendum: Trace Overlay Contracts
+
+Phase 4 makes trace confirmation operational through a reducer-backed overlay review model.
+
+New or expanded trace contracts:
+
+- `TraceOverlayPoint` - normalized image-coordinate point with confidence.
+- `TraceOverlaySource` - auto/user/review/rejected/imported source classification.
+- `TraceConfirmationStatus` - valid, review, rejected, invalid, or missing confirmation state.
+- `TraceOverlayEditorSnapshot` - lightweight editor state for image, plotArea, trace points, metrics, artifacts, and warnings.
+- `TraceOverlayEvaluation` - quality status, gate status, normalized metrics, and issues.
+
+Confirmation writes `UserConfirmedTrace` and advances guided state to `TRACE_CONFIRMED`. The evidence records source trace id, trace points, plotArea bounds, calibration set id, quality metrics, warnings, artifact paths, user/session provenance, timestamp, decision, and rejection reason when applicable.
+
+Manual trace drawing is not part of Phase 4. Trace rejection and review acceptance are first-class decisions so bad auto traces cannot silently become release-quality evidence.
