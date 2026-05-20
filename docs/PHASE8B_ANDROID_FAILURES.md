@@ -68,3 +68,44 @@ Observed in this run:
 The White Tiger Ion 71 fixture may currently end in axis/tick/OCR/calibration review. That must be classified using the Phase 8 taxonomy and must not be converted into a release-ready report without evidence.
 
 Current blocker precedes axis/tick/OCR/calibration. Re-run after the chromatogram VLM is available to determine whether the historical `AXIS_DETECTION_FAILURE` still occurs.
+
+## Classified Failure: `white_tiger_ion71_20260520_170118`
+
+Phase 8C removed the VLM pre-geometry blocker. The fixture reached deterministic graph processing and failed at `Y_CALIBRATION`.
+
+| Field | Value |
+| --- | --- |
+| Fixture | `white_tiger_ion71` |
+| Package | `com.chromalab.app.validation` |
+| Global report gate | `BLOCKED` |
+| Validator verdict | `FAIL` |
+| Runtime failure class | `TICK_LOCALIZATION_FAILURE` |
+| Failed stage | `Y_CALIBRATION` |
+| Deterministic stages reached | `GRAPH_SELECTION`, `GRAPH_ROI`, `AXIS_DETECTION`, `OCR_SUGGESTION`, `X_CALIBRATION`, `Y_CALIBRATION` |
+| Blocking evidence issue | terminal export had no graph package |
+
+Phase 8D response:
+
+- add `RuntimeGraphFailurePackage` to terminal runtime evidence;
+- add validator rule `graph_failure.package_missing`;
+- add Android deterministic label-band projection rescue for tick candidates;
+- keep release-ready blocked unless X/Y calibration evidence passes.
+
+## Phase 8D Final Run: `white_tiger_ion71_20260520_184550`
+
+The tick/calibration failure is closed for the validation fixture.
+
+| Field | Value |
+| --- | --- |
+| Fixture | `white_tiger_ion71` |
+| Package | `com.chromalab.app.validation` |
+| Artifact directory | `/sdcard/Download/ChromaLab/validation/white_tiger_ion71_20260520_184550/` |
+| Global report gate | `REVIEW_ONLY` |
+| Validator verdict | `REVIEW` |
+| Blocking validator issues | 0 |
+| Runtime failure class | `VLM_SEMANTIC_LAYER_UNAVAILABLE` |
+| Detected graph count | 1 |
+| X/Y calibration | `VALID` / `VALID` |
+| Trace / peak evidence | Present / present |
+
+Decision: Phase 8D closes the critical Android tick localization and graph failure package blockers. The remaining review state is caused by the unavailable VLM semantic layer; it does not hide missing geometry, calibration, trace, or peak evidence and does not create a release-ready report.

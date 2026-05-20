@@ -119,6 +119,23 @@ If the next run fails at axes/ticks/calibration, the failure must remain classif
 
 ## Phase 8C Hardening Update
 
+## Phase 8D Tick Localization / Calibration Update
+
+Phase 8D adds graph-level terminal failure evidence for Android fixture runs that reach graph processing but fail before calibrated signal/report generation.
+
+Changes:
+
+- `RuntimeEvidencePackage` schema advanced to `runtime-evidence-1.2`.
+- Terminal validation exports now include `graph_failure_package_<run_id>.json`.
+- Validator emits `graph_failure.package_missing` when a graph-stage terminal failure has no graph-level failure package.
+- Android tick localization now has deterministic label-band projection rescue for X/Y tick candidate pixels.
+- OCR/VLM remain text-only helpers; they cannot create tick pixel positions, calibration, or chromatographic metrics.
+
+Expected next Android rerun:
+
+- The White Tiger fixture may still report `BLOCKED` if calibration remains invalid.
+- The artifact package must show selected graphPanel/plotArea, tick candidate counts, accepted/rejected anchors, calibration status, and exact missing artifact reasons.
+
 Phase 8C changes the acceptance target: missing VLM is no longer allowed to stop deterministic geometry before it starts. The validation package must now:
 
 - export `modelAvailabilityDiagnostics`;
@@ -129,3 +146,35 @@ Phase 8C changes the acceptance target: missing VLM is no longer allowed to stop
 Phase 8 remains blocked until an Android fixture rerun confirms this behavior and exports updated artifacts.
 
 Phase 8C rerun `white_tiger_ion71_20260520_170118` confirms the pre-geometry VLM blocker is fixed: deterministic stages reached `GRAPH_SELECTION`, `GRAPH_ROI`, `AXIS_DETECTION`, `OCR_SUGGESTION`, `X_CALIBRATION`, and `Y_CALIBRATION`. The remaining terminal status is `BLOCKED` with `runtimeFailureClass = TICK_LOCALIZATION_FAILURE`, caused by insufficient Y tick labels for automatic calibration. Phase 9 remains blocked until Product/QA accept the remaining Phase 8 limitations or the tick/calibration failure is fixed.
+
+## Phase 8D Closure Update
+
+Verdict: `PHASE_8_CLOSED`
+
+Phase 9 may start: **Yes**, after this Phase 8D commit.
+
+Final Android fixture run: `white_tiger_ion71_20260520_184550`.
+
+Phase 8D fixed the remaining Android tick/calibration evidence blocker:
+
+- deterministic graph processing no longer depends on startup VLM loading for validation fixtures;
+- graph-stage terminal failures now export `RuntimeGraphFailurePackage` evidence;
+- the validator fails graph-stage terminal runs that omit graph-level failure packages;
+- deterministic tick localization now includes label-band projection rescue;
+- OCR tick values are accepted only when paired to deterministic tick pixels;
+- the final fixture run exported one graph package, valid X/Y calibration evidence, trace/peak overlays, report HTML/Markdown/JSON, runtime evidence package, and validator JSON/Markdown.
+
+Final run summary:
+
+| Field | Value |
+| --- | --- |
+| Report gate | `REVIEW_ONLY` |
+| Validator verdict | `REVIEW` |
+| Blocking validator issues | 0 |
+| Runtime failure class | `VLM_SEMANTIC_LAYER_UNAVAILABLE` |
+| Graph count | 1 |
+| X/Y calibration | `VALID` / `VALID` |
+| Trace/peak evidence | Present |
+| Release-ready claim | No |
+
+The remaining review reason is the intentionally disabled/unavailable VLM semantic layer in the validation build. Deterministic graphPanel, plotArea, tick localization, calibration, trace, peak, and report export are no longer blocked for the White Tiger fixture.

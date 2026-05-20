@@ -153,6 +153,22 @@ data class RuntimeEvidenceGraphValidationSummary(
 )
 
 @Serializable
+data class RuntimeEvidenceGraphFailureValidationSummary(
+    val graphIndex: Int,
+    val failureClass: String,
+    val failureStage: String,
+    val graphPanelPresent: Boolean,
+    val plotAreaPresent: Boolean,
+    val xTickCandidateCount: Int,
+    val yTickCandidateCount: Int,
+    val acceptedXAnchorCount: Int,
+    val acceptedYAnchorCount: Int,
+    val xCalibrationStatus: String? = null,
+    val yCalibrationStatus: String? = null,
+    val missingArtifactReasons: List<String> = emptyList(),
+)
+
+@Serializable
 data class RuntimeEvidenceValidationSummary(
     val schemaVersion: String = "runtime-evidence-validation-1.0",
     val packageSchemaVersion: String? = null,
@@ -164,6 +180,7 @@ data class RuntimeEvidenceValidationSummary(
     val blockingIssues: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val warnings: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val modelAvailabilityRows: List<RuntimeEvidenceModelAvailabilityRow> = emptyList(),
+    val graphFailureSummaries: List<RuntimeEvidenceGraphFailureValidationSummary> = emptyList(),
     val graphSummaries: List<RuntimeEvidenceGraphValidationSummary> = emptyList(),
 )
 
@@ -220,6 +237,7 @@ object RuntimeEvidencePackageValidator {
         val graphSummaries = evidencePackage.graphs.map { graphPackage ->
             validateGraph(evidencePackage, graphPackage, fileExists, issues)
         }
+        val graphFailureSummaries = validateGraphFailurePackages(evidencePackage, fileExists, issues)
         validatePackageMetadata(evidencePackage, issues)
         val modelAvailabilityRows = validateModelAvailability(evidencePackage, issues)
         validateKnowledgePackageMetadata(evidencePackage, issues)
@@ -239,6 +257,7 @@ object RuntimeEvidencePackageValidator {
             blockingIssues = blocking,
             warnings = warnings,
             modelAvailabilityRows = modelAvailabilityRows,
+            graphFailureSummaries = graphFailureSummaries,
             graphSummaries = graphSummaries,
         )
     }
@@ -325,6 +344,23 @@ object RuntimeEvidencePackageValidator {
         }
         if (summary.modelAvailabilityRows.isEmpty()) {
             appendLine("| - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
+        appendLine("## Graph Failure Packages")
+        appendLine()
+        appendLine("| Graph | Failure | Stage | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Missing artifacts |")
+        appendLine("| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |")
+        summary.graphFailureSummaries.forEach { row ->
+            appendLine(
+                "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.graphPanelPresent} | " +
+                    "${row.plotAreaPresent} | ${row.xTickCandidateCount} | ${row.yTickCandidateCount} | " +
+                    "${row.acceptedXAnchorCount} | ${row.acceptedYAnchorCount} | " +
+                    "${row.xCalibrationStatus ?: "-"} | ${row.yCalibrationStatus ?: "-"} | " +
+                    "${row.missingArtifactReasons.joinToString("<br>").ifBlank { "-" }} |",
+            )
+        }
+        if (summary.graphFailureSummaries.isEmpty()) {
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Recovery Candidates")
@@ -435,7 +471,7 @@ object RuntimeEvidencePackageValidator {
                 issues.block("package.model_metadata_missing", "Model/runtime metadata is missing selectedModelId and executedModelId.")
             }
         }
-        if (evidencePackage.graphs.isEmpty()) {
+        if (evidencePackage.graphs.isEmpty() && evidencePackage.graphFailurePackages.isEmpty()) {
             issues.block("package.graphs_missing", "Runtime evidence package contains no graph packages.")
         }
         if (evidencePackage.terminalState == RuntimeTerminalState.PASS &&
@@ -528,6 +564,124 @@ object RuntimeEvidencePackageValidator {
         }
 
         return diagnostics.map { it.toValidationRow() }
+    }
+
+    private fun validateGraphFailurePackages(
+        evidencePackage: RuntimeEvidencePackage,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceGraphFailureValidationSummary> {
+        if (evidencePackage.requiresGraphFailurePackage() && evidencePackage.graphFailurePackages.isEmpty()) {
+            issues.block(
+                "graph_failure.package_missing",
+                "Graph-stage terminal failure must export a graph-level failure package.",
+            )
+        }
+        return evidencePackage.graphFailurePackages.map { failure ->
+            validateGraphFailurePackage(failure, fileExists, issues)
+        }
+    }
+
+    private fun validateGraphFailurePackage(
+        failure: RuntimeGraphFailurePackage,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): RuntimeEvidenceGraphFailureValidationSummary {
+        val missingArtifactReasons = failure.artifactPaths.missingReasons()
+        if (failure.graphIndex <= 0) {
+            issues.block("graph_failure.graph_index_invalid", "Graph failure package graphIndex must be positive.")
+        }
+        if (failure.failureStage.isBlank()) {
+            issues.block("graph_failure.stage_missing", "Graph failure package failureStage is missing.", failure.graphIndex)
+        }
+        if (failure.failureReason.isBlank()) {
+            issues.block("graph_failure.reason_missing", "Graph failure package failureReason is missing.", failure.graphIndex)
+        }
+        if (failure.graphPanelBounds == null && failure.graphPanelMissingReason.isNullOrBlank()) {
+            issues.block(
+                "graph_failure.graph_panel_evidence_missing",
+                "Graph failure package must include graphPanel bounds or an explicit missing reason.",
+                failure.graphIndex,
+            )
+        }
+        if (failure.plotAreaBounds == null &&
+            failure.plotAreaMissingReason.isNullOrBlank() &&
+            failure.failureClass != RuntimeFailureClass.GRAPH_PANEL_FAILURE
+        ) {
+            issues.block(
+                "graph_failure.plot_area_evidence_missing",
+                "Graph failure package must include plotArea bounds or an explicit missing reason.",
+                failure.graphIndex,
+            )
+        }
+        if (failure.failureClass in tickCalibrationFailureClasses) {
+            if (failure.artifactPaths.tickOverlayPath.isNullOrBlank() &&
+                failure.artifactPaths.tickOverlayMissingReason.isNullOrBlank()
+            ) {
+                issues.block(
+                    "graph_failure.tick_overlay_or_reason_missing",
+                    "Tick localization failure requires a tick candidate overlay path or explicit missing reason.",
+                    failure.graphIndex,
+                )
+            }
+            if (failure.artifactPaths.ocrCropPaths.isEmpty() &&
+                failure.artifactPaths.ocrCropMissingReason.isNullOrBlank()
+            ) {
+                issues.block(
+                    "graph_failure.ocr_crop_or_reason_missing",
+                    "Tick/OCR failure requires OCR crop provenance or explicit missing reason.",
+                    failure.graphIndex,
+                )
+            }
+            val acceptedWithoutPixel = failure.ocrSummary.acceptedAnchors.any { it.tickPixelPosition == null }
+            if (acceptedWithoutPixel) {
+                issues.block(
+                    "graph_failure.ocr_tick_without_deterministic_pixel",
+                    "Accepted OCR tick anchors must be linked to deterministic tick pixel positions.",
+                    failure.graphIndex,
+                )
+            }
+            val noTickGeometry = failure.tickSummary.xTickCandidateCount + failure.tickSummary.yTickCandidateCount == 0
+            if (noTickGeometry && failure.artifactPaths.tickOverlayMissingReason.isNullOrBlank()) {
+                issues.block(
+                    "graph_failure.tick_candidates_missing",
+                    "Tick/calibration failure requires deterministic tick candidates or a missing-evidence reason.",
+                    failure.graphIndex,
+                )
+            }
+            if (failure.calibrationSummary.xStatus == null && failure.calibrationSummary.yStatus == null &&
+                failure.calibrationSummary.missingReason.isNullOrBlank()
+            ) {
+                issues.block(
+                    "graph_failure.calibration_attempt_missing",
+                    "Calibration failure package must include calibration status or explicit missing reason.",
+                    failure.graphIndex,
+                )
+            }
+        }
+        failure.artifactPaths.presentPaths().forEach { path ->
+            if (!fileExists(path)) {
+                issues.warn(
+                    "graph_failure.artifact_path_not_probeable",
+                    "Graph failure artifact path was recorded but is not visible to this validator: $path",
+                    failure.graphIndex,
+                )
+            }
+        }
+        return RuntimeEvidenceGraphFailureValidationSummary(
+            graphIndex = failure.graphIndex,
+            failureClass = failure.failureClass.name,
+            failureStage = failure.failureStage,
+            graphPanelPresent = failure.graphPanelBounds != null,
+            plotAreaPresent = failure.plotAreaBounds != null,
+            xTickCandidateCount = failure.tickSummary.xTickCandidateCount,
+            yTickCandidateCount = failure.tickSummary.yTickCandidateCount,
+            acceptedXAnchorCount = failure.ocrSummary.acceptedXAnchorCount,
+            acceptedYAnchorCount = failure.ocrSummary.acceptedYAnchorCount,
+            xCalibrationStatus = failure.calibrationSummary.xStatus?.name,
+            yCalibrationStatus = failure.calibrationSummary.yStatus?.name,
+            missingArtifactReasons = missingArtifactReasons,
+        )
     }
 
     private fun validateKnowledgePackageMetadata(
@@ -1176,6 +1330,23 @@ private val modelAvailabilityFailureClasses = setOf(
     RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE,
 )
 
+private val graphStageFailureClasses = setOf(
+    RuntimeFailureClass.GRAPH_PANEL_FAILURE,
+    RuntimeFailureClass.MULTI_GRAPH_SPLIT_FAILURE,
+    RuntimeFailureClass.PLOT_AREA_FAILURE,
+    RuntimeFailureClass.AXIS_DETECTION_FAILURE,
+    RuntimeFailureClass.TICK_LOCALIZATION_FAILURE,
+    RuntimeFailureClass.OCR_TICK_FAILURE,
+    RuntimeFailureClass.CALIBRATION_FAILURE,
+    RuntimeFailureClass.CV_FALLBACK_GRAPH_PANEL_FAILURE,
+)
+
+private val tickCalibrationFailureClasses = setOf(
+    RuntimeFailureClass.TICK_LOCALIZATION_FAILURE,
+    RuntimeFailureClass.OCR_TICK_FAILURE,
+    RuntimeFailureClass.CALIBRATION_FAILURE,
+)
+
 private val loadAttemptRequiredStatuses = setOf(
     ModelAvailabilityStatus.LOAD_FAILED,
     ModelAvailabilityStatus.TIMEOUT,
@@ -1196,6 +1367,12 @@ private fun RuntimeEvidencePackage.deterministicGeometryAttempted(): Boolean {
             "CALIBRATION" in id
     }
 }
+
+private fun RuntimeEvidencePackage.requiresGraphFailurePackage(): Boolean =
+    terminalState != RuntimeTerminalState.PASS &&
+        runtimeFailureClass in graphStageFailureClasses &&
+        deterministicGeometryAttempted() &&
+        graphs.isEmpty()
 
 private fun RuntimeEvidencePackage.usesVlmOrKnowledgeOutputs(): Boolean =
     knowledgeRetrievalContexts.isNotEmpty() ||
@@ -1221,6 +1398,31 @@ private fun ModelAvailabilityDiagnostic.toValidationRow(): RuntimeEvidenceModelA
         fallbackResult = fallbackResult,
         status = status.name,
     )
+
+private fun RuntimeGraphFailureArtifactPaths.presentPaths(): List<String> = buildList {
+    addIfPresent(originalImagePath)
+    addIfPresent(normalizedImagePath)
+    addIfPresent(rectifiedImagePath)
+    addIfPresent(graphPanelOverlayPath)
+    addIfPresent(plotAreaOverlayPath)
+    addIfPresent(axisOverlayPath)
+    addIfPresent(tickOverlayPath)
+    addIfPresent(calibrationOverlayPath)
+    ocrCropPaths.forEach(::addIfPresent)
+}
+
+private fun RuntimeGraphFailureArtifactPaths.missingReasons(): List<String> = listOfNotNull(
+    graphPanelOverlayMissingReason,
+    plotAreaOverlayMissingReason,
+    axisOverlayMissingReason,
+    tickOverlayMissingReason,
+    calibrationOverlayMissingReason,
+    ocrCropMissingReason,
+)
+
+private fun MutableList<String>.addIfPresent(path: String?) {
+    if (!path.isNullOrBlank()) add(path)
+}
 
 private fun MutableList<RuntimeEvidenceValidationIssue>.block(
     code: String,

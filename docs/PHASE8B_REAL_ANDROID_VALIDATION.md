@@ -62,6 +62,21 @@ The command uses an explicit component and action so no external camera/gallery 
 
 The action string remains `com.chromalab.app.RUN_VALIDATION_FIXTURE`; the side-by-side package is selected by the explicit component.
 
+## Phase 8D Fixture Evidence Closure
+
+After Phase 8C, run `white_tiger_ion71_20260520_170118` reached graph selection, graph ROI, axis detection, OCR suggestion, X calibration, and Y calibration. It failed with `TICK_LOCALIZATION_FAILURE` because fewer than two Y tick labels were available for automatic calibration.
+
+Phase 8D requires the next Android fixture run to export graph-stage failure evidence even when no final calibrated graph report can be produced:
+
+- `graph_failure_package_<run_id>.json`;
+- graph failure summary in runtime validator JSON/Markdown;
+- graphPanel/plotArea bounds or explicit missing reasons;
+- axis/tick candidate summaries;
+- OCR crop and accepted/rejected tick anchor summaries;
+- calibration fit status and warnings.
+
+Android tick candidate rescue is deterministic only. OCR/VLM text may be paired to candidates, but cannot create pixel coordinates or calibration.
+
 ## Android Fixture Run - 2026-05-20
 
 Run id: `white_tiger_ion71_20260520_162317`.
@@ -119,4 +134,18 @@ For the current run, the required text artifacts were exported. Overlay artifact
 
 If the run still fails at axis/tick/calibration, that is a valid validation result. The report must remain `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, or `BLOCKED`; the runtime evidence package and final report contract must carry a structured `runtimeFailureClass`.
 
-The current run does not yet test axis/tick/calibration because `VLM_MODEL_UNAVAILABLE` blocks the pipeline first. Re-run the same fixture command after installing or activating the required chromatogram VLM.
+Phase 8C removed the pre-geometry VLM blocker. Phase 8D then closed the tick/calibration blocker with final run `white_tiger_ion71_20260520_184550`.
+
+Final Phase 8D result:
+
+- global report gate: `REVIEW_ONLY`;
+- validator verdict: `REVIEW`;
+- blocking validator issues: `0`;
+- runtime failure class: `VLM_SEMANTIC_LAYER_UNAVAILABLE`;
+- graph count: `1`;
+- X/Y calibration: `VALID` / `VALID`;
+- trace and peak evidence: present;
+- final report JSON/HTML/Markdown: exported;
+- graphPanel, plotArea, axis/tick, trace, and peak overlays: exported.
+
+The current run tests axis/tick/calibration successfully. The remaining non-release status is limited to the unavailable VLM semantic layer and is explicitly visible in runtime evidence.

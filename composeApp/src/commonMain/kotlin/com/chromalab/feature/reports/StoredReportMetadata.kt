@@ -2,6 +2,7 @@ package com.chromalab.feature.reports
 
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -29,6 +30,7 @@ data class StoredReportMetadata(
     val selectedModel: ModelExecutionInfo? = null,
     val executedModel: ModelExecutionInfo? = null,
     val executedRuntime: ExecutedRuntime? = null,
+    val modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     val deviceName: String? = null,
     val processingMode: ProcessingMode? = null,
     val stageTimings: List<ReportStageTiming> = emptyList(),

@@ -515,7 +515,7 @@ private data class GeometryCandidateEvaluation(
 
 private const val MAX_GEOMETRY_RETRY_CANDIDATES = 6
 private const val VLM_ROI_HINT_TIMEOUT_MS = 8_000L
-private const val TICK_OCR_TIMEOUT_MS = 8_000L
+private const val TICK_OCR_TIMEOUT_MS = 20_000L
 
 private inline fun <T> timedStage(
     stageId: String,

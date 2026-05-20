@@ -26,11 +26,13 @@ object DebugPackageExporter {
     fun exportRuntimeEvidencePackage(
         report: ChromatogramReport,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): String =
         json.encodeToString(
             RuntimeEvidencePackageBuilder.build(
                 report = report,
                 modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+                graphFailurePackages = graphFailurePackages,
             ),
         )
 
@@ -94,11 +96,12 @@ object DebugPackageExporter {
         report: ChromatogramReport,
         graphIndex: Int? = null,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): String {
         val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
         return writer.writeText(
             filename = "runtime_evidence_package$suffix.json",
-            content = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics),
+            content = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics, graphFailurePackages),
         )
     }
 
@@ -107,9 +110,10 @@ object DebugPackageExporter {
         report: ChromatogramReport,
         graphIndex: Int? = null,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): List<String> {
         val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
-        val evidenceJson = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics)
+        val evidenceJson = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics, graphFailurePackages)
         val evidencePath = writer.writeText(
             filename = "runtime_evidence_package$suffix.json",
             content = evidenceJson,

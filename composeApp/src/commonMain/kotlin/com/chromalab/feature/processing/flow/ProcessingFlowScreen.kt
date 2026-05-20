@@ -72,6 +72,13 @@ import com.chromalab.feature.processing.quality.StageQuality
 import com.chromalab.feature.processing.export.ExportScreen
 import com.chromalab.feature.processing.export.ExportBundle
 import com.chromalab.feature.processing.debug.DebugPackageExporter
+import com.chromalab.feature.processing.debug.RuntimeAxisFailureSummary
+import com.chromalab.feature.processing.debug.RuntimeCalibrationFailureSummary
+import com.chromalab.feature.processing.debug.RuntimeGraphFailureArtifactPaths
+import com.chromalab.feature.processing.debug.RuntimeGraphFailurePackage
+import com.chromalab.feature.processing.debug.RuntimeTickAnchorEvidenceSummary
+import com.chromalab.feature.processing.debug.RuntimeTickFailureSummary
+import com.chromalab.feature.processing.debug.RuntimeTickOcrFailureSummary
 import com.chromalab.feature.processing.storage.SessionWriter
 import com.chromalab.feature.processing.storage.ProcessingParams
 import com.chromalab.feature.processing.signal.SmoothingParams
@@ -102,6 +109,7 @@ import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.geometry.SourceType as GeometrySourceType
+import com.chromalab.feature.processing.geometry.TickOcrItemStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -251,8 +259,23 @@ fun ProcessingFlowScreen(
             withContext(Dispatchers.Default) {
                 when (currentStep) {
                     ProcessingStep.IMAGE_QUALITY -> {
-                        // 25.2B: Lazy VLM model loading at pipeline start
-                            if (!vlmReady) {
+                        // Lazy VLM loading; validation fixtures defer it until deterministic CV has run.
+                            if (sourceType == SourceType.VALIDATION_FIXTURE && modelAvailabilityDiagnostics.isEmpty()) {
+                                val modelSnapshot = chartReader.currentModelSnapshot()
+                                val diagnostic = modelSnapshot.toModelAvailabilityDiagnostic(
+                                    ready = false,
+                                    mode = sourceType.toModelAvailabilityMode(),
+                                    loadAttempted = false,
+                                    forcedStatus = ModelAvailabilityStatus.DISABLED,
+                                    forcedMessage = "Validation fixture skipped startup VLM loading so deterministic graphPanel, plotArea, axis, and tick stages can run first.",
+                                )
+                                modelAvailabilityDiagnostics = listOf(diagnostic)
+                                vlmLoadingStatus = "AI model deferred for validation fixture; deterministic CV is running"
+                                println(
+                                    "PIPELINE[VLM] startup load deferred for validation fixture " +
+                                        "status=${diagnostic.status} deterministicFallback=continue",
+                                )
+                            } else if (!vlmReady) {
                                 vlmLoadingStatus = "Загрузка AI модели..."
                                 vlmReady = chartReader.ensureModelLoaded { status ->
                                     vlmLoadingStatus = status
@@ -603,11 +626,26 @@ fun ProcessingFlowScreen(
                     stageId = timedStep.name,
                     failureMessage = e.message ?: "Unknown processing failure.",
                     analysisStartedAtEpochMillis = flowStartedAt,
-                        analysisCompletedAtEpochMillis = System.currentTimeMillis(),
+                    analysisCompletedAtEpochMillis = System.currentTimeMillis(),
+                    stageTimings = failureTimings,
+                    deviceName = currentReportDeviceName(),
+                    modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+                    graphFailurePackages = buildRuntimeGraphFailurePackages(
+                        failureClass = e.toRuntimeFailureClass(timedStep),
+                        failureStage = timedStep.name,
+                        failureReason = e.message ?: "Unknown processing failure.",
+                        imagePath = imagePath,
+                        normalizedImagePath = currentImagePath,
+                        currentGraphIndex = currentGraphIndex,
+                        selectedRegion = selectedRegion,
+                        graphResult = graphResult,
+                        geometryResult = geometryResult,
+                        ocrResult = ocrResult,
+                        xCalibration = xCalibration,
+                        yCalibration = yCalibration,
                         stageTimings = failureTimings,
-                        deviceName = currentReportDeviceName(),
-                        modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
-                    )
+                    ),
+                )
             }.onFailure { exportError ->
                 println("PIPELINE[VALIDATION_FAILURE_EVIDENCE] export_failed=${exportError.message}")
             }
@@ -646,12 +684,17 @@ fun ProcessingFlowScreen(
                 if (currentStep == ProcessingStep.QUALITY_REPORT) {
                     // Multi-graph: check for more regions before advancing to EXPORT
                     captureCurrentGraphSnapshot()
-                    val totalRegions = graphResult?.filteredRegions?.size ?: 1
-                    if (currentGraphIndex + 1 < totalRegions) {
-                        currentGraphIndex++
-                        val nextRegion = graphResult!!.filteredRegions[currentGraphIndex]
+                    val candidateRegions = graphResult?.filteredRegions.orEmpty()
+                    val nextGraphIndex = nextUnprocessedGraphRegionIndex(
+                        candidateRegions = candidateRegions,
+                        currentIndex = currentGraphIndex,
+                        processedRegions = processedGraphs.map { it.selectedRegion },
+                    )
+                    if (nextGraphIndex != null) {
+                        currentGraphIndex = nextGraphIndex
+                        val nextRegion = candidateRegions[nextGraphIndex]
                         selectedRegion = nextRegion
-                        println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/$totalRegions: ${nextRegion.label}")
+                        println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/${candidateRegions.size}: ${nextRegion.label}")
                         // Reset per-graph state
                         axesResult = null
                         xCalibration = null
@@ -660,6 +703,7 @@ fun ProcessingFlowScreen(
                         pixelCalibration = null
                         curveExtractionResult = null
                         curvePoints = emptyList()
+                        geometryResult = null
                         smoothedSignal = null
                         digitizationReport = null
                         sweepCompleted = false
@@ -675,7 +719,7 @@ fun ProcessingFlowScreen(
                         val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                         val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
                         val executedRuntime = executedReportModel?.runtime
-                            ?: ExecutedRuntime.UNKNOWN
+                            ?: ExecutedRuntime.DETERMINISTIC
                         val reportStageTimings = stageDurationMillis.toReportStageTimings()
                         val reportDeviceName = currentReportDeviceName()
                         val saveResult = withContext(Dispatchers.IO) {
@@ -708,9 +752,7 @@ fun ProcessingFlowScreen(
                                 println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sId")
 
                                 var firstId: Long? = null
-                                val detectedGraphCount = graphResult?.filteredRegions?.size
-                                    ?.takeIf { it > 0 }
-                                    ?: graphsToSave.size
+                                val detectedGraphCount = graphsToSave.size.coerceAtLeast(1)
                                 val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
                                 val cropConfidence = graphResult?.confidence.toReportCropConfidence()
                                 for ((idx, entry) in graphsToSave.withIndex()) {
@@ -745,6 +787,7 @@ fun ProcessingFlowScreen(
                                         selectedModel = selectedReportModel,
                                         executedModel = executedReportModel,
                                         executedRuntime = executedRuntime,
+                                        modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
                                         deviceName = reportDeviceName,
                                         stageTimings = reportStageTimings,
                                         graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
@@ -808,13 +851,18 @@ fun ProcessingFlowScreen(
         if (step == ProcessingStep.QUALITY_REPORT) {
             // Save current signal to the batch
             captureCurrentGraphSnapshot()
-            val totalRegions = graphResult?.filteredRegions?.size ?: 1
-            if (currentGraphIndex + 1 < totalRegions) {
+            val candidateRegions = graphResult?.filteredRegions.orEmpty()
+            val nextGraphIndex = nextUnprocessedGraphRegionIndex(
+                candidateRegions = candidateRegions,
+                currentIndex = currentGraphIndex,
+                processedRegions = processedGraphs.map { it.selectedRegion },
+            )
+            if (nextGraphIndex != null) {
                 // More regions — reset per-graph state and loop back
-                currentGraphIndex++
-                val nextRegion = graphResult!!.filteredRegions[currentGraphIndex]
+                currentGraphIndex = nextGraphIndex
+                val nextRegion = candidateRegions[nextGraphIndex]
                 selectedRegion = nextRegion
-                println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/$totalRegions: ${nextRegion.label} (${nextRegion.width}x${nextRegion.height})")
+                println("PIPELINE[MULTI] Advancing to graph ${currentGraphIndex + 1}/${candidateRegions.size}: ${nextRegion.label} (${nextRegion.width}x${nextRegion.height})")
                 // Reset per-graph results
                 axesResult = null
                 xCalibration = null
@@ -841,7 +889,7 @@ fun ProcessingFlowScreen(
                     val selectedReportModel = modelSnapshot.selectedModel.toReportModelExecutionInfo()
                     val executedReportModel = modelSnapshot.executedModel.toReportModelExecutionInfo()
                     val executedRuntime = executedReportModel?.runtime
-                        ?: ExecutedRuntime.UNKNOWN
+                        ?: ExecutedRuntime.DETERMINISTIC
                     val reportStageTimings = stageDurationMillis.toReportStageTimings()
                     val reportDeviceName = currentReportDeviceName()
                     val resultId = withContext(Dispatchers.IO) {
@@ -874,9 +922,7 @@ fun ProcessingFlowScreen(
                             println("PIPELINE[AUTO-SAVE] Created project=$projectId, sample=$sampleId")
 
                             var firstId: Long? = null
-                            val detectedGraphCount = graphResult?.filteredRegions?.size
-                                ?.takeIf { it > 0 }
-                                ?: graphsToSave.size
+                            val detectedGraphCount = graphsToSave.size.coerceAtLeast(1)
                             val sourceImageBounds = reportSourceImageBounds(imageWidth, imageHeight)
                             val cropConfidence = graphResult?.confidence.toReportCropConfidence()
                             for ((idx, entry) in graphsToSave.withIndex()) {
@@ -911,6 +957,7 @@ fun ProcessingFlowScreen(
                                     selectedModel = selectedReportModel,
                                     executedModel = executedReportModel,
                                     executedRuntime = executedRuntime,
+                                    modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
                                     deviceName = reportDeviceName,
                                     stageTimings = reportStageTimings,
                                     graphWarnings = entry.warnings.withReportGraphIndex(entry.graphIndex),
@@ -1235,10 +1282,12 @@ private fun ActiveInferenceModelSnapshot.toModelAvailabilityDiagnostic(
     ready: Boolean,
     mode: ModelAvailabilityMode,
     loadAttempted: Boolean,
+    forcedStatus: ModelAvailabilityStatus? = null,
+    forcedMessage: String? = null,
 ): ModelAvailabilityDiagnostic {
     val selected = selectedModel
     val executed = executedModel
-    val status = when {
+    val status = forcedStatus ?: when {
         ready -> ModelAvailabilityStatus.AVAILABLE
         selected == null && executed == null -> ModelAvailabilityStatus.NOT_CONFIGURED
         executed == null -> ModelAvailabilityStatus.UNAVAILABLE
@@ -1255,7 +1304,8 @@ private fun ActiveInferenceModelSnapshot.toModelAvailabilityDiagnostic(
         sanitizedErrorMessage = if (ready) {
             null
         } else {
-            "Chromatogram VLM is unavailable. Deterministic graphPanel, plotArea, axis, and tick stages must still run."
+            forcedMessage
+                ?: "Chromatogram VLM is unavailable. Deterministic graphPanel, plotArea, axis, and tick stages must still run."
         },
         fallbackModelAttempted = selected != null,
         fallbackResult = if (ready) "not_needed" else "unavailable",
@@ -1355,9 +1405,174 @@ private fun buildConfirmedPixelCalibration(
         yAxis = yCal,
         originPixelX = (origin?.x ?: selectedRegion.x.toFloat()) - selectedRegion.x.toFloat(),
         originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) -
-            selectedRegion.y.toFloat(),
+        selectedRegion.y.toFloat(),
     )
 }
+
+private fun buildRuntimeGraphFailurePackages(
+    failureClass: RuntimeFailureClass,
+    failureStage: String,
+    failureReason: String,
+    imagePath: String,
+    normalizedImagePath: String,
+    currentGraphIndex: Int,
+    selectedRegion: GraphRegion,
+    graphResult: GraphRegionResult?,
+    geometryResult: GeometryPipelineResult?,
+    ocrResult: AxisOcrResult?,
+    xCalibration: XAxisCalibration?,
+    yCalibration: YAxisCalibration?,
+    stageTimings: List<ReportStageTiming>,
+): List<RuntimeGraphFailurePackage> {
+    val trace = geometryResult?.trace
+    val graphPanelBounds = geometryResult?.graphPanelBounds?.region
+        ?: trace?.selectedGraphPanelBounds?.region
+        ?: graphResult?.filteredRegions?.getOrNull(currentGraphIndex)
+        ?: selectedRegion.takeIf { it.width > 1 && it.height > 1 }
+    val plotAreaBounds = geometryResult?.plotAreaBounds?.region
+        ?: trace?.selectedPlotAreaBounds?.region
+
+    if (graphPanelBounds == null && geometryResult == null) return emptyList()
+
+    val axisGeometry = geometryResult?.axisGeometry ?: trace?.axisGeometry
+    val tickGeometry = geometryResult?.tickGeometry ?: trace?.tickGeometry
+    val tickOcr = geometryResult?.tickOcrResult ?: trace?.tickOcrResult
+    val xFit = geometryResult?.xCalibrationFit ?: trace?.xCalibrationFit
+    val yFit = geometryResult?.yCalibrationFit ?: trace?.yCalibrationFit
+    val acceptedAnchors = tickOcr?.acceptedItems.orEmpty()
+    val rejectedAnchors = tickOcr?.items.orEmpty()
+        .filterNot { it.status == TickOcrItemStatus.ACCEPTED }
+
+    return listOf(
+        RuntimeGraphFailurePackage(
+            graphIndex = currentGraphIndex + 1,
+            failureClass = failureClass,
+            failureStage = failureStage,
+            failureReason = failureReason,
+            graphPanelBounds = graphPanelBounds,
+            graphPanelMissingReason = graphPanelBounds.missingReason("graphPanel bounds were not available at failure time."),
+            plotAreaBounds = plotAreaBounds,
+            plotAreaMissingReason = plotAreaBounds.missingReason("plotArea bounds were not available at failure time."),
+            axisSummary = RuntimeAxisFailureSummary(
+                xAxisLineAvailable = axisGeometry?.xAxisLinePx != null,
+                yAxisLineAvailable = axisGeometry?.yAxisLinePx != null,
+                originAvailable = axisGeometry?.originPx != null,
+                axisConfidence = axisGeometry?.axisConfidence ?: 0f,
+                warnings = axisGeometry?.warnings.orEmpty(),
+            ),
+            tickSummary = RuntimeTickFailureSummary(
+                sourceMethod = tickGeometry?.source ?: "deterministic_cv_unavailable",
+                xTickCandidateCount = tickGeometry?.xTicks.orEmpty().size,
+                yTickCandidateCount = tickGeometry?.yTicks.orEmpty().size,
+                xTickPixelPositions = tickGeometry?.xTicks.orEmpty().map { it.pixelCoordinate },
+                yTickPixelPositions = tickGeometry?.yTicks.orEmpty().map { it.pixelCoordinate },
+                readyForOcrValueMatching = tickGeometry?.let {
+                    it.xTicks.size >= 2 && it.yTicks.size >= 2
+                } == true,
+                warnings = tickGeometry?.warnings.orEmpty(),
+            ),
+            ocrSummary = RuntimeTickOcrFailureSummary(
+                rawElementCount = ocrResult?.rawElements?.size ?: tickOcr?.items.orEmpty().size,
+                numericElementCount = ocrResult?.rawElements?.count { it.numericValue != null }
+                    ?: tickOcr?.items.orEmpty().count { it.parsedNumericValue != null },
+                acceptedXAnchorCount = acceptedAnchors.count { it.axis.name == "X" },
+                acceptedYAnchorCount = acceptedAnchors.count { it.axis.name == "Y" },
+                semanticOnlyCount = tickOcr?.items.orEmpty().count { it.status == TickOcrItemStatus.SEMANTIC_ONLY },
+                acceptedAnchors = acceptedAnchors.map { item ->
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = item.axis,
+                        tickPixelPosition = item.tickPixelPosition,
+                        rawText = item.rawText,
+                        parsedNumericValue = item.parsedNumericValue,
+                        localCropPath = item.localCropPath,
+                        confidence = item.confidence,
+                        status = item.status,
+                        rejectionReason = item.rejectionReason,
+                    )
+                },
+                rejectedAnchors = rejectedAnchors.map { item ->
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = item.axis,
+                        tickPixelPosition = item.tickPixelPosition,
+                        rawText = item.rawText,
+                        parsedNumericValue = item.parsedNumericValue,
+                        localCropPath = item.localCropPath,
+                        confidence = item.confidence,
+                        status = item.status,
+                        rejectionReason = item.rejectionReason,
+                    )
+                },
+                warnings = tickOcr?.warnings.orEmpty() + ocrResult?.warnings.orEmpty(),
+            ),
+            calibrationSummary = RuntimeCalibrationFailureSummary(
+                xStatus = xFit?.status,
+                yStatus = yFit?.status,
+                xAcceptedAnchorCount = xFit?.acceptedAnchors.orEmpty().size,
+                yAcceptedAnchorCount = yFit?.acceptedAnchors.orEmpty().size,
+                xRejectedAnchorCount = xFit?.rejectedAnchors.orEmpty().size,
+                yRejectedAnchorCount = yFit?.rejectedAnchors.orEmpty().size,
+                xMaxResidualPx = xFit?.maxResidualPx,
+                yMaxResidualPx = yFit?.maxResidualPx,
+                xRmsePx = xFit?.rmsePx,
+                yRmsePx = yFit?.rmsePx,
+                xWarnings = xFit?.warnings.orEmpty() + xCalibration?.warnings.orEmpty(),
+                yWarnings = yFit?.warnings.orEmpty() + yCalibration?.warnings.orEmpty(),
+                missingReason = if (xFit == null || yFit == null) {
+                    "calibration fit evidence was incomplete at failure time."
+                } else {
+                    null
+                },
+            ),
+            artifactPaths = RuntimeGraphFailureArtifactPaths(
+                originalImagePath = trace?.originalImagePath ?: imagePath,
+                normalizedImagePath = trace?.normalizedImagePath ?: normalizedImagePath,
+                rectifiedImagePath = trace?.rectifiedImagePath,
+                graphPanelOverlayPath = trace?.selectedGraphPanelOverlayPath,
+                graphPanelOverlayMissingReason = trace?.selectedGraphPanelOverlayPath
+                    .missingReason("graphPanel overlay was not produced before $failureStage."),
+                plotAreaOverlayPath = trace?.selectedPlotAreaOverlayPath,
+                plotAreaOverlayMissingReason = trace?.selectedPlotAreaOverlayPath
+                    .missingReason("plotArea overlay was not produced before $failureStage."),
+                axisOverlayPath = trace?.axisOverlayPath,
+                axisOverlayMissingReason = trace?.axisOverlayPath
+                    .missingReason("axis candidate overlay was not produced before $failureStage."),
+                tickOverlayPath = trace?.tickOverlayPath,
+                tickOverlayMissingReason = trace?.tickOverlayPath
+                    .missingReason("tick candidate overlay was not produced before $failureStage."),
+                calibrationOverlayPath = trace?.calibrationFitOverlayPath,
+                calibrationOverlayMissingReason = trace?.calibrationFitOverlayPath
+                    .missingReason("calibration overlay was not produced before $failureStage."),
+                ocrCropPaths = trace?.ocrCropPaths.orEmpty(),
+                ocrCropMissingReason = trace?.ocrCropPaths.orEmpty()
+                    .takeIf { it.isEmpty() }
+                    ?.let { "OCR crop grid was not produced before $failureStage." },
+            ),
+            rejectionReasons = buildList {
+                add(failureReason)
+                addAll(tickOcr?.items.orEmpty().mapNotNull { it.rejectionReason })
+                addAll(xFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
+                addAll(yFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
+            }.distinct(),
+            warnings = buildList {
+                addAll(geometryResult?.warnings.orEmpty())
+                addAll(trace?.warnings.orEmpty())
+                addAll(axisGeometry?.warnings.orEmpty())
+                addAll(tickGeometry?.warnings.orEmpty())
+                addAll(tickOcr?.warnings.orEmpty())
+                addAll(ocrResult?.warnings.orEmpty())
+                addAll(xFit?.warnings.orEmpty())
+                addAll(yFit?.warnings.orEmpty())
+            }.distinct(),
+            stageTimings = stageTimings,
+        ),
+    )
+}
+
+private fun GraphRegion?.missingReason(reason: String): String? =
+    if (this == null) reason else null
+
+private fun String?.missingReason(reason: String): String? =
+    if (isNullOrBlank()) reason else null
 
 private fun failAutomaticAxisCalibration(reason: String): Nothing {
     error(
@@ -1377,6 +1592,28 @@ private data class ProcessedGraphSnapshot(
     val preparationVariants: List<GraphPreparationVariantMetadata>,
     val geometryResult: GeometryPipelineResult?,
 )
+
+private fun nextUnprocessedGraphRegionIndex(
+    candidateRegions: List<GraphRegion>,
+    currentIndex: Int,
+    processedRegions: List<GraphRegion>,
+): Int? =
+    candidateRegions.indices
+        .drop(currentIndex + 1)
+        .firstOrNull { index ->
+            val candidate = candidateRegions[index]
+            processedRegions.none { processed -> !candidate.isDistinctGraphRegionFrom(processed) }
+        }
+
+private fun GraphRegion.isDistinctGraphRegionFrom(other: GraphRegion): Boolean {
+    val overlapWidth = (min(right, other.right) - max(x, other.x)).coerceAtLeast(0)
+    val overlapHeight = (min(bottom, other.bottom) - max(y, other.y)).coerceAtLeast(0)
+    val overlapArea = overlapWidth * overlapHeight
+    if (overlapArea <= 0) return true
+    val smallerArea = min(area, other.area).coerceAtLeast(1)
+    val overlapRatio = overlapArea.toFloat() / smallerArea.toFloat()
+    return overlapRatio < 0.72f
+}
 
 private fun List<ProcessedGraphSnapshot>.toReportSaveEntries(): List<ProcessedGraphSnapshot> =
     sortedBy { it.graphIndex }.filter { it.signal.smoothed.points.size >= 10 }

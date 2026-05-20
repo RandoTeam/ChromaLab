@@ -14,7 +14,7 @@ Phase 8 failures must be classified instead of hidden, converted into expected p
 | `MULTI_GRAPH_SPLIT_FAILURE` | Physical graph count is wrong or one graph becomes many pseudo-graphs. | Multiplicity resolver output, per-candidate overlays, expected graph count. | Blocking | Yes | Yes | Yes |
 | `PLOT_AREA_FAILURE` | PlotArea is missing, outside graphPanel, zero-area, or equal to full panel without review. | PlotArea overlay, graphPanel relation, validator finding. | Blocking | Yes | Yes | Yes |
 | `AXIS_DETECTION_FAILURE` | X/Y axes cannot be localized. | Axis overlay, line evidence, origin evidence, candidate rejection reasons. | Blocking | Yes | Yes | Yes |
-| `TICK_LOCALIZATION_FAILURE` | Tick marks cannot be linked to pixel geometry. | Tick overlay, tick candidate table, axis linkage. | Blocking | Yes | Yes | Yes |
+| `TICK_LOCALIZATION_FAILURE` | Tick marks or deterministic label-band tick geometry cannot be linked to usable pixel positions. | Tick overlay or explicit missing reason, tick candidate table, axis linkage, graph failure package. | Blocking | Yes with projection/grid/label-band rescue | Yes | Yes |
 | `OCR_TICK_FAILURE` | Tick label OCR is missing, ambiguous, or inconsistent. | OCR crop, OCR/VLM disagreement, accepted/rejected text table. | Review | Yes with expanded/enhanced crop | Yes | Yes unless user-confirmed calibration exists |
 | `CALIBRATION_FAILURE` | X/Y calibration is missing, invalid, non-monotonic, or has blocking residuals. | Calibration anchors, residuals, fit status, validator report. | Blocking | Yes | Yes | Yes |
 | `TRACE_EXTRACTION_FAILURE` | No usable trace is extracted. | Raw/clean mask, rejected components, selected trace overlay. | Blocking | Yes | Yes | Yes |
@@ -34,6 +34,16 @@ Phase 8 failures must be classified instead of hidden, converted into expected p
 | `EXPORT_PRIVACY_FAILURE` | User report includes raw logs, raw prompts, private paths, or never-shared artifacts. | Export manifest, HTML/Markdown/JSON output, privacy finding. | Blocking | No | No | Yes |
 | `PERFORMANCE_TIMEOUT` | A stage exceeds configured runtime budget. | Stage timings, model runtime profile, timeout status. | Review | Yes with bounded retry | Yes if result unavailable | Blocks release only when evidence is incomplete |
 | `UNKNOWN_FAILURE` | Failure cannot be assigned to a known class. | Full evidence package and reviewer notes. | Blocking | No until classified | Yes after classification | Yes |
+
+## Graph-Stage Failure Packages
+
+Phase 8D adds graph-stage failure packages for terminal failures after deterministic graph processing begins. A graph-stage failure package is required for:
+
+- graphPanel, plotArea, axis, tick, OCR tick, calibration, and CV fallback graph failures;
+- Android validation fixture terminal failures that reached graph processing but cannot produce a final graph report;
+- any `BLOCKED` report where the selected graph context exists but calibrated signal/report generation is impossible.
+
+The package must include graphPanel/plotArea bounds or explicit missing reasons, axis/tick candidate evidence, OCR crop evidence or missing reasons, accepted/rejected anchors, calibration status/residual summaries when available, warnings, failure class, failure stage, and stage timings.
 
 ## Failure Closure Policy
 

@@ -4,6 +4,7 @@ import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.GraphPreparationVariantMetadata
@@ -12,6 +13,7 @@ import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.ModelExecutionInfo
 import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
+import com.chromalab.feature.reports.ReportAxisCalibration
 import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.StoredGraphReportMetadata
@@ -42,6 +44,7 @@ fun buildProcessingReportMetadataConfig(
     selectedModel: ModelExecutionInfo? = null,
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
+    modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
     graphWarnings: List<ReportWarning> = emptyList(),
@@ -71,6 +74,7 @@ fun buildProcessingReportMetadataConfig(
             selectedModel = selectedModel,
             executedModel = executedModel,
             executedRuntime = executedRuntime,
+            modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
             deviceName = deviceName,
             stageTimings = stageTimings,
             graphWarnings = graphWarnings,
@@ -135,6 +139,7 @@ fun buildProcessingStoredReportMetadata(
     selectedModel: ModelExecutionInfo? = null,
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
+    modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
     graphWarnings: List<ReportWarning> = emptyList(),
@@ -153,6 +158,7 @@ fun buildProcessingStoredReportMetadata(
         .filterNot { it == selectedPreparationVariant }
         .sortedBy { it.rank }
     val ocrExtraction = axisOcrResult.toProcessingOcrReportExtraction(detectedGraphBounds)
+    val axisCalibration = ocrExtraction.axisCalibration.withGeometryCalibrationFits(geometryTrace)
     val processingMode = ProcessingMode.AUTO_DIAGNOSTIC
     val modelStageTimings = ModelAssistedAnalysisContract.augmentStageTimings(
         stageTimings = stageTimings,
@@ -177,6 +183,7 @@ fun buildProcessingStoredReportMetadata(
         selectedModel = selectedModel,
         executedModel = executedModel,
         executedRuntime = executedRuntime,
+        modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
         deviceName = deviceName?.takeIf { it.isNotBlank() },
         processingMode = processingMode,
         stageTimings = modelStageTimings,
@@ -188,7 +195,7 @@ fun buildProcessingStoredReportMetadata(
                 geometryTrace = geometryTrace,
                 warnings = graphWarnings.toStoredGraphWarnings(graphIndex.coerceAtLeast(1)),
                 identification = ocrExtraction.identification,
-                axisCalibration = ocrExtraction.axisCalibration,
+                axisCalibration = axisCalibration,
                 source = GraphSourceMetadata(
                     sourceImageBounds = sourceImageBounds,
                     detectedGraphBounds = detectedGraphBounds,
@@ -213,6 +220,18 @@ fun buildProcessingStoredReportMetadata(
                 ),
             ),
         ),
+    )
+}
+
+private fun ReportAxisCalibration?.withGeometryCalibrationFits(
+    geometryTrace: GeometryTrace?,
+): ReportAxisCalibration? {
+    val xFit = geometryTrace?.xCalibrationFit
+    val yFit = geometryTrace?.yCalibrationFit
+    if (xFit == null && yFit == null) return this
+    return (this ?: ReportAxisCalibration()).copy(
+        xCalibrationFit = xFit,
+        yCalibrationFit = yFit,
     )
 }
 

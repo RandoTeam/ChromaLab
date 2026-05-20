@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.geometry
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 internal fun buildTickCropRegions(
@@ -16,7 +17,12 @@ internal fun buildTickCropRegions(
     val xCropHeight = (xCropBottom - xCropTop).coerceAtLeast(24)
 
     val yCropLeft = (panelRegion.x - plotRegion.width * 0.03f).roundToInt()
-    val yCropRight = (plotRegion.x + plotRegion.width * 0.08f).roundToInt()
+    val plotContainsLeftLabels = plotRegion.x <= panelRegion.x + max(8, panelRegion.width / 45)
+    val yCropRight = if (plotContainsLeftLabels) {
+        panelRegion.x + max(72, panelRegion.width / 4)
+    } else {
+        (plotRegion.x + plotRegion.width * 0.08f).roundToInt()
+    }
     val yCropWidth = (yCropRight - yCropLeft).coerceAtLeast(34)
     val yCropHeight = (plotRegion.height * 0.10f).roundToInt().coerceIn(22, 72)
 

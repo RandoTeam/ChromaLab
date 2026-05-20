@@ -240,4 +240,18 @@ Phase 8B adds a deterministic Android validation row that avoids camera/gallery/
 
 Phase 8B device run `white_tiger_ion71_20260520_162317` reached the real processing path and exported terminal artifacts, but stopped before graph analysis because the required chromatogram VLM was unavailable. The run is classified as `VLM_MODEL_UNAVAILABLE`, report gate `BLOCKED`, validator verdict `FAIL`, and Phase 9 remains blocked until model availability is resolved and the fixture is rerun.
 
+Phase 8D tracks the later fixture run `white_tiger_ion71_20260520_170118`: deterministic graph stages reached `Y_CALIBRATION`, then failed as `TICK_LOCALIZATION_FAILURE` because Y tick label evidence was insufficient. The regression requirement is now that graph-stage failures export a `RuntimeGraphFailurePackage` and validator graph failure summary rather than ending with only `package.graphs_missing`.
+
 Expected status remains `DIAGNOSTIC_ONLY` or `REVIEW_ONLY` until autonomous axis/tick/calibration evidence is valid. A release-ready result from this fixture is only acceptable when all Phase 0-8 evidence gates pass.
+
+Phase 8D final run `white_tiger_ion71_20260520_184550` reaches report export with:
+
+- graph count: `1`;
+- X/Y calibration: `VALID` / `VALID`;
+- runtime graph package: present;
+- trace and peak overlays: present;
+- runtime evidence validator: `REVIEW` with 0 blocking issues;
+- report gate: `REVIEW_ONLY`;
+- runtime failure class: `VLM_SEMANTIC_LAYER_UNAVAILABLE`.
+
+This fixture row is now considered closed for tick localization and calibration. It remains review-only until a configured VLM semantic layer is available or Product Acceptance explicitly allows deterministic-only release policy for this fixture class.

@@ -2,6 +2,7 @@ package com.chromalab.feature.validation
 
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.debug.DebugPackageExporter
+import com.chromalab.feature.processing.debug.RuntimeGraphFailurePackage
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.processing.model.ModelAvailabilityStatus
 import com.chromalab.feature.reports.ChromatogramReport
@@ -36,6 +37,7 @@ object AutonomousValidationTerminalFailureExporter {
         stageTimings: List<ReportStageTiming>,
         deviceName: String?,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): List<AutonomousValidationArtifactRecord> {
         val runId = AutonomousValidationArtifactExporter.activeRunId().orEmpty()
         if (runId.isBlank()) {
@@ -56,7 +58,11 @@ object AutonomousValidationTerminalFailureExporter {
             deviceName = deviceName,
             modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
         )
-        val evidenceJson = DebugPackageExporter.exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics)
+        val evidenceJson = DebugPackageExporter.exportRuntimeEvidencePackage(
+            report = report,
+            modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+            graphFailurePackages = graphFailurePackages,
+        )
         val textArtifacts = listOf(
             ValidationTextArtifact(
                 slot = "runtime_evidence_package",
@@ -110,9 +116,25 @@ object AutonomousValidationTerminalFailureExporter {
                 mimeType = "application/json",
             ),
             ValidationTextArtifact(
+                slot = "graph_failure_package",
+                fileName = "graph_failure_package_$runId.json",
+                content = json.encodeToString(
+                    ListSerializer(RuntimeGraphFailurePackage.serializer()),
+                    graphFailurePackages,
+                ),
+                mimeType = "application/json",
+            ),
+            ValidationTextArtifact(
                 slot = "log_summary",
                 fileName = "log_summary_$runId.md",
-                content = failureLogSummary(runId, failureClass, stageId, failureMessage, modelAvailabilityDiagnostics),
+                content = failureLogSummary(
+                    runId,
+                    failureClass,
+                    stageId,
+                    failureMessage,
+                    modelAvailabilityDiagnostics,
+                    graphFailurePackages,
+                ),
                 mimeType = "text/markdown",
             ),
         )
@@ -245,6 +267,7 @@ object AutonomousValidationTerminalFailureExporter {
         stageId: String,
         failureMessage: String,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic>,
+        graphFailurePackages: List<RuntimeGraphFailurePackage>,
     ): String = buildString {
         appendLine("# Validation Fixture Failure")
         appendLine()
@@ -252,6 +275,18 @@ object AutonomousValidationTerminalFailureExporter {
         appendLine("- Runtime failure class: `${failureClass.name}`")
         appendLine("- Stage: `$stageId`")
         appendLine("- Message: $failureMessage")
+        appendLine("- Graph failure packages: ${graphFailurePackages.size}")
+        graphFailurePackages.forEach { graph ->
+            appendLine(
+                "  - graph=${graph.graphIndex} panel=${graph.graphPanelBounds != null} " +
+                    "plot=${graph.plotAreaBounds != null} xTicks=${graph.tickSummary.xTickCandidateCount} " +
+                    "yTicks=${graph.tickSummary.yTickCandidateCount} " +
+                    "xAnchors=${graph.ocrSummary.acceptedXAnchorCount} " +
+                    "yAnchors=${graph.ocrSummary.acceptedYAnchorCount} " +
+                    "xCal=${graph.calibrationSummary.xStatus ?: "none"} " +
+                    "yCal=${graph.calibrationSummary.yStatus ?: "none"}",
+            )
+        }
         appendLine("- Model diagnostics: ${modelAvailabilityDiagnostics.size}")
         modelAvailabilityDiagnostics.forEach { diagnostic ->
             appendLine(

@@ -551,6 +551,65 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun validatorFailsGraphStageFailureWithoutGraphFailurePackage() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.package_missing" })
+        assertTrue(result.blockingIssues.any { it.code == "package.graphs_missing" })
+    }
+
+    @Test
+    fun validatorAcceptsGraphStageFailurePackageWithExplicitEvidence() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(tickLocalizationFailurePackage()),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertTrue(result.blockingIssues.none { it.code == "graph_failure.package_missing" })
+        assertTrue(result.blockingIssues.none { it.code == "package.graphs_missing" })
+        assertEquals(1, result.graphFailureSummaries.single().graphIndex)
+        assertEquals(3, result.graphFailureSummaries.single().xTickCandidateCount)
+        assertEquals(1, result.graphFailureSummaries.single().acceptedYAnchorCount)
+    }
+
+    @Test
+    fun validatorRejectsAcceptedOcrTickWithoutDeterministicPixel() {
+        val badPackage = tickLocalizationFailurePackage().copy(
+            ocrSummary = tickLocalizationFailurePackage().ocrSummary.copy(
+                acceptedAnchors = listOf(
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = GeometryAxis.Y,
+                        tickPixelPosition = null,
+                        rawText = "400000",
+                        parsedNumericValue = 400000.0,
+                        localCropPath = "crop.png",
+                        status = com.chromalab.feature.processing.geometry.TickOcrItemStatus.ACCEPTED,
+                    ),
+                ),
+            ),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.OCR_TICK_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(badPackage),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.ocr_tick_without_deterministic_pixel" })
+    }
+
+    @Test
     fun validatorRequiresFailureClassForNonPassRuntimePackage() {
         val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(
             reportWithRecovery(
@@ -679,6 +738,104 @@ class RuntimeEvidencePackageValidatorTest {
             ),
         )
     }
+
+    private fun terminalGraphFailureReport(failureClass: RuntimeFailureClass): ChromatogramReport =
+        reportWithRecovery(runtimeEvidence()).let { report ->
+            report.copy(
+                metadata = report.metadata.copy(
+                    detectedGraphCount = 0,
+                    selectedModel = null,
+                    executedModel = null,
+                    executedRuntime = ExecutedRuntime.UNKNOWN,
+                    runtimeFailureClass = failureClass,
+                    stageTimings = listOf(
+                        ReportStageTiming("GRAPH_SELECTION", "GRAPH_SELECTION", 100L),
+                        ReportStageTiming("GRAPH_ROI", "GRAPH_ROI", 20L),
+                        ReportStageTiming("AXIS_DETECTION", "AXIS_DETECTION", 12L),
+                        ReportStageTiming("OCR_SUGGESTION", "OCR_SUGGESTION", 8L),
+                        ReportStageTiming("Y_CALIBRATION", "Y_CALIBRATION", 4L),
+                    ),
+                ),
+                graphs = emptyList(),
+            )
+        }
+
+    private fun tickLocalizationFailurePackage(): RuntimeGraphFailurePackage =
+        RuntimeGraphFailurePackage(
+            graphIndex = 1,
+            failureClass = RuntimeFailureClass.TICK_LOCALIZATION_FAILURE,
+            failureStage = "Y_CALIBRATION",
+            failureReason = "Automatic axis calibration failed: at least two Y tick labels are required.",
+            graphPanelBounds = GraphRegion(0, 0, 100, 100),
+            plotAreaBounds = GraphRegion(10, 20, 80, 60),
+            axisSummary = RuntimeAxisFailureSummary(
+                xAxisLineAvailable = true,
+                yAxisLineAvailable = true,
+                originAvailable = true,
+                axisConfidence = 0.72f,
+            ),
+            tickSummary = RuntimeTickFailureSummary(
+                sourceMethod = "deterministic_cv_projection",
+                xTickCandidateCount = 3,
+                yTickCandidateCount = 1,
+                xTickPixelPositions = listOf(20f, 50f, 80f),
+                yTickPixelPositions = listOf(40f),
+                readyForOcrValueMatching = false,
+                warnings = listOf("axis_tick_geometry.y_tick_positions_insufficient"),
+            ),
+            ocrSummary = RuntimeTickOcrFailureSummary(
+                rawElementCount = 4,
+                numericElementCount = 4,
+                acceptedXAnchorCount = 3,
+                acceptedYAnchorCount = 1,
+                acceptedAnchors = listOf(
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = GeometryAxis.X,
+                        tickPixelPosition = 20f,
+                        rawText = "10.00",
+                        parsedNumericValue = 10.0,
+                        localCropPath = "crop.png",
+                        status = com.chromalab.feature.processing.geometry.TickOcrItemStatus.ACCEPTED,
+                    ),
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = GeometryAxis.Y,
+                        tickPixelPosition = 40f,
+                        rawText = "400000",
+                        parsedNumericValue = 400000.0,
+                        localCropPath = "crop.png",
+                        status = com.chromalab.feature.processing.geometry.TickOcrItemStatus.ACCEPTED,
+                    ),
+                ),
+                rejectedAnchors = listOf(
+                    RuntimeTickAnchorEvidenceSummary(
+                        axis = GeometryAxis.Y,
+                        rawText = "71.00",
+                        parsedNumericValue = 71.0,
+                        status = com.chromalab.feature.processing.geometry.TickOcrItemStatus.SEMANTIC_ONLY,
+                        rejectionReason = "tick_ocr.numeric_value_without_deterministic_tick_position",
+                    ),
+                ),
+            ),
+            calibrationSummary = RuntimeCalibrationFailureSummary(
+                xStatus = CalibrationFitStatus.REVIEW,
+                yStatus = CalibrationFitStatus.INVALID,
+                xAcceptedAnchorCount = 3,
+                yAcceptedAnchorCount = 1,
+                yRejectedAnchorCount = 1,
+                yWarnings = listOf("calibration.y.not_enough_anchors"),
+            ),
+            artifactPaths = RuntimeGraphFailureArtifactPaths(
+                originalImagePath = "original.png",
+                normalizedImagePath = "normalized.png",
+                graphPanelOverlayPath = "graph_panel.png",
+                plotAreaOverlayPath = "plot_area.png",
+                axisOverlayPath = "axis.png",
+                tickOverlayPath = "tick.png",
+                calibrationOverlayPath = "calibration.png",
+                ocrCropPaths = listOf("crop.png"),
+            ),
+            rejectionReasons = listOf("tick_ocr.numeric_value_without_deterministic_tick_position"),
+        )
 
     private fun runtimeEvidence(): PeakLabelEvidence =
         PeakLabelEvidence(

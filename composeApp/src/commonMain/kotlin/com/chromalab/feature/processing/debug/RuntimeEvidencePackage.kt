@@ -3,8 +3,12 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
 import com.chromalab.feature.knowledge.KnowledgeRetrievalContext
+import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
+import com.chromalab.feature.processing.geometry.TickOcrItemStatus
+import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
 import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
 import com.chromalab.feature.processing.multimodal.MultimodalTextRegionClass
@@ -28,13 +32,14 @@ import com.chromalab.feature.reports.PeakEvidence
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.ReportGateStatus
 import com.chromalab.feature.reports.ReportReleaseGateEvaluator
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class RuntimeEvidencePackage(
-    val schemaVersion: String = "runtime-evidence-1.1",
+    val schemaVersion: String = "runtime-evidence-1.2",
     val generatedAtEpochMillis: Long,
     val reportId: String,
     val sourceName: String? = null,
@@ -50,8 +55,110 @@ data class RuntimeEvidencePackage(
     val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
     val knowledgePackVersion: String? = null,
     val knowledgeRetrievalContexts: List<KnowledgeRetrievalContext> = emptyList(),
+    val graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     val graphs: List<RuntimeEvidenceGraphPackage>,
     val reportContract: ChromatogramReport,
+)
+
+@Serializable
+data class RuntimeGraphFailurePackage(
+    val schemaVersion: String = "runtime-graph-failure-1.0",
+    val graphIndex: Int,
+    val failureClass: RuntimeFailureClass,
+    val failureStage: String,
+    val failureReason: String,
+    val graphPanelBounds: GraphRegion? = null,
+    val graphPanelMissingReason: String? = null,
+    val plotAreaBounds: GraphRegion? = null,
+    val plotAreaMissingReason: String? = null,
+    val axisSummary: RuntimeAxisFailureSummary = RuntimeAxisFailureSummary(),
+    val tickSummary: RuntimeTickFailureSummary = RuntimeTickFailureSummary(),
+    val ocrSummary: RuntimeTickOcrFailureSummary = RuntimeTickOcrFailureSummary(),
+    val calibrationSummary: RuntimeCalibrationFailureSummary = RuntimeCalibrationFailureSummary(),
+    val artifactPaths: RuntimeGraphFailureArtifactPaths = RuntimeGraphFailureArtifactPaths(),
+    val rejectionReasons: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+    val stageTimings: List<ReportStageTiming> = emptyList(),
+)
+
+@Serializable
+data class RuntimeGraphFailureArtifactPaths(
+    val originalImagePath: String? = null,
+    val normalizedImagePath: String? = null,
+    val rectifiedImagePath: String? = null,
+    val graphPanelOverlayPath: String? = null,
+    val graphPanelOverlayMissingReason: String? = null,
+    val plotAreaOverlayPath: String? = null,
+    val plotAreaOverlayMissingReason: String? = null,
+    val axisOverlayPath: String? = null,
+    val axisOverlayMissingReason: String? = null,
+    val tickOverlayPath: String? = null,
+    val tickOverlayMissingReason: String? = null,
+    val calibrationOverlayPath: String? = null,
+    val calibrationOverlayMissingReason: String? = null,
+    val ocrCropPaths: List<String> = emptyList(),
+    val ocrCropMissingReason: String? = null,
+)
+
+@Serializable
+data class RuntimeAxisFailureSummary(
+    val xAxisLineAvailable: Boolean = false,
+    val yAxisLineAvailable: Boolean = false,
+    val originAvailable: Boolean = false,
+    val axisConfidence: Float = 0f,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class RuntimeTickFailureSummary(
+    val sourceMethod: String = "deterministic_cv_unavailable",
+    val xTickCandidateCount: Int = 0,
+    val yTickCandidateCount: Int = 0,
+    val xTickPixelPositions: List<Float> = emptyList(),
+    val yTickPixelPositions: List<Float> = emptyList(),
+    val readyForOcrValueMatching: Boolean = false,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class RuntimeTickOcrFailureSummary(
+    val rawElementCount: Int = 0,
+    val numericElementCount: Int = 0,
+    val acceptedXAnchorCount: Int = 0,
+    val acceptedYAnchorCount: Int = 0,
+    val semanticOnlyCount: Int = 0,
+    val acceptedAnchors: List<RuntimeTickAnchorEvidenceSummary> = emptyList(),
+    val rejectedAnchors: List<RuntimeTickAnchorEvidenceSummary> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class RuntimeTickAnchorEvidenceSummary(
+    val axis: GeometryAxis,
+    val tickPixelPosition: Float? = null,
+    val rawText: String,
+    val parsedNumericValue: Double? = null,
+    val localCropPath: String? = null,
+    val confidence: Float = 0f,
+    val status: TickOcrItemStatus,
+    val rejectionReason: String? = null,
+)
+
+@Serializable
+data class RuntimeCalibrationFailureSummary(
+    val xStatus: CalibrationFitStatus? = null,
+    val yStatus: CalibrationFitStatus? = null,
+    val xAcceptedAnchorCount: Int = 0,
+    val yAcceptedAnchorCount: Int = 0,
+    val xRejectedAnchorCount: Int = 0,
+    val yRejectedAnchorCount: Int = 0,
+    val xMaxResidualPx: Double? = null,
+    val yMaxResidualPx: Double? = null,
+    val xRmsePx: Double? = null,
+    val yRmsePx: Double? = null,
+    val xWarnings: List<String> = emptyList(),
+    val yWarnings: List<String> = emptyList(),
+    val missingReason: String? = null,
 )
 
 @Serializable
@@ -137,6 +244,7 @@ object RuntimeEvidencePackageBuilder {
     fun build(
         report: ChromatogramReport,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): RuntimeEvidencePackage {
         val gate = ReportReleaseGateEvaluator.evaluate(
             report = report,
@@ -163,6 +271,7 @@ object RuntimeEvidencePackageBuilder {
             modelRuntimeProfiles = graphBuilds
                 .flatMap { it.modelRuntimeProfiles }
                 .distinctBy { it.profileId },
+            graphFailurePackages = graphFailurePackages,
             graphs = graphBuilds.map { it.graphPackage },
             reportContract = reportWithFailureClass,
         )
@@ -399,8 +508,29 @@ private fun currentTimeMillis(): Long = System.currentTimeMillis()
 
 private fun com.chromalab.feature.reports.ReportGateEvaluation.toRuntimeFailureClass(): RuntimeFailureClass? {
     if (status == ReportGateStatus.RELEASE_READY) return null
+    val releaseEvidenceComplete = listOf(
+        evidence.graphPanelStatus,
+        evidence.plotAreaStatus,
+        evidence.xCalibrationStatus,
+        evidence.yCalibrationStatus,
+        evidence.traceStatus,
+        evidence.peakReviewStatus,
+        evidence.evidencePackageStatus,
+        evidence.sourceProvenanceStatus,
+    ).all { status ->
+        status == EvidenceGateStatus.VALID ||
+            status == EvidenceGateStatus.USER_CONFIRMED ||
+            status == EvidenceGateStatus.NOT_APPLICABLE
+    }
+    if (releaseEvidenceComplete && evidence.vlmEvidenceStatus == EvidenceGateStatus.INVALID) {
+        return RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE
+    }
     val reason = (blockingReasons + reviewReasons).firstOrNull()
     return when {
+        reason == null && evidence.vlmEvidenceStatus == EvidenceGateStatus.INVALID ->
+            RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE
+        reason == null && evidence.traceStatus == EvidenceGateStatus.REVIEW ->
+            RuntimeFailureClass.SPARSE_TRACE_REVIEW
         reason == null -> RuntimeFailureClass.UNKNOWN_FAILURE
         "graph_panel" in reason -> RuntimeFailureClass.GRAPH_PANEL_FAILURE
         "plot_area" in reason -> RuntimeFailureClass.PLOT_AREA_FAILURE
@@ -414,6 +544,7 @@ private fun com.chromalab.feature.reports.ReportGateEvaluation.toRuntimeFailureC
         "model_asset_missing" in reason -> RuntimeFailureClass.MODEL_ASSET_MISSING
         "model_load_failed" in reason -> RuntimeFailureClass.MODEL_LOAD_FAILED
         "vlm_model_unavailable" in reason -> RuntimeFailureClass.VLM_MODEL_UNAVAILABLE
+        "vlm_evidence" in reason -> RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE
         "vlm" in reason || "model" in reason -> RuntimeFailureClass.VLM_UNSUPPORTED_CLAIM
         "knowledge" in reason -> RuntimeFailureClass.KNOWLEDGE_GROUNDING_FAILURE
         "evidence_package" in reason || "source_provenance" in reason || "report" in reason ->
