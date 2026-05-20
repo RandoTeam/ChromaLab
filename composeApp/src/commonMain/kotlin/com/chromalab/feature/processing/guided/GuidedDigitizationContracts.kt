@@ -117,6 +117,9 @@ data class RoiConfirmationEvidence(
 @Serializable
 enum class RoiEditSource {
     AUTO_SUGGESTION,
+    USER_CONFIRMED,
+    USER_EDITED_AUTO_SUGGESTION,
+    MANUAL,
     USER_DRAG,
     USER_NUMERIC_ENTRY,
     IMPORTED_TEMPLATE,

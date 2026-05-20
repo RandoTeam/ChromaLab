@@ -111,4 +111,6 @@ VLM/LLM must not provide:
 
 ## Current Status
 
-Phase 0 defines modes and gates. Phase 1 adds shared guided/manual state contracts and tests. The app still does not implement Guided or Manual UI workflows, and full-auto is still not production-ready by default.
+Phase 0 defines modes and gates. Phase 1 adds shared guided/manual state contracts and tests.
+
+Phase 2 adds the guided graphPanel/plotArea editor component and confirmation reducer. It does not yet implement calibration anchors, trace editing, peak review, report release, or a complete guided navigation flow. Full-auto remains diagnostic by default.

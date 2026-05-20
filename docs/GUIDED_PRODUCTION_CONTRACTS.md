@@ -83,3 +83,26 @@ VLM may help read or classify local text crops and judge overlays. It must not p
 ## Phase 2 Handoff
 
 The next phase may create graphPanel/plotArea confirmation UI using these contracts. It must use the state machine, persist audit entries, and keep evidence package exports intact.
+
+## Phase 2 Addendum: ROI Editor Contracts
+
+Phase 2 adds a reducer-backed editor that writes graphPanel and plotArea confirmations into the Phase 1 contracts.
+
+New ROI edit sources:
+
+- `USER_CONFIRMED` - the user accepts the suggested ROI without changing bounds.
+- `USER_EDITED_AUTO_SUGGESTION` - the user starts from an automatic suggestion and adjusts it.
+- `MANUAL` - the user defines a ROI without an automatic suggestion.
+
+Confirmation objects must preserve:
+
+- normalized image-coordinate bounds;
+- source;
+- timestamp;
+- user/session provenance;
+- related image id/path;
+- optional overlay artifact path;
+- warning codes;
+- gate status.
+
+Review-grade ROI warnings remain part of report provenance. A graphPanel or plotArea confirmation alone cannot make a report release-ready; calibration, trace, evidence package, and validator gates still apply.

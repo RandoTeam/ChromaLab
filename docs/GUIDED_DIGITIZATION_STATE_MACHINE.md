@@ -86,3 +86,28 @@ Phase 2 may build UI around this model, but must not:
 - write release-ready report status before gate evaluation;
 - store heavy images or masks in transient Compose saved state;
 - allow VLM-provided numeric geometry or chromatographic metrics.
+
+## Phase 2 Addendum: ROI Confirmation
+
+Phase 2 implements the first guided UI surface for `GRAPH_PANEL_CONFIRMED` and `PLOT_AREA_CONFIRMED`.
+
+The editor uses `GuidedRoiEditorSnapshot` as serializable UI state and writes confirmed evidence back into:
+
+- `GraphPanelConfirmation`;
+- `PlotAreaConfirmation`;
+- `RoiConfirmationEvidence`.
+
+The Phase 2 editor may set:
+
+- `GRAPH_PANEL_CONFIRMED`;
+- `PLOT_AREA_CONFIRMED`.
+
+It must not set:
+
+- `CALIBRATION_POINTS_CONFIRMED`;
+- `CALIBRATION_VALIDATED`;
+- `TRACE_CONFIRMED`;
+- `PEAKS_CONFIRMED`;
+- `REPORT_READY`.
+
+After `PLOT_AREA_CONFIRMED`, the UI may show only a disabled `Next: calibration anchors` handoff until Phase 3 implements calibration anchor placement.

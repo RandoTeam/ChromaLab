@@ -73,3 +73,21 @@ Future regression rows should record, when guided/manual workflows are used:
 - trace confirmation status;
 - peak review status;
 - guided release-gate result.
+
+## Phase 2 Addendum
+
+Phase 2 adds guided graphPanel and plotArea confirmation UI/contracts. No fixture expectations, auto-analysis algorithms, calibration math, trace extraction, or peak math changed.
+
+Future regression rows that exercise guided ROI confirmation should record:
+
+- graphPanel suggested bounds;
+- graphPanel confirmed bounds;
+- graphPanel confirmation source;
+- graphPanel warning codes;
+- plotArea suggested bounds;
+- plotArea confirmed bounds;
+- plotArea confirmation source;
+- plotArea warning codes;
+- whether plotArea was fully inside graphPanel;
+- whether plotArea equaled graphPanel and therefore became review-grade;
+- serialized `GuidedRoiEditorSnapshot` roundtrip result.

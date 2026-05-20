@@ -89,6 +89,23 @@ Mapping rules:
 - two-anchor calibration is structurally valid but review-grade by default until robust validation or explicit future policy.
 - missing guided confirmations produce `DIAGNOSTIC_ONLY` or `BLOCKED`, never `RELEASE_READY`.
 
+## Phase 2 ROI Gate Mapping
+
+Phase 2 can satisfy only these gate inputs:
+
+- graphPanel, through `GraphPanelConfirmation.confirmedGraphPanel`;
+- plotArea, through `PlotAreaConfirmation.confirmedPlotArea`.
+
+The confirmed ROI source is recorded as:
+
+- `USER_CONFIRMED`;
+- `USER_EDITED_AUTO_SUGGESTION`;
+- `MANUAL`.
+
+If the editor validation returns warnings, the corresponding gate remains `REVIEW_REQUIRED` and the final report must stay `REVIEW_ONLY` or lower until later gates and validator checks allow otherwise.
+
+Phase 2 does not satisfy calibration, trace, peak review, source provenance, or evidence package gates. A report must not become `RELEASE_READY` only because graphPanel and plotArea were confirmed.
+
 ## Terminal-State Evidence Requirement
 
 Every terminal state must export a runtime evidence package or failure evidence package:
