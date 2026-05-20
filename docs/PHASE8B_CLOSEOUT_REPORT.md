@@ -116,3 +116,16 @@ The run stopped at `IMAGE_QUALITY` with:
 Phase 8B cannot close until the required chromatogram VLM is installed/activated on the device and the fixture run proceeds past model readiness into actual graph/axis/calibration/trace/peak stages.
 
 If the next run fails at axes/ticks/calibration, the failure must remain classified and diagnostic/review-gated.
+
+## Phase 8C Hardening Update
+
+Phase 8C changes the acceptance target: missing VLM is no longer allowed to stop deterministic geometry before it starts. The validation package must now:
+
+- export `modelAvailabilityDiagnostics`;
+- continue deterministic graphPanel/plotArea/axis attempts when VLM is unavailable;
+- fail validator check `package.deterministic_fallback_not_attempted` if model unavailability prevents those attempts;
+- classify later failures by deterministic stage (`GRAPH_PANEL_FAILURE`, `AXIS_DETECTION_FAILURE`, `TICK_LOCALIZATION_FAILURE`, `CALIBRATION_FAILURE`) rather than primary `VLM_MODEL_UNAVAILABLE`.
+
+Phase 8 remains blocked until an Android fixture rerun confirms this behavior and exports updated artifacts.
+
+Phase 8C rerun `white_tiger_ion71_20260520_170118` confirms the pre-geometry VLM blocker is fixed: deterministic stages reached `GRAPH_SELECTION`, `GRAPH_ROI`, `AXIS_DETECTION`, `OCR_SUGGESTION`, `X_CALIBRATION`, and `Y_CALIBRATION`. The remaining terminal status is `BLOCKED` with `runtimeFailureClass = TICK_LOCALIZATION_FAILURE`, caused by insufficient Y tick labels for automatic calibration. Phase 9 remains blocked until Product/QA accept the remaining Phase 8 limitations or the tick/calibration failure is fixed.

@@ -8,7 +8,7 @@ internal fun blocksFullAnalysisSkip(error: String): Boolean {
 }
 
 private val BlockingVisionErrorMarkers =
-    ModelAssistedAnalysisContract.blockingErrorMarkers() + listOf(
+    ModelAssistedAnalysisContract.requiredVisionStages().map { it.blockingFailureMarker } + listOf(
         "axis calibration requires",
         "axis calibration is required",
         "axis calibration is incomplete",

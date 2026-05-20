@@ -2,6 +2,8 @@ package com.chromalab.feature.validation
 
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.debug.DebugPackageExporter
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
+import com.chromalab.feature.processing.model.ModelAvailabilityStatus
 import com.chromalab.feature.reports.ChromatogramReport
 import com.chromalab.feature.reports.ExecutedRuntime
 import com.chromalab.feature.reports.InputSourceType
@@ -33,6 +35,7 @@ object AutonomousValidationTerminalFailureExporter {
         analysisCompletedAtEpochMillis: Long,
         stageTimings: List<ReportStageTiming>,
         deviceName: String?,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     ): List<AutonomousValidationArtifactRecord> {
         val runId = AutonomousValidationArtifactExporter.activeRunId().orEmpty()
         if (runId.isBlank()) {
@@ -51,8 +54,9 @@ object AutonomousValidationTerminalFailureExporter {
             analysisCompletedAtEpochMillis = analysisCompletedAtEpochMillis,
             stageTimings = stageTimings,
             deviceName = deviceName,
+            modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
         )
-        val evidenceJson = DebugPackageExporter.exportRuntimeEvidencePackage(report)
+        val evidenceJson = DebugPackageExporter.exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics)
         val textArtifacts = listOf(
             ValidationTextArtifact(
                 slot = "runtime_evidence_package",
@@ -97,9 +101,18 @@ object AutonomousValidationTerminalFailureExporter {
                 mimeType = "application/json",
             ),
             ValidationTextArtifact(
+                slot = "model_availability_diagnostics",
+                fileName = "model_availability_diagnostics_$runId.json",
+                content = json.encodeToString(
+                    ListSerializer(ModelAvailabilityDiagnostic.serializer()),
+                    modelAvailabilityDiagnostics,
+                ),
+                mimeType = "application/json",
+            ),
+            ValidationTextArtifact(
                 slot = "log_summary",
                 fileName = "log_summary_$runId.md",
-                content = failureLogSummary(runId, failureClass, stageId, failureMessage),
+                content = failureLogSummary(runId, failureClass, stageId, failureMessage, modelAvailabilityDiagnostics),
                 mimeType = "text/markdown",
             ),
         )
@@ -150,6 +163,7 @@ object AutonomousValidationTerminalFailureExporter {
         analysisCompletedAtEpochMillis: Long,
         stageTimings: List<ReportStageTiming>,
         deviceName: String?,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic>,
     ): ChromatogramReport =
         ChromatogramReport(
             metadata = ReportMetadata(
@@ -170,12 +184,12 @@ object AutonomousValidationTerminalFailureExporter {
             graphs = emptyList(),
             warnings = listOf(
                 ReportWarning(
-                    code = "model.vlm_unavailable",
+                    code = failureClass.toWarningCode(),
                     message = failureMessage,
                     severity = ReportSeverity.FAILED,
                     stage = stageId,
                 ),
-            ),
+            ) + modelAvailabilityDiagnostics.toReportWarnings(),
         )
 
     private fun SourceType.toReportInputSourceType(): InputSourceType =
@@ -230,6 +244,7 @@ object AutonomousValidationTerminalFailureExporter {
         failureClass: RuntimeFailureClass,
         stageId: String,
         failureMessage: String,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic>,
     ): String = buildString {
         appendLine("# Validation Fixture Failure")
         appendLine()
@@ -237,8 +252,39 @@ object AutonomousValidationTerminalFailureExporter {
         appendLine("- Runtime failure class: `${failureClass.name}`")
         appendLine("- Stage: `$stageId`")
         appendLine("- Message: $failureMessage")
+        appendLine("- Model diagnostics: ${modelAvailabilityDiagnostics.size}")
+        modelAvailabilityDiagnostics.forEach { diagnostic ->
+            appendLine(
+                "  - `${diagnostic.diagnosticId}` status=${diagnostic.status} " +
+                    "selected=${diagnostic.selectedModelId ?: "none"} " +
+                    "executed=${diagnostic.executedModelId ?: "none"} " +
+                    "loadAttempted=${diagnostic.loadAttempted}",
+            )
+        }
         appendLine("- Result: terminal diagnostic artifacts were exported; no chromatographic metrics were fabricated.")
     }
+
+    private fun RuntimeFailureClass.toWarningCode(): String =
+        when (this) {
+            RuntimeFailureClass.VLM_MODEL_UNAVAILABLE,
+            RuntimeFailureClass.MODEL_ASSET_MISSING,
+            RuntimeFailureClass.MODEL_LOAD_FAILED,
+            RuntimeFailureClass.MODEL_NOT_CONFIGURED,
+            -> "model.vlm_unavailable"
+            else -> "pipeline.${name.lowercase()}"
+        }
+
+    private fun List<ModelAvailabilityDiagnostic>.toReportWarnings(): List<ReportWarning> =
+        filter { it.status != ModelAvailabilityStatus.AVAILABLE }
+            .map { diagnostic ->
+                ReportWarning(
+                    code = "model.availability.${diagnostic.status.name.lowercase()}",
+                    message = diagnostic.sanitizedErrorMessage
+                        ?: "Chromatogram vision model is ${diagnostic.status.name.lowercase()}; deterministic CV fallback continued.",
+                    severity = ReportSeverity.SERIOUS,
+                    stage = "model_runtime",
+                )
+            }
 
     private fun validationPublicDirectory(runId: String): String =
         "/sdcard/Download/ChromaLab/validation/$runId"

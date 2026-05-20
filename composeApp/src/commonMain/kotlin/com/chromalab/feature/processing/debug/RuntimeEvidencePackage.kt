@@ -15,6 +15,7 @@ import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
 import com.chromalab.feature.processing.multimodal.StageJudgeSource
 import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
 import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
@@ -45,6 +46,7 @@ data class RuntimeEvidencePackage(
     val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
     val runtimeFailureClass: RuntimeFailureClass? = null,
     val gateEvidence: GateEvidence = GateEvidence(),
+    val modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
     val knowledgePackVersion: String? = null,
     val knowledgeRetrievalContexts: List<KnowledgeRetrievalContext> = emptyList(),
@@ -132,7 +134,10 @@ data class RuntimeRoiFailureEvidencePackage(
 )
 
 object RuntimeEvidencePackageBuilder {
-    fun build(report: ChromatogramReport): RuntimeEvidencePackage {
+    fun build(
+        report: ChromatogramReport,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    ): RuntimeEvidencePackage {
         val gate = ReportReleaseGateEvaluator.evaluate(
             report = report,
             evidencePackageStatus = EvidenceGateStatus.VALID,
@@ -154,6 +159,7 @@ object RuntimeEvidencePackageBuilder {
             reportGateStatus = gate.status,
             runtimeFailureClass = failureClass,
             gateEvidence = gate.evidence,
+            modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
             modelRuntimeProfiles = graphBuilds
                 .flatMap { it.modelRuntimeProfiles }
                 .distinctBy { it.profileId },
@@ -404,6 +410,10 @@ private fun com.chromalab.feature.reports.ReportGateEvaluation.toRuntimeFailureC
         "calibration" in reason -> RuntimeFailureClass.CALIBRATION_FAILURE
         "trace" in reason -> RuntimeFailureClass.TRACE_EXTRACTION_FAILURE
         "peak" in reason -> RuntimeFailureClass.PEAK_EVIDENCE_FAILURE
+        "model_not_configured" in reason -> RuntimeFailureClass.MODEL_NOT_CONFIGURED
+        "model_asset_missing" in reason -> RuntimeFailureClass.MODEL_ASSET_MISSING
+        "model_load_failed" in reason -> RuntimeFailureClass.MODEL_LOAD_FAILED
+        "vlm_model_unavailable" in reason -> RuntimeFailureClass.VLM_MODEL_UNAVAILABLE
         "vlm" in reason || "model" in reason -> RuntimeFailureClass.VLM_UNSUPPORTED_CLAIM
         "knowledge" in reason -> RuntimeFailureClass.KNOWLEDGE_GROUNDING_FAILURE
         "evidence_package" in reason || "source_provenance" in reason || "report" in reason ->

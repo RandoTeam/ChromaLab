@@ -43,7 +43,10 @@ import com.chromalab.feature.processing.geometry.GeometryStageStatus
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.ModelRuntime
-import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
+import com.chromalab.feature.processing.inference.ActiveInferenceModelSnapshot
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
+import com.chromalab.feature.processing.model.ModelAvailabilityMode
+import com.chromalab.feature.processing.model.ModelAvailabilityStatus
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrSuggestionScreen
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
@@ -201,6 +204,9 @@ fun ProcessingFlowScreen(
     // VLM model loading status (25.2B: lazy loading)
     var vlmLoadingStatus by remember { mutableStateOf<String?>(null) }
     var vlmReady by remember { mutableStateOf(false) }
+    var modelAvailabilityDiagnostics by remember(imagePath) {
+        mutableStateOf<List<ModelAvailabilityDiagnostic>>(emptyList())
+    }
 
     // --- Run real processing on step entry ---
     var processingError by remember { mutableStateOf<String?>(null) }
@@ -246,17 +252,28 @@ fun ProcessingFlowScreen(
                 when (currentStep) {
                     ProcessingStep.IMAGE_QUALITY -> {
                         // 25.2B: Lazy VLM model loading at pipeline start
-                        if (!vlmReady) {
-                            vlmLoadingStatus = "Загрузка AI модели..."
-                            vlmReady = chartReader.ensureModelLoaded { status ->
-                                vlmLoadingStatus = status
-                            }
-                            vlmLoadingStatus = if (vlmReady) "AI модель готова" else null
-                            println("PIPELINE[VLM] Model ready: $vlmReady")
                             if (!vlmReady) {
-                                error(ModelAssistedAnalysisContract.MISSING_CHROMATOGRAM_VLM_MESSAGE)
+                                vlmLoadingStatus = "Загрузка AI модели..."
+                                vlmReady = chartReader.ensureModelLoaded { status ->
+                                    vlmLoadingStatus = status
+                                }
+                                val modelSnapshot = chartReader.currentModelSnapshot()
+                                val diagnostic = modelSnapshot.toModelAvailabilityDiagnostic(
+                                    ready = vlmReady,
+                                    mode = sourceType.toModelAvailabilityMode(),
+                                    loadAttempted = true,
+                                )
+                                modelAvailabilityDiagnostics = listOf(diagnostic)
+                                vlmLoadingStatus = if (vlmReady) {
+                                    "AI модель готова"
+                                } else {
+                                    "AI модель недоступна; продолжается deterministic CV"
+                                }
+                                println(
+                                    "PIPELINE[VLM] Model ready: $vlmReady " +
+                                        "status=${diagnostic.status} deterministicFallback=continue",
+                                )
                             }
-                        }
 
                         // Normalize first: fix EXIF orientation
                         if (normalizedResult == null) {
@@ -586,10 +603,11 @@ fun ProcessingFlowScreen(
                     stageId = timedStep.name,
                     failureMessage = e.message ?: "Unknown processing failure.",
                     analysisStartedAtEpochMillis = flowStartedAt,
-                    analysisCompletedAtEpochMillis = System.currentTimeMillis(),
-                    stageTimings = failureTimings,
-                    deviceName = currentReportDeviceName(),
-                )
+                        analysisCompletedAtEpochMillis = System.currentTimeMillis(),
+                        stageTimings = failureTimings,
+                        deviceName = currentReportDeviceName(),
+                        modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+                    )
             }.onFailure { exportError ->
                 println("PIPELINE[VALIDATION_FAILURE_EVIDENCE] export_failed=${exportError.message}")
             }
@@ -1213,6 +1231,45 @@ private fun ActiveInferenceModel?.toReportModelExecutionInfo(): ModelExecutionIn
     )
 }
 
+private fun ActiveInferenceModelSnapshot.toModelAvailabilityDiagnostic(
+    ready: Boolean,
+    mode: ModelAvailabilityMode,
+    loadAttempted: Boolean,
+): ModelAvailabilityDiagnostic {
+    val selected = selectedModel
+    val executed = executedModel
+    val status = when {
+        ready -> ModelAvailabilityStatus.AVAILABLE
+        selected == null && executed == null -> ModelAvailabilityStatus.NOT_CONFIGURED
+        executed == null -> ModelAvailabilityStatus.UNAVAILABLE
+        else -> ModelAvailabilityStatus.LOAD_FAILED
+    }
+    return ModelAvailabilityDiagnostic(
+        diagnosticId = "model-availability:${mode.name.lowercase()}",
+        mode = mode,
+        selectedModelId = selected?.modelId,
+        executedModelId = executed?.modelId,
+        expectedBackend = "Gemma-4-E4B LiteRT-LM FULL_ANALYSIS primary; Gemma-4-E2B LiteRT-LM FAST fallback; GGUF optional compatibility.",
+        loadAttempted = loadAttempted,
+        loadResult = if (ready) "loaded" else "not_loaded",
+        sanitizedErrorMessage = if (ready) {
+            null
+        } else {
+            "Chromatogram VLM is unavailable. Deterministic graphPanel, plotArea, axis, and tick stages must still run."
+        },
+        fallbackModelAttempted = selected != null,
+        fallbackResult = if (ready) "not_needed" else "unavailable",
+        status = status,
+        timestampEpochMillis = System.currentTimeMillis(),
+    )
+}
+
+private fun SourceType.toModelAvailabilityMode(): ModelAvailabilityMode =
+    when (this) {
+        SourceType.VALIDATION_FIXTURE -> ModelAvailabilityMode.VALIDATION_FIXTURE
+        else -> ModelAvailabilityMode.FULL_ANALYSIS
+    }
+
 private fun ModelRuntime?.toReportExecutedRuntime(): ExecutedRuntime =
     when (this) {
         ModelRuntime.LITERT_LM -> ExecutedRuntime.LITERT
@@ -1233,6 +1290,12 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
 private fun Throwable.toRuntimeFailureClass(step: ProcessingStep): RuntimeFailureClass {
     val message = this.message.orEmpty().lowercase()
     return when {
+        "model asset missing" in message || "asset missing" in message || "file missing" in message ->
+            RuntimeFailureClass.MODEL_ASSET_MISSING
+        "model not configured" in message || "no controller" in message ->
+            RuntimeFailureClass.MODEL_NOT_CONFIGURED
+        "model load failed" in message || "load failed" in message ->
+            RuntimeFailureClass.MODEL_LOAD_FAILED
         "vision model is required" in message ||
             "model unavailable" in message ||
             "no chromatogram vision model" in message -> RuntimeFailureClass.VLM_MODEL_UNAVAILABLE

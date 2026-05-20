@@ -24,6 +24,9 @@ import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
 import com.chromalab.feature.processing.multimodal.StageRetryAction
 import com.chromalab.feature.processing.multimodal.StageRetryRecommendation
 import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
+import com.chromalab.feature.processing.model.ModelAvailabilityMode
+import com.chromalab.feature.processing.model.ModelAvailabilityStatus
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
@@ -55,6 +58,7 @@ import com.chromalab.feature.reports.ReportMetadata
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.SignalAndBaselineReport
 import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.encodeToString
@@ -499,6 +503,54 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun validatorFailsWhenModelUnavailablePreventsDeterministicFallback() {
+        val report = reportWithRecovery(runtimeEvidence()).copy(
+            metadata = reportWithRecovery(runtimeEvidence()).metadata.copy(
+                detectedGraphCount = 0,
+                executedModel = null,
+                executedRuntime = ExecutedRuntime.UNKNOWN,
+                runtimeFailureClass = RuntimeFailureClass.VLM_MODEL_UNAVAILABLE,
+                stageTimings = listOf(ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 41L)),
+            ),
+            graphs = emptyList(),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = report,
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.modelAvailabilityRows.single().status == ModelAvailabilityStatus.NOT_CONFIGURED.name)
+        assertTrue(result.blockingIssues.any { it.code == "package.deterministic_fallback_not_attempted" })
+    }
+
+    @Test
+    fun validatorRecordsModelUnavailableAfterDeterministicFallbackAsWarning() {
+        val report = reportWithRecovery(runtimeEvidence()).copy(
+            metadata = reportWithRecovery(runtimeEvidence()).metadata.copy(
+                executedModel = null,
+                executedRuntime = ExecutedRuntime.UNKNOWN,
+                stageTimings = listOf(
+                    ReportStageTiming("IMAGE_QUALITY", "IMAGE_QUALITY", 41L),
+                    ReportStageTiming("GRAPH_SELECTION", "GRAPH_SELECTION", 90L),
+                ),
+            ),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = report,
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.REVIEW, result.verdict)
+        assertTrue(result.blockingIssues.none { it.code == "package.deterministic_fallback_not_attempted" })
+        assertTrue(result.warnings.any { it.code == "package.executed_runtime_missing" })
+    }
+
+    @Test
     fun validatorRequiresFailureClassForNonPassRuntimePackage() {
         val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(
             reportWithRecovery(
@@ -697,6 +749,20 @@ class RuntimeEvidencePackageValidatorTest {
             timedOut = false,
             success = true,
             cacheHit = false,
+        )
+
+    private fun missingModelDiagnostic(): ModelAvailabilityDiagnostic =
+        ModelAvailabilityDiagnostic(
+            diagnosticId = "model-availability:test",
+            mode = ModelAvailabilityMode.VALIDATION_FIXTURE,
+            expectedBackend = "Gemma-4-E4B LiteRT-LM FULL_ANALYSIS primary",
+            loadAttempted = true,
+            loadResult = "not_loaded",
+            sanitizedErrorMessage = "Chromatogram VLM is unavailable; deterministic fallback must continue.",
+            fallbackModelAttempted = false,
+            fallbackResult = "unavailable",
+            status = ModelAvailabilityStatus.NOT_CONFIGURED,
+            timestampEpochMillis = 123L,
         )
 
     private fun vlmCropStage(): AutonomousStageJudgeResult =

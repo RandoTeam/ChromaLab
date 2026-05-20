@@ -114,33 +114,21 @@ actual class ChartAnalysisReader actual constructor() {
 
                     val message = "AI axis extraction returned incomplete axes after supplemental OCR"
                     log(message)
-                    if (VlmEngineHolder.requireVisionForAnalysis) {
-                        throw IllegalStateException(message)
-                    }
                     return merged
                 }
 
                 val message = "AI axis extraction returned low confidence (${analysis.confidence})"
                 log(message)
-                if (VlmEngineHolder.requireVisionForAnalysis) {
-                    throw IllegalStateException(message)
-                }
             } catch (e: Exception) {
                 VlmEngineHolder.isInferring = false
                 logError("Axis extraction failed: ${e.message}", e)
-                if (VlmEngineHolder.requireVisionForAnalysis) {
-                    throw IllegalStateException("AI axis extraction failed: ${e.message}", e)
-                }
             }
         } else {
             val message = "AI vision model is not loaded for axis OCR"
             log(message)
-            if (VlmEngineHolder.requireVisionForAnalysis) {
-                throw IllegalStateException(message)
-            }
         }
 
-        // === Diagnostic fallback only when strict photo analysis is disabled ===
+        // Missing VLM is a semantic-layer warning, not a blocker for deterministic/ML Kit OCR attempts.
         return fallbackOcr.readAxisLabels(imagePath, graphRegion)
     }
 

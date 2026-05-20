@@ -2,6 +2,7 @@ package com.chromalab.feature.processing.debug
 
 import com.chromalab.feature.processing.storage.SessionWriter
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.reports.ChromatogramReport
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -22,8 +23,16 @@ object DebugPackageExporter {
      */
     fun exportDebugInfo(info: DebugInfo): String = json.encodeToString(info)
 
-    fun exportRuntimeEvidencePackage(report: ChromatogramReport): String =
-        json.encodeToString(RuntimeEvidencePackageBuilder.build(report))
+    fun exportRuntimeEvidencePackage(
+        report: ChromatogramReport,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    ): String =
+        json.encodeToString(
+            RuntimeEvidencePackageBuilder.build(
+                report = report,
+                modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+            ),
+        )
 
     fun exportRoiFailureEvidencePackage(
         stageId: String,
@@ -84,11 +93,12 @@ object DebugPackageExporter {
         writer: SessionWriter,
         report: ChromatogramReport,
         graphIndex: Int? = null,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     ): String {
         val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
         return writer.writeText(
             filename = "runtime_evidence_package$suffix.json",
-            content = exportRuntimeEvidencePackage(report),
+            content = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics),
         )
     }
 
@@ -96,9 +106,10 @@ object DebugPackageExporter {
         writer: SessionWriter,
         report: ChromatogramReport,
         graphIndex: Int? = null,
+        modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
     ): List<String> {
         val suffix = graphIndex?.let { "_graph_$it" }.orEmpty()
-        val evidenceJson = exportRuntimeEvidencePackage(report)
+        val evidenceJson = exportRuntimeEvidencePackage(report, modelAvailabilityDiagnostics)
         val evidencePath = writer.writeText(
             filename = "runtime_evidence_package$suffix.json",
             content = evidenceJson,

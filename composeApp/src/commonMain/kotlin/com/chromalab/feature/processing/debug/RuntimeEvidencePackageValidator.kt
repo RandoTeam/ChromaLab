@@ -14,6 +14,8 @@ import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
 import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
 import com.chromalab.feature.processing.multimodal.StageRetryPolicy
 import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
+import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
+import com.chromalab.feature.processing.model.ModelAvailabilityStatus
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
@@ -106,6 +108,23 @@ data class RuntimeEvidenceStageJudgeRow(
 )
 
 @Serializable
+data class RuntimeEvidenceModelAvailabilityRow(
+    val diagnosticId: String,
+    val mode: String,
+    val selectedModelId: String? = null,
+    val executedModelId: String? = null,
+    val expectedBackend: String? = null,
+    val expectedPath: String? = null,
+    val pathExists: Boolean? = null,
+    val fileSizeBytes: Long? = null,
+    val loadAttempted: Boolean,
+    val loadResult: String? = null,
+    val fallbackModelAttempted: Boolean = false,
+    val fallbackResult: String? = null,
+    val status: String,
+)
+
+@Serializable
 data class RuntimeEvidenceKnowledgeRow(
     val graphIndex: Int,
     val outputId: String,
@@ -144,6 +163,7 @@ data class RuntimeEvidenceValidationSummary(
     val verdict: RuntimeEvidenceValidationVerdict,
     val blockingIssues: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val warnings: List<RuntimeEvidenceValidationIssue> = emptyList(),
+    val modelAvailabilityRows: List<RuntimeEvidenceModelAvailabilityRow> = emptyList(),
     val graphSummaries: List<RuntimeEvidenceGraphValidationSummary> = emptyList(),
 )
 
@@ -201,6 +221,7 @@ object RuntimeEvidencePackageValidator {
             validateGraph(evidencePackage, graphPackage, fileExists, issues)
         }
         validatePackageMetadata(evidencePackage, issues)
+        val modelAvailabilityRows = validateModelAvailability(evidencePackage, issues)
         validateKnowledgePackageMetadata(evidencePackage, issues)
         val blocking = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.BLOCKING }
         val warnings = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.WARNING }
@@ -217,6 +238,7 @@ object RuntimeEvidencePackageValidator {
             },
             blockingIssues = blocking,
             warnings = warnings,
+            modelAvailabilityRows = modelAvailabilityRows,
             graphSummaries = graphSummaries,
         )
     }
@@ -290,6 +312,21 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendIssueSection("Blocking Issues", summary.blockingIssues)
         appendIssueSection("Warnings", summary.warnings)
+        appendLine("## Model Availability")
+        appendLine()
+        appendLine("| Diagnostic | Mode | Status | Selected | Executed | Load attempted | Load result | Fallback | Expected backend |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        summary.modelAvailabilityRows.forEach { row ->
+            appendLine(
+                "| `${row.diagnosticId}` | ${row.mode} | ${row.status} | ${row.selectedModelId ?: "-"} | " +
+                    "${row.executedModelId ?: "-"} | ${row.loadAttempted} | ${row.loadResult ?: "-"} | " +
+                    "${row.fallbackResult ?: "-"} | ${row.expectedBackend ?: "-"} |",
+            )
+        }
+        if (summary.modelAvailabilityRows.isEmpty()) {
+            appendLine("| - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
         appendLine("## Recovery Candidates")
         appendLine()
         appendLine("| Graph | Evidence | Source | Label RT | Local max RT | Status | Production | Flags | Rejection |")
@@ -371,6 +408,7 @@ object RuntimeEvidencePackageValidator {
         evidencePackage: RuntimeEvidencePackage,
         issues: MutableList<RuntimeEvidenceValidationIssue>,
     ) {
+        val hasModelDiagnostics = evidencePackage.modelAvailabilityDiagnostics.isNotEmpty()
         if (evidencePackage.reportId.isBlank()) {
             issues.block("package.report_id_missing", "Runtime evidence package report id is missing.")
         }
@@ -378,10 +416,24 @@ object RuntimeEvidencePackageValidator {
             issues.block("package.device_metadata_missing", "Device/runtime metadata is missing deviceName.")
         }
         if (evidencePackage.executedRuntime.isBlank() || evidencePackage.executedRuntime == ExecutedRuntime.UNKNOWN.name) {
-            issues.block("package.executed_runtime_missing", "Executed runtime is missing or UNKNOWN.")
+            if (hasModelDiagnostics) {
+                issues.warn(
+                    "package.executed_runtime_missing",
+                    "Executed runtime is missing or UNKNOWN; model availability diagnostics explain the unavailable model state.",
+                )
+            } else {
+                issues.block("package.executed_runtime_missing", "Executed runtime is missing or UNKNOWN.")
+            }
         }
         if (evidencePackage.selectedModelId.isNullOrBlank() && evidencePackage.executedModelId.isNullOrBlank()) {
-            issues.block("package.model_metadata_missing", "Model/runtime metadata is missing selectedModelId and executedModelId.")
+            if (hasModelDiagnostics) {
+                issues.warn(
+                    "package.model_metadata_missing",
+                    "Model/runtime metadata is missing selectedModelId and executedModelId; model availability diagnostics are present.",
+                )
+            } else {
+                issues.block("package.model_metadata_missing", "Model/runtime metadata is missing selectedModelId and executedModelId.")
+            }
         }
         if (evidencePackage.graphs.isEmpty()) {
             issues.block("package.graphs_missing", "Runtime evidence package contains no graph packages.")
@@ -422,6 +474,60 @@ object RuntimeEvidencePackageValidator {
                 "Runtime failure class must match the embedded final report contract.",
             )
         }
+    }
+
+    private fun validateModelAvailability(
+        evidencePackage: RuntimeEvidencePackage,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceModelAvailabilityRow> {
+        val diagnostics = evidencePackage.modelAvailabilityDiagnostics
+        if (diagnostics.isEmpty()) {
+            if (evidencePackage.runtimeFailureClass in modelAvailabilityFailureClasses) {
+                issues.block(
+                    "model_availability.diagnostics_missing",
+                    "Model availability failure class is present but no model availability diagnostics were exported.",
+                )
+            }
+            return emptyList()
+        }
+
+        val deterministicAttempted = evidencePackage.deterministicGeometryAttempted()
+        diagnostics.forEach { diagnostic ->
+            if (diagnostic.diagnosticId.isBlank()) {
+                issues.block("model_availability.diagnostic_id_missing", "Model availability diagnostic id is missing.")
+            }
+            if (diagnostic.status != ModelAvailabilityStatus.AVAILABLE && !deterministicAttempted) {
+                issues.block(
+                    "package.deterministic_fallback_not_attempted",
+                    "Model was unavailable before deterministic graphPanel/plotArea/axis fallback was attempted.",
+                )
+            }
+            if (diagnostic.status != ModelAvailabilityStatus.AVAILABLE &&
+                evidencePackage.reportGateStatus == ReportGateStatus.RELEASE_READY &&
+                evidencePackage.usesVlmOrKnowledgeOutputs()
+            ) {
+                issues.block(
+                    "model_availability.release_ready_with_unavailable_model",
+                    "Report cannot be RELEASE_READY while model availability diagnostics record unavailable VLM state.",
+                )
+            }
+            if (!diagnostic.loadAttempted && diagnostic.status in loadAttemptRequiredStatuses) {
+                issues.warn(
+                    "model_availability.load_attempt_missing",
+                    "Model availability diagnostic records ${diagnostic.status} without a load attempt.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+            if (diagnostic.status != ModelAvailabilityStatus.AVAILABLE && diagnostic.sanitizedErrorMessage.isNullOrBlank()) {
+                issues.warn(
+                    "model_availability.error_message_missing",
+                    "Unavailable model diagnostic should include a sanitized error message.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+        }
+
+        return diagnostics.map { it.toValidationRow() }
     }
 
     private fun validateKnowledgePackageMetadata(
@@ -1061,6 +1167,60 @@ private fun MutableList<RuntimeEvidenceValidationIssue>.requirePath(
         block("$code.file_not_found", "$message Path does not exist: $path", graphIndex, candidateId)
     }
 }
+
+private val modelAvailabilityFailureClasses = setOf(
+    RuntimeFailureClass.VLM_MODEL_UNAVAILABLE,
+    RuntimeFailureClass.MODEL_ASSET_MISSING,
+    RuntimeFailureClass.MODEL_LOAD_FAILED,
+    RuntimeFailureClass.MODEL_NOT_CONFIGURED,
+    RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE,
+)
+
+private val loadAttemptRequiredStatuses = setOf(
+    ModelAvailabilityStatus.LOAD_FAILED,
+    ModelAvailabilityStatus.TIMEOUT,
+)
+
+private fun RuntimeEvidencePackage.deterministicGeometryAttempted(): Boolean {
+    if (graphs.isNotEmpty()) return true
+    val stageIds = reportContract.metadata.stageTimings
+        .flatMap { listOf(it.stageId, it.stageName.orEmpty()) }
+        .map { it.uppercase() }
+    return stageIds.any { id ->
+        "GRAPH" in id ||
+            "ROI" in id ||
+            "PLOT" in id ||
+            "AXIS" in id ||
+            "TICK" in id ||
+            "OCR" in id ||
+            "CALIBRATION" in id
+    }
+}
+
+private fun RuntimeEvidencePackage.usesVlmOrKnowledgeOutputs(): Boolean =
+    knowledgeRetrievalContexts.isNotEmpty() ||
+        graphs.any { graph ->
+            graph.knowledgeGroundedVlmOutputs.isNotEmpty() ||
+                graph.stageJudgeResults.any { it.source == StageJudgeSource.VLM || it.source == StageJudgeSource.BOTH } ||
+                graph.ocrVlmCropResults.any { it.source == StageJudgeSource.VLM || it.source == StageJudgeSource.BOTH }
+        }
+
+private fun ModelAvailabilityDiagnostic.toValidationRow(): RuntimeEvidenceModelAvailabilityRow =
+    RuntimeEvidenceModelAvailabilityRow(
+        diagnosticId = diagnosticId,
+        mode = mode.name,
+        selectedModelId = selectedModelId,
+        executedModelId = executedModelId,
+        expectedBackend = expectedBackend,
+        expectedPath = expectedPath,
+        pathExists = pathExists,
+        fileSizeBytes = fileSizeBytes,
+        loadAttempted = loadAttempted,
+        loadResult = loadResult,
+        fallbackModelAttempted = fallbackModelAttempted,
+        fallbackResult = fallbackResult,
+        status = status.name,
+    )
 
 private fun MutableList<RuntimeEvidenceValidationIssue>.block(
     code: String,

@@ -419,7 +419,7 @@ class ModelManager(private val context: Context) {
 
     fun canLoadForChromatogramVision(model: ModelInfo): Boolean =
         canLoadForVision(model) &&
-            (ModelRegistry.isChromatogramVisionModel(model) || !model.isBuiltin)
+            ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(model).eligible
 
     fun liteRtPreferAccelerator(model: ModelInfo): Boolean =
         model.runtime == ModelRuntime.LITERT_LM && !isConservativeDevice()

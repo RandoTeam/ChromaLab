@@ -91,6 +91,14 @@ class ModelAssistedAnalysisContractTest {
                 ModelFile("mmproj-paddle.gguf", 10L, ModelFileType.GGUF_MMPROJ, ""),
             ),
         )
+        val arbitraryCustomVision = model(
+            id = "custom-unvetted",
+            family = "custom",
+            files = listOf(
+                ModelFile("custom.gguf", 100L, ModelFileType.GGUF_BASE, ""),
+                ModelFile("mmproj-custom.gguf", 10L, ModelFileType.GGUF_MMPROJ, ""),
+            ),
+        )
 
         assertTrue(ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(validQwen).eligible)
 
@@ -101,6 +109,10 @@ class ModelAssistedAnalysisContractTest {
         val ocr = ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(ocrOnly)
         assertFalse(ocr.eligible)
         assertTrue(ocr.reasons.any { it.contains("OCR/document-only") })
+
+        val custom = ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(arbitraryCustomVision)
+        assertFalse(custom.eligible)
+        assertTrue(custom.reasons.any { it.contains("allow-list") })
     }
 
     private fun model(
