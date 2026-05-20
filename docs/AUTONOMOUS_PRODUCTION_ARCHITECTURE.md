@@ -17,8 +17,9 @@ flowchart LR
     G --> H["Trace extraction"]
     H --> I["Trace quality gate"]
     I --> J["Peak detection / evidence table"]
-    J --> K["Report gate"]
-    K --> L["Release report or diagnostic package"]
+    J --> K["Multimodal stage evidence"]
+    K --> L["Report gate"]
+    L --> N["Release report or diagnostic package"]
     I --> M["Assisted Review when REVIEW/INVALID"]
 ```
 
@@ -59,3 +60,7 @@ User intervention is never hidden. Reports must state which gates are automatic 
 ## Phase 5 Peak Layer
 
 Autonomous peak detection remains the primary path. `CalculationRun` peaks are wrapped as `PeakEvidence` rows with apex, local-maximum, height, area, width/FWHM, S/N, boundary, overlap, artifact, and provenance fields. Manual peak review is not the default route; it is used only when autonomous peak evidence is review-grade or invalid.
+
+## Phase 6 Multimodal Intelligence Layer
+
+Phase 6 adds `AutonomousStageJudgeResult`, OCR/VLM crop results, model runtime profiles, and strict VLM JSON boundaries. These records explain why a stage passed, entered review, timed out, or requested a retry. They do not replace deterministic geometry, calibration, trace extraction, or peak integration.

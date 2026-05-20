@@ -3,6 +3,14 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
+import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
+import com.chromalab.feature.processing.multimodal.StageJudgeSource
+import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
+import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
+import com.chromalab.feature.processing.multimodal.StageRetryPolicy
+import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
@@ -80,6 +88,20 @@ data class RuntimeEvidencePeakRow(
 )
 
 @Serializable
+data class RuntimeEvidenceStageJudgeRow(
+    val graphIndex: Int,
+    val taskId: String,
+    val taskType: String,
+    val source: String,
+    val verdict: String,
+    val cropPath: String? = null,
+    val overlayPath: String? = null,
+    val runtimeProfileId: String? = null,
+    val retryRecommendations: List<String> = emptyList(),
+    val rejectedForbiddenFields: List<String> = emptyList(),
+)
+
+@Serializable
 data class RuntimeEvidenceGraphValidationSummary(
     val graphIndex: Int,
     val rawDetectedPeaks: Int? = null,
@@ -88,6 +110,7 @@ data class RuntimeEvidenceGraphValidationSummary(
     val testOnlyRecoveredPeaks: Int = 0,
     val rejectedRecoveredCandidates: Int = 0,
     val peakEvidenceRows: List<RuntimeEvidencePeakRow> = emptyList(),
+    val stageJudgeRows: List<RuntimeEvidenceStageJudgeRow> = emptyList(),
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
     val calibrationStatuses: List<String> = emptyList(),
@@ -278,6 +301,22 @@ object RuntimeEvidencePackageValidator {
             appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
+        appendLine("## Multimodal Stage Judges")
+        appendLine()
+        appendLine("| Graph | Task | Type | Source | Verdict | Crop | Overlay | Runtime | Retry | Rejected forbidden fields |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        summary.graphSummaries.flatMap { it.stageJudgeRows }.forEach { row ->
+            appendLine(
+                "| ${row.graphIndex} | `${row.taskId}` | ${row.taskType} | ${row.source} | ${row.verdict} | " +
+                    "${row.cropPath ?: "-"} | ${row.overlayPath ?: "-"} | ${row.runtimeProfileId ?: "-"} | " +
+                    "${row.retryRecommendations.joinToString(", ").ifBlank { "-" }} | " +
+                    "${row.rejectedForbiddenFields.joinToString(", ").ifBlank { "-" }} |",
+            )
+        }
+        if (summary.graphSummaries.all { it.stageJudgeRows.isEmpty() }) {
+            appendLine("| - | - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
         appendLine("## Graph Counts")
         appendLine()
         appendLine("| Graph | Raw | Validated | Runtime recovered | Test-only recovered | Rejected recovery | Production reportable | Review-grade | Calibration |")
@@ -368,6 +407,7 @@ object RuntimeEvidencePackageValidator {
         }
         validateGeometry(graphPackage, graph?.source?.geometryReportStatus, issues)
         validateCalibration(graphPackage, graph, issues)
+        val stageJudgeRows = validateMultimodalEvidence(evidencePackage, graphPackage, fileExists, issues)
         val peakRows = validatePeakEvidence(graphPackage, issues)
         validatePeakLabelEvidence(graphPackage, fileExists, issues)
         val recoveryRows = validateRecovery(graphPackage, graph?.peaks.orEmpty(), issues)
@@ -380,6 +420,7 @@ object RuntimeEvidencePackageValidator {
             testOnlyRecoveredPeaks = graphPackage.summaryCounts.testOnlyRecoveredPeaks,
             rejectedRecoveredCandidates = graphPackage.summaryCounts.rejectedRecoveredCandidates,
             peakEvidenceRows = peakRows,
+            stageJudgeRows = stageJudgeRows,
             productionReportablePeaks = graphPackage.summaryCounts.productionReportablePeaks,
             reviewGradePeaks = graphPackage.summaryCounts.reviewGradePeaks,
             calibrationStatuses = listOfNotNull(
@@ -469,6 +510,169 @@ object RuntimeEvidencePackageValidator {
             reportable = evidence.isReportable,
             warnings = evidence.warnings,
         )
+    }
+
+    private fun validateMultimodalEvidence(
+        evidencePackage: RuntimeEvidencePackage,
+        graphPackage: RuntimeEvidenceGraphPackage,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceStageJudgeRow> {
+        val runtimeProfiles = evidencePackage.modelRuntimeProfiles.associateBy { it.profileId }
+        graphPackage.ocrVlmCropResults.forEach { result ->
+            validateOcrVlmCropResult(graphPackage.graphIndex, result, fileExists, issues)
+        }
+        graphPackage.overlayJudgeResults.forEach { overlay ->
+            issues.requirePath(
+                overlay.overlayImagePath,
+                "multimodal.overlay_judge_path_missing",
+                "Overlay judge result path is missing.",
+                graphPackage.graphIndex,
+                fileExists,
+                overlay.resultId,
+            )
+        }
+        return graphPackage.stageJudgeResults.map { result ->
+            validateStageJudgeResult(graphPackage.graphIndex, result, runtimeProfiles, fileExists, issues)
+        }
+    }
+
+    private fun validateOcrVlmCropResult(
+        graphIndex: Int,
+        result: VlmOcrCropResult,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ) {
+        if (result.resultId.isBlank()) {
+            issues.block("multimodal.crop_result_id_missing", "OCR/VLM crop result id is missing.", graphIndex)
+        }
+        if (result.taskId.isBlank()) {
+            issues.block("multimodal.crop_task_id_missing", "OCR/VLM crop result task id is missing.", graphIndex, result.resultId)
+        }
+        if (result.source == StageJudgeSource.VLM || result.source == StageJudgeSource.ML_KIT || result.source == StageJudgeSource.BOTH) {
+            issues.requirePath(
+                result.localCropPath,
+                "multimodal.crop_path_missing",
+                "OCR/VLM crop result requires local crop provenance.",
+                graphIndex,
+                fileExists,
+                result.resultId,
+            )
+        }
+        if ((result.source == StageJudgeSource.VLM || result.source == StageJudgeSource.BOTH) && result.rawText.isBlank()) {
+            issues.block("multimodal.vlm_raw_text_missing", "VLM crop result must store raw text.", graphIndex, result.resultId)
+        }
+        if (result.acceptedNumericFields.isNotEmpty()) {
+            issues.block(
+                "multimodal.vlm_numeric_field_accepted",
+                "VLM/OCR crop result accepted forbidden numeric fields: ${result.acceptedNumericFields.joinToString()}.",
+                graphIndex,
+                result.resultId,
+            )
+        }
+    }
+
+    private fun validateStageJudgeResult(
+        graphIndex: Int,
+        result: AutonomousStageJudgeResult,
+        runtimeProfiles: Map<String, ModelRuntimeProfile>,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): RuntimeEvidenceStageJudgeRow {
+        if (result.taskId.isBlank()) {
+            issues.block("multimodal.stage_task_id_missing", "Stage judge task id is missing.", graphIndex)
+        }
+        if (result.acceptedNumericFields.isNotEmpty()) {
+            issues.block(
+                "multimodal.stage_numeric_field_accepted",
+                "Stage judge accepted forbidden numeric fields: ${result.acceptedNumericFields.joinToString()}.",
+                graphIndex,
+                result.taskId,
+            )
+        }
+        result.retryRecommendations
+            .filterNot(StageRetryPolicy::isAllowed)
+            .forEach { recommendation ->
+                issues.block(
+                    "multimodal.retry_forbidden_action",
+                    "Stage judge retry recommendation is forbidden: ${recommendation.action}.",
+                    graphIndex,
+                    result.taskId,
+                )
+            }
+        if (result.taskType == StageJudgeTaskType.OCR_CROP_READ || result.source == StageJudgeSource.VLM) {
+            issues.requirePath(
+                result.cropPath,
+                "multimodal.stage_crop_path_missing",
+                "VLM/OCR stage judge requires crop provenance.",
+                graphIndex,
+                fileExists,
+                result.taskId,
+            )
+        }
+        result.overlayPath?.let {
+            issues.requirePath(
+                it,
+                "multimodal.stage_overlay_path_missing",
+                "Stage judge overlay path does not exist.",
+                graphIndex,
+                fileExists,
+                result.taskId,
+            )
+        }
+        if (result.source == StageJudgeSource.VLM || result.source == StageJudgeSource.BOTH) {
+            val profileId = result.modelRuntimeProfileId
+            if (profileId.isNullOrBlank()) {
+                issues.block("multimodal.stage_runtime_profile_missing", "VLM stage judge has no linked runtime profile.", graphIndex, result.taskId)
+            } else {
+                validateRuntimeProfile(graphIndex, runtimeProfiles[profileId], result, issues)
+            }
+        }
+        if (result.verdict == StageJudgeVerdict.TIMEOUT) {
+            val profile = result.modelRuntimeProfileId?.let(runtimeProfiles::get)
+            if (profile?.timedOut != true) {
+                issues.block("multimodal.timeout_not_profiled", "TIMEOUT verdict has no timedOut model runtime profile.", graphIndex, result.taskId)
+            }
+        }
+        return RuntimeEvidenceStageJudgeRow(
+            graphIndex = graphIndex,
+            taskId = result.taskId,
+            taskType = result.taskType.name,
+            source = result.source.name,
+            verdict = result.verdict.name,
+            cropPath = result.cropPath,
+            overlayPath = result.overlayPath,
+            runtimeProfileId = result.modelRuntimeProfileId,
+            retryRecommendations = result.retryRecommendations.map { it.action.name },
+            rejectedForbiddenFields = result.rejectedForbiddenFields.map { it.name },
+        )
+    }
+
+    private fun validateRuntimeProfile(
+        graphIndex: Int,
+        profile: ModelRuntimeProfile?,
+        stage: AutonomousStageJudgeResult,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ) {
+        if (profile == null) {
+            issues.block("multimodal.runtime_profile_missing", "Linked model runtime profile is missing.", graphIndex, stage.taskId)
+            return
+        }
+        if (profile.modelId.isBlank()) {
+            issues.block("multimodal.runtime_model_id_missing", "Model runtime profile modelId is missing.", graphIndex, profile.profileId)
+        }
+        if (profile.runtimeBackend.isBlank()) {
+            issues.block("multimodal.runtime_backend_missing", "Model runtime profile runtime backend is missing.", graphIndex, profile.profileId)
+        }
+        if (profile.durationMillis == null || profile.durationMillis < 0L) {
+            issues.block("multimodal.runtime_duration_missing", "Model runtime profile durationMillis is missing or invalid.", graphIndex, profile.profileId)
+        }
+        if (profile.timeoutMillis == null || profile.timeoutMillis <= 0L) {
+            issues.warn("multimodal.runtime_timeout_missing", "Model runtime profile timeoutMillis is missing.", graphIndex, profile.profileId)
+        }
+        if (stage.verdict == StageJudgeVerdict.TIMEOUT && !profile.timedOut) {
+            issues.block("multimodal.timeout_profile_mismatch", "Stage timeout verdict does not match model runtime profile.", graphIndex, profile.profileId)
+        }
     }
 
     private fun validateGeometry(

@@ -48,6 +48,10 @@ Peaks with low S/N, missing optional metrics, shoulder/overlap status, recovered
 
 VLM/OCR can support text and semantic gates. It cannot directly satisfy numeric geometry, calibration, trace, or peak metric gates.
 
+## Multimodal Stage Judge Gate
+
+Stage judge evidence is `VALID` only when task ids, crop/overlay provenance, verdicts, runtime profiles, and rejected forbidden fields are recorded. It is `REVIEW` when VLM/OCR disagrees, times out, or gives inconclusive semantic evidence. It is `INVALID` when forbidden numeric fields are accepted, crop provenance is missing, or a retry recommendation attempts to fabricate metrics or override deterministic validation.
+
 ## Evidence Package Requirement
 
 Every terminal state must include evidence artifacts if the stage ran:

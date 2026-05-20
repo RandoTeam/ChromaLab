@@ -160,3 +160,22 @@ Future regression rows that exercise peak evidence should record:
 - whether the peak gate is `VALID`, `REVIEW`, `INVALID`, or `MISSING`.
 
 `AUTO_DIAGNOSTIC` cannot use user peak decisions as automatic release evidence. `AUTONOMOUS_PRODUCTION` requires automatic valid peak evidence. `ASSISTED_REVIEW` and `MANUAL_ADVANCED` may satisfy peak gates through explicit user-confirmed or user-edited provenance.
+
+## Phase 6 Addendum
+
+Phase 6 adds multimodal stage judge contracts, VLM/OCR boundary checks, OCR/VLM crop benchmark reporting, and model runtime profile evidence. It does not change VLM runtime behavior, ML Kit OCR behavior, geometry, trace extraction, peak detection, or `CalculationEngine`.
+
+Future regression rows that exercise multimodal evidence should record:
+
+- stage judge task id and type;
+- source (`CV`, `ML_KIT`, `VLM`, `BOTH`, or deterministic);
+- verdict and confidence;
+- local crop or overlay path;
+- model runtime profile id, duration, timeout, cache hit, and backend;
+- OCR/VLM disagreement status;
+- rejected forbidden fields;
+- retry recommendations;
+- whether deterministic evidence proceeded without waiting for VLM;
+- whether validator rejected any accepted VLM numeric metric.
+
+VLM/OCR disagreement must not create numeric geometry, calibration, trace, or peak metrics. Strong deterministic geometry, trace, and peak evidence must remain able to proceed without VLM.

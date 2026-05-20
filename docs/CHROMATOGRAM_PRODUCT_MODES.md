@@ -20,6 +20,7 @@ Phase 4 realigns the product around an autonomous-first architecture. The primar
 - attempts the complete chromatogram pipeline automatically;
 - may produce `RELEASE_READY` only with valid graphPanel, plotArea, X/Y calibration, trace, peak evidence, source provenance, evidence package, and validator results;
 - must record deterministic evidence for numeric geometry and chromatographic metrics;
+- may use VLM/OCR/CV stage judges only as semantic/review/retry evidence;
 - must export a runtime evidence package for every terminal state;
 - must not require manual axes/calibration for normal images.
 
@@ -117,6 +118,6 @@ VLM/LLM must not provide:
 
 ## Current Status
 
-Phase 0 defined the original gate contract. Phase 1 created shared guided/manual state contracts. Phase 2, Phase 3, and Phase 4 implemented ROI, calibration, and trace review components that now belong to `ASSISTED_REVIEW` and `MANUAL_ADVANCED`.
+Phase 0 defined the original gate contract. Phase 1 created shared guided/manual state contracts. Phase 2, Phase 3, and Phase 4 implemented ROI, calibration, and trace review components that now belong to `ASSISTED_REVIEW` and `MANUAL_ADVANCED`. Phase 5 added autonomous peak evidence. Phase 6 adds multimodal stage judge contracts for OCR/VLM/CV assistance without changing numeric authority.
 
 Future work must prioritize `AUTONOMOUS_PRODUCTION`: automatic evidence first, assisted/manual repair only when a stage fails or falls below confidence.

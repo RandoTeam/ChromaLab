@@ -22,6 +22,7 @@ Assisted Review starts when:
 | Phase 3 | Guided calibration editor | Repair invalid/review X/Y calibration. |
 | Phase 4 | Trace overlay screen | Review, accept, or reject extracted trace evidence. |
 | Phase 5 | Peak evidence review contracts | Review peak apexes/boundaries after autonomous peak validation; full manual editor remains future work. |
+| Phase 6 | Multimodal evidence review | Review VLM/OCR timeout, disagreement, missing crop provenance, or forbidden-field rejection. |
 
 ## Rules
 
@@ -31,6 +32,7 @@ Assisted Review starts when:
 - `AUTO_DIAGNOSTIC` cannot consume assisted evidence as automatic release evidence.
 - `MANUAL_ADVANCED` remains available for expert workflows beyond assisted repair.
 - user peak decisions must appear in report provenance and cannot be hidden as automatic detection.
+- VLM/OCR review can accept semantic text evidence or request deterministic retry, but cannot accept final numeric metrics from model output.
 
 ## UX Principles
 

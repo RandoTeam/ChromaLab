@@ -10,6 +10,16 @@ import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.geometry.GraphPanelBounds
 import com.chromalab.feature.processing.geometry.GeometryCandidateSource
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
+import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
+import com.chromalab.feature.processing.multimodal.MultimodalTextRegionClass
+import com.chromalab.feature.processing.multimodal.StageJudgeSource
+import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
+import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
+import com.chromalab.feature.processing.multimodal.StageRetryAction
+import com.chromalab.feature.processing.multimodal.StageRetryRecommendation
+import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
@@ -145,6 +155,102 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
         assertTrue(result.blockingIssues.any { it.code == "peak_evidence.auto_valid_without_apex" })
+    }
+
+    @Test
+    fun validatorFailsForbiddenVlmNumericOutput() {
+        val packageWithVlm = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithVlm.graphs.single()
+        val stage = vlmCropStage().copy(
+            acceptedNumericFields = listOf(ForbiddenVlmNumericField.RT),
+        )
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithVlm.copy(
+                modelRuntimeProfiles = listOf(runtimeProfile()),
+                graphs = listOf(
+                    graph.copy(
+                        stageJudgeResults = listOf(stage),
+                        ocrVlmCropResults = listOf(vlmCropResult()),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.stage_numeric_field_accepted" })
+    }
+
+    @Test
+    fun validatorRequiresVlmCropProvenance() {
+        val packageWithVlm = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithVlm.graphs.single()
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithVlm.copy(
+                modelRuntimeProfiles = listOf(runtimeProfile()),
+                graphs = listOf(
+                    graph.copy(
+                        stageJudgeResults = listOf(vlmCropStage()),
+                        ocrVlmCropResults = listOf(vlmCropResult().copy(localCropPath = null)),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.crop_path_missing" })
+    }
+
+    @Test
+    fun validatorRecordsTimeoutProfile() {
+        val packageWithVlm = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithVlm.graphs.single()
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithVlm.copy(
+                modelRuntimeProfiles = listOf(runtimeProfile().copy(timedOut = true, success = false, durationMillis = 6_000L)),
+                graphs = listOf(
+                    graph.copy(
+                        stageJudgeResults = listOf(vlmCropStage().copy(verdict = StageJudgeVerdict.TIMEOUT)),
+                        ocrVlmCropResults = listOf(vlmCropResult()),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertTrue(result.blockingIssues.none { it.code.startsWith("multimodal.timeout") })
+        assertEquals(StageJudgeVerdict.TIMEOUT.name, result.graphSummaries.single().stageJudgeRows.single().verdict)
+    }
+
+    @Test
+    fun validatorFailsForbiddenRetryRecommendation() {
+        val packageWithVlm = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithVlm.graphs.single()
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithVlm.copy(
+                modelRuntimeProfiles = listOf(runtimeProfile()),
+                graphs = listOf(
+                    graph.copy(
+                        stageJudgeResults = listOf(
+                            vlmCropStage().copy(
+                                retryRecommendations = listOf(
+                                    StageRetryRecommendation(
+                                        action = StageRetryAction.CREATE_PEAK_FROM_TEXT,
+                                        reason = "VLM cannot fabricate peaks.",
+                                    ),
+                                ),
+                            ),
+                        ),
+                        ocrVlmCropResults = listOf(vlmCropResult()),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.retry_forbidden_action" })
     }
 
     @Test
@@ -362,6 +468,48 @@ class RuntimeEvidencePackageValidatorTest {
                 endRetentionTime = PeakMetricEvidence.calculated(3.95, "min"),
                 status = PeakMetricEvidenceStatus.CALCULATED,
             ),
+        )
+
+    private fun runtimeProfile(): ModelRuntimeProfile =
+        ModelRuntimeProfile(
+            profileId = "runtime:vlm:crop:1",
+            taskId = "stage:vlm_crop:1",
+            modelId = "gemma-litert",
+            runtimeBackend = "LITERT",
+            cropWidth = 64,
+            cropHeight = 32,
+            durationMillis = 120L,
+            timeoutMillis = 6_000L,
+            timedOut = false,
+            success = true,
+            cacheHit = false,
+        )
+
+    private fun vlmCropStage(): AutonomousStageJudgeResult =
+        AutonomousStageJudgeResult(
+            taskId = "stage:vlm_crop:1",
+            graphIndex = 1,
+            taskType = StageJudgeTaskType.OCR_CROP_READ,
+            source = StageJudgeSource.VLM,
+            verdict = StageJudgeVerdict.PASS,
+            cropPath = "crop.png",
+            modelRuntimeProfileId = "runtime:vlm:crop:1",
+            ocrCropResultIds = listOf("ocr-vlm:1"),
+            rejectedForbiddenFields = listOf(ForbiddenVlmNumericField.RT),
+        )
+
+    private fun vlmCropResult(): VlmOcrCropResult =
+        VlmOcrCropResult(
+            resultId = "ocr-vlm:1",
+            taskId = "stage:vlm_crop:1",
+            source = StageJudgeSource.VLM,
+            localCropPath = "crop.png",
+            rawText = "5.610",
+            normalizedText = "5.610",
+            parsedText = "5.610",
+            textClass = MultimodalTextRegionClass.PEAK_ANNOTATION,
+            rejectedForbiddenFields = listOf(ForbiddenVlmNumericField.RT),
+            runtimeProfileId = "runtime:vlm:crop:1",
         )
 
     private val existingPaths = setOf(

@@ -3,6 +3,11 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
+import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
+import com.chromalab.feature.processing.multimodal.OcrVlmDisagreement
+import com.chromalab.feature.processing.multimodal.OverlayJudgeResult
+import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.reports.ChromatogramReport
@@ -18,7 +23,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RuntimeEvidencePackage(
-    val schemaVersion: String = "runtime-evidence-1.0",
+    val schemaVersion: String = "runtime-evidence-1.1",
     val generatedAtEpochMillis: Long,
     val reportId: String,
     val sourceName: String? = null,
@@ -29,6 +34,7 @@ data class RuntimeEvidencePackage(
     val terminalState: RuntimeTerminalState = RuntimeTerminalState.DIAGNOSTIC_ONLY,
     val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
     val gateEvidence: GateEvidence = GateEvidence(),
+    val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
     val graphs: List<RuntimeEvidenceGraphPackage>,
     val reportContract: ChromatogramReport,
 )
@@ -37,6 +43,10 @@ data class RuntimeEvidencePackage(
 data class RuntimeEvidenceGraphPackage(
     val graphIndex: Int,
     val artifactPaths: RuntimeEvidenceArtifactPaths,
+    val stageJudgeResults: List<AutonomousStageJudgeResult> = emptyList(),
+    val ocrVlmCropResults: List<VlmOcrCropResult> = emptyList(),
+    val ocrVlmDisagreements: List<OcrVlmDisagreement> = emptyList(),
+    val overlayJudgeResults: List<OverlayJudgeResult> = emptyList(),
     val peakEvidenceTable: List<PeakEvidence> = emptyList(),
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val runtimeRecoveredPeaks: List<RecoveredPeakCandidate>,

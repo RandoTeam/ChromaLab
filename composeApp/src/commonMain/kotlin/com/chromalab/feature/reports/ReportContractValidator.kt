@@ -305,6 +305,20 @@ object ReportContractValidator {
         requireDouble(peak.widthAtBase, "peak.width_base_missing", "peak_table", graphIndex, "Base width", findings, peak.number)
         requireDouble(peak.signalToNoise, "peak.snr_missing", "peak_table", graphIndex, "S/N", findings, peak.number)
         requireDouble(peak.asymmetry, "peak.asymmetry_missing", "peak_table", graphIndex, "Asymmetry", findings, peak.number)
+        listOf(
+            "RT" to peak.retentionTime,
+            "Height" to peak.heightAboveBaseline,
+            "Area" to peak.integratedArea,
+            "FWHM" to peak.fwhm,
+            "Base width" to peak.widthAtBase,
+            "S/N" to peak.signalToNoise,
+            "Baseline" to peak.baselineAtApex,
+        ).forEach { (label, value) ->
+            validateModelNotNumericSource(value, "peak.model_numeric_source_forbidden", "peak_table", graphIndex, label, findings, peak.number)
+        }
+        peak.compound?.let { compound ->
+            validateModelNotNumericSource(compound.kovatsIndex, "peak.model_numeric_source_forbidden", "peak_table", graphIndex, "Kovats", findings, peak.number)
+        }
 
         if (peak.confidence == null) {
             findings += warning(
@@ -361,6 +375,26 @@ object ReportContractValidator {
                 peakNumber = peakNumber,
                 section = section,
                 message = "$label is not available.",
+            )
+        }
+    }
+
+    private fun validateModelNotNumericSource(
+        value: ReportDoubleValue,
+        code: String,
+        section: String,
+        graphIndex: Int,
+        label: String,
+        findings: MutableList<ReportContractFinding>,
+        peakNumber: Int? = null,
+    ) {
+        if (value.source == ReportValueSource.VISION_MODEL || value.source == ReportValueSource.MODEL_SUGGESTED) {
+            findings += error(
+                code = code,
+                graphIndex = graphIndex,
+                peakNumber = peakNumber,
+                section = section,
+                message = "$label cannot use VLM/model-suggested output as numeric chromatographic evidence.",
             )
         }
     }

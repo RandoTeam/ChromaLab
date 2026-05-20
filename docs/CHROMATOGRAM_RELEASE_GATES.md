@@ -189,6 +189,15 @@ VLM/LLM is forbidden from producing:
 
 VLM output must preserve provenance: task type, local crop or overlay path, raw output, parsed output, confidence, and rejection reason when invalid.
 
+## Phase 6 Multimodal Gate Mapping
+
+- VLM/OCR stage judge output is supporting evidence only.
+- `PASS` stage judge verdicts require crop or overlay provenance and no accepted forbidden numeric fields.
+- `TIMEOUT` must have a linked model runtime profile with `timedOut=true`.
+- VLM/OCR disagreement maps to `REVIEW` unless deterministic acceptance rules pass.
+- Forbidden retry recommendations such as creating peaks from text, accepting invalid calibration, or overriding residuals map to `INVALID`.
+- Missing model runtime profile for VLM evidence is a blocking validator issue.
+
 ## Acceptance
 
 The autonomous-first release-gate contract is accepted when:
