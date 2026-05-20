@@ -28,7 +28,13 @@ import com.chromalab.feature.reports.GraphSourceMetadata
 import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.KovatsIndexReport
 import com.chromalab.feature.reports.ModelExecutionInfo
+import com.chromalab.feature.reports.PeakBoundaryEvidence
+import com.chromalab.feature.reports.PeakEvidence
 import com.chromalab.feature.reports.PeakEvidenceAndRecoveryReport
+import com.chromalab.feature.reports.PeakEvidenceStatus
+import com.chromalab.feature.reports.PeakGateStatus
+import com.chromalab.feature.reports.PeakMetricEvidence
+import com.chromalab.feature.reports.PeakMetricEvidenceStatus
 import com.chromalab.feature.reports.ReportAxisCalibration
 import com.chromalab.feature.reports.ReportDoubleValue
 import com.chromalab.feature.reports.ReportMetadata
@@ -111,6 +117,34 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.PASS, result.verdict)
         assertTrue(result.blockingIssues.none { it.code.startsWith("vlm.") })
+    }
+
+    @Test
+    fun validatorFailsAutoValidPeakWithoutApexEvidence() {
+        val evidence = runtimeEvidence()
+        val report = reportWithRecovery(evidence)
+        val graph = report.graphs.single()
+        val brokenPeakEvidence = autoValidPeakEvidence().copy(
+            apexPointIndex = null,
+            localMaximumEvidence = false,
+        )
+        val brokenReport = report.copy(
+            graphs = listOf(
+                graph.copy(
+                    peakRecovery = graph.peakRecovery.copy(
+                        peakEvidenceTable = listOf(brokenPeakEvidence),
+                    ),
+                ),
+            ),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(
+            RuntimeEvidencePackageBuilder.build(brokenReport),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "peak_evidence.auto_valid_without_apex" })
     }
 
     @Test
@@ -254,6 +288,11 @@ class RuntimeEvidencePackageValidatorTest {
                     peakRecovery = PeakEvidenceAndRecoveryReport(
                         rawDetectedPeaks = 1,
                         validatedPeaks = 1,
+                        peakEvidenceTable = listOf(autoValidPeakEvidence()),
+                        reviewPeaks = 0,
+                        rejectedPeaks = 0,
+                        userConfirmedPeaks = 0,
+                        userEditedPeaks = 0,
                         runtimeRecoveredPeaks = runtimeRecovered,
                         testOnlyRecoveredPeaks = testOnlyRecovered,
                         rejectedRecoveredCandidates = emptyList(),
@@ -303,6 +342,25 @@ class RuntimeEvidencePackageValidatorTest {
                 RecoveredPeakCandidateFlag.LOW_RESOLUTION_RECOVERED,
                 RecoveredPeakCandidateFlag.LABEL_EVIDENCE_VERIFIED,
                 RecoveredPeakCandidateFlag.RUNTIME_OCR_VERIFIED,
+            ),
+        )
+
+    private fun autoValidPeakEvidence(): PeakEvidence =
+        PeakEvidence(
+            evidenceId = "calculation:test:peak:1",
+            peakId = "1",
+            peakNumber = 1,
+            status = PeakEvidenceStatus.AUTO_VALID,
+            gateStatus = PeakGateStatus.VALID,
+            retentionTime = PeakMetricEvidence.calculated(3.890, "min"),
+            apexPointIndex = 15,
+            localMaximumEvidence = true,
+            height = PeakMetricEvidence.calculated(100.0, "a.u."),
+            area = PeakMetricEvidence.calculated(300.0),
+            boundaryEvidence = PeakBoundaryEvidence(
+                startRetentionTime = PeakMetricEvidence.calculated(3.80, "min"),
+                endRetentionTime = PeakMetricEvidence.calculated(3.95, "min"),
+                status = PeakMetricEvidenceStatus.CALCULATED,
             ),
         )
 

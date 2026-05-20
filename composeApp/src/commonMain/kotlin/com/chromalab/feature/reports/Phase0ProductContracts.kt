@@ -148,12 +148,7 @@ object ReportReleaseGateEvaluator {
                 }
             },
             peakReviewStatus = report.aggregateGraphGate { graph ->
-                when {
-                    graph.peaks.isNotEmpty() &&
-                        graph.source.geometryReportStatus == GeometryReportStatus.SCIENTIFIC_READY -> EvidenceGateStatus.VALID
-                    graph.peaks.isNotEmpty() -> EvidenceGateStatus.REVIEW
-                    else -> EvidenceGateStatus.MISSING
-                }
+                graph.toPeakEvidenceGate()
             },
             evidencePackageStatus = evidencePackageStatus,
             sourceProvenanceStatus = report.aggregateGraphGate { graph ->
@@ -252,6 +247,7 @@ object ReportReleaseGateEvaluator {
             xCalibrationStatus,
             yCalibrationStatus,
             traceStatus,
+            peakReviewStatus,
             evidencePackageStatus,
             sourceProvenanceStatus,
         )
@@ -289,9 +285,34 @@ object ReportReleaseGateEvaluator {
         "x_calibration",
         "y_calibration",
         "trace",
+        "peak_review",
         "evidence_package",
         "source_provenance",
     )
+}
+
+private fun GraphReport.toPeakEvidenceGate(): EvidenceGateStatus {
+    val evidence = peakRecovery.peakEvidenceTable
+    if (evidence.isNotEmpty()) {
+        return when {
+            evidence.any { it.gateStatus == PeakGateStatus.INVALID } -> EvidenceGateStatus.INVALID
+            evidence.any { it.gateStatus == PeakGateStatus.REVIEW } -> EvidenceGateStatus.REVIEW
+            evidence.all { it.gateStatus == PeakGateStatus.VALID } -> {
+                if (evidence.any { it.status == PeakEvidenceStatus.USER_CONFIRMED || it.status == PeakEvidenceStatus.USER_EDITED }) {
+                    EvidenceGateStatus.USER_CONFIRMED
+                } else {
+                    EvidenceGateStatus.VALID
+                }
+            }
+            else -> EvidenceGateStatus.MISSING
+        }
+    }
+    return when {
+        peaks.isNotEmpty() &&
+            source.geometryReportStatus == GeometryReportStatus.SCIENTIFIC_READY -> EvidenceGateStatus.REVIEW
+        peaks.isNotEmpty() -> EvidenceGateStatus.REVIEW
+        else -> EvidenceGateStatus.MISSING
+    }
 }
 
 object VlmBoundaryPolicy {

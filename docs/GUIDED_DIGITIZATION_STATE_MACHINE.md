@@ -164,3 +164,16 @@ It must not set:
 - `REPORT_READY`.
 
 Accepted valid trace can satisfy the trace gate in guided/manual modes. Review-grade trace stays review-grade. Rejected trace blocks release. `AUTO_DIAGNOSTIC` still cannot use guided trace confirmation objects as release evidence.
+
+## Phase 5 Addendum: Peak Evidence Review
+
+Phase 5 treats `PEAKS_DETECTED` as autonomous peak detection plus `PeakEvidence` mapping. `PEAKS_CONFIRMED` remains an Assisted Review / Manual Advanced state for explicit user peak decisions.
+
+The peak evidence layer writes:
+
+- `PeakEvidence` rows;
+- `UserConfirmedPeakSet` only when the user performs Assisted Review;
+- peak gate status;
+- peak provenance and warning codes.
+
+`AUTONOMOUS_PRODUCTION` may satisfy the peak gate through `AUTO_VALID` evidence. `AUTO_DIAGNOSTIC` cannot use user peak decisions as release evidence.

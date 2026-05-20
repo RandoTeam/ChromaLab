@@ -1,10 +1,14 @@
 package com.chromalab.feature.reports
 
+import com.chromalab.feature.processing.axis.AxisLine
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
+import com.chromalab.feature.processing.geometry.AxisGeometry
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.geometry.TickGeometry
+import com.chromalab.feature.processing.geometry.TickPixelPosition
 import com.chromalab.feature.reports.fixtures.BelyiTigrIon92ReportFixture
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,6 +45,7 @@ class Phase0ProductContractsTest {
 
         val gate = ReportReleaseGateEvaluator.evaluate(
             report = report,
+            validation = ReportContractValidationResult(isComplete = true, findings = emptyList()),
             evidencePackageStatus = EvidenceGateStatus.VALID,
         )
 
@@ -55,10 +60,31 @@ class Phase0ProductContractsTest {
 
     @Test
     fun autonomousProductionRequiredAutomaticEvidenceDoesNotNeedUserConfirmation() {
+        val base = releaseReadyShapeReport().withAutoValidPeakEvidence()
+        val report = base.copy(
+            metadata = base.metadata.copy(processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION),
+            warnings = emptyList(),
+            graphs = base.graphs.map { it.copy(warnings = emptyList()) },
+        )
+
+        val gate = ReportReleaseGateEvaluator.evaluate(
+            report = report,
+            validation = ReportContractValidationResult(isComplete = true, findings = emptyList()),
+            evidencePackageStatus = EvidenceGateStatus.VALID,
+        )
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status, gate.toString())
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.peakReviewStatus)
+        assertFalse(gate.blockingReasons.any { it.startsWith("trace.") })
+    }
+
+    @Test
+    fun autoDiagnosticCannotBeReleaseReadyWithoutPeakEvidenceGate() {
         val report = releaseReadyShapeReport().copy(
-            metadata = releaseReadyShapeReport().metadata.copy(
-                processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION,
-            ),
+            graphs = releaseReadyShapeReport().graphs.map { graph ->
+                graph.copy(peakRecovery = graph.peakRecovery.copy(peakEvidenceTable = emptyList()))
+            },
         )
 
         val gate = ReportReleaseGateEvaluator.evaluate(
@@ -67,8 +93,8 @@ class Phase0ProductContractsTest {
         )
 
         assertEquals(ReportGateStatus.REVIEW_ONLY, gate.status)
-        assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
-        assertFalse(gate.blockingReasons.any { it.startsWith("trace.") })
+        assertEquals(EvidenceGateStatus.REVIEW, gate.evidence.peakReviewStatus)
+        assertTrue(gate.reviewReasons.contains("peak_review.review"))
     }
 
     @Test
@@ -139,6 +165,15 @@ class Phase0ProductContractsTest {
                                     confidence = 0.90f,
                                 ),
                             finalCenterlineOverlayPath = "centerline.png",
+                            axisGeometry = AxisGeometry(
+                                xAxisLinePx = AxisLine(10f, 90f, 90f, 90f),
+                                yAxisLinePx = AxisLine(10f, 10f, 10f, 90f),
+                                axisConfidence = 0.95f,
+                            ),
+                            tickGeometry = TickGeometry(
+                                xTicks = listOf(TickPixelPosition(10f, confidence = 0.95f)),
+                                yTicks = listOf(TickPixelPosition(90f, confidence = 0.95f)),
+                            ),
                         ),
                     ),
                     axisCalibration = graph.axisCalibration.copy(
@@ -155,4 +190,42 @@ class Phase0ProductContractsTest {
             ),
         )
     }
+
+    private fun ChromatogramReport.withAutoValidPeakEvidence(): ChromatogramReport =
+        copy(
+            graphs = graphs.map { graph ->
+                graph.copy(
+                    peakRecovery = graph.peakRecovery.copy(
+                        peakEvidenceTable = graph.peaks.map { peak ->
+                            PeakEvidence(
+                                evidenceId = "evidence:${peak.number}",
+                                peakId = peak.number.toString(),
+                                peakNumber = peak.number,
+                                status = PeakEvidenceStatus.AUTO_VALID,
+                                gateStatus = PeakGateStatus.VALID,
+                                retentionTime = PeakMetricEvidence.calculated(peak.retentionTime.value, "min"),
+                                apexPointIndex = peak.number,
+                                localMaximumEvidence = true,
+                                height = PeakMetricEvidence.calculated(
+                                    peak.heightAboveBaseline.value ?: 1.0,
+                                    "a.u.",
+                                ),
+                                area = PeakMetricEvidence.calculated(peak.integratedArea.value ?: 1.0),
+                                boundaryEvidence = PeakBoundaryEvidence(
+                                    startRetentionTime = PeakMetricEvidence.calculated(
+                                        peak.startRetentionTime.value ?: 0.0,
+                                        "min",
+                                    ),
+                                    endRetentionTime = PeakMetricEvidence.calculated(
+                                        peak.endRetentionTime.value ?: 1.0,
+                                        "min",
+                                    ),
+                                    status = PeakMetricEvidenceStatus.CALCULATED,
+                                ),
+                            )
+                        },
+                    ),
+                )
+            },
+        )
 }

@@ -9,6 +9,7 @@ import com.chromalab.feature.reports.ChromatogramReport
 import com.chromalab.feature.reports.EvidenceGateStatus
 import com.chromalab.feature.reports.GateEvidence
 import com.chromalab.feature.reports.GraphReport
+import com.chromalab.feature.reports.PeakEvidence
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.ReportGateStatus
 import com.chromalab.feature.reports.ReportReleaseGateEvaluator
@@ -36,6 +37,7 @@ data class RuntimeEvidencePackage(
 data class RuntimeEvidenceGraphPackage(
     val graphIndex: Int,
     val artifactPaths: RuntimeEvidenceArtifactPaths,
+    val peakEvidenceTable: List<PeakEvidence> = emptyList(),
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val runtimeRecoveredPeaks: List<RecoveredPeakCandidate>,
     val testOnlyRecoveredPeaks: List<RecoveredPeakCandidate>,
@@ -76,6 +78,10 @@ data class RuntimeEvidenceArtifactPaths(
 data class RuntimeEvidenceSummaryCounts(
     val rawDetectedPeaks: Int? = null,
     val validatedPeaks: Int? = null,
+    val reviewPeaks: Int? = null,
+    val rejectedPeaks: Int? = null,
+    val userConfirmedPeaks: Int? = null,
+    val userEditedPeaks: Int? = null,
     val runtimeRecoveredPeaks: Int = 0,
     val testOnlyRecoveredPeaks: Int = 0,
     val rejectedRecoveredCandidates: Int = 0,
@@ -152,6 +158,7 @@ object RuntimeEvidencePackageBuilder {
                 skeletonOrCenterlineOverlayPath = trace?.curveSkeletonPath,
                 finalPeakOverlayPath = trace?.finalCenterlineOverlayPath,
             ),
+            peakEvidenceTable = recovery.peakEvidenceTable,
             peakLabelEvidence = recovery.labelEvidence,
             runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks,
             testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks,
@@ -161,6 +168,10 @@ object RuntimeEvidencePackageBuilder {
             summaryCounts = RuntimeEvidenceSummaryCounts(
                 rawDetectedPeaks = recovery.rawDetectedPeaks,
                 validatedPeaks = recovery.validatedPeaks,
+                reviewPeaks = recovery.reviewPeaks,
+                rejectedPeaks = recovery.rejectedPeaks,
+                userConfirmedPeaks = recovery.userConfirmedPeaks,
+                userEditedPeaks = recovery.userEditedPeaks,
                 runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks.size,
                 testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks.size,
                 rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates.size,

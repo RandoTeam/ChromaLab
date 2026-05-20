@@ -21,7 +21,7 @@ Assisted Review starts when:
 | Phase 2 | Guided ROI editor | Correct graphPanel/plotArea only when auto ROI is uncertain. |
 | Phase 3 | Guided calibration editor | Repair invalid/review X/Y calibration. |
 | Phase 4 | Trace overlay screen | Review, accept, or reject extracted trace evidence. |
-| Phase 5 | Future peak review | Review peak apexes/boundaries after autonomous peak validation. |
+| Phase 5 | Peak evidence review contracts | Review peak apexes/boundaries after autonomous peak validation; full manual editor remains future work. |
 
 ## Rules
 
@@ -30,6 +30,7 @@ Assisted Review starts when:
 - Review-grade acceptance cannot silently become release-ready.
 - `AUTO_DIAGNOSTIC` cannot consume assisted evidence as automatic release evidence.
 - `MANUAL_ADVANCED` remains available for expert workflows beyond assisted repair.
+- user peak decisions must appear in report provenance and cannot be hidden as automatic detection.
 
 ## UX Principles
 

@@ -139,3 +139,24 @@ Future regression rows that exercise guided trace confirmation should record:
 - serialized `TraceOverlayEditorSnapshot` or guided state roundtrip result.
 
 Guided trace confirmation cannot upgrade `AUTO_DIAGNOSTIC` output. If an auto trace is rejected, release output must remain diagnostic or blocked until a later guided/manual workflow supplies acceptable trace evidence.
+
+## Phase 5 Addendum
+
+Phase 5 adds autonomous peak evidence mapping and peak gate semantics. It does not change `CalculationEngine`, peak detection math, integration math, fixture expectations, or VLM behavior.
+
+Future regression rows that exercise peak evidence should record:
+
+- raw detected peak count;
+- validated/reportable peak count;
+- review peak count;
+- rejected artifact/noise peak count;
+- user-confirmed/user-edited peak count when Assisted Review is used;
+- peak evidence status per reportable peak;
+- apex point/pixel linkage;
+- local maximum evidence;
+- height, area, FWHM, S/N, prominence, and boundary evidence status;
+- overlap/shoulder status;
+- provenance source (`AUTO_DETECTED`, `USER_CONFIRMED`, `USER_EDITED`, `LABEL_RECOVERED`);
+- whether the peak gate is `VALID`, `REVIEW`, `INVALID`, or `MISSING`.
+
+`AUTO_DIAGNOSTIC` cannot use user peak decisions as automatic release evidence. `AUTONOMOUS_PRODUCTION` requires automatic valid peak evidence. `ASSISTED_REVIEW` and `MANUAL_ADVANCED` may satisfy peak gates through explicit user-confirmed or user-edited provenance.

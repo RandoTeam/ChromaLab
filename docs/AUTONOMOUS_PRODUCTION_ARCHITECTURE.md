@@ -16,7 +16,7 @@ flowchart LR
     F --> G["Calibration fit"]
     G --> H["Trace extraction"]
     H --> I["Trace quality gate"]
-    I --> J["Peak detection / validation"]
+    I --> J["Peak detection / evidence table"]
     J --> K["Report gate"]
     K --> L["Release report or diagnostic package"]
     I --> M["Assisted Review when REVIEW/INVALID"]
@@ -38,7 +38,7 @@ Automatic release requires:
 - plotArea `VALID`;
 - X and Y calibration `VALID`;
 - trace `VALID`;
-- peak evidence valid after Phase 5;
+- peak evidence `VALID`;
 - evidence package `VALID`;
 - source provenance `VALID`;
 - validator has no blocking findings.
@@ -52,6 +52,10 @@ The app should ask for review only for the failed stage:
 - uncertain ROI -> Phase 2 ROI editor;
 - invalid/review calibration -> Phase 3 calibration editor;
 - sparse/fragmented trace -> Phase 4 trace overlay review;
-- weak/ambiguous peaks -> future Phase 5 peak review.
+- weak/ambiguous peaks -> Phase 5 Assisted Peak Review fallback.
 
 User intervention is never hidden. Reports must state which gates are automatic and which were user-confirmed or manual.
+
+## Phase 5 Peak Layer
+
+Autonomous peak detection remains the primary path. `CalculationRun` peaks are wrapped as `PeakEvidence` rows with apex, local-maximum, height, area, width/FWHM, S/N, boundary, overlap, artifact, and provenance fields. Manual peak review is not the default route; it is used only when autonomous peak evidence is review-grade or invalid.

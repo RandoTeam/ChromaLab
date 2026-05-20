@@ -7,7 +7,7 @@ import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import kotlinx.serialization.Serializable
 
-const val CURRENT_CHROMATOGRAM_REPORT_SCHEMA = "1.0.0-phase-1.3"
+const val CURRENT_CHROMATOGRAM_REPORT_SCHEMA = "1.0.0-phase-5"
 
 /**
  * Strict report contract for chromatogram analysis.
@@ -110,6 +110,11 @@ data class GraphReport(
 data class PeakEvidenceAndRecoveryReport(
     val rawDetectedPeaks: Int? = null,
     val validatedPeaks: Int? = null,
+    val peakEvidenceTable: List<PeakEvidence> = emptyList(),
+    val reviewPeaks: Int? = null,
+    val rejectedPeaks: Int? = null,
+    val userConfirmedPeaks: Int? = null,
+    val userEditedPeaks: Int? = null,
     val runtimeRecoveredPeaks: List<RecoveredPeakCandidate> = emptyList(),
     val testOnlyRecoveredPeaks: List<RecoveredPeakCandidate> = emptyList(),
     val rejectedRecoveredCandidates: List<RecoveredPeakCandidate> = emptyList(),
@@ -120,6 +125,158 @@ data class PeakEvidenceAndRecoveryReport(
     val labelEvidence: List<PeakLabelEvidence> = emptyList(),
     val warnings: List<ReportWarning> = emptyList(),
 )
+
+@Serializable
+enum class PeakEvidenceStatus {
+    AUTO_VALID,
+    AUTO_REVIEW,
+    USER_CONFIRMED,
+    USER_EDITED,
+    USER_REJECTED,
+    ARTIFACT_REJECTED,
+    NOISE_REJECTED,
+    SHOULDER_REVIEW,
+    OVERLAP_REVIEW,
+    INVALID,
+}
+
+@Serializable
+enum class PeakMetricEvidenceStatus {
+    CALCULATED,
+    UNKNOWN,
+    REVIEW,
+    INVALID,
+}
+
+@Serializable
+enum class PeakArtifactStatus {
+    NONE,
+    ARTIFACT_REJECTED,
+    NOISE_REJECTED,
+    UNKNOWN,
+}
+
+@Serializable
+enum class PeakOverlapEvidenceStatus {
+    ISOLATED,
+    SHOULDER_REVIEW,
+    OVERLAP_REVIEW,
+    UNRESOLVED_REVIEW,
+    UNKNOWN,
+}
+
+@Serializable
+enum class PeakGateStatus {
+    VALID,
+    REVIEW,
+    INVALID,
+    MISSING,
+}
+
+@Serializable
+data class PeakMetricEvidence(
+    val value: Double? = null,
+    val unit: String? = null,
+    val status: PeakMetricEvidenceStatus = PeakMetricEvidenceStatus.UNKNOWN,
+    val source: ReportValueSource = ReportValueSource.UNKNOWN,
+    val warning: String? = null,
+) {
+    companion object {
+        fun calculated(value: Double?, unit: String? = null): PeakMetricEvidence =
+            if (value != null && value.isFinite()) {
+                PeakMetricEvidence(value, unit, PeakMetricEvidenceStatus.CALCULATED, ReportValueSource.DETERMINISTIC)
+            } else {
+                unknown(unit, "metric unavailable")
+            }
+
+        fun review(value: Double?, unit: String? = null, warning: String): PeakMetricEvidence =
+            PeakMetricEvidence(value?.takeIf { it.isFinite() }, unit, PeakMetricEvidenceStatus.REVIEW, ReportValueSource.DETERMINISTIC, warning)
+
+        fun invalid(value: Double?, unit: String? = null, warning: String): PeakMetricEvidence =
+            PeakMetricEvidence(value?.takeIf { it.isFinite() }, unit, PeakMetricEvidenceStatus.INVALID, ReportValueSource.DETERMINISTIC, warning)
+
+        fun unknown(unit: String? = null, warning: String? = null): PeakMetricEvidence =
+            PeakMetricEvidence(null, unit, PeakMetricEvidenceStatus.UNKNOWN, ReportValueSource.UNKNOWN, warning)
+    }
+}
+
+@Serializable
+data class PeakBoundaryEvidence(
+    val startRetentionTime: PeakMetricEvidence = PeakMetricEvidence.unknown("min"),
+    val endRetentionTime: PeakMetricEvidence = PeakMetricEvidence.unknown("min"),
+    val method: String? = null,
+    val integrationMethod: String? = null,
+    val baselineMethod: String? = null,
+    val status: PeakMetricEvidenceStatus = PeakMetricEvidenceStatus.UNKNOWN,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class PeakProvenance(
+    val source: PeakEvidenceSource = PeakEvidenceSource.AUTO_DETECTED,
+    val metricSource: String = "CalculationRun",
+    val calculationRunId: String? = null,
+    val sourceSignalId: String? = null,
+    val pipelineVersion: String? = null,
+    val algorithmVersion: String? = null,
+    val traceSourceId: String? = null,
+    val userDecisionId: String? = null,
+    val userVisibleIntervention: Boolean = false,
+)
+
+@Serializable
+enum class PeakEvidenceSource {
+    AUTO_DETECTED,
+    LABEL_RECOVERED,
+    USER_CONFIRMED,
+    USER_EDITED,
+    USER_REJECTED,
+    IMPORTED,
+}
+
+@Serializable
+data class PeakEvidence(
+    val evidenceId: String,
+    val peakId: String,
+    val peakNumber: Int,
+    val status: PeakEvidenceStatus,
+    val gateStatus: PeakGateStatus,
+    val retentionTime: PeakMetricEvidence = PeakMetricEvidence.unknown("min"),
+    val apexPixel: PixelPoint? = null,
+    val apexPointIndex: Int? = null,
+    val localMaximumEvidence: Boolean = false,
+    val height: PeakMetricEvidence = PeakMetricEvidence.unknown("a.u."),
+    val area: PeakMetricEvidence = PeakMetricEvidence.unknown(),
+    val areaPercent: PeakMetricEvidence = PeakMetricEvidence.unknown("%"),
+    val widthAtBase: PeakMetricEvidence = PeakMetricEvidence.unknown("min"),
+    val fwhm: PeakMetricEvidence = PeakMetricEvidence.unknown("min"),
+    val signalToNoise: PeakMetricEvidence = PeakMetricEvidence.unknown(),
+    val prominence: PeakMetricEvidence = PeakMetricEvidence.unknown("a.u."),
+    val baselineAtApex: PeakMetricEvidence = PeakMetricEvidence.unknown("a.u."),
+    val boundaryEvidence: PeakBoundaryEvidence = PeakBoundaryEvidence(),
+    val artifactStatus: PeakArtifactStatus = PeakArtifactStatus.UNKNOWN,
+    val overlapStatus: PeakOverlapEvidenceStatus = PeakOverlapEvidenceStatus.UNKNOWN,
+    val provenance: PeakProvenance = PeakProvenance(),
+    val flags: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+) {
+    val isReportable: Boolean
+        get() = gateStatus != PeakGateStatus.INVALID &&
+            status !in setOf(
+                PeakEvidenceStatus.USER_REJECTED,
+                PeakEvidenceStatus.ARTIFACT_REJECTED,
+                PeakEvidenceStatus.NOISE_REJECTED,
+                PeakEvidenceStatus.INVALID,
+            )
+
+    val requiresReview: Boolean
+        get() = gateStatus == PeakGateStatus.REVIEW ||
+            status in setOf(
+                PeakEvidenceStatus.AUTO_REVIEW,
+                PeakEvidenceStatus.SHOULDER_REVIEW,
+                PeakEvidenceStatus.OVERLAP_REVIEW,
+            )
+}
 
 @Serializable
 data class GraphSourceMetadata(

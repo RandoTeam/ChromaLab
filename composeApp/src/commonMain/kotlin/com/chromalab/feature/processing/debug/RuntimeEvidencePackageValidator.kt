@@ -10,6 +10,10 @@ import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateFlag
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidateStatus
 import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.PeakEvidence
+import com.chromalab.feature.reports.PeakEvidenceStatus
+import com.chromalab.feature.reports.PeakGateStatus
+import com.chromalab.feature.reports.PeakMetricEvidenceStatus
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.ReportGateStatus
 import com.chromalab.feature.reports.RuntimeTerminalState
@@ -58,6 +62,24 @@ data class RuntimeEvidenceRecoveryCandidateRow(
 )
 
 @Serializable
+data class RuntimeEvidencePeakRow(
+    val graphIndex: Int,
+    val evidenceId: String,
+    val peakId: String,
+    val peakNumber: Int,
+    val status: String,
+    val gateStatus: String,
+    val rt: Double? = null,
+    val apexPointIndex: Int? = null,
+    val localMaximumEvidence: Boolean = false,
+    val heightStatus: String,
+    val areaStatus: String,
+    val boundaryStatus: String,
+    val reportable: Boolean,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class RuntimeEvidenceGraphValidationSummary(
     val graphIndex: Int,
     val rawDetectedPeaks: Int? = null,
@@ -65,6 +87,7 @@ data class RuntimeEvidenceGraphValidationSummary(
     val runtimeRecoveredPeaks: Int = 0,
     val testOnlyRecoveredPeaks: Int = 0,
     val rejectedRecoveredCandidates: Int = 0,
+    val peakEvidenceRows: List<RuntimeEvidencePeakRow> = emptyList(),
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
     val calibrationStatuses: List<String> = emptyList(),
@@ -239,6 +262,22 @@ object RuntimeEvidencePackageValidator {
             appendLine("| - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
+        appendLine("## Peak Evidence")
+        appendLine()
+        appendLine("| Graph | Evidence | Peak | Status | Gate | RT | Apex index | Local max | Height | Area | Boundary | Reportable | Warnings |")
+        appendLine("| --- | --- | ---: | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |")
+        summary.graphSummaries.flatMap { it.peakEvidenceRows }.forEach { row ->
+            appendLine(
+                "| ${row.graphIndex} | `${row.evidenceId}` | ${row.peakNumber} | ${row.status} | ${row.gateStatus} | " +
+                    "${row.rt.formatOrDash()} | ${row.apexPointIndex ?: "-"} | ${row.localMaximumEvidence} | " +
+                    "${row.heightStatus} | ${row.areaStatus} | ${row.boundaryStatus} | ${row.reportable} | " +
+                    "${row.warnings.joinToString(", ").ifBlank { "-" }} |",
+            )
+        }
+        if (summary.graphSummaries.all { it.peakEvidenceRows.isEmpty() }) {
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
         appendLine("## Graph Counts")
         appendLine()
         appendLine("| Graph | Raw | Validated | Runtime recovered | Test-only recovered | Rejected recovery | Production reportable | Review-grade | Calibration |")
@@ -329,6 +368,7 @@ object RuntimeEvidencePackageValidator {
         }
         validateGeometry(graphPackage, graph?.source?.geometryReportStatus, issues)
         validateCalibration(graphPackage, graph, issues)
+        val peakRows = validatePeakEvidence(graphPackage, issues)
         validatePeakLabelEvidence(graphPackage, fileExists, issues)
         val recoveryRows = validateRecovery(graphPackage, graph?.peaks.orEmpty(), issues)
         validateReportCounts(graphPackage, issues)
@@ -339,6 +379,7 @@ object RuntimeEvidencePackageValidator {
             runtimeRecoveredPeaks = graphPackage.summaryCounts.runtimeRecoveredPeaks,
             testOnlyRecoveredPeaks = graphPackage.summaryCounts.testOnlyRecoveredPeaks,
             rejectedRecoveredCandidates = graphPackage.summaryCounts.rejectedRecoveredCandidates,
+            peakEvidenceRows = peakRows,
             productionReportablePeaks = graphPackage.summaryCounts.productionReportablePeaks,
             reviewGradePeaks = graphPackage.summaryCounts.reviewGradePeaks,
             calibrationStatuses = listOfNotNull(
@@ -346,6 +387,87 @@ object RuntimeEvidencePackageValidator {
                 graph?.axisCalibration?.yCalibrationFit?.status?.name,
             ),
             recoveryCandidates = recoveryRows,
+        )
+    }
+
+    private fun validatePeakEvidence(
+        graphPackage: RuntimeEvidenceGraphPackage,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidencePeakRow> {
+        if ((graphPackage.summaryCounts.rawDetectedPeaks ?: 0) > 0 && graphPackage.peakEvidenceTable.isEmpty()) {
+            issues.block("peak_evidence.table_missing", "Detected peaks require a peakEvidenceTable.", graphPackage.graphIndex)
+        }
+        graphPackage.summaryCounts.reviewPeaks?.let { expected ->
+            val actual = graphPackage.peakEvidenceTable.count { it.requiresReview }
+            if (expected != actual) {
+                issues.warn(
+                    "peak_evidence.review_count_mismatch",
+                    "reviewPeaks count ($expected) does not match peak evidence rows ($actual).",
+                    graphPackage.graphIndex,
+                )
+            }
+        }
+        graphPackage.summaryCounts.rejectedPeaks?.let { expected ->
+            val actual = graphPackage.peakEvidenceTable.count { !it.isReportable }
+            if (expected != actual) {
+                issues.warn(
+                    "peak_evidence.rejected_count_mismatch",
+                    "rejectedPeaks count ($expected) does not match peak evidence rows ($actual).",
+                    graphPackage.graphIndex,
+                )
+            }
+        }
+        return graphPackage.peakEvidenceTable.map { evidence ->
+            validatePeakEvidenceRow(graphPackage.graphIndex, evidence, issues)
+        }
+    }
+
+    private fun validatePeakEvidenceRow(
+        graphIndex: Int,
+        evidence: PeakEvidence,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): RuntimeEvidencePeakRow {
+        if (evidence.evidenceId.isBlank()) {
+            issues.block("peak_evidence.id_missing", "PeakEvidence evidenceId is missing.", graphIndex, evidence.peakId)
+        }
+        if (evidence.peakId.isBlank()) {
+            issues.block("peak_evidence.peak_id_missing", "PeakEvidence peakId is missing.", graphIndex, evidence.evidenceId)
+        }
+        if (evidence.status == PeakEvidenceStatus.AUTO_VALID) {
+            if (!evidence.localMaximumEvidence || evidence.apexPointIndex == null) {
+                issues.block("peak_evidence.auto_valid_without_apex", "AUTO_VALID peak has no linked local apex evidence.", graphIndex, evidence.evidenceId)
+            }
+            if (evidence.height.status != PeakMetricEvidenceStatus.CALCULATED || evidence.height.value == null || evidence.height.value <= 0.0) {
+                issues.block("peak_evidence.auto_valid_height_invalid", "AUTO_VALID peak has invalid height evidence.", graphIndex, evidence.evidenceId)
+            }
+            if (evidence.area.status != PeakMetricEvidenceStatus.CALCULATED || evidence.area.value == null) {
+                issues.block("peak_evidence.auto_valid_area_missing", "AUTO_VALID peak has no calculated area evidence.", graphIndex, evidence.evidenceId)
+            }
+            if (evidence.boundaryEvidence.status != PeakMetricEvidenceStatus.CALCULATED) {
+                issues.block("peak_evidence.auto_valid_boundary_missing", "AUTO_VALID peak has no calculated boundary evidence.", graphIndex, evidence.evidenceId)
+            }
+        }
+        if (evidence.status in rejectedPeakStatuses && evidence.isReportable) {
+            issues.block("peak_evidence.rejected_reportable", "Rejected peak evidence is marked reportable.", graphIndex, evidence.evidenceId)
+        }
+        if (evidence.gateStatus == PeakGateStatus.VALID && evidence.status in reviewPeakStatuses) {
+            issues.warn("peak_evidence.review_status_valid_gate", "Review peak evidence has VALID gate status.", graphIndex, evidence.evidenceId)
+        }
+        return RuntimeEvidencePeakRow(
+            graphIndex = graphIndex,
+            evidenceId = evidence.evidenceId,
+            peakId = evidence.peakId,
+            peakNumber = evidence.peakNumber,
+            status = evidence.status.name,
+            gateStatus = evidence.gateStatus.name,
+            rt = evidence.retentionTime.value,
+            apexPointIndex = evidence.apexPointIndex,
+            localMaximumEvidence = evidence.localMaximumEvidence,
+            heightStatus = evidence.height.status.name,
+            areaStatus = evidence.area.status.name,
+            boundaryStatus = evidence.boundaryEvidence.status.name,
+            reportable = evidence.isReportable,
+            warnings = evidence.warnings,
         )
     }
 
@@ -532,6 +654,19 @@ object RuntimeEvidencePackageValidator {
         PeakLabelEvidenceSource.ML_KIT,
         PeakLabelEvidenceSource.VLM,
         PeakLabelEvidenceSource.BOTH,
+    )
+
+    private val reviewPeakStatuses = setOf(
+        PeakEvidenceStatus.AUTO_REVIEW,
+        PeakEvidenceStatus.SHOULDER_REVIEW,
+        PeakEvidenceStatus.OVERLAP_REVIEW,
+    )
+
+    private val rejectedPeakStatuses = setOf(
+        PeakEvidenceStatus.USER_REJECTED,
+        PeakEvidenceStatus.ARTIFACT_REJECTED,
+        PeakEvidenceStatus.NOISE_REJECTED,
+        PeakEvidenceStatus.INVALID,
     )
 }
 

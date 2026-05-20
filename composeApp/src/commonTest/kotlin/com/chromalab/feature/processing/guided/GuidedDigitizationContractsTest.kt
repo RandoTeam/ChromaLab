@@ -4,6 +4,12 @@ import com.chromalab.feature.processing.geometry.GeometryPoint
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.reports.EvidenceGateStatus
 import com.chromalab.feature.reports.GateEvidence
+import com.chromalab.feature.reports.PeakBoundaryEvidence
+import com.chromalab.feature.reports.PeakEvidence
+import com.chromalab.feature.reports.PeakEvidenceStatus
+import com.chromalab.feature.reports.PeakGateStatus
+import com.chromalab.feature.reports.PeakMetricEvidence
+import com.chromalab.feature.reports.PeakMetricEvidenceStatus
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportGateStatus
 import kotlinx.serialization.decodeFromString
@@ -113,7 +119,7 @@ class GuidedDigitizationContractsTest {
     @Test
     fun autonomousProductionCanSatisfyTraceGateWithAutoValidEvidence() {
         val state = GuidedTraceOverlayReducer.acceptAutonomousTrace(
-            state = releaseReadyAutonomousState(),
+            state = releaseReadyAutonomousState().copy(peaks = autoValidPeakSet()),
             snapshot = validTraceSnapshot(),
             timestampEpochMillis = 30L,
         )
@@ -123,6 +129,58 @@ class GuidedDigitizationContractsTest {
         assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
         assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
         assertEquals(EvidenceGateStatus.NOT_APPLICABLE, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun autonomousProductionCanSatisfyPeakGateWithAutoValidEvidence() {
+        val gate = GuidedReportGateMapper.evaluate(
+            releaseReadyAutonomousState().copy(
+                trace = autoValidTrace(),
+                peaks = autoValidPeakSet(),
+            ),
+        )
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.peakReviewStatus)
+        assertEquals(EvidenceGateStatus.NOT_APPLICABLE, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun assistedReviewPeakConfirmationIsExplicitUserEvidence() {
+        val gate = GuidedReportGateMapper.evaluate(releaseReadyGuidedState())
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
+        assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.peakReviewStatus)
+        assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun userRejectedPeakSetBlocksAssistedRelease() {
+        val state = releaseReadyGuidedState().copy(
+            peaks = UserConfirmedPeakSet(
+                peakSetId = "peaks-rejected",
+                decisions = listOf(
+                    UserPeakEditDecision(
+                        decisionId = "decision-reject",
+                        action = PeakEditAction.REMOVE,
+                        peakId = "peak-1",
+                        timestampEpochMillis = 15L,
+                        userProvenance = user,
+                    ),
+                ),
+                rejectedPeakIds = listOf("peak-1"),
+                reviewStatus = PeakReviewStatus.USER_REJECTED,
+                timestampEpochMillis = 15L,
+                userProvenance = user,
+                gateStatus = PeakReviewGateStatus.INVALID,
+            ),
+        )
+
+        val gate = GuidedReportGateMapper.evaluate(state)
+
+        assertEquals(ReportGateStatus.DIAGNOSTIC_ONLY, gate.status)
+        assertEquals(EvidenceGateStatus.INVALID, gate.evidence.peakReviewStatus)
+        assertTrue(gate.blockingReasons.contains("peak_review.invalid"))
     }
 
     @Test
@@ -136,6 +194,7 @@ class GuidedDigitizationContractsTest {
                 xCalibrationStatus = EvidenceGateStatus.VALID,
                 yCalibrationStatus = EvidenceGateStatus.VALID,
                 traceStatus = EvidenceGateStatus.MISSING,
+                peakReviewStatus = EvidenceGateStatus.VALID,
                 evidencePackageStatus = EvidenceGateStatus.VALID,
                 sourceProvenanceStatus = EvidenceGateStatus.VALID,
             ),
@@ -301,6 +360,7 @@ class GuidedDigitizationContractsTest {
                     ),
                 ),
                 reportablePeakIds = listOf("peak-1"),
+                peakEvidence = listOf(autoValidPeakEvidence().copy(status = PeakEvidenceStatus.USER_CONFIRMED)),
                 reviewStatus = PeakReviewStatus.USER_CONFIRMED,
                 timestampEpochMillis = 14L,
                 userProvenance = user,
@@ -387,6 +447,36 @@ class GuidedDigitizationContractsTest {
             gateStatus = TraceGateStatus.AUTO_VALID,
             source = TraceOverlaySource.AUTO_EXTRACTED,
             traceConfirmationStatus = TraceConfirmationStatus.AUTO_SUGGESTED,
+        )
+
+    private fun autoValidPeakSet(): UserConfirmedPeakSet =
+        UserConfirmedPeakSet(
+            peakSetId = "auto-peaks-1",
+            reportablePeakIds = listOf("peak-1"),
+            peakEvidence = listOf(autoValidPeakEvidence()),
+            reviewStatus = PeakReviewStatus.AUTO_VALID,
+            timestampEpochMillis = 31L,
+            userProvenance = GuidedUserProvenance(sessionId = "autonomous"),
+            gateStatus = PeakReviewGateStatus.AUTO_VALID,
+        )
+
+    private fun autoValidPeakEvidence(): PeakEvidence =
+        PeakEvidence(
+            evidenceId = "peak-evidence-1",
+            peakId = "peak-1",
+            peakNumber = 1,
+            status = PeakEvidenceStatus.AUTO_VALID,
+            gateStatus = PeakGateStatus.VALID,
+            retentionTime = PeakMetricEvidence.calculated(5.0, "min"),
+            apexPointIndex = 42,
+            localMaximumEvidence = true,
+            height = PeakMetricEvidence.calculated(120.0, "a.u."),
+            area = PeakMetricEvidence.calculated(300.0),
+            boundaryEvidence = PeakBoundaryEvidence(
+                startRetentionTime = PeakMetricEvidence.calculated(4.8, "min"),
+                endRetentionTime = PeakMetricEvidence.calculated(5.2, "min"),
+                status = PeakMetricEvidenceStatus.CALCULATED,
+            ),
         )
 
     private fun confirmedCalibration(

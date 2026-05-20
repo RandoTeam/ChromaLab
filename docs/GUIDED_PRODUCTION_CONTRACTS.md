@@ -159,3 +159,17 @@ New or expanded trace contracts:
 Confirmation writes `UserConfirmedTrace` and advances guided state to `TRACE_CONFIRMED`. The evidence records source trace id, trace points, plotArea bounds, calibration set id, quality metrics, warnings, artifact paths, user/session provenance, timestamp, decision, and rejection reason when applicable.
 
 Manual trace drawing is not part of Phase 4. Trace rejection and review acceptance are first-class decisions so bad auto traces cannot silently become release-quality evidence.
+
+## Phase 5 Addendum: Peak Evidence Contracts
+
+Phase 5 adds autonomous peak evidence contracts while keeping user peak review as Assisted Review / Manual Advanced fallback.
+
+New or expanded peak contracts:
+
+- `PeakEvidence` - deterministic or user-reviewed evidence row for a peak.
+- `PeakMetricEvidence` - value/status/source wrapper for RT, height, area, width, FWHM, S/N, prominence, and baseline-related metrics.
+- `PeakBoundaryEvidence` - integration boundary, boundary method, integration method, and baseline method evidence.
+- `PeakProvenance` - calculation run, source signal, algorithm version, trace source, and visible user-intervention metadata.
+- `UserConfirmedPeakSet` - explicit user decisions only when Assisted Review or Manual Advanced is active.
+
+`AUTONOMOUS_PRODUCTION` can satisfy peak gates through `AUTO_VALID` peak evidence. User-confirmed or user-edited peak sets must remain visibly user-sourced in report provenance.

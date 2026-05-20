@@ -4,6 +4,8 @@ import com.chromalab.feature.processing.geometry.GeometryPoint
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.reports.EvidenceGateStatus
 import com.chromalab.feature.reports.GateEvidence
+import com.chromalab.feature.reports.PeakEvidence
+import com.chromalab.feature.reports.PeakEvidenceStatus
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportGateStatus
 import kotlinx.serialization.Serializable
@@ -417,14 +419,22 @@ enum class PeakEditAction {
 @Serializable
 enum class PeakReviewStatus {
     NOT_REVIEWED,
+    AUTO_VALID,
+    AUTO_REVIEW,
     REVIEW,
     USER_CONFIRMED,
+    USER_EDITED,
     USER_REJECTED,
+    ARTIFACT_REJECTED,
+    NOISE_REJECTED,
+    SHOULDER_REVIEW,
+    OVERLAP_REVIEW,
     INVALID,
 }
 
 @Serializable
 enum class PeakReviewGateStatus {
+    AUTO_VALID,
     USER_CONFIRMED,
     REVIEW_REQUIRED,
     INVALID,
@@ -450,6 +460,7 @@ data class UserConfirmedPeakSet(
     val reportablePeakIds: List<String> = emptyList(),
     val rejectedPeakIds: List<String> = emptyList(),
     val reviewPeakIds: List<String> = emptyList(),
+    val peakEvidence: List<PeakEvidence> = emptyList(),
     val reviewStatus: PeakReviewStatus = PeakReviewStatus.NOT_REVIEWED,
     val timestampEpochMillis: Long,
     val userProvenance: GuidedUserProvenance,
@@ -578,6 +589,9 @@ object GuidedReportGateMapper {
             state.autoDiagnosticEvidence.copy(
                 userConfirmationStatus = EvidenceGateStatus.NOT_APPLICABLE,
                 traceStatus = state.trace.toEvidenceGate(allowAutoValid = true),
+                peakReviewStatus = state.peaks.toEvidenceGate(allowAutoValid = true)
+                    .takeUnless { it == EvidenceGateStatus.MISSING }
+                    ?: state.autoDiagnosticEvidence.peakReviewStatus,
             )
         } else {
             GateEvidence(
@@ -586,7 +600,7 @@ object GuidedReportGateMapper {
                 xCalibrationStatus = state.calibration.toCalibrationEvidenceGate(CalibrationAxis.X),
                 yCalibrationStatus = state.calibration.toCalibrationEvidenceGate(CalibrationAxis.Y),
                 traceStatus = state.trace.toEvidenceGate(allowAutoValid = false),
-                peakReviewStatus = state.peaks.toEvidenceGate(),
+                peakReviewStatus = state.peaks.toEvidenceGate(allowAutoValid = false),
                 evidencePackageStatus = state.autoDiagnosticEvidence.evidencePackageStatus,
                 sourceProvenanceStatus = if (state.image?.normalizedImagePath != null) {
                     EvidenceGateStatus.VALID
@@ -663,9 +677,13 @@ object GuidedReportGateMapper {
             else -> EvidenceGateStatus.MISSING
         }
 
-    private fun UserConfirmedPeakSet?.toEvidenceGate(): EvidenceGateStatus =
+    private fun UserConfirmedPeakSet?.toEvidenceGate(allowAutoValid: Boolean): EvidenceGateStatus =
         when {
             this == null -> EvidenceGateStatus.MISSING
+            allowAutoValid &&
+                gateStatus == PeakReviewGateStatus.AUTO_VALID &&
+                peakEvidence.isNotEmpty() &&
+                peakEvidence.all { it.status == PeakEvidenceStatus.AUTO_VALID } -> EvidenceGateStatus.VALID
             gateStatus == PeakReviewGateStatus.USER_CONFIRMED -> EvidenceGateStatus.USER_CONFIRMED
             gateStatus == PeakReviewGateStatus.REVIEW_REQUIRED -> EvidenceGateStatus.REVIEW
             gateStatus == PeakReviewGateStatus.INVALID -> EvidenceGateStatus.INVALID
@@ -678,7 +696,8 @@ object GuidedReportGateMapper {
             plotAreaConfirmation.toEvidenceGate() == EvidenceGateStatus.USER_CONFIRMED &&
             calibration.toCalibrationEvidenceGate(CalibrationAxis.X) == EvidenceGateStatus.USER_CONFIRMED &&
             calibration.toCalibrationEvidenceGate(CalibrationAxis.Y) == EvidenceGateStatus.USER_CONFIRMED &&
-            trace.toEvidenceGate(allowAutoValid = false) == EvidenceGateStatus.USER_CONFIRMED
+            trace.toEvidenceGate(allowAutoValid = false) == EvidenceGateStatus.USER_CONFIRMED &&
+            peaks.toEvidenceGate(allowAutoValid = false) == EvidenceGateStatus.USER_CONFIRMED
         ) {
             EvidenceGateStatus.USER_CONFIRMED
         } else {
@@ -697,6 +716,7 @@ object GuidedReportGateMapper {
             "x_calibration" to xCalibrationStatus,
             "y_calibration" to yCalibrationStatus,
             "trace" to traceStatus,
+            "peak_review" to peakReviewStatus,
             "evidence_package" to evidencePackageStatus,
             "source_provenance" to sourceProvenanceStatus,
         )

@@ -202,6 +202,7 @@ object CalculationRunReportMapper {
         peaks: List<PeakResult>,
         options: CalculationRunReportOptions,
     ): PeakEvidenceAndRecoveryReport {
+        val peakEvidence = PeakEvidenceMapper.map(run, peaks)
         val source = options.graphSourceMetadata
         val trace = source?.geometryTrace
         val evidence = trace?.peakLabelEvidence.orEmpty()
@@ -257,17 +258,19 @@ object CalculationRunReportMapper {
         }
         return PeakEvidenceAndRecoveryReport(
             rawDetectedPeaks = peaks.size,
-            validatedPeaks = peaks.count { peak ->
-                val apex = run.signals.raw.nearestSample(peak.rtApex)
-                apex != null && peak.confidence != ConfidenceGrade.FAILED
-            },
+            validatedPeaks = peakEvidence.count { it.isReportable },
+            peakEvidenceTable = peakEvidence,
+            reviewPeaks = peakEvidence.count { it.requiresReview },
+            rejectedPeaks = peakEvidence.count { !it.isReportable },
+            userConfirmedPeaks = peakEvidence.count { it.status == PeakEvidenceStatus.USER_CONFIRMED },
+            userEditedPeaks = peakEvidence.count { it.status == PeakEvidenceStatus.USER_EDITED },
             runtimeRecoveredPeaks = runtimeRecovered,
             testOnlyRecoveredPeaks = testOnlyRecovered,
             rejectedRecoveredCandidates = rejected,
-            productionReportablePeaks = peaks.size + runtimeRecovered.size,
-            reviewGradePeaks = runtimeRecovered.size + peaks.count { it.confidence == ConfidenceGrade.LOW },
+            productionReportablePeaks = peakEvidence.count { it.isReportable } + runtimeRecovered.size,
+            reviewGradePeaks = runtimeRecovered.size + peakEvidence.count { it.requiresReview },
             denseSeriesMembers = null,
-            rejectedArtifactPeaks = 0,
+            rejectedArtifactPeaks = peakEvidence.count { it.artifactStatus == PeakArtifactStatus.ARTIFACT_REJECTED },
             labelEvidence = evidence,
             warnings = warnings,
         )

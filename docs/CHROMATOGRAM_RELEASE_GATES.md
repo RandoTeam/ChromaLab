@@ -22,6 +22,7 @@ A report can be `RELEASE_READY` only when all required gates pass:
 | X calibration | `VALID` or `USER_CONFIRMED` | Missing, invalid, high residuals, non-monotonic anchors, or OCR-only values without tick pixels. |
 | Y calibration | `VALID` or `USER_CONFIRMED` | Missing, invalid, high residuals, non-monotonic anchors, or OCR-only values without tick pixels. |
 | trace | `VALID` or `USER_CONFIRMED` | Missing centerline, sparse/fragmented trace without review evidence, text/grid contamination, or weak coverage. |
+| peak evidence | `VALID` or `USER_CONFIRMED` | Missing evidence table, no apex/local maximum, invalid boundary evidence, artifact/noise rejection, or blocking overlap. |
 | evidence package | `VALID` | Missing package, missing terminal state, missing core artifacts, or validator blocking issues. |
 | source provenance | `VALID` | Missing original/normalized image path or source metadata. |
 
@@ -29,7 +30,6 @@ Supporting gates are still recorded:
 
 - axis status;
 - tick status;
-- peak review status;
 - VLM evidence status;
 - user confirmation status;
 - report contract validation status.
@@ -113,7 +113,22 @@ Mapping rules:
 - missing trace maps to `EvidenceGateStatus.MISSING`;
 - `AUTO_DIAGNOSTIC` ignores assisted/manual trace confirmation objects.
 
-Phase 4 does not implement peak review. Phase 5 must add peak evidence before peak-specific claims are treated as reviewed or release-ready.
+Phase 4 does not implement peak review. Phase 5 adds peak evidence before peak-specific claims are treated as reviewed or release-ready.
+
+## Phase 5 Peak Gate Mapping
+
+Phase 5 adds a required peak evidence gate.
+
+Mapping rules:
+
+- `AUTO_VALID` peak evidence maps to `EvidenceGateStatus.VALID` only when apex, local maximum, height, area, and boundary evidence exist;
+- `AUTO_REVIEW`, `SHOULDER_REVIEW`, and `OVERLAP_REVIEW` map to `EvidenceGateStatus.REVIEW`;
+- `USER_CONFIRMED` and `USER_EDITED` peak evidence map to `EvidenceGateStatus.USER_CONFIRMED` in `ASSISTED_REVIEW` or `MANUAL_ADVANCED`;
+- `USER_REJECTED`, `ARTIFACT_REJECTED`, `NOISE_REJECTED`, and `INVALID` peak evidence map to `EvidenceGateStatus.INVALID`;
+- missing `peakEvidenceTable` keeps the run out of `RELEASE_READY`;
+- `AUTO_DIAGNOSTIC` cannot present user peak decisions as automatic evidence.
+
+Manual peak review remains fallback. The primary path is still autonomous peak detection plus deterministic evidence validation.
 
 ## Terminal-State Evidence Requirement
 
