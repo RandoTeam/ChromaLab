@@ -80,6 +80,68 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun builderPopulatesMultimodalEvidenceFromRuntimeTrace() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = evidencePackage.graphs.single()
+        val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.PASS, validation.verdict)
+        assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.GRAPH_PANEL_CANDIDATE_JUDGE })
+        assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.PLOT_AREA_CANDIDATE_JUDGE })
+        assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.OCR_CROP_READ })
+        assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.TRACE_OVERLAY_JUDGE })
+        assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.PEAK_EVIDENCE_JUDGE })
+        assertEquals(1, graph.ocrVlmCropResults.size)
+        assertEquals("crop.png", graph.ocrVlmCropResults.single().localCropPath)
+        assertTrue(graph.overlayJudgeResults.any { it.overlayImagePath == "selected_trace.png" })
+    }
+
+    @Test
+    fun builderCarriesVlmRuntimeProfileAndForbiddenFieldRejections() {
+        val vlmEvidence = runtimeEvidence().copy(
+            source = PeakLabelEvidenceSource.VLM,
+            warnings = listOf("peak_label_ocr.vlm_text_only_no_peak_metrics"),
+            rejectedForbiddenFields = listOf(ForbiddenVlmNumericField.RT),
+            runtimeProfile = runtimeProfile(),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(vlmEvidence))
+        val graph = evidencePackage.graphs.single()
+        val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.PASS, validation.verdict)
+        assertEquals(listOf("runtime:vlm:crop:1"), evidencePackage.modelRuntimeProfiles.map { it.profileId })
+        assertTrue(graph.stageJudgeResults.any { it.modelRuntimeProfileId == "runtime:vlm:crop:1" })
+        assertTrue(graph.ocrVlmCropResults.any { ForbiddenVlmNumericField.RT in it.rejectedForbiddenFields })
+    }
+
+    @Test
+    fun validatorFailsVlmPeakLabelEvidenceWithoutMultimodalRows() {
+        val vlmEvidence = runtimeEvidence().copy(
+            source = PeakLabelEvidenceSource.VLM,
+            warnings = listOf("peak_label_ocr.vlm_text_only_no_peak_metrics"),
+            runtimeProfile = runtimeProfile(),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(vlmEvidence))
+        val graph = evidencePackage.graphs.single()
+        val broken = evidencePackage.copy(
+            modelRuntimeProfiles = emptyList(),
+            graphs = listOf(
+                graph.copy(
+                    stageJudgeResults = emptyList(),
+                    ocrVlmCropResults = emptyList(),
+                ),
+            ),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(broken, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.vlm_crop_result_missing" })
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.vlm_stage_judge_missing" })
+        assertTrue(result.blockingIssues.any { it.code == "multimodal.vlm_runtime_profile_missing" })
+    }
+
+    @Test
     fun validatorFailsFixtureHintEvidenceInRuntimePackage() {
         val fixtureHint = runtimeEvidence().copy(
             source = PeakLabelEvidenceSource.FIXTURE_HINT,
@@ -122,6 +184,7 @@ class RuntimeEvidencePackageValidatorTest {
         val evidence = runtimeEvidence().copy(
             source = PeakLabelEvidenceSource.VLM,
             warnings = listOf("peak_label_ocr.vlm_text_only_no_peak_metrics"),
+            runtimeProfile = runtimeProfile(),
         )
         val report = reportWithRecovery(evidence)
         val result = RuntimeEvidencePackageValidator.validate(

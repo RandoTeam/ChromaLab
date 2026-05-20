@@ -4,6 +4,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ChromaLabBaseKnowledgePackTest {
@@ -62,7 +63,7 @@ class ChromaLabBaseKnowledgePackTest {
     }
 
     @Test
-    fun mz92IsConservativeTolueneCompatibleChannelNotStandaloneAssignment() {
+    fun mz92IsConservativeAromaticChannelNotStandaloneAssignment() {
         val pack = ChromaLabBaseKnowledgePack.pack
         val mz92 = pack.ionFragments.single { it.id == "ei-mz-92" }
 
@@ -76,9 +77,9 @@ class ChromaLabBaseKnowledgePackTest {
 
         assertTrue(
             mz92.interpretation.any {
-                it.sourceIds == listOf("nist-toluene") &&
-                    it.text.contains("toluene") &&
-                    it.text.contains("92.1384")
+                it.sourceIds == listOf("chromalab-petroleum-gcms-curation") &&
+                    it.text.contains("aromatic-channel evidence") &&
+                    it.text.contains("channel/class hint")
             },
         )
         assertTrue(
@@ -91,28 +92,13 @@ class ChromaLabBaseKnowledgePackTest {
     }
 
     @Test
-    fun alkylbenzeneSeedLibraryIncludesC7AndC8ReferenceEntries() {
+    fun restrictedExternalSourcesAreLinkOnlyAndNotBundledAsRiSeedData() {
         val pack = ChromaLabBaseKnowledgePack.pack
-        val library = pack.kovatsLibraries.single { it.id == "nist-nonpolar-ramp-alkylbenzene-seed" }
-        val entriesByName = library.entries.associateBy { it.compoundName }
-
-        assertEquals("gc-ms-ei-eic", library.chromatogramTypeId)
-        assertEquals("monoalkylbenzene-carbon-series", library.referenceSeriesId)
-        assertEquals(setOf("Toluene", "Ethylbenzene", "m-Xylene", "p-Xylene", "o-Xylene"), entriesByName.keys)
-
-        val toluene = entriesByName.getValue("Toluene")
-        assertEquals("C7H8", toluene.formula)
-        assertEquals(7, toluene.carbonNumber)
-        assertEquals(KnowledgeEvidence.LITERATURE, toluene.evidence)
-        assertTrue(toluene.kovatsRange?.isValid() == true)
-
-        listOf("Ethylbenzene", "m-Xylene", "p-Xylene", "o-Xylene").forEach { compound ->
-            val entry = entriesByName.getValue(compound)
-            assertEquals("C8H10", entry.formula)
-            assertEquals(8, entry.carbonNumber)
-            assertEquals("monoalkylbenzenes", entry.compoundClassId)
-            assertTrue(entry.sourceIds.single().startsWith("nist-"))
-            assertTrue(entry.kovatsRange?.isValid() == true)
+        assertFalse(pack.kovatsLibraries.any { it.id == "nist-nonpolar-ramp-alkylbenzene-seed" })
+        pack.sources.filter { it.id.startsWith("nist-") }.forEach { source ->
+            assertEquals(KnowledgeLicenseStatus.NEEDS_REVIEW, source.licenseStatus)
+            assertEquals(KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED, source.trustTier)
+            assertFalse(source.canBundle)
         }
     }
 
@@ -155,8 +141,9 @@ class ChromaLabBaseKnowledgePackTest {
             assertEquals("C${carbonNumber}H${carbonNumber * 2 + 2}", entry.formula)
             assertEquals(carbonNumber * 100.0, entry.kovatsIndex)
             assertEquals("n-paraffins", entry.compoundClassId)
-            assertEquals(KnowledgeEvidence.LITERATURE, entry.evidence)
-            assertEquals(listOf("nist-gc-retention-data"), entry.sourceIds)
+            assertEquals(KnowledgeEvidence.CURATED, entry.evidence)
+            assertEquals(listOf("chromalab-reference-report-contract"), entry.sourceIds)
+            assertTrue(EvidenceClaimScope.NOT_MEASUREMENT in entry.claimScopes)
         }
     }
 

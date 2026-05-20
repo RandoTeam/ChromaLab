@@ -1,6 +1,10 @@
 package com.chromalab.feature.processing.inference
 
 import android.util.Log
+import com.chromalab.feature.processing.multimodal.ForbiddenVlmBoundaryPolicy
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
+import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
+import com.chromalab.feature.processing.multimodal.VlmStructuredTaskContracts
 
 private const val VISION_BACKEND_TAG = "ChromaLabVLM"
 
@@ -16,6 +20,9 @@ class ActiveVisionModelBackend : VisionModelBackend {
             style = config?.promptStyle ?: PromptStyle.RAW,
             context = context,
         )
+        val taskId = "vlm_local_crop:${cropImagePath.hashCode()}"
+        val startedAt = System.currentTimeMillis()
+        val timeoutMillis = VlmStructuredTaskContracts.contractFor(StageJudgeTaskType.OCR_CROP_READ).timeoutMillis
         return try {
             VlmEngineHolder.isInferring = true
             val raw = engine.inferRaw(
@@ -23,7 +30,7 @@ class ActiveVisionModelBackend : VisionModelBackend {
                 prompt = prompt,
                 options = GenerationOptions(
                     maxTokens = 128,
-                    timeoutMs = 180_000L,
+                    timeoutMs = timeoutMillis,
                     temperature = 0f,
                     topP = 1f,
                     topK = 0,
@@ -31,10 +38,34 @@ class ActiveVisionModelBackend : VisionModelBackend {
                     repeatLastN = config?.repeatLastN ?: 32,
                 ),
             )
-            parseLocalTextCropResponse(raw)
+            val durationMillis = System.currentTimeMillis() - startedAt
+            parseLocalTextCropResponse(
+                raw = raw,
+                runtimeProfile = runtimeProfile(
+                    taskId = taskId,
+                    durationMillis = durationMillis,
+                    timeoutMillis = timeoutMillis,
+                    success = true,
+                    timedOut = false,
+                ),
+            )
         } catch (e: Exception) {
+            val durationMillis = System.currentTimeMillis() - startedAt
             Log.w(VISION_BACKEND_TAG, "Local crop VLM OCR failed: ${e.message}", e)
-            null
+            VisionLocalTextCropResult(
+                rawText = "",
+                textType = VisionTextRegionType.UNKNOWN_TEXT,
+                confidence = 0f,
+                warnings = listOf("peak_label_ocr.vlm_local_crop_failed:${e.javaClass.simpleName}"),
+                runtimeProfile = runtimeProfile(
+                    taskId = taskId,
+                    durationMillis = durationMillis,
+                    timeoutMillis = timeoutMillis,
+                    success = false,
+                    timedOut = durationMillis >= timeoutMillis,
+                    errorCode = e.javaClass.simpleName,
+                ),
+            )
         } finally {
             VlmEngineHolder.isInferring = false
         }
@@ -61,7 +92,37 @@ class ActiveVisionModelBackend : VisionModelBackend {
     override suspend fun summarizeGeometryWarnings(warnings: List<String>): String? = null
 }
 
-private fun parseLocalTextCropResponse(raw: String): VisionLocalTextCropResult? {
+private fun runtimeProfile(
+    taskId: String,
+    durationMillis: Long,
+    timeoutMillis: Long,
+    success: Boolean,
+    timedOut: Boolean,
+    errorCode: String? = null,
+): ModelRuntimeProfile =
+    ModelRuntimeProfile(
+        profileId = "runtime:$taskId",
+        taskId = taskId,
+        modelId = VlmEngineHolder.executedModel?.modelId
+            ?: VlmEngineHolder.selectedModel?.modelId
+            ?: "active-vlm-model",
+        runtimeBackend = VlmEngineHolder.executedModel?.backendLabel
+            ?: VlmEngineHolder.activeEngine?.getBackendName()
+            ?: "ACTIVE_VLM",
+        durationMillis = durationMillis,
+        timeoutMillis = timeoutMillis,
+        timedOut = timedOut,
+        success = success,
+        cacheHit = false,
+        errorCode = errorCode,
+    )
+
+private fun parseLocalTextCropResponse(
+    raw: String,
+    runtimeProfile: ModelRuntimeProfile,
+): VisionLocalTextCropResult? {
+    val contract = VlmStructuredTaskContracts.contractFor(StageJudgeTaskType.OCR_CROP_READ)
+    val boundary = ForbiddenVlmBoundaryPolicy.validateRawJsonFields(raw, contract)
     val json = raw.substringAfter('{', missingDelimiterValue = raw)
         .substringBeforeLast('}', missingDelimiterValue = raw)
         .let { "{$it}" }
@@ -76,6 +137,7 @@ private fun parseLocalTextCropResponse(raw: String): VisionLocalTextCropResult? 
         ?.getOrNull(1)
         ?.replace(',', '.')
         ?.toDoubleOrNull()
+        ?.takeIf { boundary.rejectedForbiddenFields.isEmpty() }
         ?: parseRtLikeText(text)
     val typeName = Regex(""""text_type"\s*:\s*"([A-Z_]+)"""")
         .find(json)
@@ -88,15 +150,33 @@ private fun parseLocalTextCropResponse(raw: String): VisionLocalTextCropResult? 
         ?.toFloatOrNull()
         ?.coerceIn(0f, 1f)
         ?: if (text.isNotBlank()) 0.55f else 0f
-    if (text.isBlank() && parsed == null) return null
+    if (text.isBlank() && parsed == null) {
+        return VisionLocalTextCropResult(
+            rawText = "",
+            confidence = 0f,
+            warnings = listOf("peak_label_ocr.vlm_empty_or_unparseable_response"),
+            rejectedForbiddenFields = boundary.rejectedForbiddenFields.toList(),
+            runtimeProfile = runtimeProfile.copy(success = false),
+        )
+    }
     return VisionLocalTextCropResult(
         rawText = text,
         normalizedText = text.trim().replace(Regex("\\s+"), " "),
         parsedRetentionTime = parsed,
         textType = typeName?.let { runCatching { VisionTextRegionType.valueOf(it) }.getOrNull() }
-            ?: if (parsed != null) VisionTextRegionType.PEAK_ANNOTATION else VisionTextRegionType.UNKNOWN_TEXT,
+            ?: VisionTextRegionType.UNKNOWN_TEXT,
         confidence = confidence,
-        warnings = listOf("peak_label_ocr.vlm_local_crop_fallback"),
+        warnings = buildList {
+            add("peak_label_ocr.vlm_local_crop_fallback")
+            if (boundary.rejectedForbiddenFields.isNotEmpty()) {
+                add("vlm.boundary.rejected_forbidden_fields:${boundary.rejectedForbiddenFields.joinToString("|")}")
+            }
+            if (boundary.missingRequiredFields.isNotEmpty()) {
+                add("vlm.boundary.missing_required_fields:${boundary.missingRequiredFields.joinToString("|")}")
+            }
+        },
+        rejectedForbiddenFields = boundary.rejectedForbiddenFields.toList(),
+        runtimeProfile = runtimeProfile,
     )
 }
 

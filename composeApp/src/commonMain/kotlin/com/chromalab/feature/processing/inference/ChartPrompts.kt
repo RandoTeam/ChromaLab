@@ -231,8 +231,9 @@ Graph context: ${context.graphContext ?: "unknown"}
 Classify the text as exactly one of:
 PEAK_ANNOTATION, TICK_LABEL, AXIS_LABEL, TITLE_OR_CHANNEL, PAGE_TEXT, UNKNOWN_TEXT.
 
-If the crop contains a printed retention-time-like peak label, copy it exactly and parse it as a number.
-If no readable text is visible, return an empty text string and null parsed_retention_time.
+If the crop contains a printed retention-time-like peak label, copy the visible text exactly.
+Do not parse it as a measurement. Downstream deterministic code will decide whether the text is a signal-verified peak annotation.
+If no readable text is visible, return an empty text string.
 
 Forbidden:
 - Do not provide peak height.
@@ -243,7 +244,7 @@ Forbidden:
 - Do not invent missing labels.
 
 Respond with ONLY this JSON object:
-{"text":"<visible text or empty>","parsed_retention_time":<number or null>,"text_type":"<one enum value>","confidence":<0..1>}
+{"text":"<visible text or empty>","text_type":"<one enum value>","confidence":<0..1>}
 """.trimIndent()
 
     fun localTextCropPrompt(style: PromptStyle, context: VisionLocalTextCropContext): String =

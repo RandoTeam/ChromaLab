@@ -1,5 +1,7 @@
 package com.chromalab.feature.processing.inference
 
+import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -27,6 +29,8 @@ data class VisionLocalTextCropResult(
     val textType: VisionTextRegionType = VisionTextRegionType.UNKNOWN_TEXT,
     val confidence: Float = 0f,
     val warnings: List<String> = emptyList(),
+    val rejectedForbiddenFields: List<ForbiddenVlmNumericField> = emptyList(),
+    val runtimeProfile: ModelRuntimeProfile? = null,
 )
 
 @Serializable

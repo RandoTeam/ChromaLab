@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.peaks
 
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
+import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -45,6 +47,8 @@ data class PeakLabelEvidence(
     val isRuntimeEvidence: Boolean = source != PeakLabelEvidenceSource.FIXTURE_HINT,
     val rejectionReason: String? = null,
     val warnings: List<String> = emptyList(),
+    val rejectedForbiddenFields: List<ForbiddenVlmNumericField> = emptyList(),
+    val runtimeProfile: ModelRuntimeProfile? = null,
 )
 
 @Serializable

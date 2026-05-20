@@ -120,3 +120,18 @@ Sources checked:
 ## Decision
 
 Phase 6 must remain blocked until the five blocking items above are completed or the phase contract is explicitly narrowed. Phase 7 must not start from this audit state.
+
+## Deep Unblock Follow-Up
+
+Date: 2026-05-20
+
+Follow-up plan and blocker matrix:
+
+- `docs/PHASE6_DEEP_UNBLOCK_PLAN.md`
+- `docs/PHASE6_BLOCKER_MATRIX.md`
+
+The deep unblock work closed the code-level blockers for runtime evidence population, local crop VLM runtime profiles, structured VLM boundary enforcement, validator enforcement for VLM-backed peak-label evidence, and legacy/base Knowledge Pack source-policy alignment.
+
+The only remaining item from this audit is real Android device package validation. Product Acceptance approved deferring that item to the real-device validation gate because this desktop repository context cannot generate a physical-device evidence package. The deferral does not permit release/device-performance claims and remains mandatory before release validation.
+
+Superseding closeout verdict is recorded in `docs/PHASE6_CLOSEOUT_REPORT.md`.

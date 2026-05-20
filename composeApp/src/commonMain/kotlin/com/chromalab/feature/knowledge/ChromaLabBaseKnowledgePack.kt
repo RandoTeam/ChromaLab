@@ -8,57 +8,78 @@ object ChromaLabBaseKnowledgePack {
     private fun buildPack(): LocalKnowledgePack = LocalKnowledgePack(
         id = "chromalab-base",
         name = "ChromaLab Base Knowledge Pack",
-        revision = "2026-05-16-phase-7.4",
-        description = "Conservative offline reference facts for GC-MS chromatogram interpretation.",
+        revision = "2026-05-20-phase-6-unblock",
+        description = "Conservative offline ChromaLab-authored rules for GC-MS chromatogram interpretation. Restricted external sources are retained as link-only references and do not provide bundled measurement data.",
         sources = listOf(
             KnowledgeSource(
                 id = "nist-webbook-srd69",
                 label = "NIST Chemistry WebBook, SRD 69",
                 citation = "https://webbook.nist.gov/chemistry/",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Used as the curated source family for EI spectrum availability, formulas, molecular weights, and non-polar RI records."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted source. Do not bundle NIST spectral, compound, or retention data without explicit source/license review."),
             ),
             KnowledgeSource(
                 id = "nist-gc-retention-data",
                 label = "NIST Chemistry WebBook: Gas Chromatographic Retention Data",
                 citation = "https://webbook.nist.gov/chemistry/gc-ri/",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Defines retention-index data types and the bracketing n-alkane reference-series formulas used for isothermal Kovats and temperature-programmed Van den Dool/Kratz RI calculations."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted source for future manual reference review. Built-in pack must not bundle NIST GC retention-index tables."),
             ),
             KnowledgeSource(
                 id = "nist-toluene",
                 label = "NIST Chemistry WebBook: Toluene",
                 citation = "https://webbook.nist.gov/cgi/cbook.cgi?ID=C108883",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Formula C7H8, molecular weight 92.1384, EI mass spectrum available, non-polar RI records available."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted compound page. Do not bundle formula, mass-spectrum, or retention-index values without license review."),
             ),
             KnowledgeSource(
                 id = "nist-ethylbenzene",
                 label = "NIST Chemistry WebBook: Ethylbenzene",
                 citation = "https://webbook.nist.gov/cgi/cbook.cgi?ID=C100414",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Formula C8H10, molecular weight 106.1650, EI mass spectrum available, non-polar RI records available."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted compound page. Do not bundle formula, mass-spectrum, or retention-index values without license review."),
             ),
             KnowledgeSource(
                 id = "nist-m-xylene",
                 label = "NIST Chemistry WebBook: m-Xylene",
                 citation = "https://webbook.nist.gov/cgi/cbook.cgi?ID=C108383",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Formula C8H10, molecular weight 106.1650, EI mass spectrum available, non-polar RI records available."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted compound page. Do not bundle formula, mass-spectrum, or retention-index values without license review."),
             ),
             KnowledgeSource(
                 id = "nist-p-xylene",
                 label = "NIST Chemistry WebBook: p-Xylene",
                 citation = "https://webbook.nist.gov/cgi/cbook.cgi?ID=C106423",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Formula C8H10, molecular weight 106.1650, EI mass spectrum available, non-polar RI records available."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted compound page. Do not bundle formula, mass-spectrum, or retention-index values without license review."),
             ),
             KnowledgeSource(
                 id = "nist-o-xylene",
                 label = "NIST Chemistry WebBook: o-Xylene",
                 citation = "https://webbook.nist.gov/cgi/cbook.cgi?ID=C95476",
                 sourceType = KnowledgeSourceType.LITERATURE,
-                notes = listOf("Formula C8H10, molecular weight 106.1650, EI mass spectrum available, non-polar RI records available."),
+                licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
+                trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+                canBundle = false,
+                notes = listOf("Link-only restricted compound page. Do not bundle formula, mass-spectrum, or retention-index values without license review."),
             ),
             KnowledgeSource(
                 id = "chromalab-reference-report-contract",
@@ -90,7 +111,7 @@ object ChromaLabBaseKnowledgePack {
         ),
         compoundClasses = listOf(monoAlkylbenzenes, nParaffins, petroleumBiomarkers, methodTargetedExtracts),
         carbonNumberSeries = listOf(alkylbenzeneSeries, nParaffinReferenceSeries),
-        kovatsLibraries = listOf(nonPolarAlkylbenzeneSeedRi, nParaffinReferenceRiScale),
+        kovatsLibraries = listOf(nParaffinReferenceRiScale),
     )
 
     private val gcMsEiTic = ChromatogramTypeDefinition(
@@ -127,10 +148,10 @@ object ChromaLabBaseKnowledgePack {
                 text = "An extracted ion chromatogram is channel evidence only; compound names require retention behavior, spectrum context, and confidence flags.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-webbook-srd69"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-webbook-srd69"),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val gcMsEiXic = ChromatogramTypeDefinition(
@@ -243,16 +264,16 @@ object ChromaLabBaseKnowledgePack {
         relatedIonFragmentIds = listOf("ei-mz-91"),
         interpretation = listOf(
             KnowledgeStatement(
-                text = "The m/z 92 channel is directly compatible with the molecular ion of toluene (C7H8, molecular weight 92.1384).",
-                evidence = KnowledgeEvidence.LITERATURE,
-                confidence = 0.9,
-                sourceIds = listOf("nist-toluene"),
+                text = "The m/z 92 channel is aromatic-channel evidence in this pack. It must remain a channel/class hint unless retention, spectrum/library, method, or user evidence supports a compound assignment.",
+                evidence = KnowledgeEvidence.CURATED,
+                confidence = 0.8,
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
             ),
             KnowledgeStatement(
                 text = "In alkylbenzene-oriented GC-MS work, m/z 92 is aromatic-channel evidence but is not a standalone compound assignment.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 0.8,
-                sourceIds = listOf("nist-webbook-srd69"),
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
             ),
         ),
         cautions = listOf(
@@ -260,10 +281,10 @@ object ChromaLabBaseKnowledgePack {
                 text = "Do not identify a peak as toluene or an alkylbenzene from m/z 92 alone; require retention index, adjacent ions, full spectrum, or user/library confirmation.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-webbook-srd69", "nist-toluene"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-toluene"),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
     )
 
     private val eiMz91 = IonFragmentDefinition(
@@ -279,7 +300,7 @@ object ChromaLabBaseKnowledgePack {
                 text = "m/z 91 is a related EI channel commonly checked with alkylbenzene candidates, but it still requires spectrum and retention confirmation.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 0.75,
-                sourceIds = listOf("nist-webbook-srd69"),
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
             ),
         ),
         cautions = listOf(
@@ -287,10 +308,10 @@ object ChromaLabBaseKnowledgePack {
                 text = "Treat m/z 91 as supporting evidence only; it is not specific enough for release-quality compound naming by itself.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-webbook-srd69"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-webbook-srd69"),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
     )
 
     private val eiMz191 = IonFragmentDefinition(
@@ -389,18 +410,18 @@ object ChromaLabBaseKnowledgePack {
                 text = "For homologous alkylbenzene candidates, retention generally increases with carbon number on non-polar GC phases.",
                 evidence = KnowledgeEvidence.INFERRED_RULE,
                 confidence = 0.75,
-                sourceIds = listOf("nist-ethylbenzene", "nist-m-xylene", "nist-p-xylene", "nist-o-xylene"),
+                sourceIds = listOf("chromalab-petroleum-gcms-curation"),
             ),
         ),
         assignmentCautions = listOf(
             KnowledgeStatement(
                 text = "Xylene and ethylbenzene isomers share formula C8H10; retention index and full-spectrum evidence are needed to separate candidates.",
-                evidence = KnowledgeEvidence.LITERATURE,
+                evidence = KnowledgeEvidence.CURATED,
                 confidence = 0.9,
-                sourceIds = listOf("nist-ethylbenzene", "nist-m-xylene", "nist-p-xylene", "nist-o-xylene"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-webbook-srd69"),
+        sourceIds = listOf("chromalab-petroleum-gcms-curation"),
     )
 
     private val petroleumBiomarkers = CompoundClassDefinition(
@@ -465,10 +486,10 @@ object ChromaLabBaseKnowledgePack {
                 text = "Use carbon-number labels as candidate grouping, not as verified compound names, unless Kovats and spectrum evidence support the assignment.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-webbook-srd69"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-webbook-srd69"),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val nParaffins = CompoundClassDefinition(
@@ -481,9 +502,9 @@ object ChromaLabBaseKnowledgePack {
         interpretationNotes = listOf(
             KnowledgeStatement(
                 text = "Reference n-paraffin retention times must come from the same chromatographic method or run family as the target sample before Kovats values are calculated.",
-                evidence = KnowledgeEvidence.LITERATURE,
+                evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-gc-retention-data"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
         assignmentCautions = listOf(
@@ -491,10 +512,10 @@ object ChromaLabBaseKnowledgePack {
                 text = "The built-in n-paraffin entries define the retention-index scale only; they do not replace measured reference retention times.",
                 evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-gc-retention-data"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-gc-retention-data"),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val nParaffinReferenceSeries = CarbonNumberSeriesDefinition(
@@ -507,69 +528,12 @@ object ChromaLabBaseKnowledgePack {
         interpretationNotes = listOf(
             KnowledgeStatement(
                 text = "Kovats calculation requires the two adjacent n-paraffin references that elute immediately before and after the target peak.",
-                evidence = KnowledgeEvidence.LITERATURE,
+                evidence = KnowledgeEvidence.CURATED,
                 confidence = 1.0,
-                sourceIds = listOf("nist-gc-retention-data"),
+                sourceIds = listOf("chromalab-reference-report-contract"),
             ),
         ),
-        sourceIds = listOf("nist-gc-retention-data"),
-    )
-
-    private val nonPolarAlkylbenzeneSeedRi = KovatsReferenceLibrary(
-        id = "nist-nonpolar-ramp-alkylbenzene-seed",
-        label = "NIST non-polar ramp RI seed: C7-C8 alkylbenzenes",
-        chromatogramTypeId = "gc-ms-ei-eic",
-        stationaryPhase = "Non-polar capillary phases; Van den Dool and Kratz RI, temperature ramp",
-        temperatureProgram = "Multiple NIST WebBook literature records; use as broad seed ranges only.",
-        referenceSeriesId = "monoalkylbenzene-carbon-series",
-        entries = listOf(
-            KovatsReferenceEntry(
-                compoundName = "Toluene",
-                compoundClassId = "monoalkylbenzenes",
-                formula = "C7H8",
-                carbonNumber = 7,
-                kovatsRange = KnowledgeDoubleRange(769.0, 796.8, "RI"),
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-toluene"),
-            ),
-            KovatsReferenceEntry(
-                compoundName = "Ethylbenzene",
-                compoundClassId = "monoalkylbenzenes",
-                formula = "C8H10",
-                carbonNumber = 8,
-                kovatsRange = KnowledgeDoubleRange(850.8, 893.0, "RI"),
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-ethylbenzene"),
-            ),
-            KovatsReferenceEntry(
-                compoundName = "m-Xylene",
-                compoundClassId = "monoalkylbenzenes",
-                formula = "C8H10",
-                carbonNumber = 8,
-                kovatsRange = KnowledgeDoubleRange(838.0, 898.0, "RI"),
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-m-xylene"),
-            ),
-            KovatsReferenceEntry(
-                compoundName = "p-Xylene",
-                compoundClassId = "monoalkylbenzenes",
-                formula = "C8H10",
-                carbonNumber = 8,
-                kovatsRange = KnowledgeDoubleRange(847.0, 884.0, "RI"),
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-p-xylene"),
-            ),
-            KovatsReferenceEntry(
-                compoundName = "o-Xylene",
-                compoundClassId = "monoalkylbenzenes",
-                formula = "C8H10",
-                carbonNumber = 8,
-                kovatsRange = KnowledgeDoubleRange(862.0, 896.0, "RI"),
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-o-xylene"),
-            ),
-        ),
-        sourceIds = listOf("nist-webbook-srd69"),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private val nParaffinReferenceRiScale = KovatsReferenceLibrary(
@@ -585,11 +549,11 @@ object ChromaLabBaseKnowledgePack {
                 formula = normalAlkaneFormula(carbonNumber),
                 carbonNumber = carbonNumber,
                 kovatsIndex = carbonNumber * 100.0,
-                evidence = KnowledgeEvidence.LITERATURE,
-                sourceIds = listOf("nist-gc-retention-data"),
+                evidence = KnowledgeEvidence.CURATED,
+                sourceIds = listOf("chromalab-reference-report-contract"),
             )
         },
-        sourceIds = listOf("nist-gc-retention-data"),
+        sourceIds = listOf("chromalab-reference-report-contract"),
     )
 
     private fun normalAlkaneFormula(carbonNumber: Int): String =

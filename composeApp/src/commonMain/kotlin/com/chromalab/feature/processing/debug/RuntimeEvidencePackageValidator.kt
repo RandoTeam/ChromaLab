@@ -635,6 +635,9 @@ object RuntimeEvidencePackageValidator {
         issues: MutableList<RuntimeEvidenceValidationIssue>,
     ): List<RuntimeEvidenceStageJudgeRow> {
         val runtimeProfiles = evidencePackage.modelRuntimeProfiles.associateBy { it.profileId }
+        val vlmLabelEvidence = graphPackage.peakLabelEvidence.filter {
+            it.source == PeakLabelEvidenceSource.VLM || it.source == PeakLabelEvidenceSource.BOTH
+        }
         graphPackage.ocrVlmCropResults.forEach { result ->
             validateOcrVlmCropResult(graphPackage.graphIndex, result, fileExists, issues)
         }
@@ -647,6 +650,35 @@ object RuntimeEvidencePackageValidator {
                 fileExists,
                 overlay.resultId,
             )
+        }
+        if (vlmLabelEvidence.isNotEmpty()) {
+            val vlmCropResults = graphPackage.ocrVlmCropResults.filter {
+                it.source == StageJudgeSource.VLM || it.source == StageJudgeSource.BOTH
+            }
+            val vlmStages = graphPackage.stageJudgeResults.filter {
+                it.source == StageJudgeSource.VLM || it.source == StageJudgeSource.BOTH
+            }
+            if (vlmCropResults.isEmpty()) {
+                issues.block(
+                    "multimodal.vlm_crop_result_missing",
+                    "VLM-backed peak-label evidence requires an OCR/VLM crop result row.",
+                    graphPackage.graphIndex,
+                )
+            }
+            if (vlmStages.isEmpty()) {
+                issues.block(
+                    "multimodal.vlm_stage_judge_missing",
+                    "VLM-backed peak-label evidence requires a linked stage judge result.",
+                    graphPackage.graphIndex,
+                )
+            }
+            if (vlmCropResults.none { !it.runtimeProfileId.isNullOrBlank() && it.runtimeProfileId in runtimeProfiles }) {
+                issues.block(
+                    "multimodal.vlm_runtime_profile_missing",
+                    "VLM-backed peak-label evidence requires a linked model runtime profile.",
+                    graphPackage.graphIndex,
+                )
+            }
         }
         return graphPackage.stageJudgeResults.map { result ->
             validateStageJudgeResult(graphPackage.graphIndex, result, runtimeProfiles, fileExists, issues)

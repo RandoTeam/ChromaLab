@@ -22,6 +22,18 @@ class AutonomousStageJudgeContractsTest {
     }
 
     @Test
+    fun parsedRetentionTimeFieldIsRejectedAsNumericMetric() {
+        val contract = VlmStructuredTaskContracts.contractFor(StageJudgeTaskType.OCR_CROP_READ)
+        val validation = ForbiddenVlmBoundaryPolicy.validateRawJsonFields(
+            rawJson = """{"text":"5.610","text_type":"PEAK_ANNOTATION","confidence":0.81,"parsed_retention_time":5.610}""",
+            contract = contract,
+        )
+
+        assertFalse(validation.accepted)
+        assertTrue(ForbiddenVlmNumericField.RT in validation.rejectedForbiddenFields)
+    }
+
+    @Test
     fun localCropVlmFallbackCreatesSemanticEvidenceOnly() {
         val result = VlmOcrCropResult(
             resultId = "crop:1",
@@ -100,4 +112,3 @@ class AutonomousStageJudgeContractsTest {
         assertEquals("ocr-vlm-crop-benchmark-1.0", Json.decodeFromString<OcrVlmCropBenchmarkReport>(json).schemaVersion)
     }
 }
-

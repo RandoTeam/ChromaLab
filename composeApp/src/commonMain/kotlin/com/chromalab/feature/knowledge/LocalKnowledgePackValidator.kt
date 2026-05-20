@@ -1,6 +1,25 @@
 package com.chromalab.feature.knowledge
 
 object LocalKnowledgePackValidator {
+    private val restrictedLicenseStatuses = setOf(
+        KnowledgeLicenseStatus.API_ONLY,
+        KnowledgeLicenseStatus.REJECTED,
+        KnowledgeLicenseStatus.NEEDS_REVIEW,
+        KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN,
+    )
+    private val restrictedTrustTiers = setOf(
+        KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+        KnowledgeSourceTrustTier.TIER_4_REJECTED,
+        KnowledgeSourceTrustTier.REJECTED,
+        KnowledgeSourceTrustTier.USER_SUPPLIED_UNVERIFIED,
+    )
+    private val allowedRestrictedSourceClaimScopes = setOf(
+        EvidenceClaimScope.EXPLANATION_ONLY,
+        EvidenceClaimScope.REPORT_CAVEAT,
+        EvidenceClaimScope.RETRIEVAL_CONTEXT,
+        EvidenceClaimScope.SPECTRAL_REFERENCE_LINK,
+        EvidenceClaimScope.NOT_MEASUREMENT,
+    )
 
     fun validate(pack: LocalKnowledgePack): KnowledgePackValidationResult {
         val errors = mutableListOf<KnowledgePackIssue>()
@@ -17,7 +36,8 @@ object LocalKnowledgePackValidator {
         validateUniqueIds("carbonNumberSeries", pack.carbonNumberSeries.map { it.id }, errors)
         validateUniqueIds("kovatsLibraries", pack.kovatsLibraries.map { it.id }, errors)
 
-        val sourceIds = pack.sources.map { it.id }.toSet()
+        val sourcesById = pack.sources.associateBy { it.id }
+        val sourceIds = sourcesById.keys
         val chromatogramTypeIds = pack.chromatogramTypes.map { it.id }.toSet()
         val ionFragmentIds = pack.ionFragments.map { it.id }.toSet()
         val compoundClassIds = pack.compoundClasses.map { it.id }.toSet()
@@ -26,6 +46,12 @@ object LocalKnowledgePackValidator {
         pack.sources.forEach { source ->
             requireNonBlank("source.id", source.id, errors)
             requireNonBlank("source[${source.id}].label", source.label, errors)
+            if (source.licenseStatus in restrictedLicenseStatuses && source.canBundle) {
+                errors.add(KnowledgePackIssue("source[${source.id}].canBundle", "restricted source must not be marked bundleable."))
+            }
+            if (source.trustTier in restrictedTrustTiers && source.canBundle) {
+                errors.add(KnowledgePackIssue("source[${source.id}].trustTier", "restricted trust tier must not be marked bundleable."))
+            }
         }
 
         pack.chromatogramTypes.forEach { type ->
@@ -38,7 +64,7 @@ object LocalKnowledgePackValidator {
             validateKnownIds(type.sourceIds, sourceIds, "chromatogramType[${type.id}].sourceIds", errors)
             validateKnownIds(type.supportedIonFragmentIds, ionFragmentIds, "chromatogramType[${type.id}].supportedIonFragmentIds", errors)
             validateKnownIds(type.targetCompoundClassIds, compoundClassIds, "chromatogramType[${type.id}].targetCompoundClassIds", errors)
-            validateStatements(type.interpretationNotes, sourceIds, "chromatogramType[${type.id}].interpretationNotes", errors)
+            validateStatements(type.interpretationNotes, sourceIds, sourcesById, "chromatogramType[${type.id}].interpretationNotes", errors)
         }
 
         pack.ionFragments.forEach { ion ->
@@ -53,8 +79,8 @@ object LocalKnowledgePackValidator {
             validateKnownIds(ion.sourceIds, sourceIds, "ionFragment[${ion.id}].sourceIds", errors)
             validateKnownIds(ion.diagnosticForCompoundClassIds, compoundClassIds, "ionFragment[${ion.id}].diagnosticForCompoundClassIds", errors)
             validateKnownIds(ion.relatedIonFragmentIds, ionFragmentIds, "ionFragment[${ion.id}].relatedIonFragmentIds", errors)
-            validateStatements(ion.interpretation, sourceIds, "ionFragment[${ion.id}].interpretation", errors)
-            validateStatements(ion.cautions, sourceIds, "ionFragment[${ion.id}].cautions", errors)
+            validateStatements(ion.interpretation, sourceIds, sourcesById, "ionFragment[${ion.id}].interpretation", errors)
+            validateStatements(ion.cautions, sourceIds, sourcesById, "ionFragment[${ion.id}].cautions", errors)
         }
 
         pack.compoundClasses.forEach { compoundClass ->
@@ -69,8 +95,8 @@ object LocalKnowledgePackValidator {
             validateKnownIds(compoundClass.sourceIds, sourceIds, "compoundClass[${compoundClass.id}].sourceIds", errors)
             validateKnownIds(compoundClass.diagnosticIonFragmentIds, ionFragmentIds, "compoundClass[${compoundClass.id}].diagnosticIonFragmentIds", errors)
             validateKnownIds(compoundClass.homologousSeriesIds, seriesIds, "compoundClass[${compoundClass.id}].homologousSeriesIds", errors)
-            validateStatements(compoundClass.interpretationNotes, sourceIds, "compoundClass[${compoundClass.id}].interpretationNotes", errors)
-            validateStatements(compoundClass.assignmentCautions, sourceIds, "compoundClass[${compoundClass.id}].assignmentCautions", errors)
+            validateStatements(compoundClass.interpretationNotes, sourceIds, sourcesById, "compoundClass[${compoundClass.id}].interpretationNotes", errors)
+            validateStatements(compoundClass.assignmentCautions, sourceIds, sourcesById, "compoundClass[${compoundClass.id}].assignmentCautions", errors)
         }
 
         pack.carbonNumberSeries.forEach { series ->
@@ -82,7 +108,7 @@ object LocalKnowledgePackValidator {
             validateKnownIds(listOf(series.compoundClassId), compoundClassIds, "carbonNumberSeries[${series.id}].compoundClassId", errors)
             validateKnownIds(series.expectedIonFragmentIds, ionFragmentIds, "carbonNumberSeries[${series.id}].expectedIonFragmentIds", errors)
             validateKnownIds(series.sourceIds, sourceIds, "carbonNumberSeries[${series.id}].sourceIds", errors)
-            validateStatements(series.interpretationNotes, sourceIds, "carbonNumberSeries[${series.id}].interpretationNotes", errors)
+            validateStatements(series.interpretationNotes, sourceIds, sourcesById, "carbonNumberSeries[${series.id}].interpretationNotes", errors)
         }
 
         pack.kovatsLibraries.forEach { library ->
@@ -113,6 +139,8 @@ object LocalKnowledgePackValidator {
                 if (entry.kovatsRange?.isValid() == false) {
                     errors.add(KnowledgePackIssue("$path.kovatsRange", "Kovats range minimum must be <= maximum."))
                 }
+                validateClaimScopes(entry.claimScopes, "$path.claimScopes", errors)
+                validateRestrictedSourceUse(entry.sourceIds, sourcesById, "$path.sourceIds", entry.claimScopes, errors)
                 validateKnownIds(entry.sourceIds, sourceIds, "$path.sourceIds", errors)
             }
         }
@@ -163,18 +191,49 @@ object LocalKnowledgePackValidator {
     private fun validateStatements(
         statements: List<KnowledgeStatement>,
         sourceIds: Set<String>,
+        sourcesById: Map<String, KnowledgeSource>,
         path: String,
         errors: MutableList<KnowledgePackIssue>,
     ) {
         statements.forEachIndexed { index, statement ->
             val statementPath = "$path[$index]"
             requireNonBlank("$statementPath.text", statement.text, errors)
+            validateClaimScopes(statement.claimScopes, "$statementPath.claimScopes", errors)
+            validateRestrictedSourceUse(statement.sourceIds, sourcesById, "$statementPath.sourceIds", statement.claimScopes, errors)
             statement.confidence?.let { confidence ->
                 if (confidence !in 0.0..1.0) {
                     errors.add(KnowledgePackIssue("$statementPath.confidence", "confidence must be between 0 and 1."))
                 }
             }
             validateKnownIds(statement.sourceIds, sourceIds, "$statementPath.sourceIds", errors)
+        }
+    }
+
+    private fun validateClaimScopes(
+        claimScopes: List<EvidenceClaimScope>,
+        path: String,
+        errors: MutableList<KnowledgePackIssue>,
+    ) {
+        if (claimScopes.isEmpty()) {
+            errors.add(KnowledgePackIssue(path, "claim scopes must not be empty."))
+        }
+        if (EvidenceClaimScope.NOT_MEASUREMENT !in claimScopes) {
+            errors.add(KnowledgePackIssue(path, "local knowledge claims must declare NOT_MEASUREMENT."))
+        }
+    }
+
+    private fun validateRestrictedSourceUse(
+        ids: List<String>,
+        sourcesById: Map<String, KnowledgeSource>,
+        path: String,
+        claimScopes: List<EvidenceClaimScope>,
+        errors: MutableList<KnowledgePackIssue>,
+    ) {
+        val restrictedSources = ids.mapNotNull(sourcesById::get).filter { source ->
+            source.licenseStatus in restrictedLicenseStatuses || source.trustTier in restrictedTrustTiers
+        }
+        if (restrictedSources.isNotEmpty() && claimScopes.any { it !in allowedRestrictedSourceClaimScopes }) {
+            errors.add(KnowledgePackIssue(path, "restricted sources can only support explanation, caveat, retrieval-context, or link-only claims."))
         }
     }
 }

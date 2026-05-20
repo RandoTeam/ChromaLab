@@ -25,6 +25,10 @@ data class KnowledgeSource(
     val label: String,
     val citation: String? = null,
     val sourceType: KnowledgeSourceType = KnowledgeSourceType.INTERNAL_CURATED,
+    val licenseStatus: KnowledgeLicenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
+    val trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.TIER_0_INTERNAL_CURATED,
+    val canBundle: Boolean = sourceType == KnowledgeSourceType.INTERNAL_CURATED,
+    val attributionRequired: Boolean = false,
     val notes: List<String> = emptyList(),
 )
 
@@ -132,6 +136,10 @@ data class KovatsReferenceEntry(
     val kovatsRange: KnowledgeDoubleRange? = null,
     val evidence: KnowledgeEvidence = KnowledgeEvidence.CURATED,
     val sourceIds: List<String> = emptyList(),
+    val claimScopes: List<EvidenceClaimScope> = listOf(
+        EvidenceClaimScope.RETRIEVAL_CONTEXT,
+        EvidenceClaimScope.NOT_MEASUREMENT,
+    ),
 )
 
 @Serializable
@@ -140,6 +148,10 @@ data class KnowledgeStatement(
     val evidence: KnowledgeEvidence = KnowledgeEvidence.CURATED,
     val confidence: Double? = null,
     val sourceIds: List<String> = emptyList(),
+    val claimScopes: List<EvidenceClaimScope> = listOf(
+        EvidenceClaimScope.EXPLANATION_ONLY,
+        EvidenceClaimScope.NOT_MEASUREMENT,
+    ),
 )
 
 @Serializable

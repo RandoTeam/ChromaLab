@@ -7,10 +7,17 @@ import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
 import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
+import com.chromalab.feature.processing.multimodal.MultimodalTextRegionClass
 import com.chromalab.feature.processing.multimodal.OcrVlmDisagreement
 import com.chromalab.feature.processing.multimodal.OverlayJudgeResult
+import com.chromalab.feature.processing.multimodal.StageJudgeConfidence
 import com.chromalab.feature.processing.multimodal.VlmOcrCropResult
+import com.chromalab.feature.processing.multimodal.StageJudgeSource
+import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
+import com.chromalab.feature.processing.multimodal.StageJudgeVerdict
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
+import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
+import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
 import com.chromalab.feature.processing.peaks.RecoveredPeakCandidate
 import com.chromalab.feature.reports.ChromatogramReport
 import com.chromalab.feature.reports.EvidenceGateStatus
@@ -127,6 +134,7 @@ object RuntimeEvidencePackageBuilder {
             report = report,
             evidencePackageStatus = EvidenceGateStatus.VALID,
         )
+        val graphBuilds = report.graphs.map(::buildGraphPackage)
         return RuntimeEvidencePackage(
             generatedAtEpochMillis = currentTimeMillis(),
             reportId = report.metadata.reportId,
@@ -138,68 +146,242 @@ object RuntimeEvidencePackageBuilder {
             terminalState = ReportReleaseGateEvaluator.terminalStateFor(gate.status),
             reportGateStatus = gate.status,
             gateEvidence = gate.evidence,
-            graphs = report.graphs.map(::buildGraphPackage),
+            modelRuntimeProfiles = graphBuilds
+                .flatMap { it.modelRuntimeProfiles }
+                .distinctBy { it.profileId },
+            graphs = graphBuilds.map { it.graphPackage },
             reportContract = report,
         )
     }
 
-    private fun buildGraphPackage(graph: GraphReport): RuntimeEvidenceGraphPackage {
+    private fun buildGraphPackage(graph: GraphReport): RuntimeGraphPackageBuild {
         val trace = graph.source.geometryTrace
         val recovery = graph.peakRecovery
         val fixtureHintCount = recovery.labelEvidence.count { !it.isRuntimeEvidence || it.source.name == "FIXTURE_HINT" }
-        return RuntimeEvidenceGraphPackage(
-            graphIndex = graph.graphIndex,
-            artifactPaths = RuntimeEvidenceArtifactPaths(
-                originalImagePath = trace?.originalImagePath,
-                normalizedImagePath = trace?.normalizedImagePath,
-                rectifiedImagePath = trace?.rectifiedImagePath,
-                graphPanelOverlayPath = trace?.selectedGraphPanelOverlayPath,
-                plotAreaOverlayPath = trace?.selectedPlotAreaOverlayPath,
-                axisOverlayPath = trace?.axisOverlayPath,
-                tickOverlayPath = trace?.tickOverlayPath,
-                calibrationAnchorsOverlayPath = trace?.calibrationFitOverlayPath,
-                ocrCropPaths = trace?.ocrCropPaths.orEmpty(),
-                peakLabelCropPaths = trace?.peakLabelCropPaths.orEmpty(),
-                peakLabelCropBoundsOverlayPath = trace?.peakLabelCropBoundsOverlayPath,
-                peakLabelTextClassificationOverlayPath = trace?.peakLabelTextClassificationOverlayPath,
-                rawPlotAreaCropPath = trace?.plotAreaCropPath,
-                rawCurveMaskPath = trace?.curveMaskRawPath,
-                cleanCurveMaskPath = trace?.curveMaskCleanPath,
-                textSuppressionOverlayPath = trace?.curveTextSuppressionOverlayPath,
-                rejectedComponentsOverlayPath = trace?.curveRejectedComponentsPath,
-                selectedTraceOverlayPath = trace?.curveSelectedComponentPath
-                    ?: trace?.curveSkeletonPath
-                    ?: trace?.finalCenterlineOverlayPath,
-                skeletonOrCenterlineOverlayPath = trace?.curveSkeletonPath,
-                finalPeakOverlayPath = trace?.finalCenterlineOverlayPath,
+        val artifactPaths = RuntimeEvidenceArtifactPaths(
+            originalImagePath = trace?.originalImagePath,
+            normalizedImagePath = trace?.normalizedImagePath,
+            rectifiedImagePath = trace?.rectifiedImagePath,
+            graphPanelOverlayPath = trace?.selectedGraphPanelOverlayPath,
+            plotAreaOverlayPath = trace?.selectedPlotAreaOverlayPath,
+            axisOverlayPath = trace?.axisOverlayPath,
+            tickOverlayPath = trace?.tickOverlayPath,
+            calibrationAnchorsOverlayPath = trace?.calibrationFitOverlayPath,
+            ocrCropPaths = trace?.ocrCropPaths.orEmpty(),
+            peakLabelCropPaths = trace?.peakLabelCropPaths.orEmpty(),
+            peakLabelCropBoundsOverlayPath = trace?.peakLabelCropBoundsOverlayPath,
+            peakLabelTextClassificationOverlayPath = trace?.peakLabelTextClassificationOverlayPath,
+            rawPlotAreaCropPath = trace?.plotAreaCropPath,
+            rawCurveMaskPath = trace?.curveMaskRawPath,
+            cleanCurveMaskPath = trace?.curveMaskCleanPath,
+            textSuppressionOverlayPath = trace?.curveTextSuppressionOverlayPath,
+            rejectedComponentsOverlayPath = trace?.curveRejectedComponentsPath,
+            selectedTraceOverlayPath = trace?.curveSelectedComponentPath
+                ?: trace?.curveSkeletonPath
+                ?: trace?.finalCenterlineOverlayPath,
+            skeletonOrCenterlineOverlayPath = trace?.curveSkeletonPath,
+            finalPeakOverlayPath = trace?.finalCenterlineOverlayPath,
+        )
+        val modelRuntimeProfiles = recovery.labelEvidence
+            .mapNotNull { it.runtimeProfile }
+            .distinctBy { it.profileId }
+        val ocrVlmCropResults = recovery.labelEvidence.mapIndexedNotNull { index, evidence ->
+            evidence.toCropResult(graph.graphIndex, index)
+        }
+        val overlayJudgeResults = buildOverlayJudgeResults(graph.graphIndex, artifactPaths)
+        val stageJudgeResults = buildStageJudgeResults(
+            graph = graph,
+            artifactPaths = artifactPaths,
+            cropResults = ocrVlmCropResults,
+            overlayJudgeResults = overlayJudgeResults,
+        )
+        return RuntimeGraphPackageBuild(
+            graphPackage = RuntimeEvidenceGraphPackage(
+                graphIndex = graph.graphIndex,
+                artifactPaths = artifactPaths,
+                stageJudgeResults = stageJudgeResults,
+                ocrVlmCropResults = ocrVlmCropResults,
+                overlayJudgeResults = overlayJudgeResults,
+                peakEvidenceTable = recovery.peakEvidenceTable,
+                peakLabelEvidence = recovery.labelEvidence,
+                runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks,
+                testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks,
+                rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates,
+                suppressedTextBoxes = trace?.curveTextSuppressionRegions.orEmpty(),
+                multiplicityResolution = trace?.multiplicityResolution,
+                summaryCounts = RuntimeEvidenceSummaryCounts(
+                    rawDetectedPeaks = recovery.rawDetectedPeaks,
+                    validatedPeaks = recovery.validatedPeaks,
+                    reviewPeaks = recovery.reviewPeaks,
+                    rejectedPeaks = recovery.rejectedPeaks,
+                    userConfirmedPeaks = recovery.userConfirmedPeaks,
+                    userEditedPeaks = recovery.userEditedPeaks,
+                    runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks.size,
+                    testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks.size,
+                    rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates.size,
+                    productionReportablePeaks = recovery.productionReportablePeaks,
+                    reviewGradePeaks = recovery.reviewGradePeaks,
+                ),
+                warnings = graph.warnings + recovery.warnings,
+                fixtureHintCount = fixtureHintCount,
+                productionRuntimeEvidenceOnly = fixtureHintCount == 0 &&
+                    recovery.runtimeRecoveredPeaks.all { it.isProductionEvidence } &&
+                    recovery.testOnlyRecoveredPeaks.isEmpty(),
             ),
-            peakEvidenceTable = recovery.peakEvidenceTable,
-            peakLabelEvidence = recovery.labelEvidence,
-            runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks,
-            testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks,
-            rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates,
-            suppressedTextBoxes = trace?.curveTextSuppressionRegions.orEmpty(),
-            multiplicityResolution = trace?.multiplicityResolution,
-            summaryCounts = RuntimeEvidenceSummaryCounts(
-                rawDetectedPeaks = recovery.rawDetectedPeaks,
-                validatedPeaks = recovery.validatedPeaks,
-                reviewPeaks = recovery.reviewPeaks,
-                rejectedPeaks = recovery.rejectedPeaks,
-                userConfirmedPeaks = recovery.userConfirmedPeaks,
-                userEditedPeaks = recovery.userEditedPeaks,
-                runtimeRecoveredPeaks = recovery.runtimeRecoveredPeaks.size,
-                testOnlyRecoveredPeaks = recovery.testOnlyRecoveredPeaks.size,
-                rejectedRecoveredCandidates = recovery.rejectedRecoveredCandidates.size,
-                productionReportablePeaks = recovery.productionReportablePeaks,
-                reviewGradePeaks = recovery.reviewGradePeaks,
-            ),
-            warnings = graph.warnings + recovery.warnings,
-            fixtureHintCount = fixtureHintCount,
-            productionRuntimeEvidenceOnly = fixtureHintCount == 0 &&
-                recovery.runtimeRecoveredPeaks.all { it.isProductionEvidence } &&
-                recovery.testOnlyRecoveredPeaks.isEmpty(),
+            modelRuntimeProfiles = modelRuntimeProfiles,
         )
     }
+
+    private data class RuntimeGraphPackageBuild(
+        val graphPackage: RuntimeEvidenceGraphPackage,
+        val modelRuntimeProfiles: List<ModelRuntimeProfile>,
+    )
+
+    private fun buildStageJudgeResults(
+        graph: GraphReport,
+        artifactPaths: RuntimeEvidenceArtifactPaths,
+        cropResults: List<VlmOcrCropResult>,
+        overlayJudgeResults: List<OverlayJudgeResult>,
+    ): List<AutonomousStageJudgeResult> {
+        val trace = graph.source.geometryTrace
+        val recovery = graph.peakRecovery
+        return buildList {
+            add(
+                AutonomousStageJudgeResult(
+                    taskId = "graph:${graph.graphIndex}:graph_panel",
+                    graphIndex = graph.graphIndex,
+                    taskType = StageJudgeTaskType.GRAPH_PANEL_CANDIDATE_JUDGE,
+                    source = StageJudgeSource.CV,
+                    verdict = if (trace?.selectedGraphPanelBounds != null) StageJudgeVerdict.PASS else StageJudgeVerdict.REVIEW,
+                    confidence = StageJudgeConfidence(trace?.selectedGraphPanelBounds?.confidence ?: 0f),
+                    overlayPath = artifactPaths.graphPanelOverlayPath,
+                ),
+            )
+            add(
+                AutonomousStageJudgeResult(
+                    taskId = "graph:${graph.graphIndex}:plot_area",
+                    graphIndex = graph.graphIndex,
+                    taskType = StageJudgeTaskType.PLOT_AREA_CANDIDATE_JUDGE,
+                    source = StageJudgeSource.CV,
+                    verdict = if (trace?.selectedPlotAreaBounds != null) StageJudgeVerdict.PASS else StageJudgeVerdict.REVIEW,
+                    confidence = StageJudgeConfidence(trace?.selectedPlotAreaBounds?.confidence ?: 0f),
+                    overlayPath = artifactPaths.plotAreaOverlayPath,
+                ),
+            )
+            add(
+                AutonomousStageJudgeResult(
+                    taskId = "graph:${graph.graphIndex}:axis_tick_visibility",
+                    graphIndex = graph.graphIndex,
+                    taskType = StageJudgeTaskType.AXIS_TICK_VISIBILITY_JUDGE,
+                    source = StageJudgeSource.ML_KIT,
+                    verdict = if (trace?.tickOcrResult?.acceptedItems.orEmpty().isNotEmpty()) StageJudgeVerdict.PASS else StageJudgeVerdict.REVIEW,
+                    confidence = StageJudgeConfidence(trace?.tickOcrResult?.acceptedItems.orEmpty().map { it.confidence }.averageOrNull() ?: 0f),
+                    overlayPath = artifactPaths.tickOverlayPath,
+                ),
+            )
+            cropResults.forEach { crop ->
+                add(
+                    AutonomousStageJudgeResult(
+                        taskId = crop.taskId,
+                        graphIndex = graph.graphIndex,
+                        taskType = StageJudgeTaskType.OCR_CROP_READ,
+                        source = crop.source,
+                        verdict = when {
+                            crop.source == StageJudgeSource.VLM && crop.rawText.isBlank() -> StageJudgeVerdict.REVIEW
+                            crop.textClass == MultimodalTextRegionClass.PEAK_ANNOTATION -> StageJudgeVerdict.PASS
+                            else -> StageJudgeVerdict.REVIEW
+                        },
+                        confidence = crop.confidence,
+                        cropPath = crop.localCropPath,
+                        modelRuntimeProfileId = crop.runtimeProfileId,
+                        ocrCropResultIds = listOf(crop.resultId),
+                        rejectedForbiddenFields = crop.rejectedForbiddenFields,
+                    ),
+                )
+            }
+            artifactPaths.selectedTraceOverlayPath?.let { traceOverlayPath ->
+                add(
+                    AutonomousStageJudgeResult(
+                        taskId = "graph:${graph.graphIndex}:trace_overlay",
+                        graphIndex = graph.graphIndex,
+                        taskType = StageJudgeTaskType.TRACE_OVERLAY_JUDGE,
+                        source = StageJudgeSource.DETERMINISTIC,
+                        verdict = StageJudgeVerdict.PASS,
+                        confidence = StageJudgeConfidence(1f),
+                        overlayPath = traceOverlayPath,
+                        overlayJudgeResultIds = overlayJudgeResults.map { it.resultId },
+                    ),
+                )
+            }
+            add(
+                AutonomousStageJudgeResult(
+                    taskId = "graph:${graph.graphIndex}:peak_evidence",
+                    graphIndex = graph.graphIndex,
+                    taskType = StageJudgeTaskType.PEAK_EVIDENCE_JUDGE,
+                    source = StageJudgeSource.DETERMINISTIC,
+                    verdict = if (recovery.productionReportablePeaks != null) StageJudgeVerdict.PASS else StageJudgeVerdict.REVIEW,
+                    confidence = StageJudgeConfidence(if (recovery.productionReportablePeaks != null) 1f else 0.4f),
+                    overlayPath = artifactPaths.finalPeakOverlayPath,
+                    linkedEvidenceIds = recovery.peakEvidenceTable.map { it.evidenceId },
+                ),
+            )
+        }
+    }
+
+    private fun buildOverlayJudgeResults(
+        graphIndex: Int,
+        artifactPaths: RuntimeEvidenceArtifactPaths,
+    ): List<OverlayJudgeResult> = buildList {
+        artifactPaths.selectedTraceOverlayPath?.let { path ->
+            add(
+                OverlayJudgeResult(
+                    resultId = "overlay:graph:$graphIndex:trace",
+                    taskId = "graph:$graphIndex:trace_overlay",
+                    overlayImagePath = path,
+                    verdict = StageJudgeVerdict.PASS,
+                    confidence = StageJudgeConfidence(1f),
+                ),
+            )
+        }
+    }
+
+    private fun PeakLabelEvidence.toCropResult(graphIndex: Int, index: Int): VlmOcrCropResult? {
+        if (!isRuntimeEvidence || source == PeakLabelEvidenceSource.FIXTURE_HINT) return null
+        val taskId = "graph:$graphIndex:ocr_crop:$index"
+        val resultSource = when (source) {
+            PeakLabelEvidenceSource.ML_KIT -> StageJudgeSource.ML_KIT
+            PeakLabelEvidenceSource.VLM -> StageJudgeSource.VLM
+            PeakLabelEvidenceSource.BOTH -> StageJudgeSource.BOTH
+            PeakLabelEvidenceSource.FIXTURE_HINT -> StageJudgeSource.SYSTEM
+        }
+        return VlmOcrCropResult(
+            resultId = "ocr-vlm:graph:$graphIndex:$index",
+            taskId = taskId,
+            source = resultSource,
+            localCropPath = localCropPath,
+            rawText = rawText,
+            normalizedText = normalizedText,
+            parsedText = parsedRetentionTime?.toString(),
+            textClass = textClassification.toMultimodalClass(),
+            confidence = StageJudgeConfidence(confidence.coerceIn(0f, 1f)),
+            durationMillis = runtimeProfile?.durationMillis,
+            runtimeProfileId = runtimeProfile?.profileId,
+            rejectedForbiddenFields = rejectedForbiddenFields,
+        )
+    }
+
+    private fun PeakLabelTextClassification.toMultimodalClass(): MultimodalTextRegionClass =
+        when (this) {
+            PeakLabelTextClassification.PEAK_ANNOTATION -> MultimodalTextRegionClass.PEAK_ANNOTATION
+            PeakLabelTextClassification.TICK_LABEL -> MultimodalTextRegionClass.TICK_LABEL
+            PeakLabelTextClassification.AXIS_LABEL -> MultimodalTextRegionClass.AXIS_LABEL
+            PeakLabelTextClassification.TITLE_OR_CHANNEL -> MultimodalTextRegionClass.TITLE_OR_CHANNEL
+            PeakLabelTextClassification.PAGE_TEXT -> MultimodalTextRegionClass.PAGE_TEXT
+            PeakLabelTextClassification.UNKNOWN_TEXT -> MultimodalTextRegionClass.UNKNOWN_TEXT
+        }
 }
 
 private fun currentTimeMillis(): Long = System.currentTimeMillis()
+
+private fun List<Float>.averageOrNull(): Float? =
+    takeIf { it.isNotEmpty() }?.average()?.toFloat()?.coerceIn(0f, 1f)

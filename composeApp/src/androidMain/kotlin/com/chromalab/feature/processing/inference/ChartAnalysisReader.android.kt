@@ -4,6 +4,8 @@ import android.util.Log
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.geometry.TickOcrCropArtifact
 import com.chromalab.feature.processing.model.ModelRegistry
+import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
+import com.chromalab.feature.processing.multimodal.VlmStructuredTaskContracts
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
 import com.chromalab.feature.processing.ocr.OcrTextElement
@@ -484,6 +486,13 @@ private enum class VlmTask {
     AxisStructure,
 }
 
+private fun VlmTask.stageJudgeTaskType(): StageJudgeTaskType =
+    when (this) {
+        VlmTask.GraphRegion -> StageJudgeTaskType.GRAPH_PANEL_CANDIDATE_JUDGE
+        VlmTask.AxisExtraction -> StageJudgeTaskType.AXIS_TICK_VISIBILITY_JUDGE
+        VlmTask.AxisStructure -> StageJudgeTaskType.AXIS_TICK_VISIBILITY_JUDGE
+    }
+
 private suspend fun inferStructuredRaw(
     engine: InferenceEngine,
     imagePath: String,
@@ -512,11 +521,7 @@ private fun optionsFor(task: VlmTask, config: InferenceConfig?): GenerationOptio
     }.coerceIn(128, 768)
     return GenerationOptions(
         maxTokens = maxTokens,
-        timeoutMs = when (task) {
-            VlmTask.GraphRegion -> 300_000L
-            VlmTask.AxisExtraction -> 420_000L
-            VlmTask.AxisStructure -> 300_000L
-        },
+        timeoutMs = VlmStructuredTaskContracts.contractFor(task.stageJudgeTaskType()).timeoutMillis,
         temperature = 0f,
         topP = 1f,
         topK = 0,

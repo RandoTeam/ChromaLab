@@ -104,7 +104,7 @@ object ForbiddenVlmBoundaryPolicy {
     val forbiddenNumericFields: Set<ForbiddenVlmNumericField> = ForbiddenVlmNumericField.entries.toSet()
 
     private val fieldAliases: Map<ForbiddenVlmNumericField, Set<String>> = mapOf(
-        ForbiddenVlmNumericField.RT to setOf("rt", "retention_time", "retentionTime", "peak_rt", "peakRt"),
+        ForbiddenVlmNumericField.RT to setOf("rt", "retention_time", "retentionTime", "peak_rt", "peakRt", "parsed_retention_time", "parsedRetentionTime"),
         ForbiddenVlmNumericField.HEIGHT to setOf("height", "peak_height", "peakHeight"),
         ForbiddenVlmNumericField.AREA to setOf("area", "peak_area", "peakArea"),
         ForbiddenVlmNumericField.FWHM to setOf("fwhm", "width_half_height", "widthHalfHeight"),

@@ -255,6 +255,8 @@ private fun VisionLocalTextCropResult.toPeakLabelEvidence(
             confidence < 0.50f -> "vlm_low_confidence"
             else -> null
         },
+        rejectedForbiddenFields = rejectedForbiddenFields,
+        runtimeProfile = runtimeProfile,
         warnings = warnings + buildList {
             add("peak_label_ocr.local_crop:${crop.kind}")
             add("peak_label_ocr.vlm_text_only_no_peak_metrics")
@@ -323,6 +325,8 @@ private fun mergeMlKitAndVlmEvidence(
             ml.copy(
                 source = PeakLabelEvidenceSource.BOTH,
                 confidence = maxOf(ml.confidence, vlmLabel.confidence),
+                rejectedForbiddenFields = vlmLabel.rejectedForbiddenFields,
+                runtimeProfile = vlmLabel.runtimeProfile,
                 status = when {
                     ml.status == PeakLabelEvidenceStatus.VALID_TEXT ||
                         vlmLabel.status == PeakLabelEvidenceStatus.VALID_TEXT -> PeakLabelEvidenceStatus.VALID_TEXT
