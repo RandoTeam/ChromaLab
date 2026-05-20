@@ -2,7 +2,9 @@
 
 ## Status
 
-Phase 6 implemented the autonomous multimodal intelligence evidence layer as contracts, validator checks, benchmark harness, and documentation.
+Verdict: `PHASE_6_BLOCKED`
+
+Phase 6 implemented the autonomous multimodal intelligence evidence layer as contracts, validator checks, benchmark harness, and documentation. The closeout audit in `docs/PHASE6_CLOSEOUT_AUDIT.md` found that Phase 6 is not fully closed because runtime producers do not yet populate the new multimodal stage evidence, Knowledge Pack contexts, and per-call model runtime profiles in real analysis packages. It also found that the legacy/base Knowledge Pack still needs source-tier/license alignment before the full knowledge system can be called closed.
 
 Amendment 6B adds the local/offline Knowledge Pack and retrieval layer for semantic grounding.
 
@@ -66,7 +68,7 @@ Amendment 6B adds the local/offline Knowledge Pack and retrieval layer for seman
 
 ## Phase 7 Readiness
 
-Phase 7 may start. It should consume the new evidence contracts in report presentation without exposing raw model internals unnecessarily.
+Phase 7 must not start until the closeout blockers in `docs/PHASE6_CLOSEOUT_AUDIT.md` are resolved or the Phase 6 contract is explicitly narrowed.
 # Phase 6C Closeout Addendum
 
 Date: 2026-05-20
@@ -97,4 +99,4 @@ Phase 6C expands the local/offline Knowledge Pack and adds a controlled computer
 
 ## Phase 7 Gate
 
-Phase 7 may start after Phase 6C validation completes and this closeout remains accurate. Phase 7 must preserve the rule that knowledge can explain and classify but cannot measure.
+Phase 7 is blocked by the Phase 6 closeout audit. It may start only after runtime multimodal evidence population, model runtime profile emission, and real Android evidence package validation are completed or explicitly moved to a later phase by contract update. Phase 7 must preserve the rule that knowledge can explain and classify but cannot measure.
