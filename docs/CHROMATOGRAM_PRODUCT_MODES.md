@@ -1,27 +1,101 @@
 # ChromaLab Product Modes
 
-Phase 0 freezes the old fully automatic photo/screenshot flow as `AUTO_DIAGNOSTIC`.
+Phase 0 freezes the previous fully automatic photo/screenshot pipeline as `AUTO_DIAGNOSTIC`. This is a product honesty reset: the app may continue to attempt automatic analysis, but it must not silently present weak evidence as production science.
 
 ## Modes
 
-| Mode | Purpose | Release-quality allowed? | Phase 0 implementation |
+| Mode | Purpose | Release-quality allowed? | Phase 0 state |
 | --- | --- | --- | --- |
-| `AUTO_DIAGNOSTIC` | Automatic attempt for quick diagnostics, candidate geometry, OCR, trace and peak suggestions. | Only if every release gate passes. Otherwise diagnostic/review only. | Explicit metadata and gate contract. |
-| `GUIDED_PRODUCTION` | Future reliable workflow where the user confirms graphPanel, plotArea, calibration anchors, trace and peaks. | Yes, after evidence or user confirmation gates pass. | Contract only. UI is not implemented in Phase 0. |
-| `MANUAL_ADVANCED` | Future fallback for hard images where the user defines geometry and calibration manually. | Yes, after manual evidence is captured. | Contract only. UI is not implemented in Phase 0. |
+| `AUTO_DIAGNOSTIC` | Automatic attempt for quick diagnostics, candidate geometry, OCR, trace, and peak suggestions. | Only when every release gate passes. Otherwise `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, or `BLOCKED`. | Explicit contract and metadata. |
+| `GUIDED_PRODUCTION` | Future main workflow where the user confirms graphPanel, plotArea, calibration anchors, trace, and peaks. | Yes, after evidence or explicit user-confirmation gates pass. | Contract only; UI is not implemented in Phase 0. |
+| `MANUAL_ADVANCED` | Future fallback for hard images where the user manually defines geometry, calibration, trace, and peak decisions. | Yes, after manual evidence is captured and validated. | Contract only; UI is not implemented in Phase 0. |
 
 ## AUTO_DIAGNOSTIC Rules
 
-- May run automatically from camera, gallery, screenshot, or file input.
-- May produce diagnostic reports and suggestions.
-- Must not look like release-quality production output unless all gates pass.
-- Must export RuntimeEvidencePackage for every terminal state.
-- Must label missing geometry, invalid calibration, sparse traces, or weak model evidence as review/diagnostic.
+`AUTO_DIAGNOSTIC`:
 
-## Future Guided Rules
+- may run automatically from camera, gallery, screenshot, scan, or file input;
+- may generate graphPanel, plotArea, axis/tick, OCR, trace, peak, and report suggestions;
+- may produce a diagnostic report;
+- must export evidence for every terminal state;
+- must clearly label review/diagnostic output;
+- may be `RELEASE_READY` only if graphPanel, plotArea, X calibration, Y calibration, trace, evidence package, source provenance, and validator gates pass.
 
-`GUIDED_PRODUCTION` and `MANUAL_ADVANCED` are allowed to satisfy gates with `USER_CONFIRMED` evidence. That confirmation must be explicit and stored in the report/evidence package.
+`AUTO_DIAGNOSTIC` must not:
+
+- hide missing geometry, invalid calibration, sparse trace, missing overlays, or VLM failure;
+- use VLM/LLM output as numeric truth;
+- produce a release-quality peak table when required evidence is missing;
+- use fixture hints or image-specific branches as production evidence;
+- rewrite `CalculationEngine` to compensate for upstream failures.
+
+## GUIDED_PRODUCTION Rules
+
+`GUIDED_PRODUCTION` is the future reliable path.
+
+The user must confirm:
+
+- graphPanel;
+- plotArea;
+- X and Y calibration anchors;
+- extracted trace overlay;
+- peak apexes, boundaries, and review decisions;
+- report evidence package.
+
+User confirmation must be explicit, persisted, and visible in the report/evidence package as `USER_CONFIRMED`. Phase 0 does not implement this UI.
+
+## MANUAL_ADVANCED Rules
+
+`MANUAL_ADVANCED` is the future fallback for difficult photos, rotated scans, weak traces, missing tick labels, or failed automatic geometry.
+
+It may allow the user to define:
+
+- graph bounds;
+- plot bounds;
+- axis/tick anchors;
+- calibration values;
+- trace points or corrections;
+- peak decisions.
+
+Manual values must still carry provenance and review status. Phase 0 does not implement this UI.
+
+## Report Mode Requirements
+
+Every final report or evidence package must identify:
+
+- processing mode;
+- gate status;
+- terminal state;
+- evidence package status;
+- user confirmation status if applicable;
+- VLM evidence status if applicable.
+
+Legacy `FULL_ANALYSIS` labels must not be interpreted as production-ready unless the Phase 0 gates pass.
 
 ## VLM Boundary
 
-VLM/LLM can assist with OCR crop reading, text classification, overlay judging, graph hints, and warning summaries. VLM/LLM must not produce numeric RT, height, area, FWHM, S/N, baseline, Kovats, or exact pixel geometry used in calculations.
+VLM/LLM may assist with:
+
+- local crop OCR;
+- title / ion / channel / axis-label reading;
+- text classification;
+- rough graph hints;
+- overlay judging;
+- warning explanation.
+
+VLM/LLM must not provide:
+
+- exact numeric geometry used for calculation;
+- RT as final measurement;
+- height;
+- area;
+- FWHM;
+- S/N;
+- baseline;
+- Kovats / retention index;
+- final peak count;
+- chromatographic quantitative metrics.
+
+## Current Status
+
+Phase 0 defines modes and gates. It does not make full-auto production-ready and does not implement Guided or Manual workflows.
