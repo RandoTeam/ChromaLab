@@ -17,6 +17,168 @@ Registry links:
 - `docs/agent-orchestration/expansion/config/expanded_skills_registry.json`
 - `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
 
+## Skill Identity
+
+`current-web-research-deep` is the mandatory ChromaLab research skill for any phase or task that depends on current technical methods, APIs, libraries, UX practices, VLM/OCR behavior, Android/KMP behavior, scientific reporting, or chromatographic claims.
+
+It is paired with `source-quality-triage`. This skill discovers and organizes sources; source-quality triage decides whether those sources are strong enough to influence implementation or product claims.
+
+## Mandatory Activation Triggers
+
+Use this skill before implementation or phase approval when work involves:
+
+- Android, Kotlin, KMP, Compose, CameraX, ML Kit, scoped storage, export, permissions, lifecycle, accessibility, localization, or performance APIs;
+- chart digitization, image preprocessing, graphPanel/plotArea detection, homography, axes, ticks, calibration, skeletonization, curve extraction, or peak review methods;
+- OCR, VLM, local model inference, structured model output, prompt contracts, model memory/latency, or hallucination controls;
+- chromatographic terminology, RT, height, area, FWHM, S/N, baseline, Kovats/retention index, or scientific report language;
+- mobile UX flow, guided calibration, zoom/pan annotation, report UI, error recovery, or user confirmation;
+- security/privacy for user images, logs, runtime evidence packages, report sharing, or exported artifacts;
+- test strategy, golden artifacts, real-device validation, benchmark methodology, or release gates.
+
+Assume model knowledge may be outdated for these areas. Do not proceed from memory alone.
+
+## When Not To Use
+
+Do not run a new deep research cycle when:
+
+- the task is a pure mechanical edit to already-approved docs with no technical decision;
+- the user asks only to copy, move, or link existing files;
+- the current phase already has a fresh, directly applicable research note and the task does not change the decision;
+- the work is a formatting-only change that does not affect APIs, methods, UX, report claims, validation, or runtime behavior.
+
+Even in these cases, do not contradict existing research notes or source-quality decisions.
+
+## Required Inputs
+
+Before research starts, collect:
+
+- exact research question and decision to be made;
+- active phase and affected ChromaLab area;
+- platform and runtime constraints;
+- current code path or docs to inspect;
+- relevant failure classes, evidence artifacts, or validation gaps;
+- acceptance criteria and forbidden changes;
+- source-quality requirements from `source-quality-triage`;
+- expected output location under `docs/research/`.
+
+If the research question is too broad, split it into focused questions before searching.
+
+## Required Outputs
+
+This skill must produce:
+
+- a markdown research note under `docs/research/YYYY-MM-DD_<phase>_<topic>.md`;
+- source table with links, source type/tier, date or version, relevance, and limitations;
+- findings tied to ChromaLab decisions;
+- option comparison when multiple methods exist;
+- adoption and rejection rationale;
+- risks and assumptions;
+- implementation guardrails;
+- required tests and validation;
+- handoff summary for the Orchestrator and implementing agents.
+
+Weak blogs, uncited claims, stale examples, and vendor marketing may be listed as context only. They must not drive implementation decisions.
+
+## Research Query Planning Procedure
+
+1. Convert the task into one or more decision questions.
+2. Identify the source types needed: official docs, maintained repositories, peer-reviewed sources, standards, current API references, benchmarks, or domain references.
+3. Define recency expectations. Android/KMP, ML Kit, VLM/runtime, model, storage, and UX practices require current sources.
+4. Define what would change in ChromaLab if the research is accepted.
+5. Define what not to adopt before searching, such as VLM numeric measurement or fixture-specific shortcuts.
+
+## Source Discovery Procedure
+
+1. Search official documentation first.
+2. Search maintained repositories and official samples second.
+3. Search peer-reviewed, standards, or domain references for scientific and algorithmic claims.
+4. Use engineering blogs, forums, and discussions only for context, symptoms, or implementation caveats.
+5. Capture source dates, versions, maintainers, and license/maintenance status where relevant.
+6. Stop and escalate if only weak or contradictory sources exist for a release-critical decision.
+
+## Source Quality Requirements
+
+Implementation-impacting decisions require reliable sources:
+
+- official docs, current API docs, maintained repositories, peer-reviewed sources, and standards take priority;
+- weak blogs, uncited claims, unmaintained examples, forum anecdotes, and marketing claims cannot be sole authority;
+- conflicting sources must be documented and resolved through `source-quality-triage`;
+- every accepted source must have clear relevance and limitations;
+- every rejected or background-only source must be marked as such.
+
+## Source Capture Format
+
+Each source entry must include:
+
+```markdown
+### Source: <title>
+
+- URL:
+- Source type / tier:
+- Date or version:
+- Maintainer / publisher:
+- Why it is relevant:
+- Limitations:
+- ChromaLab decision impact:
+- Use status: accepted / background-only / rejected
+```
+
+## Research Synthesis Handoff
+
+The handoff to implementation or phase closeout must include:
+
+- research note path;
+- confidence label: `HIGH`, `MEDIUM`, or `LOW`;
+- selected approach;
+- rejected alternatives;
+- affected files or contracts;
+- required tests and validation artifacts;
+- risks and rollback plan;
+- explicit statement that source-quality triage was applied.
+
+Implementation must not start if the handoff is missing or confidence is too low for a release-critical decision.
+
+## ChromaLab-Specific Research Areas
+
+Research must be tailored to ChromaLab's product boundaries:
+
+- AUTO_DIAGNOSTIC is diagnostic unless every evidence gate passes.
+- GUIDED_PRODUCTION is the reliable target path.
+- MANUAL_ADVANCED is the fallback for difficult graphs.
+- VLM/LLM may assist with OCR, text classification, overlay judging, and warning explanation only.
+- VLM/LLM must not provide exact numeric geometry, RT, height, area, FWHM, S/N, baseline, Kovats, final peak count, or chromatographic metrics.
+- `CalculationEngine` must not be rewritten unless a proven isolated bug exists after validated upstream input.
+
+## Failure Conditions
+
+Research fails or must be reopened if:
+
+- no current official or maintained source was checked for a high-recency topic;
+- source quality was not triaged;
+- implementation decisions depend on weak blogs, uncited claims, stale snippets, or marketing;
+- model/VLM capability claims are not verified by documentation or project-specific tests;
+- scientific claims lack chromatography/domain support;
+- the research note does not explain what not to adopt;
+- the recommendation cannot be validated with ChromaLab artifacts.
+
+## Validation Checklist
+
+Before the Orchestrator accepts this skill's output, verify:
+
+- [ ] Research question is specific.
+- [ ] Official docs or current primary sources were checked when available.
+- [ ] Maintained repository or implementation evidence was checked where relevant.
+- [ ] Peer-reviewed, standards, or domain sources were checked for scientific claims.
+- [ ] Weak sources are marked background-only or rejected.
+- [ ] Source-quality triage is present.
+- [ ] Decision impact and risks are explicit.
+- [ ] Required tests and artifacts are listed.
+- [ ] Research note is saved under `docs/research/`.
+
+## Definition of Done
+
+This skill is complete only when the research note is saved, sources are triaged, implementation guardrails are explicit, weak sources are prevented from driving decisions, and the Orchestrator can trace each recommendation to reliable current evidence.
+
 ---
 
 ## 1. Purpose

@@ -18,6 +18,180 @@ Registry links:
 - `docs/agent-orchestration/expansion/config/expanded_skills_registry.json`
 - `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
 
+## Skill Identity
+
+`source-quality-triage` is the mandatory ChromaLab skill for deciding whether a source found through research is reliable enough to affect implementation, phase contracts, scientific claims, UX decisions, release gates, or runtime behavior.
+
+It must be used with `current-web-research-deep` before implementation decisions. Research without source triage is incomplete.
+
+## Mandatory Activation Triggers
+
+Use this skill whenever research sources may influence:
+
+- Android/KMP/Compose APIs, lifecycle, storage, permissions, performance, or accessibility;
+- OCR, ML Kit, VLM, on-device model behavior, local inference, prompts, or structured outputs;
+- geometry, calibration, chart digitization, image processing, curve extraction, or peak review methods;
+- chromatographic concepts such as RT, height, area, FWHM, S/N, baseline, Kovats/retention index, uncertainty, or report wording;
+- security, privacy, exported evidence packages, logs, user images, or sharing;
+- UX/design decisions for guided workflows, report UI, validation flows, or error recovery;
+- QA strategy, golden artifacts, real-device validation, or release acceptance.
+
+Assume model knowledge may be outdated. Verify current sources and reject weak claims before they affect ChromaLab decisions.
+
+## When Not To Use
+
+Do not run a separate source-quality triage pass when:
+
+- the task does not use external sources and only edits already-approved local orchestration wording;
+- the change is mechanical formatting, path correction, or registry linking with no new technical or product decision;
+- an existing fresh triage note already covers the exact source set and the current task does not change the decision;
+- the user explicitly asks for explanation-only work and no repository decision will be made.
+
+If any source is used to justify implementation, report claims, UX decisions, validation rules, security/privacy behavior, Android/KMP/API choices, OCR/VLM behavior, or chromatographic semantics, this skill must be used.
+
+## Required Inputs
+
+The triage pass requires:
+
+- research question and target decision;
+- list of candidate sources with URLs;
+- source dates, versions, maintainers, or publication context where available;
+- affected ChromaLab area and active phase;
+- implementation or product claim the source might support;
+- known risks, conflicts, or uncertainty;
+- required acceptance criteria and validation type.
+
+If a source has no provenance, date, maintainer, or reproducible method, mark it weak until corroborated.
+
+## Required Outputs
+
+This skill must output:
+
+- source tier for every source;
+- authority, freshness, specificity, reproducibility, bias, and implementation readiness assessment;
+- accepted, background-only, and rejected source lists;
+- conflict resolution when sources disagree;
+- decision impact for each accepted source;
+- limitations and risks;
+- final statement: implementation allowed, review-only, or blocked.
+
+## Source Tiering Rules
+
+Prioritize sources in this order:
+
+1. Official docs, current API references, standards, vendor manuals, and official sample repositories.
+2. Maintained repositories with active issue/commit history and clear license.
+3. Peer-reviewed papers, scientific references, and recognized domain literature.
+4. Reputable engineering articles with reproducible details and corroboration.
+5. Forums, discussions, and anecdotes as context only.
+6. Marketing or benchmark claims as awareness only unless independently verified.
+
+For ChromaLab release gates, a Tier 4 or weaker source cannot be the sole authority.
+
+## Source Rejection Rules
+
+Reject or downgrade a source when:
+
+- it is undated and concerns a fast-changing API or runtime;
+- it is a weak blog, uncited claim, copied snippet, or marketing post without reproducible evidence;
+- it describes an obsolete Android/KMP/ML Kit/model/runtime version without compatibility proof;
+- it recommends using VLM/LLM as numeric geometry or chromatographic measurement;
+- it conflicts with official docs or standards without stronger evidence;
+- it cannot be tested against ChromaLab artifacts;
+- it lacks license clarity for copied code or examples.
+
+Rejected sources may remain in the research note only to explain what not to adopt.
+
+## Conflict Resolution Procedure
+
+1. State the conflicting claims.
+2. Classify each supporting source by tier and quality.
+3. Prefer official/current API docs for platform behavior.
+4. Prefer maintained implementation evidence for library behavior.
+5. Prefer peer-reviewed, standards, or domain references for scientific definitions.
+6. If evidence remains unresolved, downgrade the decision to review-only or block implementation.
+7. Record the remaining risk and required validation.
+
+## Recency Rules
+
+High-recency topics require current sources:
+
+- Android, Compose, KMP, ML Kit, storage/export, permissions, accessibility, lifecycle, and performance APIs;
+- VLM/runtime/model formats, GPU/NPU/Vulkan/NNAPI behavior, model quantization, and on-device inference;
+- security/privacy and sharing behavior;
+- active libraries used in production.
+
+Stable topics such as linear regression or basic chromatographic definitions may use older authoritative references, but current implementation constraints still require current sources.
+
+## Domain-Specific Source Rules
+
+- Android/KMP/Compose: official docs or official samples are required.
+- OCR/ML Kit: official ML Kit documentation and project validation are required.
+- VLM/model behavior: model/runtime documentation plus ChromaLab evaluation evidence are required.
+- Geometry/calibration/chart digitization: technical method source plus implementation evidence and internal artifacts are required.
+- Chromatography/scientific reporting: domain references, standards, or peer-reviewed sources are required.
+- Security/privacy/export: official Android storage/sharing docs and privacy review are required.
+- UX/design/accessibility: current platform guidelines and real workflow validation are required.
+
+## ChromaLab-Specific Source Quality Rules
+
+Sources must reinforce these product boundaries:
+
+- AUTO_DIAGNOSTIC cannot be promoted to production without evidence gates.
+- GUIDED_PRODUCTION requires user-confirmed or valid graphPanel, plotArea, calibration, trace, and report evidence.
+- VLM/LLM is an OCR/semantic/judge assistant only, never a numeric measurement engine.
+- Fixture hints and screenshot-specific observations are test-only unless generalized and validated.
+- `CalculationEngine` changes require proof of an isolated bug after upstream input is validated.
+
+Any source that encourages bypassing these boundaries must be rejected for production implementation.
+
+## Research Handoff Format
+
+Use this handoff after triage:
+
+```markdown
+## Source Quality Handoff
+
+- Research note:
+- Decision:
+- Accepted sources:
+- Background-only sources:
+- Rejected sources:
+- Conflicts:
+- Confidence: HIGH / MEDIUM / LOW
+- Implementation allowed: yes / review-only / no
+- Required validation:
+- Remaining risk:
+```
+
+## Failure Conditions
+
+Triage fails or blocks implementation if:
+
+- sources are missing for a release-critical decision;
+- weak sources are used as primary authority;
+- no official/current source was checked for a fast-changing API;
+- scientific claims lack domain support;
+- source conflicts are unresolved;
+- source limitations are not documented;
+- the recommendation cannot be validated in ChromaLab.
+
+## Validation Checklist
+
+Before accepting triage:
+
+- [ ] Every source has a tier.
+- [ ] Every accepted source has relevance and limitations.
+- [ ] Weak sources are background-only or rejected.
+- [ ] Recency expectations are satisfied or risk is recorded.
+- [ ] Conflicts are resolved or escalated.
+- [ ] Implementation decision is traceable to accepted sources.
+- [ ] Required tests or artifacts are listed.
+
+## Definition of Done
+
+This skill is complete only when every source is classified, weak sources are prevented from driving implementation, accepted sources support the claimed decision, unresolved conflicts are escalated, and the Orchestrator can decide whether implementation is allowed, review-only, or blocked.
+
 ---
 
 ## 1. Purpose

@@ -198,3 +198,77 @@ The core activation matrix and registries are valid, but mandatory full-system f
 ## No Application Code Confirmation
 
 This audit changed only orchestration documentation. No application code, tests, CalculationEngine, geometry, OCR, VLM, UI, report, or Android runtime files were modified.
+
+## Doc Schema Patch Follow-Up
+
+Follow-up date: 2026-05-20
+
+Patched files:
+
+- `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/expansion/skills/current-web-research-deep.md`
+- `docs/agent-orchestration/expansion/skills/source-quality-triage.md`
+
+Sections added to `AGENT_00_ORCHESTRATOR.md`:
+
+- Identity
+- Mandatory Activation Triggers
+- Required Inputs
+- Required Outputs
+- Agent Activation Procedure
+- Skill Selection Procedure
+- Phase Gate Procedure
+- Web Research Enforcement Procedure
+- Evidence Package Enforcement Procedure
+- Regression Enforcement Procedure
+- VLM Boundary Enforcement Procedure
+- Anti-Patterns
+- Closeout Checklist
+- Final Response Format
+- Definition of Done
+
+Sections added to `current-web-research-deep.md`:
+
+- Skill Identity
+- Mandatory Activation Triggers
+- When Not To Use
+- Required Inputs
+- Required Outputs
+- Research Query Planning Procedure
+- Source Discovery Procedure
+- Source Quality Requirements
+- Source Capture Format
+- Research Synthesis Handoff
+- ChromaLab-Specific Research Areas
+- Failure Conditions
+- Validation Checklist
+- Definition of Done
+
+Sections added to `source-quality-triage.md`:
+
+- Skill Identity
+- Mandatory Activation Triggers
+- When Not To Use
+- Required Inputs
+- Required Outputs
+- Source Tiering Rules
+- Source Rejection Rules
+- Conflict Resolution Procedure
+- Recency Rules
+- Domain-Specific Source Rules
+- ChromaLab-Specific Source Quality Rules
+- Research Handoff Format
+- Failure Conditions
+- Validation Checklist
+- Definition of Done
+
+Existing detailed content in all three files was preserved. The patch adds canonical execution sections above the existing detailed rules so the files can serve as future schema examples.
+
+Current active verdict: **PHASE_0_READY_AFTER_DOC_SCHEMA_PATCH**
+
+Phase 0 may start after this patch: **YES**, subject to the normal Orchestrator requirements:
+
+- no Phase 0 implementation begins without required agent activation;
+- current web research and source-quality triage are performed before technical decisions;
+- no application code or scientific behavior is changed outside the active phase scope;
+- every Phase 0 terminal decision is documented with evidence and validation status.
