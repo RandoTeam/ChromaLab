@@ -27,6 +27,7 @@ import com.chromalab.feature.reports.PeakGateStatus
 import com.chromalab.feature.reports.PeakMetricEvidenceStatus
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -139,6 +140,7 @@ data class RuntimeEvidenceValidationSummary(
     val reportId: String? = null,
     val terminalState: RuntimeTerminalState? = null,
     val reportGateStatus: ReportGateStatus? = null,
+    val runtimeFailureClass: RuntimeFailureClass? = null,
     val verdict: RuntimeEvidenceValidationVerdict,
     val blockingIssues: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val warnings: List<RuntimeEvidenceValidationIssue> = emptyList(),
@@ -207,6 +209,7 @@ object RuntimeEvidencePackageValidator {
             reportId = evidencePackage.reportId,
             terminalState = evidencePackage.terminalState,
             reportGateStatus = evidencePackage.reportGateStatus,
+            runtimeFailureClass = evidencePackage.runtimeFailureClass,
             verdict = when {
                 blocking.isNotEmpty() -> RuntimeEvidenceValidationVerdict.FAIL
                 warnings.isNotEmpty() -> RuntimeEvidenceValidationVerdict.REVIEW
@@ -261,6 +264,7 @@ object RuntimeEvidencePackageValidator {
             reportId = "ROI_FAILURE",
             terminalState = evidencePackage.terminalState,
             reportGateStatus = ReportGateStatus.BLOCKED,
+            runtimeFailureClass = evidencePackage.runtimeFailureClass,
             verdict = when {
                 blocking.isNotEmpty() -> RuntimeEvidenceValidationVerdict.FAIL
                 warnings.isNotEmpty() -> RuntimeEvidenceValidationVerdict.REVIEW
@@ -278,6 +282,7 @@ object RuntimeEvidencePackageValidator {
         appendLine("- Verdict: `${summary.verdict}`")
         appendLine("- Terminal state: `${summary.terminalState ?: "missing"}`")
         appendLine("- Report gate: `${summary.reportGateStatus ?: "missing"}`")
+        appendLine("- Runtime failure class: `${summary.runtimeFailureClass ?: "none"}`")
         appendLine("- Package schema: `${summary.packageSchemaVersion ?: "missing"}`")
         appendLine("- Report id: `${summary.reportId ?: "missing"}`")
         appendLine("- Blocking issues: ${summary.blockingIssues.size}")
@@ -395,6 +400,26 @@ object RuntimeEvidencePackageValidator {
             issues.block(
                 "package.release_gate_without_pass_terminal",
                 "Runtime package is RELEASE_READY but terminalState is not PASS.",
+            )
+        }
+        if (evidencePackage.terminalState == RuntimeTerminalState.PASS) {
+            if (evidencePackage.runtimeFailureClass != null) {
+                issues.block(
+                    "package.failure_class_on_pass",
+                    "Runtime failure class must be absent when terminalState is PASS.",
+                )
+            }
+        } else if (evidencePackage.runtimeFailureClass == null) {
+            issues.block(
+                "package.failure_class_missing",
+                "Runtime failure class is required when terminalState is not PASS.",
+            )
+        }
+        val contractFailureClass = evidencePackage.reportContract.metadata.runtimeFailureClass
+        if (evidencePackage.runtimeFailureClass != contractFailureClass) {
+            issues.block(
+                "package.failure_class_report_contract_mismatch",
+                "Runtime failure class must match the embedded final report contract.",
             )
         }
     }

@@ -12,6 +12,7 @@ enum class SourceType {
     CAMERA,
     GALLERY,
     SCREENSHOT,
+    VALIDATION_FIXTURE,
     ML_KIT_SCAN,
     UNKNOWN,
 }

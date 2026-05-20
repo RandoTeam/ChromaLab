@@ -38,6 +38,7 @@ Every dataset item requires:
 | `phase8_missing_tick_labels_synthetic` | `docs/regression/synthetic/missing_tick_labels.md` | synthetic missing tick label case | 1 | `DIAGNOSTIC_ONLY` | `TICK_LOCALIZATION_FAILURE` | release-ready claim with missing tick labels | Test-only acceptance case | Geometry / Calibration Core Agent |
 | `phase8_invalid_calibration_synthetic` | `docs/regression/synthetic/invalid_calibration.md` | synthetic invalid calibration case | 1 | `DIAGNOSTIC_ONLY` | `CALIBRATION_FAILURE` | release-ready claim with invalid calibration | Test-only acceptance case | Scientific Reporting & Validation Agent |
 | `phase8_six_pseudo_graph_android_failure` | `docs/regression/synthetic/six_pseudo_graph_android_failure.md` | historical Android failure class | 1 | `BLOCKED` | `MULTI_GRAPH_SPLIT_FAILURE` | six pseudo-graph reports | Test-only acceptance case | Product Acceptance Agent |
+| `phase8b_white_tiger_ion71_android_fixture` | `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg` | bundled Android validation fixture, original Ion 71 / White Tiger style screenshot | 1 | `DIAGNOSTIC_ONLY` | `AXIS_DETECTION_FAILURE`, `TICK_LOCALIZATION_FAILURE`, `OCR_TICK_FAILURE`, or `CALIBRATION_FAILURE` until autonomous evidence passes | camera/gallery validation ambiguity; axis detection failure in real usage | Fixture-driven Android validation mode ready; device run pending | QA / Regression Agent |
 
 ## Coverage Mapping
 
@@ -60,9 +61,11 @@ Every dataset item requires:
 | original user graph / Ion 71 / White Tiger case | `bench_08_mz71_duplicate_candidate`, `bench_07_rotated_page_photo` |
 | bench_03 / bench_04 / bench_08 classes | `bench_03_small_tic_export`, `bench_04_stacked_xic_resolution`, `bench_08_mz71_duplicate_candidate` |
 | known failed Android runs | `bench_08_mz71_duplicate_candidate`, `bench_05_tic_plus_ions` |
+| fixture-driven Android validation | `phase8b_white_tiger_ion71_android_fixture` |
 
 ## Acceptance Notes
 
 - Current desktop bench fixtures intentionally keep calibration blocked until valid calibration evidence exists. That is not a release-ready failure; it is the correct diagnostic gate until Android/OCR calibration can prove the full chain.
 - A dataset item may only move from `REVIEW_ONLY`/`DIAGNOSTIC_ONLY` to `RELEASE_READY` after its evidence package, validator JSON/Markdown, report JSON, overlays, and privacy checks are present.
 - Product Acceptance and QA must approve any change from expected failure to expected pass.
+- The Phase 8B fixture row bypasses only image acquisition. It must still enter the same autonomous processing flow after the fixture is copied into app-private capture storage.

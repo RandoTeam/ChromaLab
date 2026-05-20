@@ -54,6 +54,9 @@ import com.chromalab.feature.reports.ReportDoubleValue
 import com.chromalab.feature.reports.ReportMetadata
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.SignalAndBaselineReport
+import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.RuntimeFailureClass
+import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -454,6 +457,64 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.PASS, result.verdict)
         assertEquals(1, result.graphSummaries.single().runtimeRecoveredPeaks)
+    }
+
+    @Test
+    fun builderAddsFailureClassForDiagnosticRuntimePackage() {
+        val evidence = runtimeEvidence()
+        val report = reportWithRecovery(
+            evidence = evidence,
+            geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+        )
+
+        val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(report)
+
+        assertEquals(RuntimeFailureClass.GRAPH_PANEL_FAILURE, packageWithFailureClass.runtimeFailureClass)
+        assertEquals(
+            packageWithFailureClass.runtimeFailureClass,
+            packageWithFailureClass.reportContract.metadata.runtimeFailureClass,
+        )
+    }
+
+    @Test
+    fun validatorRequiresFailureClassForNonPassRuntimePackage() {
+        val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(
+            reportWithRecovery(
+                evidence = runtimeEvidence(),
+                geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+            ),
+        )
+        val broken = packageWithFailureClass.copy(
+            runtimeFailureClass = null,
+            reportContract = packageWithFailureClass.reportContract.copy(
+                metadata = packageWithFailureClass.reportContract.metadata.copy(runtimeFailureClass = null),
+            ),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(broken, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "package.failure_class_missing" })
+    }
+
+    @Test
+    fun validatorRejectsFailureClassOnPassRuntimePackage() {
+        val complete = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val broken = complete.copy(
+            terminalState = RuntimeTerminalState.PASS,
+            reportGateStatus = ReportGateStatus.RELEASE_READY,
+            runtimeFailureClass = RuntimeFailureClass.CALIBRATION_FAILURE,
+            reportContract = complete.reportContract.copy(
+                metadata = complete.reportContract.metadata.copy(
+                    runtimeFailureClass = RuntimeFailureClass.CALIBRATION_FAILURE,
+                ),
+            ),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(broken, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "package.failure_class_on_pass" })
     }
 
     private fun reportWithRecovery(

@@ -46,18 +46,29 @@ import com.chromalab.feature.calculation.screen.ResultsSummaryScreen
 import com.chromalab.feature.calculation.screen.ExportCalculationScreen
 import com.chromalab.feature.calculation.export.CalculationRunReportExporter
 import com.chromalab.feature.processing.export.FileSharer
+import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.calculation.algorithm.DistributionAnalyzer
 import com.chromalab.feature.calculation.algorithm.PatternAnalyzer
 import com.chromalab.feature.calculation.algorithm.MethodQualityAnalyzer
 import com.chromalab.feature.calculation.algorithm.GeochemicalCalculator
 import com.chromalab.feature.calculation.algorithm.CompoundSource
+import com.chromalab.feature.reports.CalculationRunReportOptions
+import com.chromalab.feature.reports.ChromatogramReport
+import com.chromalab.feature.reports.InputSourceType
 import com.chromalab.feature.reports.StoredReportMetadata
 import com.chromalab.feature.reports.StructuredReportPreview
 import com.chromalab.feature.reports.buildCalculationReportOptions
 import com.chromalab.feature.reports.StoredReportMetadataCodec
+import com.chromalab.feature.validation.AutonomousValidationArtifactRecord
+import com.chromalab.feature.validation.AutonomousValidationArtifactExporter
+import com.chromalab.feature.validation.AutonomousValidationFixtureContracts
+import com.chromalab.feature.validation.AutonomousValidationRunArtifactManifest
+import com.chromalab.feature.validation.ValidationArtifactSaveResult
+import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.ListSerializer
 
@@ -534,13 +545,37 @@ private fun AnalysisStructuredReportScreen(
                 val evidenceJson = CalculationRunReportExporter.exportRuntimeEvidencePackageJson(run, reportOptions)
                 val validationJson = CalculationRunReportExporter.exportRuntimeEvidenceValidationJson(run, reportOptions)
                 val validationMarkdown = CalculationRunReportExporter.exportRuntimeEvidenceValidationMarkdown(run, reportOptions)
-                listOf(
-                    "runtime_evidence_package_${run.id}.json" to (evidenceJson to "application/json"),
-                    "runtime_evidence_validation_${run.id}.json" to (validationJson to "application/json"),
-                    "runtime_evidence_validation_${run.id}.md" to (validationMarkdown to "text/markdown"),
-                ).forEach { (fileName, payload) ->
-                    val result = FileSharer.saveText(fileName, payload.first, payload.second)
-                    println("ANALYSIS[RUNTIME_EVIDENCE_EXPORT] $fileName success=${result.success} location=${result.location ?: result.message}")
+                val runtimeEvidenceArtifacts = listOf(
+                    ValidationTextArtifact(
+                        slot = "runtime_evidence_package",
+                        fileName = "runtime_evidence_package_${run.id}.json",
+                        content = evidenceJson,
+                        mimeType = "application/json",
+                    ),
+                    ValidationTextArtifact(
+                        slot = "runtime_evidence_validation_json",
+                        fileName = "runtime_evidence_validation_${run.id}.json",
+                        content = validationJson,
+                        mimeType = "application/json",
+                    ),
+                    ValidationTextArtifact(
+                        slot = "runtime_evidence_validation_markdown",
+                        fileName = "runtime_evidence_validation_${run.id}.md",
+                        content = validationMarkdown,
+                        mimeType = "text/markdown",
+                    ),
+                )
+                runtimeEvidenceArtifacts.forEach { artifact ->
+                    val result = FileSharer.saveText(artifact.fileName, artifact.content, artifact.mimeType)
+                    println("ANALYSIS[RUNTIME_EVIDENCE_EXPORT] ${artifact.fileName} success=${result.success} location=${result.location ?: result.message}")
+                }
+                if (report.metadata.inputSourceType == InputSourceType.VALIDATION_FIXTURE) {
+                    exportAutonomousValidationArtifacts(
+                        run = run,
+                        report = report,
+                        reportOptions = reportOptions,
+                        runtimeEvidenceArtifacts = runtimeEvidenceArtifacts,
+                    )
                 }
             }.onFailure { error ->
                 println("ANALYSIS[RUNTIME_EVIDENCE_EXPORT] failed=${error.message}")
@@ -564,6 +599,240 @@ private fun AnalysisStructuredReportScreen(
         Spacer(modifier = Modifier.height(Spacing.lg))
     }
 }
+
+private val validationArtifactJson = Json {
+    prettyPrint = true
+    encodeDefaults = true
+}
+
+private data class ValidationTextArtifact(
+    val slot: String,
+    val fileName: String,
+    val content: String,
+    val mimeType: String,
+)
+
+private data class ValidationOverlayArtifact(
+    val slot: String,
+    val graphIndex: Int,
+    val sourcePath: String?,
+)
+
+private fun exportAutonomousValidationArtifacts(
+    run: CalculationRun,
+    report: ChromatogramReport,
+    reportOptions: CalculationRunReportOptions,
+    runtimeEvidenceArtifacts: List<ValidationTextArtifact>,
+) {
+    val runId = AutonomousValidationArtifactExporter.activeRunId()
+    if (runId.isNullOrBlank()) {
+        println("ANALYSIS[VALIDATION_FIXTURE_EXPORT] skipped=no_active_validation_run")
+        return
+    }
+
+    val textArtifacts = runtimeEvidenceArtifacts + listOf(
+        ValidationTextArtifact(
+            slot = "final_report_contract_json",
+            fileName = "final_report_contract_${run.id}.json",
+            content = CalculationRunReportExporter.exportReportContractJson(run, reportOptions),
+            mimeType = "application/json",
+        ),
+        ValidationTextArtifact(
+            slot = "report_html",
+            fileName = "report_${run.id}.html",
+            content = CalculationRunReportExporter.exportHtml(run, reportOptions),
+            mimeType = "text/html",
+        ),
+        ValidationTextArtifact(
+            slot = "report_markdown",
+            fileName = "report_${run.id}.md",
+            content = CalculationRunReportExporter.exportMarkdown(run, reportOptions),
+            mimeType = "text/markdown",
+        ),
+        ValidationTextArtifact(
+            slot = "stage_timings",
+            fileName = "stage_timings_${run.id}.json",
+            content = report.stageTimingsJson(),
+            mimeType = "application/json",
+        ),
+        ValidationTextArtifact(
+            slot = "log_summary",
+            fileName = "log_summary_${run.id}.md",
+            content = report.validationLogSummary(runId, run.id),
+            mimeType = "text/markdown",
+        ),
+    )
+
+    val textRecords = textArtifacts.map { artifact ->
+        AutonomousValidationArtifactExporter
+            .saveTextArtifact(artifact.fileName, artifact.content, artifact.mimeType)
+            .toArtifactRecord(artifact.slot, artifact.fileName)
+            .also { record ->
+                println(
+                    "ANALYSIS[VALIDATION_FIXTURE_EXPORT] ${artifact.fileName} " +
+                        "available=${record.available} location=${record.location ?: record.missingReason}",
+                )
+            }
+    }
+
+    val overlayRecords = report.validationOverlayArtifacts().map { artifact ->
+        val fileName = "graph_${artifact.graphIndex}_${artifact.slot}.${artifact.sourcePath.extensionOrDefault("png")}"
+        AutonomousValidationArtifactExporter
+            .copyFileArtifact(artifact.sourcePath, fileName, artifact.sourcePath.mimeTypeOrDefault())
+            .toArtifactRecord(artifact.slot, fileName)
+            .also { record ->
+                println(
+                    "ANALYSIS[VALIDATION_FIXTURE_EXPORT] ${fileName} " +
+                        "available=${record.available} location=${record.location ?: record.missingReason}",
+                )
+            }
+    }
+
+    val manifestFileName = "artifact_manifest_${run.id}.json"
+    val manifestRecord = AutonomousValidationArtifactRecord(
+        slot = "artifact_manifest",
+        fileName = manifestFileName,
+        available = true,
+        location = "${validationPublicDirectory(runId)}/$manifestFileName",
+    )
+    val manifest = AutonomousValidationRunArtifactManifest(
+        runId = runId,
+        fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+        publicArtifactDirectory = validationPublicDirectory(runId),
+        records = completeRequiredValidationSlots(textRecords + overlayRecords + manifestRecord),
+    )
+    val manifestJson = validationArtifactJson.encodeToString(
+        AutonomousValidationRunArtifactManifest.serializer(),
+        manifest,
+    )
+    val manifestResult = AutonomousValidationArtifactExporter.saveTextArtifact(
+        manifestFileName,
+        manifestJson,
+        "application/json",
+    )
+    println(
+        "ANALYSIS[VALIDATION_FIXTURE_EXPORT] $manifestFileName " +
+            "success=${manifestResult.success} location=${manifestResult.location ?: manifestResult.message}",
+    )
+}
+
+private fun ChromatogramReport.stageTimingsJson(): String =
+    validationArtifactJson.encodeToString(
+        ListSerializer(GeometryStageTiming.serializer()),
+        graphs.flatMap { graph ->
+            graph.source.geometryTrace?.timings.orEmpty()
+        },
+    )
+
+private fun ChromatogramReport.validationOverlayArtifacts(): List<ValidationOverlayArtifact> {
+    if (graphs.isEmpty()) {
+        return AutonomousValidationFixtureContracts.requiredOverlayArtifactSlots.map { slot ->
+            ValidationOverlayArtifact(slot = slot, graphIndex = 0, sourcePath = null)
+        }
+    }
+    return graphs.flatMap { graph ->
+        val trace = graph.source.geometryTrace
+        listOf(
+            ValidationOverlayArtifact("graph_panel_overlay", graph.graphIndex, trace?.selectedGraphPanelOverlayPath),
+            ValidationOverlayArtifact("plot_area_overlay", graph.graphIndex, trace?.selectedPlotAreaOverlayPath),
+            ValidationOverlayArtifact("axis_tick_overlay", graph.graphIndex, trace?.tickOverlayPath ?: trace?.axisOverlayPath),
+            ValidationOverlayArtifact("calibration_overlay", graph.graphIndex, trace?.calibrationFitOverlayPath),
+            ValidationOverlayArtifact(
+                "trace_overlay",
+                graph.graphIndex,
+                trace?.finalCenterlineOverlayPath ?: trace?.curveSelectedComponentPath ?: trace?.curveSkeletonPath,
+            ),
+            ValidationOverlayArtifact("peak_overlay", graph.graphIndex, trace?.finalCenterlineOverlayPath),
+        )
+    }
+}
+
+private fun ValidationArtifactSaveResult.toArtifactRecord(
+    slot: String,
+    fileName: String,
+): AutonomousValidationArtifactRecord =
+    AutonomousValidationArtifactRecord(
+        slot = slot,
+        fileName = fileName,
+        available = success,
+        location = location,
+        missingReason = if (success) null else message,
+    )
+
+private fun completeRequiredValidationSlots(
+    records: List<AutonomousValidationArtifactRecord>,
+): List<AutonomousValidationArtifactRecord> {
+    val existingSlots = records.map { it.slot }.toSet()
+    val requiredSlots = AutonomousValidationFixtureContracts.requiredTextArtifactSlots +
+        AutonomousValidationFixtureContracts.requiredOverlayArtifactSlots +
+        AutonomousValidationFixtureContracts.requiredSupplementalArtifactSlots
+    return records + requiredSlots
+        .filterNot(existingSlots::contains)
+        .map { slot ->
+            AutonomousValidationArtifactRecord(
+                slot = slot,
+                fileName = "$slot.missing",
+                available = false,
+                missingReason = "Artifact slot was not produced by the validation fixture export path.",
+            )
+        }
+}
+
+private fun validationPublicDirectory(runId: String): String =
+    "/sdcard/Download/ChromaLab/validation/$runId"
+
+private fun ChromatogramReport.validationLogSummary(
+    runId: String,
+    calculationRunId: String,
+): String = buildString {
+    appendLine("# Autonomous Validation Fixture Log Summary")
+    appendLine()
+    appendLine("- Run id: `$runId`")
+    appendLine("- Fixture id: `$WHITE_TIGER_ION71_FIXTURE_ID`")
+    appendLine("- Calculation run id: `$calculationRunId`")
+    appendLine("- Report id: `${metadata.reportId}`")
+    appendLine("- Input source: `${metadata.inputSourceType}`")
+    appendLine("- Runtime failure class: `${metadata.runtimeFailureClass ?: "none"}`")
+    appendLine("- Graphs: ${graphs.size}")
+    appendLine()
+    appendLine("## Stage Timings")
+    appendLine()
+    appendLine("| Graph | Stage | Duration ms |")
+    appendLine("| ---: | --- | ---: |")
+    val rows = graphs.flatMap { graph ->
+        graph.source.geometryTrace?.timings.orEmpty().map { timing ->
+            Triple(graph.graphIndex, timing.stageId, timing.durationMillis)
+        }
+    }
+    if (rows.isEmpty()) {
+        appendLine("| - | no geometry timings exported | - |")
+    } else {
+        rows.forEach { (graphIndex, stageId, durationMillis) ->
+            appendLine("| $graphIndex | `$stageId` | $durationMillis |")
+        }
+    }
+    appendLine()
+    appendLine("Full logcat capture is intentionally external to the app and remains a diagnostic-only artifact.")
+}
+
+private fun String?.extensionOrDefault(default: String): String {
+    val extension = this
+        ?.substringAfterLast('.', missingDelimiterValue = default)
+        ?.lowercase()
+        ?.filter { it.isLetterOrDigit() }
+        ?.takeIf { it.isNotBlank() && it.length <= 5 }
+    return extension ?: default
+}
+
+private fun String?.mimeTypeOrDefault(): String =
+    when (extensionOrDefault("png")) {
+        "jpg", "jpeg" -> "image/jpeg"
+        "webp" -> "image/webp"
+        "json" -> "application/json"
+        "md" -> "text/markdown"
+        "html" -> "text/html"
+        else -> "image/png"
+    }
 
 @Composable
 private fun GraphResultSwitcher(

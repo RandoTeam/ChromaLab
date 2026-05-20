@@ -19,6 +19,7 @@ import androidx.navigation.toRoute
 import com.chromalab.app.navigation.BottomTab
 import com.chromalab.app.navigation.PlaceholderScreen
 import com.chromalab.app.navigation.Route
+import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.flow.ProcessingFlowScreen
 import com.chromalab.feature.calculation.flow.AnalysisFlowScreen
 import com.chromalab.feature.calculation.screen.CalculationsListScreen
@@ -50,12 +51,28 @@ import com.chromalab.feature.settings.ModelManagerState
 import com.chromalab.feature.settings.rememberModelManagerState
 
 @Composable
-fun App() {
+fun App(
+    initialProcessingRequest: InitialProcessingRequest? = null,
+    onInitialProcessingRequestConsumed: () -> Unit = {},
+    onRunValidationFixture: (() -> Unit)? = null,
+) {
     val themePreference = rememberAppThemePreference()
 
     ChromaLabTheme(themeMode = themePreference.mode) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
+        LaunchedEffect(initialProcessingRequest) {
+            val request = initialProcessingRequest ?: return@LaunchedEffect
+            navController.navigate(
+                Route.Processing(
+                    imageUri = request.imagePath,
+                    sourceType = request.sourceType.name,
+                ),
+            ) {
+                popUpTo(Route.Capture) { inclusive = false }
+            }
+            onInitialProcessingRequestConsumed()
+        }
 
         // Model Manager — platform-specific state + actions
         val (modelState, modelActions) = rememberModelManagerState()
@@ -140,6 +157,7 @@ fun App() {
                     CaptureHubScreen(
                         onCamera = { navController.navigate(Route.Camera) },
                         onImportFile = { navController.navigate(Route.FileImport) },
+                        onRunValidationFixture = onRunValidationFixture,
                     )
                 }
                 composable<Route.Calculations> {
@@ -202,6 +220,8 @@ fun App() {
                 composable<Route.Processing> { backStackEntry ->
                     val route = backStackEntry.toRoute<Route.Processing>()
                     val imageUri = route.imageUri
+                    val sourceType = runCatching { SourceType.valueOf(route.sourceType) }
+                        .getOrDefault(SourceType.PHOTO)
                     ProcessingFlowScreen(
                         imagePath = imageUri,
                         onFinish = { signalId ->
@@ -214,6 +234,7 @@ fun App() {
                             modelActions.unloadChromatogramModelAfterAnalysis()
                             navController.popBackStack(Route.Capture, inclusive = false)
                         },
+                        sourceType = sourceType,
                     )
                 }
 
@@ -272,6 +293,11 @@ fun App() {
         }
     }
 }
+
+data class InitialProcessingRequest(
+    val imagePath: String,
+    val sourceType: SourceType = SourceType.PHOTO,
+)
 
 private fun ModelManagerState.toChatModelOptions(): List<ChatModelOption> {
     val builtinOptions = ModelRegistry.builtinModels

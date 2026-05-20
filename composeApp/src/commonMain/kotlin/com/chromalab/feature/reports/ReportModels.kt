@@ -44,6 +44,7 @@ data class ReportMetadata(
     val deviceName: String? = null,
     val processingMode: ProcessingMode = ProcessingMode.UNKNOWN,
     val stageTimings: List<ReportStageTiming> = emptyList(),
+    val runtimeFailureClass: RuntimeFailureClass? = null,
 )
 
 @Serializable
@@ -108,6 +109,7 @@ enum class ReportKnowledgeGeneratedBy {
 enum class InputSourceType {
     CAMERA_CAPTURE,
     SMART_SCAN_GALLERY,
+    VALIDATION_FIXTURE,
     FILE_IMPORT,
     TEST_FIXTURE,
     UNKNOWN,

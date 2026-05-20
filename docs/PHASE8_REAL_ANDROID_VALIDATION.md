@@ -39,18 +39,18 @@ Each Android run must export:
 
 ## Command Checklist
 
-Adapt package/test names to the final Android instrumentation harness:
+Phase 8B adds a fixture-driven debug entrypoint for the White Tiger Ion 71 case. This is the preferred command because it bypasses camera/gallery/photo picker ambiguity while preserving the real processing path after acquisition:
 
 ```powershell
-.\gradlew.bat :composeApp:assembleDebug
 adb devices
-adb install -r composeApp\build\outputs\apk\debug\composeApp-debug.apk
-adb shell am instrument -w -e class com.chromalab.phase8.Phase8AndroidRegressionTest com.chromalab.test/androidx.test.runner.AndroidJUnitRunner
-adb logcat -d -v time > artifacts\phase8\android\phase8_logcat.txt
-adb pull /sdcard/Android/data/com.chromalab/files/phase8 artifacts\phase8\android
+.\gradlew.bat :androidApp:assembleDebug
+adb install -r androidApp\build\outputs\apk\debug\androidApp-debug.apk
+adb shell am start -S -n com.chromalab.app/.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71
+adb logcat -d -v time > artifacts\phase8b-android-validation\white_tiger_ion71\logcat.txt
+adb shell ls -R /sdcard/Download/ChromaLab/validation
 ```
 
-If the app has no instrumentation runner yet, execute the same scenario manually on-device and export artifacts through the diagnostic evidence export flow. Record the device name, Android version, app version, model selection, runtime profile, and total duration.
+The validation run writes artifacts to `/sdcard/Download/ChromaLab/validation/<run_id>/`. Pull or inspect that directory after the app reaches the report screen. A future instrumentation runner may wrap the same debug action, but the action above is the current deterministic runner.
 
 ## Acceptance
 

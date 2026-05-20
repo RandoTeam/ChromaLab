@@ -47,6 +47,15 @@ object CalculationRunReportExporter {
     ): String =
         json.encodeToString(buildUiContract(run, options))
 
+    fun exportReportContractJson(
+        run: CalculationRun,
+        options: CalculationRunReportOptions = CalculationRunReportOptions(),
+    ): String {
+        val report = buildReport(run, options)
+        val runtimePackage = com.chromalab.feature.processing.debug.RuntimeEvidencePackageBuilder.build(report)
+        return json.encodeToString(runtimePackage.reportContract)
+    }
+
     fun exportMarkdown(
         run: CalculationRun,
         options: CalculationRunReportOptions = CalculationRunReportOptions(),

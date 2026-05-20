@@ -317,6 +317,7 @@ private fun QualityBadge(score: Float) {
 private fun sourceIcon(type: SourceType) = when (type) {
     SourceType.PHOTO -> Icons.Filled.CameraAlt to Color(0xFF8AB4F8)
     SourceType.GALLERY -> Icons.Filled.PhotoLibrary to Color(0xFFCE93D8)
+    SourceType.VALIDATION_FIXTURE -> Icons.Filled.BugReport to Color(0xFFFFD54F)
     SourceType.CSV -> Icons.Filled.TableChart to Color(0xFF80CBC4)
     SourceType.PDF -> Icons.Filled.PictureAsPdf to Color(0xFFE57373)
     SourceType.MZML -> Icons.Filled.Biotech to Color(0xFFFFCC80)
@@ -327,6 +328,7 @@ private fun sourceIcon(type: SourceType) = when (type) {
 private fun sourceLabel(type: SourceType) = when (type) {
     SourceType.PHOTO -> "Фото"
     SourceType.GALLERY -> "Галерея"
+    SourceType.VALIDATION_FIXTURE -> "Validation fixture"
     SourceType.CSV -> "CSV"
     SourceType.PDF -> "PDF"
     SourceType.MZML -> "mzML"

@@ -235,6 +235,7 @@ private fun SourceType.toReportInputSourceType(): InputSourceType =
     when (this) {
         SourceType.PHOTO -> InputSourceType.CAMERA_CAPTURE
         SourceType.GALLERY -> InputSourceType.SMART_SCAN_GALLERY
+        SourceType.VALIDATION_FIXTURE -> InputSourceType.VALIDATION_FIXTURE
         SourceType.PDF,
         SourceType.CSV,
         SourceType.MZML -> InputSourceType.FILE_IMPORT
@@ -245,6 +246,7 @@ private fun SourceType.toScanMode(): String =
     when (this) {
         SourceType.PHOTO -> "photo-processing-flow"
         SourceType.GALLERY -> "smart-scan-gallery-processing-flow"
+        SourceType.VALIDATION_FIXTURE -> "validation-fixture-processing-flow"
         SourceType.PDF -> "pdf-processing-flow"
         SourceType.CSV -> "csv-import"
         SourceType.MZML -> "mzml-import"

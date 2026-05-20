@@ -224,3 +224,17 @@ Phase 8 converts the regression matrix into an explicit dataset and failure-taxo
 Phase 8 must not upgrade any dataset row to `RELEASE_READY` unless its evidence package, validator JSON/Markdown, report JSON, overlays, privacy manifest, and report gate all pass. The current desktop fixture suite still keeps autonomous calibration and downstream signal/peak gates blocked where calibration is unavailable; that remains correct diagnostic behavior, not a failure to be hidden.
 
 Real Android validation was not completed in the Phase 8 desktop slice because no device was attached to `adb`. Until the documented Android checklist is executed or Product Acceptance explicitly accepts a deferral, Phase 8 remains review-ready rather than fully closed.
+
+# Phase 8B Fixture-Driven Android Validation Additions
+
+Date: 2026-05-20
+
+Phase 8B adds a deterministic Android validation row that avoids camera/gallery/photo picker ambiguity:
+
+- fixture id: `white_tiger_ion71`;
+- asset: `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg`;
+- metadata: `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.metadata.json`;
+- trigger: `adb shell am start -S -n com.chromalab.app/.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71`;
+- required result: real autonomous pipeline run after acquisition bypass, runtime evidence export, validator JSON/Markdown, final report contract JSON, report exports, stage timings, overlays when available, and manifest.
+
+Expected status remains `DIAGNOSTIC_ONLY` or `REVIEW_ONLY` until autonomous axis/tick/calibration evidence is valid. A release-ready result from this fixture is only acceptable when all Phase 0-8 evidence gates pass.

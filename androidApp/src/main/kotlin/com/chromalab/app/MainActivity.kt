@@ -7,8 +7,14 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.validation.AutonomousValidationArtifactExporter
+import com.chromalab.feature.validation.AutonomousValidationFixtureRunner
+import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
 import com.chromalab.feature.processing.inference.MtpAbDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
@@ -20,13 +26,20 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "ChromaLabMain"
         private const val ACTION_DEBUG_GGUF_PARITY = "com.chromalab.app.DEBUG_GGUF_PARITY"
         private const val ACTION_DEBUG_MTP_AB = "com.chromalab.app.DEBUG_MTP_AB"
+        private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
+        private const val EXTRA_FIXTURE = "fixture"
     }
+
+    private var pendingProcessingRequestState: MutableState<InitialProcessingRequest?>? = null
+    private var activeValidationRunId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lockToPortrait()
         com.chromalab.core.data.DatabaseProvider.init(application)
         FileSharer.contextProvider = { applicationContext }
+        AutonomousValidationArtifactExporter.contextProvider = { applicationContext }
+        AutonomousValidationArtifactExporter.validationRunIdProvider = { activeValidationRunId }
 
         // Initialize ModelManagerController for VLM lazy loading (25.2B)
         // This must happen at startup so the pipeline can auto-load models
@@ -34,8 +47,25 @@ class MainActivity : ComponentActivity() {
             VlmEngineHolder.controller = ModelManagerController(applicationContext, lifecycleScope)
         }
 
+        val initialProcessingRequest = validationFixtureRequestFromIntent(intent)
         setContent {
-            App()
+            val pendingProcessingRequest = mutableStateOf(initialProcessingRequest)
+            pendingProcessingRequestState = pendingProcessingRequest
+            App(
+                initialProcessingRequest = pendingProcessingRequest.value,
+                onInitialProcessingRequestConsumed = {
+                    pendingProcessingRequest.value = null
+                },
+                onRunValidationFixture = if (isDebuggable()) {
+                    {
+                        pendingProcessingRequest.value = validationFixtureRequest(
+                            WHITE_TIGER_ION71_FIXTURE_ID,
+                        )
+                    }
+                } else {
+                    null
+                },
+            )
         }
 
         handleDebugIntent(intent)
@@ -49,6 +79,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        pendingProcessingRequestState?.value = validationFixtureRequestFromIntent(intent)
         handleDebugIntent(intent)
     }
 
@@ -74,13 +105,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDebugIntent(intent: Intent?) {
+        if (intent?.action == ACTION_RUN_VALIDATION_FIXTURE) return
         if (intent?.action == ACTION_DEBUG_MTP_AB) {
             handleMtpAbDebugIntent(intent)
             return
         }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
-        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        if (!isDebuggable) {
+        if (!isDebuggable()) {
             Log.w(TAG, "Ignoring GGUF parity diagnostics intent in non-debug build")
             return
         }
@@ -103,8 +134,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleMtpAbDebugIntent(intent: Intent) {
-        val isDebuggable = (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        if (!isDebuggable) {
+        if (!isDebuggable()) {
             Log.w(TAG, "Ignoring MTP A/B diagnostics intent in non-debug build")
             return
         }
@@ -140,4 +170,38 @@ class MainActivity : ComponentActivity() {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
     }
+
+    private fun validationFixtureRequestFromIntent(intent: Intent?): InitialProcessingRequest? {
+        if (intent?.action != ACTION_RUN_VALIDATION_FIXTURE) return null
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring validation fixture intent in non-debug build")
+            return null
+        }
+        val fixtureId = intent.getStringExtra(EXTRA_FIXTURE) ?: WHITE_TIGER_ION71_FIXTURE_ID
+        return validationFixtureRequest(fixtureId)
+    }
+
+    private fun validationFixtureRequest(fixtureId: String): InitialProcessingRequest? {
+        val prepared = AutonomousValidationFixtureRunner(applicationContext)
+            .prepareFixture(fixtureId)
+            .onFailure { error ->
+                activeValidationRunId = null
+                Log.e(TAG, "Validation fixture preparation failed", error)
+            }
+            .getOrNull()
+            ?: return null
+        activeValidationRunId = prepared.runId
+        Log.i(
+            TAG,
+            "Validation fixture ready id=${prepared.fixtureId} runId=${prepared.runId} " +
+                "imagePath=${prepared.sourceImagePath} artifacts=${prepared.publicArtifactDirectory}",
+        )
+        return InitialProcessingRequest(
+            imagePath = prepared.sourceImagePath,
+            sourceType = SourceType.VALIDATION_FIXTURE,
+        )
+    }
+
+    private fun isDebuggable(): Boolean =
+        (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 }

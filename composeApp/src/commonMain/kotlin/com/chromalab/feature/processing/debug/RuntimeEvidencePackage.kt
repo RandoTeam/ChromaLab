@@ -27,6 +27,7 @@ import com.chromalab.feature.reports.PeakEvidence
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.ReportGateStatus
 import com.chromalab.feature.reports.ReportReleaseGateEvaluator
+import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.reports.RuntimeTerminalState
 import kotlinx.serialization.Serializable
 
@@ -42,6 +43,7 @@ data class RuntimeEvidencePackage(
     val executedRuntime: String,
     val terminalState: RuntimeTerminalState = RuntimeTerminalState.DIAGNOSTIC_ONLY,
     val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
+    val runtimeFailureClass: RuntimeFailureClass? = null,
     val gateEvidence: GateEvidence = GateEvidence(),
     val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
     val knowledgePackVersion: String? = null,
@@ -116,6 +118,7 @@ data class RuntimeRoiFailureEvidencePackage(
     val schemaVersion: String = "runtime-evidence-roi-failure-1.0",
     val generatedAtEpochMillis: Long,
     val terminalState: RuntimeTerminalState = RuntimeTerminalState.ROI_FAILURE,
+    val runtimeFailureClass: RuntimeFailureClass = RuntimeFailureClass.GRAPH_PANEL_FAILURE,
     val stageId: String,
     val failureReason: String,
     val originalImagePath: String? = null,
@@ -134,6 +137,10 @@ object RuntimeEvidencePackageBuilder {
             report = report,
             evidencePackageStatus = EvidenceGateStatus.VALID,
         )
+        val failureClass = gate.toRuntimeFailureClass()
+        val reportWithFailureClass = report.copy(
+            metadata = report.metadata.copy(runtimeFailureClass = failureClass),
+        )
         val graphBuilds = report.graphs.map(::buildGraphPackage)
         return RuntimeEvidencePackage(
             generatedAtEpochMillis = currentTimeMillis(),
@@ -145,12 +152,13 @@ object RuntimeEvidencePackageBuilder {
             executedRuntime = report.metadata.executedRuntime.name,
             terminalState = ReportReleaseGateEvaluator.terminalStateFor(gate.status),
             reportGateStatus = gate.status,
+            runtimeFailureClass = failureClass,
             gateEvidence = gate.evidence,
             modelRuntimeProfiles = graphBuilds
                 .flatMap { it.modelRuntimeProfiles }
                 .distinctBy { it.profileId },
             graphs = graphBuilds.map { it.graphPackage },
-            reportContract = report,
+            reportContract = reportWithFailureClass,
         )
     }
 
@@ -382,6 +390,27 @@ object RuntimeEvidencePackageBuilder {
 }
 
 private fun currentTimeMillis(): Long = System.currentTimeMillis()
+
+private fun com.chromalab.feature.reports.ReportGateEvaluation.toRuntimeFailureClass(): RuntimeFailureClass? {
+    if (status == ReportGateStatus.RELEASE_READY) return null
+    val reason = (blockingReasons + reviewReasons).firstOrNull()
+    return when {
+        reason == null -> RuntimeFailureClass.UNKNOWN_FAILURE
+        "graph_panel" in reason -> RuntimeFailureClass.GRAPH_PANEL_FAILURE
+        "plot_area" in reason -> RuntimeFailureClass.PLOT_AREA_FAILURE
+        "axis" in reason -> RuntimeFailureClass.AXIS_DETECTION_FAILURE
+        "tick" in reason -> RuntimeFailureClass.TICK_LOCALIZATION_FAILURE
+        "ocr" in reason -> RuntimeFailureClass.OCR_TICK_FAILURE
+        "calibration" in reason -> RuntimeFailureClass.CALIBRATION_FAILURE
+        "trace" in reason -> RuntimeFailureClass.TRACE_EXTRACTION_FAILURE
+        "peak" in reason -> RuntimeFailureClass.PEAK_EVIDENCE_FAILURE
+        "vlm" in reason || "model" in reason -> RuntimeFailureClass.VLM_UNSUPPORTED_CLAIM
+        "knowledge" in reason -> RuntimeFailureClass.KNOWLEDGE_GROUNDING_FAILURE
+        "evidence_package" in reason || "source_provenance" in reason || "report" in reason ->
+            RuntimeFailureClass.REPORT_GATE_FAILURE
+        else -> RuntimeFailureClass.UNKNOWN_FAILURE
+    }
+}
 
 private fun List<Float>.averageOrNull(): Float? =
     takeIf { it.isNotEmpty() }?.average()?.toFloat()?.coerceIn(0f, 1f)

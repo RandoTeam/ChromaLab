@@ -36,3 +36,12 @@ Phase 8 failures must be classified instead of hidden, converted into expected p
 3. Decide `fix now`, `defer`, or `unsupported with product caveat`.
 4. Do not turn a failure into expected behavior without QA, Product Acceptance, and domain signoff.
 5. Critical overclaims, privacy leaks, missing evidence packages, and VLM/Knowledge numeric claims must be fixed before release readiness.
+
+## Runtime Failure-Class Field
+
+Phase 8B adds a first-class `runtimeFailureClass` field to runtime evidence packages and final report contract metadata. Rules:
+
+- `runtimeFailureClass` must be absent when terminal state is `PASS`.
+- `runtimeFailureClass` is required for non-pass terminal states.
+- Runtime evidence package and embedded final report contract must agree.
+- Fixture-driven Android validation must use these taxonomy values instead of generic failure strings.

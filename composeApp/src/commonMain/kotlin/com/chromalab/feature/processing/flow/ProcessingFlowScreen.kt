@@ -96,6 +96,7 @@ import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
+import com.chromalab.feature.processing.geometry.SourceType as GeometrySourceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,6 +119,7 @@ fun ProcessingFlowScreen(
     onFinish: (signalId: Long) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    sourceType: SourceType = SourceType.PHOTO,
 ) {
     val flowStartedAt = remember(imagePath) { System.currentTimeMillis() }
     val stageDurationMillis = remember(imagePath) { mutableStateMapOf<ProcessingStep, Long>() }
@@ -328,6 +330,7 @@ fun ProcessingFlowScreen(
                                 outputDir = graphOutputDir,
                                 imageWidth = w,
                                 imageHeight = h,
+                                sourceType = sourceType.toGeometrySourceType(),
                                 // Multi-graph: reuse graph detection, target specific region
                                 cachedGraphResult = if (isSubsequentGraph) graphResult else null,
                                 overrideRegion = if (isSubsequentGraph) selectedRegion else null,
@@ -683,7 +686,7 @@ fun ProcessingFlowScreen(
                                     val algorithmConfig = buildProcessingReportMetadataConfig(
                                         sourcePath = imagePath,
                                         processedPath = currentImagePath,
-                                        sourceType = SourceType.PHOTO,
+                                        sourceType = sourceType,
                                         graphIndex = entry.graphIndex,
                                         detectedGraphCount = detectedGraphCount,
                                         signalPointCount = signal.points.size,
@@ -709,7 +712,7 @@ fun ProcessingFlowScreen(
                                     )
                                     val entity = ChromatogramEntity(
                                         sampleId = sId,
-                                        sourceType = SourceType.PHOTO,
+                                        sourceType = sourceType,
                                         filePath = currentImagePath,
                                         timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
                                         timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
@@ -849,7 +852,7 @@ fun ProcessingFlowScreen(
                                 val algorithmConfig = buildProcessingReportMetadataConfig(
                                     sourcePath = imagePath,
                                     processedPath = currentImagePath,
-                                    sourceType = SourceType.PHOTO,
+                                    sourceType = sourceType,
                                     graphIndex = entry.graphIndex,
                                     detectedGraphCount = detectedGraphCount,
                                     signalPointCount = signal.points.size,
@@ -875,7 +878,7 @@ fun ProcessingFlowScreen(
                                 )
                                 val entity = ChromatogramEntity(
                                     sampleId = sampleId,
-                                    sourceType = SourceType.PHOTO,
+                                    sourceType = sourceType,
                                     filePath = currentImagePath,
                                     timeRangeStart = signal.points.firstOrNull()?.time?.toDouble(),
                                     timeRangeEnd = signal.points.lastOrNull()?.time?.toDouble(),
@@ -1204,6 +1207,17 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
             stageName = step.name,
             durationMillis = duration,
         )
+    }
+
+private fun SourceType.toGeometrySourceType(): GeometrySourceType =
+    when (this) {
+        SourceType.PHOTO -> GeometrySourceType.CAMERA
+        SourceType.GALLERY -> GeometrySourceType.GALLERY
+        SourceType.VALIDATION_FIXTURE -> GeometrySourceType.VALIDATION_FIXTURE
+        SourceType.PDF,
+        SourceType.CSV,
+        SourceType.MZML,
+        SourceType.MANUAL -> GeometrySourceType.UNKNOWN
     }
 
 private fun ProcessingStep.hasRequiredCalibrationOutput(

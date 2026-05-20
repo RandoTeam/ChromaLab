@@ -17,7 +17,10 @@ sealed interface Route {
 
     @Serializable data object Camera : Route
     @Serializable data object FileImport : Route
-    @Serializable data class Processing(val imageUri: String) : Route
+    @Serializable data class Processing(
+        val imageUri: String,
+        val sourceType: String = "PHOTO",
+    ) : Route
 
     @Serializable data class Analysis(val signalId: String) : Route
 

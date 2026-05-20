@@ -1,0 +1,19 @@
+{
+  "fixtureId": "white_tiger_ion71",
+  "displayName": "White Tiger Ion 71 validation chromatogram",
+  "assetImagePath": "validation/white_tiger_ion71_fixture.jpg",
+  "expectedGraphCount": 1,
+  "expectedMode": "AUTO_DIAGNOSTIC_OR_REVIEW_UNTIL_AXIS_CALIBRATION_IS_FIXED",
+  "expectedReportGate": "DIAGNOSTIC_ONLY",
+  "knownHistoricalFailures": [
+    "AXIS_DETECTION_FAILURE",
+    "TICK_LOCALIZATION_FAILURE",
+    "OCR_TICK_FAILURE",
+    "CALIBRATION_FAILURE"
+  ],
+  "notes": [
+    "Fixture is bundled only for developer validation and bypasses camera/gallery acquisition.",
+    "The real autonomous processing pipeline must still run normalization, ROI, plotArea, axis/tick OCR, calibration, trace, peaks, report, and validator stages.",
+    "Expected output may remain REVIEW_ONLY or DIAGNOSTIC_ONLY until axis and calibration failures are fixed."
+  ]
+}

@@ -6,6 +6,7 @@ package com.chromalab.core.data.model
 enum class SourceType {
     PHOTO,
     GALLERY,
+    VALIDATION_FIXTURE,
     PDF,
     CSV,
     MZML,

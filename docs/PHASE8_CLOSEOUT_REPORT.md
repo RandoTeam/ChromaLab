@@ -4,6 +4,8 @@ Verdict: `PHASE_8_REVIEW_READY_ANDROID_DEFERRED`
 
 Phase 9 may start: **No**. Real Android validation was not run because no device or emulator was attached to `adb`. Desktop/report/evidence regression was strengthened and passed, but Phase 8 is not fully closed for production acceptance.
 
+Phase 8B update: a fixture-driven Android validation mode now exists so future validation can run without camera/gallery/photo picker ambiguity. Phase 9 still may not start until that fixture mode is executed on a real Android device and artifacts are inspected.
+
 ## Task Classification
 
 Full regression testing, real Android image validation planning, visual/text golden artifacts, runtime evidence validation, autonomous graph detection coverage, multi-graph handling, geometry/calibration/trace/peak evidence, report contract/export validation, Knowledge/VLM grounded explanations, privacy/export safety, performance timing, product acceptance, accessibility/localization, and closeout governance.

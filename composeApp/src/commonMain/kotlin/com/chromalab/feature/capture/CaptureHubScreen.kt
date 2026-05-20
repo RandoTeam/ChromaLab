@@ -2,6 +2,7 @@ package com.chromalab.feature.capture
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
@@ -21,6 +22,7 @@ import com.chromalab.core.ui.theme.Spacing
 fun CaptureHubScreen(
     onCamera: () -> Unit,
     onImportFile: () -> Unit,
+    onRunValidationFixture: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -64,6 +66,21 @@ fun CaptureHubScreen(
                 contentColor = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.weight(1f),
             )
+        }
+        onRunValidationFixture?.let { runValidation ->
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            OutlinedButton(
+                onClick = runValidation,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.BugReport,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Developer: Run validation fixture")
+            }
         }
     }
 }
