@@ -21,9 +21,11 @@ class KnowledgeBuilderArtifactTest {
             "chebi-cc-by-4",
             "pubchem-provenance-policy",
             "nist-srd-review-required",
+            "opsin-builder-optional",
             "license_status:",
             "can_bundle:",
             "can_transform:",
+            "TIER_3_LINK_ONLY_RESTRICTED",
         ).forEach { needle ->
             assertTrue(text.contains(needle), "sources.yaml must contain $needle")
         }

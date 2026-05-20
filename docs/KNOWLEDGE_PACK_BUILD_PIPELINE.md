@@ -8,14 +8,16 @@ Phase 6C introduces a computer-side build scaffold under `tools/knowledge-builde
 
 1. Maintain reviewed source metadata in `tools/knowledge-builder/sources.yaml`.
 2. Validate source license status, bundle permission, transform permission, and attribution requirements.
-3. Reject or quarantine sources marked `NEEDS_REVIEW`, `REJECTED`, or `PROPRIETARY_FORBIDDEN`.
-4. Normalize curated entries into the Knowledge Pack schema.
-5. Deduplicate aliases after normalization.
-6. Validate required fields and source references.
-7. Generate app-ready JSON.
-8. Generate `knowledge_build_manifest_v2.json`.
-9. Generate `rejected_sources_v2.md`.
-10. Run Knowledge Pack tests before committing pack updates.
+3. Validate source trust tiers.
+4. Reject or quarantine sources marked `NEEDS_REVIEW`, `REJECTED`, or `PROPRIETARY_FORBIDDEN`.
+5. Normalize curated entries into the Knowledge Pack schema.
+6. Normalize aliases and detect duplicates.
+7. Validate claim scopes and required fields.
+8. Generate attribution manifest.
+9. Generate `knowledge_build_manifest_v2.json` with version/checksum fields in the future.
+10. Generate `rejected_sources_v2.md`.
+11. Export app-ready JSON or future SQLite FTS output.
+12. Run Knowledge Pack tests before committing pack updates.
 
 ## Current Builder Artifacts
 
@@ -25,6 +27,10 @@ Phase 6C introduces a computer-side build scaffold under `tools/knowledge-builde
 - `tools/knowledge-builder/output/rejected_sources_v2.md`
 
 The Phase 6C builder is stdlib-only and intentionally has no download connector. Future connectors must be added source by source after the license register is updated.
+
+## OPSIN Enrichment Plan
+
+OPSIN may be added as a builder-side optional enrichment tool because current sources list it as MIT licensed. It may only normalize chemical names into synonym/structure metadata when license policy permits. OPSIN output is not compound identification proof and must not create measured chromatographic evidence.
 
 ## Android Packaging
 

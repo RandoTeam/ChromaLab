@@ -32,6 +32,10 @@ Knowledge cannot:
 - source/license register;
 - builder scaffold under `tools/knowledge-builder/`;
 - validation tests for seed v2, retrieval, VLM grounding, and builder artifacts.
+- deterministic rule layer for ion/mz/channel/title classification, caveats, and forbidden-use checks.
+- source trust tiers and evidence claim scopes.
+- compact Gemma-ready retrieval cards.
+- optional OPSIN builder-side enrichment plan for name normalization only.
 
 ## Source Policy
 
@@ -40,3 +44,7 @@ Seed v2 is ChromaLab-authored and source-referenced. ChEBI is marked as a future
 ## Acceptance
 
 Phase 6C is accepted only when the v2 pack validates, tests confirm retrieval and forbidden-use enforcement, no cloud dependency is introduced, and CalculationEngine remains untouched.
+
+## Phase 6C-2 Amendment
+
+The Knowledge Pack is explicitly Rules + Retrieval + Provenance. Retrieval augments the deterministic rule layer; it does not replace it. OPSIN is documented only as a future builder-side normalization tool and cannot create compound identification evidence.

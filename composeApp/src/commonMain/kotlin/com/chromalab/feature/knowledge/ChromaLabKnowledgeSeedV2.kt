@@ -22,7 +22,7 @@ object ChromaLabKnowledgeSeedV2 {
             citation = "Internal conservative rules derived from ChromaLab Phase 0-6C evidence gates.",
             license = "Project internal curated content",
             licenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
-            trustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+            trustTier = KnowledgeSourceTrustTier.TIER_0_INTERNAL_CURATED,
             canBundle = true,
             canTransform = true,
             notes = "Primary source for text classification rules, release caveats, and safe prompt snippets.",
@@ -34,7 +34,7 @@ object ChromaLabKnowledgeSeedV2 {
             citation = "W3C PROV-O recommendation.",
             license = "W3C document license",
             licenseStatus = KnowledgeLicenseStatus.OPEN_VERIFIED,
-            trustTier = KnowledgeSourceTrustTier.OFFICIAL_STANDARD,
+            trustTier = KnowledgeSourceTrustTier.TIER_1_OPEN_REFERENCE,
             attributionRequired = true,
             canBundle = true,
             canTransform = true,
@@ -47,7 +47,7 @@ object ChromaLabKnowledgeSeedV2 {
             citation = "EMBL-EBI ChEBI data, CC BY 4.0 subject to EMBL-EBI terms.",
             license = "CC BY 4.0",
             licenseStatus = KnowledgeLicenseStatus.ATTRIBUTION_REQUIRED,
-            trustTier = KnowledgeSourceTrustTier.OPEN_ONTOLOGY,
+            trustTier = KnowledgeSourceTrustTier.TIER_1_OPEN_REFERENCE,
             attributionRequired = true,
             canBundle = true,
             canTransform = true,
@@ -60,7 +60,7 @@ object ChromaLabKnowledgeSeedV2 {
             citation = "PubChem download documentation and NCBI/NLM policies.",
             license = "NCBI/NLM policies plus contributor-specific source terms",
             licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
-            trustTier = KnowledgeSourceTrustTier.OFFICIAL_DATABASE,
+            trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
             attributionRequired = true,
             canBundle = false,
             canTransform = false,
@@ -74,7 +74,7 @@ object ChromaLabKnowledgeSeedV2 {
             citation = "NIST Chemistry WebBook, Standard Reference Database 69.",
             license = "NIST Standard Reference Data Program terms; bundling requires explicit product review",
             licenseStatus = KnowledgeLicenseStatus.NEEDS_REVIEW,
-            trustTier = KnowledgeSourceTrustTier.OFFICIAL_DATABASE,
+            trustTier = KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
             attributionRequired = true,
             canBundle = false,
             canTransform = false,
@@ -196,7 +196,7 @@ object ChromaLabKnowledgeSeedV2 {
             tags = listOf("chemical class", "domain dictionary"),
             sourceRefIds = listOf("chromalab-curated-v2", "chebi-cc-by-4"),
             licenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
-            trustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+            trustTier = KnowledgeSourceTrustTier.TIER_0_INTERNAL_CURATED,
         )
 
     private fun textRule(id: String, label: String, text: String, aliases: List<String>) =
@@ -221,7 +221,7 @@ object ChromaLabKnowledgeSeedV2 {
             tags = listOf("n-alkane", "compound reference stub", "C10-C40"),
             sourceRefIds = listOf("chromalab-curated-v2", "chebi-cc-by-4"),
             licenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
-            trustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+            trustTier = KnowledgeSourceTrustTier.TIER_0_INTERNAL_CURATED,
         )
 
     private fun entry(
@@ -233,7 +233,7 @@ object ChromaLabKnowledgeSeedV2 {
         tags: List<String>,
         sourceRefIds: List<String> = listOf("chromalab-curated-v2"),
         licenseStatus: KnowledgeLicenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
-        trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+        trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.TIER_0_INTERNAL_CURATED,
     ): KnowledgeEntry =
         KnowledgeEntry(
             entryId = id,
@@ -247,6 +247,7 @@ object ChromaLabKnowledgeSeedV2 {
             sourceRefIds = sourceRefIds,
             licenseStatus = licenseStatus,
             trustTier = trustTier,
+            claimScopes = claimScopesFor(type),
             confidence = 1f,
             lastReviewed = "2026-05-20",
             tags = tags,
@@ -275,6 +276,37 @@ object ChromaLabKnowledgeSeedV2 {
                 ),
             ),
         )
+
+    private fun claimScopesFor(type: KnowledgeEntryType): List<EvidenceClaimScope> =
+        when (type) {
+            KnowledgeEntryType.TEXT_CLASSIFICATION_RULE -> listOf(
+                EvidenceClaimScope.TEXT_CLASSIFICATION,
+                EvidenceClaimScope.RETRIEVAL_CONTEXT,
+                EvidenceClaimScope.NOT_MEASUREMENT,
+            )
+            KnowledgeEntryType.REPORT_CAVEAT -> listOf(
+                EvidenceClaimScope.REPORT_CAVEAT,
+                EvidenceClaimScope.EXPLANATION_ONLY,
+                EvidenceClaimScope.NOT_MEASUREMENT,
+            )
+            KnowledgeEntryType.COMPOUND_CLASS,
+            KnowledgeEntryType.CHEMICAL_SYNONYM,
+            KnowledgeEntryType.COMPOUND_REFERENCE_STUB -> listOf(
+                EvidenceClaimScope.COMPOUND_DICTIONARY,
+                EvidenceClaimScope.RETRIEVAL_CONTEXT,
+                EvidenceClaimScope.NOT_MEASUREMENT,
+            )
+            KnowledgeEntryType.SAFETY_BOUNDARY -> listOf(
+                EvidenceClaimScope.EXPLANATION_ONLY,
+                EvidenceClaimScope.REPORT_CAVEAT,
+                EvidenceClaimScope.NOT_MEASUREMENT,
+            )
+            else -> listOf(
+                EvidenceClaimScope.EXPLANATION_ONLY,
+                EvidenceClaimScope.RETRIEVAL_CONTEXT,
+                EvidenceClaimScope.NOT_MEASUREMENT,
+            )
+        }
 
     private fun normalAlkaneName(carbon: Int): String =
         when (carbon) {

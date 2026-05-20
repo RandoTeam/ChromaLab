@@ -11,6 +11,7 @@ This register controls which sources may contribute to bundled ChromaLab Knowled
 | `pubchem-provenance-policy` | PubChem | NCBI/NLM policies plus contributor-specific terms | Not allowed yet | Not allowed yet | Source-specific | API/source-reviewed only until contributor license review is complete. |
 | `nist-srd-review-required` | NIST Chemistry WebBook / AMDIS / SRD | NIST Standard Reference Data Program terms | Not allowed | Not allowed | Required if cited | Rejected for bundled Phase 6C data. |
 | `w3c-prov-o` | W3C PROV-O | W3C document license | Allowed as provenance reference | Allowed as provenance reference | Required | Accepted for provenance documentation. |
+| `opsin-builder-optional` | OPSIN | MIT | Not bundled as app data | Builder-side transform candidate | Required if used | Optional name normalization only; not compound ID evidence. |
 
 ## Enforcement
 

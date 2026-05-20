@@ -14,6 +14,8 @@ Date: 2026-05-20
 - Kovats and compound-assignment caveats are retrievable.
 - Knowledge-grounded VLM explanations must cite used entry IDs.
 - Unsupported claims produce REVIEW/REJECTED.
+- Compact retrieval cards expose bounded Gemma-ready fields only.
+- Deterministic adversarial rules classify ion/mz/SIM/title text before VLM use.
 
 ## Current Test Coverage
 
@@ -25,3 +27,5 @@ Date: 2026-05-20
 ## Validation Philosophy
 
 Retrieval is allowed to supply bounded snippets for semantic grounding only. It cannot create RT, height, area, FWHM, S/N, baseline, Kovats, or final calibration/integration values. Validator tests must continue to fail any knowledge or VLM output that tries to create numeric chromatographic metrics.
+
+Rule-engine tests must pass before retrieval results can be used for text classification prompts.

@@ -16,6 +16,7 @@ Phase 6C deliberately does not add an in-app downloader and does not commit larg
 8. Generate a rejected-source report.
 9. Generate small test fixtures.
 10. Export deterministic JSON for Android packaging.
+11. In a future implementation, export SQLite FTS/Room FTS data with checksums when pack size requires it.
 
 ## Current Scope
 
@@ -28,9 +29,13 @@ Do not add PubChem, NIST, AMDIS, or ChEBI bulk imports directly to the app. Add 
 ```powershell
 python tools/knowledge-builder/build_knowledge_pack.py `
   --sources tools/knowledge-builder/sources.yaml `
-  --output docs/knowledge/chromalab_knowledge_seed_v2.json `
+  --pack docs/knowledge/chromalab_knowledge_seed_v2.json `
   --manifest tools/knowledge-builder/output/knowledge_build_manifest_v2.json `
   --rejected tools/knowledge-builder/output/rejected_sources_v2.md
 ```
 
 The script is intentionally stdlib-only. The initial `sources.yaml` parser is conservative and validates the current Phase 6C source register shape rather than implementing a general YAML parser.
+
+## Optional OPSIN Plan
+
+OPSIN may be used later on the builder side for chemical-name normalization if license and attribution remain valid. Its output must be stored as normalized synonym/structure metadata only. It must not be used as compound identification proof.

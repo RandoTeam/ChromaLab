@@ -7,7 +7,7 @@ sources:
     url:
     license: Project internal curated content
     license_status: INTERNAL_CURATED
-    trust_tier: INTERNAL_CURATED
+    trust_tier: TIER_0_INTERNAL_CURATED
     can_bundle: true
     can_transform: true
     api_lookup_only: false
@@ -20,7 +20,7 @@ sources:
     url: https://www.ebi.ac.uk/chebi/aboutChebiForward.do
     license: CC BY 4.0
     license_status: ATTRIBUTION_REQUIRED
-    trust_tier: OPEN_ONTOLOGY
+    trust_tier: TIER_1_OPEN_REFERENCE
     can_bundle: true
     can_transform: true
     api_lookup_only: false
@@ -33,7 +33,7 @@ sources:
     url: https://pubchem.ncbi.nlm.nih.gov/docs/downloads
     license: NCBI/NLM policies plus contributor-specific source terms
     license_status: NEEDS_REVIEW
-    trust_tier: OFFICIAL_DATABASE
+    trust_tier: TIER_3_LINK_ONLY_RESTRICTED
     can_bundle: false
     can_transform: false
     api_lookup_only: true
@@ -46,7 +46,7 @@ sources:
     url: https://webbook.nist.gov/chemistry/
     license: NIST Standard Reference Data Program terms; bundling requires explicit product review
     license_status: NEEDS_REVIEW
-    trust_tier: OFFICIAL_DATABASE
+    trust_tier: TIER_3_LINK_ONLY_RESTRICTED
     can_bundle: false
     can_transform: false
     api_lookup_only: false
@@ -59,10 +59,23 @@ sources:
     url: https://www.w3.org/TR/prov-o/
     license: W3C document license
     license_status: OPEN_VERIFIED
-    trust_tier: OFFICIAL_STANDARD
+    trust_tier: TIER_1_OPEN_REFERENCE
     can_bundle: true
     can_transform: true
     api_lookup_only: false
     attribution_required: true
     decision: accepted
     notes: Used for provenance and audit-trail design references.
+
+  - id: opsin-builder-optional
+    label: OPSIN chemical name parser
+    url: https://github.com/dan2097/opsin
+    license: MIT
+    license_status: OPEN_VERIFIED
+    trust_tier: TIER_1_OPEN_REFERENCE
+    can_bundle: false
+    can_transform: true
+    api_lookup_only: false
+    attribution_required: true
+    decision: optional_builder_tool
+    notes: Optional builder-side chemical-name normalization tool. OPSIN output may become synonym/structure metadata only, never compound identification evidence.

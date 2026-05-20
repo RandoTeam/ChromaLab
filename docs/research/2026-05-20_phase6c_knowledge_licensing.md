@@ -17,6 +17,7 @@ Which chemistry and chromatography knowledge sources can ChromaLab safely bundle
 | NIST Chemistry WebBook / SRD 69 | Official SRD database source. Product redistribution is not cleared by general page access. | No | No | No uncontrolled API | Rejected until explicit licensing review. |
 | NIST AMDIS / mass spectral data | AMDIS tool access is public, while NIST mass spectral libraries are separate data products. | No | No | No uncontrolled API | Rejected for bundled knowledge data. |
 | W3C PROV-O | W3C Recommendation; suitable for provenance concept references. | Yes, as citation/reference | Yes | No | Accepted for provenance documentation. |
+| OPSIN | The maintained OPSIN GitHub repository identifies the project as MIT licensed and describes it as an IUPAC name-to-structure parser. | Not as app knowledge data in Phase 6C | Yes, builder-side only | No | Accepted only as an optional future compiler enrichment tool for chemical-name normalization. OPSIN output is synonym/structure metadata, not compound identification evidence. |
 
 ## License Register Implications
 
@@ -24,6 +25,7 @@ Which chemistry and chromatography knowledge sources can ChromaLab safely bundle
 - The builder must fail closed when source license metadata is missing.
 - `PROPRIETARY_FORBIDDEN`, `REJECTED`, or `NEEDS_REVIEW` sources cannot produce bundled entries unless explicitly overridden by a later signed source policy update.
 - NIST and PubChem may be cited in docs or used for future reviewed source connectors; they are not part of the committed seed data.
+- OPSIN may be used only in the computer-side Knowledge Pack compiler after attribution review. It must not be used in the Android runtime as a hidden chemical identification authority.
 
 ## Source Quality Triage
 

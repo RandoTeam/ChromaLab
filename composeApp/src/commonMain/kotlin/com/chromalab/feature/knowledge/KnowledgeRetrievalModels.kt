@@ -33,6 +33,7 @@ data class KnowledgeEntry(
     val sourceRefIds: List<String>,
     val licenseStatus: KnowledgeLicenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
     val trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+    val claimScopes: List<EvidenceClaimScope> = listOf(EvidenceClaimScope.NOT_MEASUREMENT),
     val confidence: Float = 1f,
     val lastReviewed: String = "2026-05-20",
     val tags: List<String> = emptyList(),
@@ -88,6 +89,11 @@ enum class KnowledgeLicenseStatus {
 
 @Serializable
 enum class KnowledgeSourceTrustTier {
+    TIER_0_INTERNAL_CURATED,
+    TIER_1_OPEN_REFERENCE,
+    TIER_2_OPEN_SPECTRAL_REFERENCE,
+    TIER_3_LINK_ONLY_RESTRICTED,
+    TIER_4_REJECTED,
     INTERNAL_CURATED,
     OFFICIAL_STANDARD,
     OFFICIAL_DATABASE,
@@ -96,6 +102,17 @@ enum class KnowledgeSourceTrustTier {
     MAINTAINED_REPOSITORY,
     USER_SUPPLIED_UNVERIFIED,
     REJECTED,
+}
+
+@Serializable
+enum class EvidenceClaimScope {
+    EXPLANATION_ONLY,
+    TEXT_CLASSIFICATION,
+    REPORT_CAVEAT,
+    RETRIEVAL_CONTEXT,
+    COMPOUND_DICTIONARY,
+    SPECTRAL_REFERENCE_LINK,
+    NOT_MEASUREMENT,
 }
 
 @Serializable
@@ -177,6 +194,17 @@ data class KnowledgeGroundedSnippet(
 )
 
 @Serializable
+data class KnowledgeRetrievalCard(
+    val entryId: String,
+    val shortCard: String,
+    val allowedUse: List<String>,
+    val forbiddenUse: List<String>,
+    val sourceRefs: List<KnowledgeSourceRef>,
+    val confidence: Float,
+    val trustTier: KnowledgeSourceTrustTier,
+)
+
+@Serializable
 data class KnowledgeGroundedVlmOutput(
     val outputId: String,
     val taskId: String,
@@ -211,6 +239,25 @@ data class KnowledgeUseValidationResult(
 )
 
 object KnowledgePackValidator {
+    private val nonBundleableLicenseStatuses = setOf(
+        KnowledgeLicenseStatus.API_ONLY,
+        KnowledgeLicenseStatus.REJECTED,
+        KnowledgeLicenseStatus.NEEDS_REVIEW,
+        KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN,
+    )
+    private val nonBundleableTrustTiers = setOf(
+        KnowledgeSourceTrustTier.TIER_3_LINK_ONLY_RESTRICTED,
+        KnowledgeSourceTrustTier.TIER_4_REJECTED,
+        KnowledgeSourceTrustTier.REJECTED,
+        KnowledgeSourceTrustTier.USER_SUPPLIED_UNVERIFIED,
+    )
+    private val legacyBundleableTrustTiers = setOf(
+        KnowledgeSourceTrustTier.INTERNAL_CURATED,
+        KnowledgeSourceTrustTier.OFFICIAL_STANDARD,
+        KnowledgeSourceTrustTier.OPEN_ONTOLOGY,
+        KnowledgeSourceTrustTier.PEER_REVIEWED,
+        KnowledgeSourceTrustTier.MAINTAINED_REPOSITORY,
+    )
     private val forbiddenMetricUses = setOf(
         "fabricate_rt",
         "fabricate_height",
@@ -234,6 +281,7 @@ object KnowledgePackValidator {
             errors.add(KnowledgePackIssue("version", "version must be stable and machine-readable."))
         }
         val sourceIds = pack.sourceRefs.map { it.sourceId }.toSet()
+        val sourcesById = pack.sourceRefs.associateBy { it.sourceId }
         if (sourceIds.size != pack.sourceRefs.size) errors.add(KnowledgePackIssue("sourceRefs", "source IDs must be unique."))
         val entryIds = pack.entries.map { it.entryId }
         if (entryIds.toSet().size != entryIds.size) errors.add(KnowledgePackIssue("entries", "entry IDs must be unique."))
@@ -243,6 +291,12 @@ object KnowledgePackValidator {
             if (source.license.isNullOrBlank()) warnings.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].license", "license text is recommended."))
             if (source.licenseStatus == KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN && source.canBundle) {
                 errors.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].canBundle", "forbidden proprietary source cannot be marked bundleable."))
+            }
+            if (source.licenseStatus in nonBundleableLicenseStatuses && source.canBundle) {
+                errors.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].canBundle", "source with ${source.licenseStatus} must not be marked bundleable."))
+            }
+            if (source.trustTier in nonBundleableTrustTiers && source.canBundle) {
+                errors.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].trustTier", "restricted or rejected source tier must not be marked bundleable."))
             }
         }
         pack.entries.forEach { entry ->
@@ -262,6 +316,10 @@ object KnowledgePackValidator {
                 errors.add(KnowledgePackIssue("entry[${entry.entryId}].aliases", "aliases must be unique after normalization."))
             }
             if (entry.sourceRefIds.isEmpty()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].sourceRefIds", "at least one source reference is required."))
+            if (entry.claimScopes.isEmpty()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].claimScopes", "at least one claim scope is required."))
+            if (EvidenceClaimScope.NOT_MEASUREMENT !in entry.claimScopes) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].claimScopes", "every bundled entry must declare NOT_MEASUREMENT."))
+            }
             entry.sourceRefIds.filterNot(sourceIds::contains).forEach { missing ->
                 errors.add(KnowledgePackIssue("entry[${entry.entryId}].sourceRefIds", "unknown source ref '$missing'."))
             }
@@ -277,6 +335,22 @@ object KnowledgePackValidator {
             if (entry.licenseStatus == KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN) {
                 errors.add(KnowledgePackIssue("entry[${entry.entryId}].licenseStatus", "proprietary forbidden entries must not be bundled."))
             }
+            if (entry.licenseStatus in nonBundleableLicenseStatuses) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].licenseStatus", "entry from ${entry.licenseStatus} source must not be bundled."))
+            }
+            if (entry.trustTier in nonBundleableTrustTiers) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].trustTier", "entry from restricted or rejected source tier must not be bundled."))
+            }
+            entry.sourceRefIds.mapNotNull(sourcesById::get).forEach { source ->
+                if (!source.isBundleableForEntries() || source.licenseStatus in nonBundleableLicenseStatuses || source.trustTier in nonBundleableTrustTiers) {
+                    errors.add(
+                        KnowledgePackIssue(
+                            "entry[${entry.entryId}].sourceRefIds",
+                            "entry cannot bundle source '${source.sourceId}' with status ${source.licenseStatus} and tier ${source.trustTier}.",
+                        ),
+                    )
+                }
+            }
             if (entry.shortText.contains(Regex("""(?i)\b(?:measured\s+)?(?:rt|height|area|fwhm|s/n|snr|baseline|kovats)\s*[:=]\s*[0-9]""")) &&
                 "test_fixture_only" !in entry.policy.forbiddenUse
             ) {
@@ -289,6 +363,11 @@ object KnowledgePackValidator {
             warnings = warnings,
         )
     }
+
+    private fun KnowledgeSourceRef.isBundleableForEntries(): Boolean =
+        canBundle ||
+            licenseStatus == KnowledgeLicenseStatus.INTERNAL_CURATED ||
+            trustTier in legacyBundleableTrustTiers
 
     fun validateOutput(
         output: KnowledgeGroundedVlmOutput,
@@ -386,6 +465,24 @@ object KnowledgePackValidator {
             )
         }
     }
+
+    fun cardsFor(
+        context: KnowledgeRetrievalContext,
+        pack: KnowledgePackVersion,
+    ): List<KnowledgeRetrievalCard> {
+        val sourceRefs = pack.sourceRefs.associateBy { it.sourceId }
+        return context.results.map { result ->
+            KnowledgeRetrievalCard(
+                entryId = result.entry.entryId,
+                shortCard = result.entry.shortText.take(420),
+                allowedUse = result.entry.policy.allowedUse,
+                forbiddenUse = result.entry.policy.forbiddenUse,
+                sourceRefs = result.entry.sourceRefIds.mapNotNull(sourceRefs::get),
+                confidence = result.entry.confidence,
+                trustTier = result.entry.trustTier,
+            )
+        }
+    }
 }
 
 object KnowledgeUsePolicyValidator {
@@ -403,6 +500,12 @@ object KnowledgeUsePolicyValidator {
         pack: KnowledgePackVersion,
     ): List<KnowledgeGroundedSnippet> =
         KnowledgePackValidator.snippetsFor(context, pack)
+
+    fun cardsFor(
+        context: KnowledgeRetrievalContext,
+        pack: KnowledgePackVersion,
+    ): List<KnowledgeRetrievalCard> =
+        KnowledgePackValidator.cardsFor(context, pack)
 }
 
 object KnowledgeTextClassificationPolicy {

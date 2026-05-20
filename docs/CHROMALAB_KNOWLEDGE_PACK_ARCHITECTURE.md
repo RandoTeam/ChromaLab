@@ -66,3 +66,13 @@ Knowledge entries are semantic aids. They cannot generate measured RT, height, a
 
 - v1 remains a small Phase 6B seed.
 - v2 is the expanded Phase 6C seed for autonomous semantic grounding and report caveats.
+
+## Phase 6C-2 Rules + Retrieval + Provenance
+
+The architecture now separates:
+
+- deterministic rules: `KnowledgeRuleEngine`;
+- retrieval: `KnowledgeRetrievalEngine`;
+- provenance: source refs, source tiers, claim scopes, and attribution manifests.
+
+Compact retrieval cards are optimized for Gemma E4B/E2B semantic prompts and include only bounded fields. Rule classifications run before VLM use for adversarial OCR cases.

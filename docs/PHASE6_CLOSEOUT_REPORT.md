@@ -81,6 +81,7 @@ Phase 6C expands the local/offline Knowledge Pack and adds a controlled computer
 - Added source validation output and rejected-source report.
 - Extended retrieval with exact alias lookup, lexical search, type/language/allowed-use filters, and source/forbidden-use propagation.
 - Added tests for seed v2 validation, retrieval filters, ion-title classification, Kovats/compound caveats, VLM grounding, and builder artifacts.
+- Added Phase 6C-2 deterministic rule layer, evidence claim scopes, source trust tiers, compact Gemma retrieval cards, adversarial tests, and OPSIN builder-side normalization plan.
 
 ## Agent Roles Applied
 

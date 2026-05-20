@@ -71,6 +71,8 @@ UI implementation agents were not needed because Phase 6C did not change UI beha
 - Retrieval now supports exact alias lookup, type filtering, language filtering, and allowed-use filtering.
 - Search results preserve source refs and forbidden-use policy.
 - Builder scaffold validates source metadata and emits manifest/rejected-source artifacts.
+- Phase 6C-2 adds `KnowledgeRuleEngine`, source trust tiers, evidence claim scopes, compact retrieval cards, and OPSIN enrichment planning.
+- Phase 6C-2 validator updates fail closed for bundled entries that reference restricted/review-only sources and reject forbidden compound-identification or Kovats-fabrication attempts.
 
 ## Validation Summary
 
@@ -82,6 +84,7 @@ Focused knowledge tests passed before closeout. Broader compile/build/regression
 - PubChem source-level contributor licenses are not resolved.
 - NIST/AMDIS/WebBook content remains excluded until product/legal review.
 - SQLite FTS5/Room FTS5 indexing is documented but not implemented because v2 is still small enough for deterministic in-memory search.
+- OPSIN is not integrated yet; it is documented as builder-side optional normalization only.
 
 ## Phase 7 Readiness
 

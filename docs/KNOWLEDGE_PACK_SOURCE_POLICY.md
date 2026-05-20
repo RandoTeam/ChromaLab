@@ -79,3 +79,8 @@ ChromaLab Knowledge Pack sources are fail-closed. A source may contribute bundle
 - ChEBI is a future candidate source under CC BY 4.0 attribution, but no bulk ChEBI import is committed in Phase 6C.
 - PubChem is a future source-reviewed/API path only because contributor licenses vary.
 - NIST/AMDIS/WebBook database content is not bundled.
+- OPSIN is allowed only as a future builder-side name-normalization tool if license and attribution are preserved. OPSIN output is synonym/structure metadata only, not compound identification evidence.
+
+## Source Tiers
+
+Use the tier definitions in `docs/KNOWLEDGE_PACK_SOURCE_TIERS.md`. Phase 6C-2 has no bundled `TIER_2_OPEN_SPECTRAL_REFERENCE` data.

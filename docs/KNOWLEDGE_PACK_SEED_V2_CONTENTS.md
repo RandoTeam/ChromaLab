@@ -28,3 +28,14 @@ Runtime seed: `ChromaLabKnowledgeSeedV2`
 - No compound identification claims.
 
 Every entry includes allowed-use and forbidden-use fields. The forbidden-use policy blocks metric fabrication, calibration override, integration override, and unsupported compound identification.
+
+## Phase 6C-2 Metadata
+
+Every runtime entry now also declares:
+
+- `claimScopes`, always including `NOT_MEASUREMENT`;
+- source trust tier;
+- confidence;
+- source references.
+
+Compact retrieval cards for Gemma E4B/E2B include only entry ID, short card text, allowed uses, forbidden uses, source refs, confidence, and trust tier.
