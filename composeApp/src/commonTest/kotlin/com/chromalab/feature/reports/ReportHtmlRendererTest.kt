@@ -23,12 +23,13 @@ class ReportHtmlRendererTest {
         assertTrue(html.contains("Evidence package"), html)
         assertTrue(html.contains("Peak evidence"), html)
         assertTrue(html.contains("Privacy class"), html)
-        assertTrue(html.contains("NEVER_SHARED_BY_DEFAULT"), html)
+        assertFalse(html.contains("NEVER_SHARED_BY_DEFAULT"), html)
         assertTrue(html.contains("<table>"), html)
         assertTrue(html.contains("Selected graph focus"), html)
         assertTrue(html.contains("Curve extraction overlay"), html)
         assertTrue(html.contains("Peak integration overlay"), html)
         assertTrue(html.contains("Value provenance"), html)
+        assertTrue(html.contains("Knowledge Pack citations"), html)
         assertTrue(html.contains("Fixture executed vision model"), html)
     }
 

@@ -55,9 +55,12 @@ Final validation results are recorded in the assistant final response for this w
 
 ## Open Risks
 
-- Visual evidence status should become a typed enum in Phase 8.
-- Large multi-graph reports would benefit from a dedicated graph selector in Phase 8.
-- First-class Knowledge Pack explanation records should be added to the report model in Phase 8.
+- Phase 7B closed the deferred typed visual evidence status and first-class Knowledge Pack citation record items.
+- Large multi-graph reports would still benefit from a richer dedicated graph selector in Phase 8; Phase 7B added minimum multi-graph acceptance and export assertions.
+
+## Phase 7B Follow-Up
+
+Phase 7B added `docs/PHASE7B_CLOSEOUT_REPORT.md`, first-class `knowledgeCitations`, typed `ReportVisualEvidenceStatus`, report overclaim tests, and golden report assertions before Phase 8.
 
 ## Phase 8 Decision
 

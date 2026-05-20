@@ -63,11 +63,60 @@ object ReportContractValidator {
         report.graphs.forEach { graph ->
             validateGraph(graph, findings)
         }
+        validateKnowledgeCitations(report, findings)
 
         return ReportContractValidationResult(
             isComplete = findings.none { it.severity == ReportContractSeverity.ERROR },
             findings = findings,
         )
+    }
+
+    private fun validateKnowledgeCitations(
+        report: ChromatogramReport,
+        findings: MutableList<ReportContractFinding>,
+    ) {
+        report.knowledgeCitations.forEach { citation ->
+            if (citation.generatedBy == ReportKnowledgeGeneratedBy.VLM_WITH_KNOWLEDGE &&
+                citation.usedEntryIds.isEmpty()
+            ) {
+                findings += warning(
+                    code = "knowledge.used_entry_ids_missing",
+                    section = "technical_appendix",
+                    message = "VLM-generated scientific/domain explanation is missing Knowledge Pack entry IDs.",
+                )
+            }
+            if (citation.usedEntryIds.any { id ->
+                    citation.usedEntryRecords.none { record -> record.entryId == id }
+                }
+            ) {
+                findings += warning(
+                    code = "knowledge.used_entry_record_missing",
+                    section = "technical_appendix",
+                    message = "Knowledge citation references entry IDs that are not represented as full citation records.",
+                )
+            }
+            if (citation.unsupportedClaims.isNotEmpty()) {
+                findings += warning(
+                    code = "knowledge.unsupported_claims_present",
+                    section = "technical_appendix",
+                    message = "Knowledge/VLM explanation contains unsupported claims and must remain review-only or be omitted.",
+                )
+            }
+            if (citation.rejectionReason != null) {
+                findings += warning(
+                    code = "knowledge.explanation_rejected",
+                    section = "technical_appendix",
+                    message = "Knowledge/VLM explanation was rejected: ${citation.rejectionReason}.",
+                )
+            }
+            if (citation.attemptedNumericMetricUse) {
+                findings += error(
+                    code = "knowledge.numeric_metric_forbidden",
+                    section = "technical_appendix",
+                    message = "Knowledge Pack citations cannot create measured RT, height, area, FWHM, S/N, baseline, Kovats, calibration, or peak metrics.",
+                )
+            }
+        }
     }
 
     private fun validateGraph(
@@ -427,13 +476,14 @@ object ReportContractValidator {
         findings: MutableList<ReportContractFinding>,
         peakNumber: Int? = null,
     ) {
-        if (value.source == ReportValueSource.VISION_MODEL || value.source == ReportValueSource.MODEL_SUGGESTED) {
+        if (!value.isAvailable()) return
+        if (!VlmBoundaryPolicy.canUseValueSourceForNumericMetric(value.source)) {
             findings += error(
                 code = code,
                 graphIndex = graphIndex,
                 peakNumber = peakNumber,
                 section = section,
-                message = "$label cannot use VLM/model-suggested output as numeric chromatographic evidence.",
+                message = "$label cannot use VLM, OCR, model-suggested, local-knowledge, or unknown output as numeric chromatographic evidence.",
             )
         }
     }

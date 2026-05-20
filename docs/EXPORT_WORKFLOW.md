@@ -41,7 +41,7 @@ Report export artifacts must be classified before sharing:
 | `calculation_<run>.json` | `TECHNICAL_EVIDENCE` | Technical export only. |
 | `runtime_evidence_package_<run>.json` | `DIAGNOSTIC_BUNDLE` | Diagnostic export only after explicit user action. |
 | `validator_report_<run>.json` / `.md` | `TECHNICAL_EVIDENCE` | Technical review export only. |
-| raw device logs | `NEVER_SHARED_BY_DEFAULT` | Excluded from normal report sharing. |
+| raw device logs | `NEVER_SHARED_BY_DEFAULT` | Excluded from normal report sharing and not listed in user report manifests. |
 
 User-facing reports must not include raw device logs, full prompts, or internal model
 debug traces. Evidence packages may include artifact paths and runtime metadata only as

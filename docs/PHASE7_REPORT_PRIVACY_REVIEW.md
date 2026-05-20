@@ -4,14 +4,15 @@ Date: 2026-05-20
 
 ## Review Result
 
-PASS with follow-up risks.
+PASS after Phase 7B hardening.
 
 ## Implemented
 
 - Export artifacts now carry privacy class, redaction policy, and diagnostic-only marker.
 - User-facing HTML/Markdown reports are separated from technical evidence and raw logs.
 - Runtime evidence package is diagnostic-only by default.
-- Raw device logs are marked `NEVER_SHARED_BY_DEFAULT`.
+- Raw device logs are not listed in the normal report export manifest. `NEVER_SHARED_BY_DEFAULT` remains a privacy class for future explicit developer diagnostics.
+- Knowledge citation records expose source IDs and caveats, but not raw prompts or model internals.
 
 ## Privacy Rules
 

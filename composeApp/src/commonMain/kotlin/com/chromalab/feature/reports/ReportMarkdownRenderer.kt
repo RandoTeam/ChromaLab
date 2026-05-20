@@ -8,11 +8,14 @@ package com.chromalab.feature.reports
  */
 object ReportMarkdownRenderer {
 
-    fun render(report: ChromatogramReport): String = buildString {
+    fun render(
+        report: ChromatogramReport,
+        uiContract: ChromatogramReportUiContract = ChromatogramReportUiContractBuilder.build(report),
+    ): String = buildString {
         appendLine("# ChromaLab chromatogram report")
         appendLine()
         appendLine("## 1. Overview")
-        renderOverview(report)
+        renderOverview(report, uiContract)
         appendLine()
 
         appendLine("## 2. Source and graph preparation")
@@ -48,23 +51,24 @@ object ReportMarkdownRenderer {
         appendLine()
 
         appendLine("## 10. Technical appendix")
-        renderTechnicalAppendix(report)
+        renderTechnicalAppendix(report, uiContract)
     }
 
-    private fun StringBuilder.renderOverview(report: ChromatogramReport) {
+    private fun StringBuilder.renderOverview(
+        report: ChromatogramReport,
+        uiContract: ChromatogramReportUiContract,
+    ) {
         val metadata = report.metadata
         val firstGraph = report.graphs.firstOrNull()
-        val validation = ReportContractValidator.validate(report)
-        val gate = ReportReleaseGateEvaluator.evaluate(report, validation)
 
         appendLine("| Field | Value |")
         appendLine("| --- | --- |")
         row("Report ID", metadata.reportId)
         row("Schema", metadata.schemaVersion)
-        row("Report gate", gate.status.name)
+        row("Report gate", uiContract.reportGateStatus.name)
         row(
             "Release-quality claim",
-            if (gate.status == ReportGateStatus.RELEASE_READY) {
+            if (uiContract.reportGateStatus == ReportGateStatus.RELEASE_READY) {
                 "allowed by current evidence gate"
             } else {
                 "blocked; use as review or diagnostic evidence only"
@@ -84,16 +88,17 @@ object ReportMarkdownRenderer {
         row("Selected model", metadata.selectedModel.render())
         row("Executed model", metadata.executedModel.render())
         row("Executed runtime", metadata.executedRuntime.name)
+        row("Knowledge citations", report.knowledgeCitations.size.toString())
 
         appendLine()
         appendLine("Report gate evidence:")
         appendLine("| Evidence gate | Status | Release impact |")
         appendLine("| --- | --- | --- |")
-        gate.evidence.rows().forEach { row ->
+        uiContract.reportGateEvidence.rows().forEach { row ->
             appendLine("| ${row.label.escapeTable()} | ${row.status.name} | ${row.status.releaseImpact().escapeTable()} |")
         }
-        renderGateReasonList("Blocking reasons", gate.blockingReasons)
-        renderGateReasonList("Review reasons", gate.reviewReasons)
+        renderGateReasonList("Blocking reasons", uiContract.reportGateBlockingReasons)
+        renderGateReasonList("Review reasons", uiContract.reportGateReviewReasons)
     }
 
     private fun StringBuilder.renderGraphPreparation(graph: GraphReport, showGraphHeader: Boolean) {
@@ -193,7 +198,7 @@ object ReportMarkdownRenderer {
         if (rows.isEmpty()) return
 
         appendLine()
-        appendLine("| Label | Source | Crop | Local max RT | Height | S/N | Prominence | Decision | Flags | Reason |")
+        appendLine("| Label | Source | Crop evidence | Local max RT | Height | S/N | Prominence | Decision | Flags | Reason |")
         appendLine("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
         rows.forEach { candidate ->
             val evidence = candidate.sourceEvidence
@@ -201,7 +206,7 @@ object ReportMarkdownRenderer {
                 listOf(
                     evidence?.rawText ?: candidate.labelRt.formatDouble(),
                     evidence?.source?.name ?: "UNKNOWN",
-                    evidence?.localCropPath ?: "",
+                    if (evidence?.localCropPath.isNullOrBlank()) "" else "available in diagnostic evidence package",
                     candidate.nearestLocalMaximumRt?.formatDouble() ?: notCalculated(),
                     candidate.localHeight?.formatDouble() ?: notCalculated(),
                     candidate.localSNR?.formatDouble() ?: notCalculated(),
@@ -332,7 +337,10 @@ object ReportMarkdownRenderer {
         }
     }
 
-    private fun StringBuilder.renderTechnicalAppendix(report: ChromatogramReport) {
+    private fun StringBuilder.renderTechnicalAppendix(
+        report: ChromatogramReport,
+        uiContract: ChromatogramReportUiContract,
+    ) {
         val metadata = report.metadata
         appendLine("| Field | Value |")
         appendLine("| --- | --- |")
@@ -361,6 +369,8 @@ object ReportMarkdownRenderer {
         }
 
         renderValueProvenance(report)
+        renderKnowledgeCitations(report)
+        renderExportManifest(uiContract)
     }
 
     private fun StringBuilder.renderStageTimings(stageTimings: List<ReportStageTiming>) {
@@ -398,6 +408,68 @@ object ReportMarkdownRenderer {
                     row.status.name,
                     row.source.name,
                     row.confidence.renderPercent(),
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+    }
+
+    private fun StringBuilder.renderKnowledgeCitations(report: ChromatogramReport) {
+        appendLine()
+        appendLine("### Knowledge Pack citations")
+        if (report.knowledgeCitations.isEmpty()) {
+            appendLine(notCalculated())
+            return
+        }
+
+        appendLine("| Citation | Pack | Used entries | Target | Generated by | Unsupported claims | Rejection |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- |")
+        report.knowledgeCitations.forEach { citation ->
+            appendLine(
+                listOf(
+                    citation.citationId,
+                    citation.knowledgePackVersion,
+                    citation.usedEntryIds.joinToString(", "),
+                    citation.explanationTarget.name,
+                    citation.generatedBy.name,
+                    citation.unsupportedClaims.joinToString("; "),
+                    citation.rejectionReason ?: "",
+                ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+            )
+        }
+
+        report.knowledgeCitations.forEach { citation ->
+            appendLine()
+            appendLine("#### ${citation.citationId.escapeMarkdown()}")
+            appendLine("| Entry | Type | Claim scope | Allowed use | Forbidden use | Trust tier | Sources |")
+            appendLine("| --- | --- | --- | --- | --- | --- | --- |")
+            citation.usedEntryRecords.forEach { record ->
+                appendLine(
+                    listOf(
+                        record.entryId,
+                        record.entryType.name,
+                        record.claimScope.joinToString(", ") { it.name },
+                        record.allowedUse.joinToString("; "),
+                        record.forbiddenUse.joinToString("; "),
+                        record.trustTier.name,
+                        record.sourceRefs.joinToString("; ") { it.citation ?: it.label },
+                    ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
+                )
+            }
+        }
+    }
+
+    private fun StringBuilder.renderExportManifest(uiContract: ChromatogramReportUiContract) {
+        appendLine()
+        appendLine("### Export manifest")
+        appendLine("| Artifact | Visibility | Privacy class | Policy |")
+        appendLine("| --- | --- | --- | --- |")
+        uiContract.exportArtifacts.forEach { artifact ->
+            appendLine(
+                listOf(
+                    artifact.artifactPath,
+                    if (artifact.userFacing) "user-facing" else "technical",
+                    artifact.privacyClass.name,
+                    artifact.redactionPolicy,
                 ).joinToString(prefix = "| ", separator = " | ", postfix = " |") { it.escapeTable() },
             )
         }

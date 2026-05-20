@@ -890,6 +890,19 @@ private fun TechnicalAppendix(
                 )
             }
         }
+
+        SectionBlock(title = "Knowledge Pack citations") {
+            if (report.knowledgeCitations.isEmpty()) {
+                EmptyText("No Knowledge Pack citations recorded.")
+            } else {
+                report.knowledgeCitations.forEach { citation ->
+                    DetailLine(
+                        label = citation.citationId,
+                        value = "${citation.generatedBy.name} / ${citation.explanationTarget.name} / ${citation.usedEntryIds.joinToString(", ")}",
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -912,10 +925,10 @@ private fun VisualEvidenceStrip(visualEvidence: List<ReportVisualEvidenceContrac
 
 @Composable
 private fun EvidenceChip(evidence: ReportVisualEvidenceContract) {
-    val ready = evidence.generatedStatus == "rendered" || evidence.generatedStatus == "generated"
+    val ready = evidence.generatedStatus.isReadyVisualEvidence()
     Surface(
         modifier = Modifier.semantics {
-            contentDescription = "${evidence.label}, ${evidence.generatedStatus}"
+            contentDescription = "${evidence.label}, ${evidence.generatedStatus.name}"
         },
         shape = RoundedCornerShape(6.dp),
         color = if (ready) {
@@ -938,6 +951,14 @@ private fun EvidenceChip(evidence: ReportVisualEvidenceContract) {
         )
     }
 }
+
+private fun ReportVisualEvidenceStatus.isReadyVisualEvidence(): Boolean =
+    this in setOf(
+        ReportVisualEvidenceStatus.PASS,
+        ReportVisualEvidenceStatus.AUTO_VALID,
+        ReportVisualEvidenceStatus.USER_CONFIRMED,
+        ReportVisualEvidenceStatus.USER_EDITED,
+    )
 
 @Composable
 private fun ReportSection(

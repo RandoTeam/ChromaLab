@@ -1,5 +1,9 @@
 package com.chromalab.feature.reports
 
+import com.chromalab.feature.knowledge.EvidenceClaimScope
+import com.chromalab.feature.knowledge.KnowledgeEntryType
+import com.chromalab.feature.knowledge.KnowledgeSourceRef
+import com.chromalab.feature.knowledge.KnowledgeSourceTrustTier
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
@@ -20,6 +24,7 @@ data class ChromatogramReport(
     val metadata: ReportMetadata,
     val graphs: List<GraphReport>,
     val warnings: List<ReportWarning> = emptyList(),
+    val knowledgeCitations: List<ReportKnowledgeCitation> = emptyList(),
 )
 
 @Serializable
@@ -55,6 +60,49 @@ data class ReportStageTiming(
     val stageName: String? = null,
     val durationMillis: Long,
 )
+
+@Serializable
+data class ReportKnowledgeCitation(
+    val citationId: String,
+    val knowledgePackVersion: String,
+    val usedEntryIds: List<String>,
+    val usedEntryRecords: List<ReportKnowledgeEntryRecord>,
+    val explanationTarget: ReportKnowledgeExplanationTarget,
+    val generatedBy: ReportKnowledgeGeneratedBy,
+    val explanation: String,
+    val unsupportedClaims: List<String> = emptyList(),
+    val rejectionReason: String? = null,
+    val attemptedNumericMetricUse: Boolean = false,
+)
+
+@Serializable
+data class ReportKnowledgeEntryRecord(
+    val entryId: String,
+    val entryType: KnowledgeEntryType,
+    val claimScope: List<EvidenceClaimScope>,
+    val allowedUse: List<String>,
+    val forbiddenUse: List<String>,
+    val sourceRefs: List<KnowledgeSourceRef>,
+    val trustTier: KnowledgeSourceTrustTier,
+)
+
+@Serializable
+enum class ReportKnowledgeExplanationTarget {
+    REPORT_SUMMARY,
+    WARNING,
+    CAVEAT,
+    COMPOUND_HYPOTHESIS,
+    AXIS_LABEL_EXPLANATION,
+    PEAK_WARNING,
+    METHOD_NOTE,
+}
+
+@Serializable
+enum class ReportKnowledgeGeneratedBy {
+    DETERMINISTIC_MAPPER,
+    KNOWLEDGE_PACK,
+    VLM_WITH_KNOWLEDGE,
+}
 
 @Serializable
 enum class InputSourceType {

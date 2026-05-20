@@ -107,6 +107,7 @@ object CalculationRunReportMapper {
                 ),
             ),
             warnings = buildReportWarnings(options, graphIndex),
+            knowledgeCitations = knowledge.citations,
         )
         return ReportWarningRuleEngine.apply(report)
     }

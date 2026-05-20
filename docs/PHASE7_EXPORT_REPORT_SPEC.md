@@ -13,11 +13,12 @@ Date: 2026-05-20
 | `runtime_evidence_package.json` | DIAGNOSTIC_BUNDLE | No | Diagnostic evidence package. |
 | `validator_report.json` | TECHNICAL_EVIDENCE | No | Machine-readable validator result. |
 | `validator_report.md` | TECHNICAL_EVIDENCE | No | Human-readable validation summary. |
-| `raw_device_logs.txt` | NEVER_SHARED_BY_DEFAULT | No | Developer debugging only after redaction. |
+| raw device logs | NEVER_SHARED_BY_DEFAULT | No | Not listed in the normal report manifest; developer debugging only after explicit redaction workflow. |
 
 ## Export Rules
 
 - User-facing reports may include visible sample/source labels but not raw logs, full prompts, or debug traces.
 - Diagnostic evidence packages can contain artifact links and runtime details, but require explicit diagnostic export.
 - Raw logs are never included in normal report sharing.
+- `NEVER_SHARED_BY_DEFAULT` artifacts are not listed in user-facing HTML/Markdown report manifests.
 - HTML and Markdown must include report gate, warnings, peak/evidence tables, provenance summaries, and model/runtime summary.

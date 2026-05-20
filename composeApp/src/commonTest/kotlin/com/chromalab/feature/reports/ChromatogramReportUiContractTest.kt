@@ -59,13 +59,7 @@ class ChromatogramReportUiContractTest {
                     it.diagnosticOnly
             },
         )
-        assertTrue(
-            contract.exportArtifacts.any {
-                it.artifactPath == "raw_device_logs.txt" &&
-                    it.privacyClass == ReportExportPrivacyClass.NEVER_SHARED_BY_DEFAULT &&
-                    it.diagnosticOnly
-            },
-        )
+        assertTrue(contract.exportArtifacts.none { it.privacyClass == ReportExportPrivacyClass.NEVER_SHARED_BY_DEFAULT })
     }
 
     private fun assertVisualEvidence(
@@ -78,5 +72,6 @@ class ChromatogramReportUiContractTest {
         assertEquals(nearSectionId, evidence.nearSectionId)
         assertEquals(ReportUiPlacement.MAIN_REPORT, evidence.placement)
         assertTrue(evidence.requiredForMobile)
+        assertTrue(evidence.generatedStatus in ReportVisualEvidenceStatus.entries)
     }
 }

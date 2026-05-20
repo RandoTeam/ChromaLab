@@ -172,6 +172,9 @@ object ReportReleaseGateEvaluator {
             .filter { it.severity == ReportContractSeverity.WARNING }
             .map { it.code }
         val status = when {
+            validation.findings.any {
+                it.severity == ReportContractSeverity.ERROR && it.code == "report.graphs.empty"
+            } -> ReportGateStatus.BLOCKED
             blocking.isNotEmpty() -> ReportGateStatus.DIAGNOSTIC_ONLY
             evidence.releaseRequiredStatuses().any { it == EvidenceGateStatus.REVIEW } || review.isNotEmpty() ->
                 ReportGateStatus.REVIEW_ONLY

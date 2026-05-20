@@ -55,9 +55,24 @@ data class ReportVisualEvidenceContract(
     val renderSurfaceId: String? = null,
     val placement: ReportUiPlacement,
     val nearSectionId: String,
-    val generatedStatus: String,
+    val generatedStatus: ReportVisualEvidenceStatus,
     val requiredForMobile: Boolean,
 )
+
+@Serializable
+enum class ReportVisualEvidenceStatus {
+    PASS,
+    REVIEW,
+    FAIL,
+    MISSING,
+    NOT_APPLICABLE,
+    AUTO_VALID,
+    AUTO_REVIEW,
+    USER_CONFIRMED,
+    USER_EDITED,
+    BLOCKED,
+    DIAGNOSTIC_ONLY,
+}
 
 @Serializable
 data class TechnicalAppendixUiContract(
@@ -238,15 +253,6 @@ object ChromatogramReportUiContractBuilder {
                     privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
                     redactionPolicy = "Contains validation summaries and warning codes, not full prompt text or raw logs.",
                 ),
-                ReportExportArtifactContract(
-                    artifactPath = "raw_device_logs.txt",
-                    label = "Raw device logs",
-                    purpose = "Developer-only debugging artifact. It is never included in normal report sharing.",
-                    userFacing = false,
-                    privacyClass = ReportExportPrivacyClass.NEVER_SHARED_BY_DEFAULT,
-                    redactionPolicy = "Exclude from user-facing exports; redact identifiers before any diagnostic sharing.",
-                    diagnosticOnly = true,
-                ),
             ),
         )
     }
@@ -367,14 +373,22 @@ object ChromatogramReportUiContractBuilder {
                 label = "Selected graph focus",
                 renderSurfaceId = "graph_${graphIndex}_focus",
                 nearSectionId = "source_and_graph_preparation",
-                generatedStatus = if (source.detectedGraphBounds != null) "rendered" else "not_available",
+                generatedStatus = if (source.detectedGraphBounds != null) {
+                    ReportVisualEvidenceStatus.AUTO_VALID
+                } else {
+                    ReportVisualEvidenceStatus.MISSING
+                },
             ),
             visualEvidence(
                 evidenceId = "calibration_evidence_focus",
                 label = "Calibration evidence focus",
                 renderSurfaceId = "graph_${graphIndex}_axis_focus",
                 nearSectionId = "axis_calibration",
-                generatedStatus = if (axisCalibration.pixelToUnitTransform != null) "rendered" else "not_available",
+                generatedStatus = if (axisCalibration.pixelToUnitTransform != null) {
+                    ReportVisualEvidenceStatus.AUTO_VALID
+                } else {
+                    ReportVisualEvidenceStatus.MISSING
+                },
             ),
             visualEvidence(
                 evidenceId = "curve_overlay",
@@ -382,9 +396,9 @@ object ChromatogramReportUiContractBuilder {
                 renderSurfaceId = "graph_${graphIndex}_curve_overlay",
                 nearSectionId = "interactive_or_rendered_graph",
                 generatedStatus = if (signal.pointCount?.let { it > 0 } == true || peaks.isNotEmpty()) {
-                    "rendered"
+                    ReportVisualEvidenceStatus.AUTO_VALID
                 } else {
-                    "not_available"
+                    ReportVisualEvidenceStatus.MISSING
                 },
             ),
             visualEvidence(
@@ -392,14 +406,22 @@ object ChromatogramReportUiContractBuilder {
                 label = "Peak integration overlay",
                 renderSurfaceId = "graph_${graphIndex}_peak_overlay",
                 nearSectionId = "peak_table",
-                generatedStatus = if (peaks.isNotEmpty()) "rendered" else "not_available_until_peak_metrics_pass",
+                generatedStatus = if (peaks.isNotEmpty()) {
+                    ReportVisualEvidenceStatus.AUTO_VALID
+                } else {
+                    ReportVisualEvidenceStatus.MISSING
+                },
             ),
             visualEvidence(
                 evidenceId = "peak_label_evidence",
                 label = "Peak label OCR crops",
                 renderSurfaceId = "graph_${graphIndex}_peak_label_evidence",
                 nearSectionId = "peak_label_evidence_and_recovery",
-                generatedStatus = if (peakRecovery.labelEvidence.isNotEmpty()) "linked" else "not_available",
+                generatedStatus = if (peakRecovery.labelEvidence.isNotEmpty()) {
+                    ReportVisualEvidenceStatus.PASS
+                } else {
+                    ReportVisualEvidenceStatus.NOT_APPLICABLE
+                },
             ),
         )
 
@@ -408,7 +430,7 @@ object ChromatogramReportUiContractBuilder {
         label: String,
         renderSurfaceId: String,
         nearSectionId: String,
-        generatedStatus: String,
+        generatedStatus: ReportVisualEvidenceStatus,
     ): ReportVisualEvidenceContract =
         ReportVisualEvidenceContract(
             evidenceId = evidenceId,
