@@ -35,6 +35,8 @@ Phase 0 matrix for future phases. Every later phase must update this file when b
 - Do not relax fixture tolerances without documented root cause and updated evidence table.
 - Do not use fixture hints as production evidence.
 - Do not hardcode image-specific coordinates, filenames, run ids, or expected counts.
+- Guided/manual user confirmations must be explicit persisted evidence, not inferred from fixture metadata.
+- `AUTO_DIAGNOSTIC` must not be upgraded to guided/user-confirmed release evidence.
 - After Phase 2 and every later phase, re-check all previous phase guarantees.
 - A new real Android failure becomes a regression matrix row and, when possible, a fixture.
 
@@ -57,3 +59,17 @@ For every fixture or real-device case used to close a phase:
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.
+
+## Phase 1 Addendum
+
+Phase 1 adds shared guided/manual state contracts. No fixture expectations or image-analysis algorithms changed.
+
+Future regression rows should record, when guided/manual workflows are used:
+
+- `GuidedDigitizationMode`;
+- confirmed graphPanel/plotArea IDs;
+- calibration anchor counts by axis;
+- calibration residual report status;
+- trace confirmation status;
+- peak review status;
+- guided release-gate result.

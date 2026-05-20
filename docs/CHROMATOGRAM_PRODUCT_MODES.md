@@ -44,6 +44,17 @@ The user must confirm:
 
 User confirmation must be explicit, persisted, and visible in the report/evidence package as `USER_CONFIRMED`. Phase 0 does not implement this UI.
 
+Phase 1 adds the shared contract layer for this mode:
+
+- `GuidedDigitizationState`;
+- graphPanel and plotArea confirmation contracts;
+- calibration anchor and residual contracts;
+- trace confirmation contracts;
+- peak review decision contracts;
+- guided-to-release-gate mapping.
+
+The Phase 1 contract still does not implement the Guided UI. It only defines the state that future screens must write.
+
 ## MANUAL_ADVANCED Rules
 
 `MANUAL_ADVANCED` is the future fallback for difficult photos, rotated scans, weak traces, missing tick labels, or failed automatic geometry.
@@ -58,6 +69,8 @@ It may allow the user to define:
 - peak decisions.
 
 Manual values must still carry provenance and review status. Phase 0 does not implement this UI.
+
+Phase 1 defines the same confirmation contracts for future manual fallback. Manual values can satisfy release gates only when they are persisted as user-confirmed evidence and remain visible in report provenance.
 
 ## Report Mode Requirements
 
@@ -98,4 +111,4 @@ VLM/LLM must not provide:
 
 ## Current Status
 
-Phase 0 defines modes and gates. It does not make full-auto production-ready and does not implement Guided or Manual workflows.
+Phase 0 defines modes and gates. Phase 1 adds shared guided/manual state contracts and tests. The app still does not implement Guided or Manual UI workflows, and full-auto is still not production-ready by default.

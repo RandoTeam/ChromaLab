@@ -60,13 +60,34 @@ Supporting gates may produce `REVIEW_ONLY` or `DIAGNOSTIC_ONLY` depending on sev
 
 - Future main production path.
 - May satisfy geometry, calibration, trace, and peak gates through explicit stored user confirmation.
-- Not implemented in Phase 0.
+- Phase 1 adds shared confirmation contracts and `GuidedReportGateMapper`.
+- Guided UI is not implemented yet.
 
 ### MANUAL_ADVANCED
 
 - Future fallback for hard images.
 - May satisfy gates through full manual geometry/calibration/trace/peak definitions.
-- Not implemented in Phase 0.
+- Phase 1 adds the shared state contracts needed for future manual fallback.
+- Manual UI is not implemented yet.
+
+## Phase 1 Guided Mapping
+
+Phase 1 adds:
+
+- `GuidedDigitizationState`
+- `GuidedReportGateMapper`
+- geometry confirmation contracts
+- calibration confirmation contracts
+- trace confirmation contracts
+- peak review contracts
+
+Mapping rules:
+
+- `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` can map confirmed graphPanel, plotArea, calibration, and trace evidence to `USER_CONFIRMED`.
+- `AUTO_DIAGNOSTIC` cannot use guided/user confirmation objects as release evidence.
+- evidence package and source provenance must still be `VALID`.
+- two-anchor calibration is structurally valid but review-grade by default until robust validation or explicit future policy.
+- missing guided confirmations produce `DIAGNOSTIC_ONLY` or `BLOCKED`, never `RELEASE_READY`.
 
 ## Terminal-State Evidence Requirement
 
@@ -148,3 +169,5 @@ Phase 0 release gates are accepted when:
 - current pipeline risks are documented;
 - regression matrix exists;
 - closeout report records validation and open risks.
+
+Phase 1 acceptance adds contract tests for guided state transitions, serialization, calibration anchor minimums, and release-gate mapping.
