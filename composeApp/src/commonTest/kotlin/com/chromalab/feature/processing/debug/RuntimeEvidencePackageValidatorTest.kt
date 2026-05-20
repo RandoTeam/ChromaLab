@@ -477,6 +477,28 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun builderPreservesExplicitModelUnavailableFailureClass() {
+        val report = reportWithRecovery(
+            evidence = runtimeEvidence(),
+            geometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+        ).let { diagnostic ->
+            diagnostic.copy(
+                metadata = diagnostic.metadata.copy(
+                    runtimeFailureClass = RuntimeFailureClass.VLM_MODEL_UNAVAILABLE,
+                ),
+            )
+        }
+
+        val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(report)
+
+        assertEquals(RuntimeFailureClass.VLM_MODEL_UNAVAILABLE, packageWithFailureClass.runtimeFailureClass)
+        assertEquals(
+            RuntimeFailureClass.VLM_MODEL_UNAVAILABLE,
+            packageWithFailureClass.reportContract.metadata.runtimeFailureClass,
+        )
+    }
+
+    @Test
     fun validatorRequiresFailureClassForNonPassRuntimePackage() {
         val packageWithFailureClass = RuntimeEvidencePackageBuilder.build(
             reportWithRecovery(

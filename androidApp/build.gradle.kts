@@ -41,6 +41,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Keep the default debug package unchanged for local developer installs.
+        }
+        create("validation") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".validation"
+            versionNameSuffix = "-validation"
+            matchingFallbacks += listOf("debug")
+            isDebuggable = true
+        }
         release {
             isMinifyEnabled = false
             val releaseSigning = signingConfigs.findByName("release")
@@ -48,6 +58,10 @@ android {
                 signingConfig = releaseSigning
             }
         }
+    }
+
+    sourceSets {
+        maybeCreate("validation").assets.srcDir(rootProject.file("composeApp/src/androidMain/assets"))
     }
 
     compileOptions {

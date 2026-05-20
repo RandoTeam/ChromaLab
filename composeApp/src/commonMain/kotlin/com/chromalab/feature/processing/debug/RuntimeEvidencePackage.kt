@@ -137,7 +137,7 @@ object RuntimeEvidencePackageBuilder {
             report = report,
             evidencePackageStatus = EvidenceGateStatus.VALID,
         )
-        val failureClass = gate.toRuntimeFailureClass()
+        val failureClass = report.metadata.runtimeFailureClass ?: gate.toRuntimeFailureClass()
         val reportWithFailureClass = report.copy(
             metadata = report.metadata.copy(runtimeFailureClass = failureClass),
         )

@@ -2,7 +2,7 @@
 
 ## Status
 
-Verdict: `ANDROID_VALIDATION_DEFERRED_NO_DEVICE`
+Verdict: `SUPERSEDED_BY_PHASE_8B_FIXTURE_VALIDATION`
 
 `adb devices` was executed during Phase 8 setup. It returned no connected device or emulator:
 
@@ -10,7 +10,7 @@ Verdict: `ANDROID_VALIDATION_DEFERRED_NO_DEVICE`
 List of devices attached
 ```
 
-Because no real Android target was available, Phase 8 cannot be marked fully closed for production. Desktop regression and contract validation can be strengthened, but real Android evidence remains a blocker for starting Phase 9 unless Product Acceptance explicitly accepts the deferral.
+Because no real Android target was available during the original Phase 8 slice, Phase 8 could not be marked fully closed for production at that time. Phase 8B later connected device `a36d1946`, resolved the install/signature conflict with a side-by-side validation package, and ran the fixture path. The current blocker is `VLM_MODEL_UNAVAILABLE`, not camera/gallery navigation.
 
 ## Required Android Dataset
 
@@ -43,14 +43,14 @@ Phase 8B adds a fixture-driven debug entrypoint for the White Tiger Ion 71 case.
 
 ```powershell
 adb devices
-.\gradlew.bat :androidApp:assembleDebug
-adb install -r androidApp\build\outputs\apk\debug\androidApp-debug.apk
-adb shell am start -S -n com.chromalab.app/.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71
+.\gradlew.bat :androidApp:assembleValidation
+adb install -r androidApp\build\outputs\apk\validation\androidApp-validation.apk
+adb shell am start -S -n com.chromalab.app.validation/com.chromalab.app.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71
 adb logcat -d -v time > artifacts\phase8b-android-validation\white_tiger_ion71\logcat.txt
 adb shell ls -R /sdcard/Download/ChromaLab/validation
 ```
 
-The validation run writes artifacts to `/sdcard/Download/ChromaLab/validation/<run_id>/`. Pull or inspect that directory after the app reaches the report screen. A future instrumentation runner may wrap the same debug action, but the action above is the current deterministic runner.
+The validation run writes artifacts to `/sdcard/Download/ChromaLab/validation/<run_id>/`. Pull or inspect that directory after the app reaches the report screen. Use the `validation` package so existing `com.chromalab.app` installs and data are not replaced during signature-mismatch recovery.
 
 ## Acceptance
 

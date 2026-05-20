@@ -22,6 +22,22 @@ Each run writes an `artifact_manifest_<id>.json` that records:
 - public location when saved;
 - missing reason when unavailable.
 
+Run `white_tiger_ion71_20260520_162317` produced:
+
+- `runtime_evidence_package_white_tiger_ion71_20260520_162317.json`
+- `runtime_evidence_validation_white_tiger_ion71_20260520_162317.json`
+- `runtime_evidence_validation_white_tiger_ion71_20260520_162317.md`
+- `final_report_contract_white_tiger_ion71_20260520_162317.json`
+- `report_white_tiger_ion71_20260520_162317.html`
+- `report_white_tiger_ion71_20260520_162317.md`
+- `stage_timings_white_tiger_ion71_20260520_162317.json`
+- `log_summary_white_tiger_ion71_20260520_162317.md`
+- `artifact_manifest_white_tiger_ion71_20260520_162317.json`
+
+The manifest marks graphPanel, plotArea, axis/tick, calibration, trace, and peak overlays unavailable with the explicit reason:
+
+`Terminal failure happened before overlay generation.`
+
 ## Privacy Review
 
 - Camera/gallery/photo picker is bypassed only for a bundled app asset.
@@ -29,14 +45,18 @@ Each run writes an `artifact_manifest_<id>.json` that records:
 - Normal `USER_REPORT` exports remain separate from the validation artifact directory.
 - Missing artifact reasons are operational and should not include private user paths.
 - The fixture image is committed intentionally as a developer validation asset; it is not a user image export.
+- The side-by-side validation install preserved existing `com.chromalab.app` data; no uninstall or data deletion was performed.
+- User-facing report artifacts do not include raw logcat. The logcat excerpt was collected externally under local `artifacts/` for Phase 8B validation evidence.
 
-## Remaining Manual Check
+## Manual Check Result
 
-After a real device run, inspect the exported directory and confirm:
+For run `white_tiger_ion71_20260520_162317`:
 
-- runtime evidence JSON exists;
-- validator JSON/Markdown exists;
-- report contract JSON exists;
-- HTML/Markdown exports open;
-- manifest records overlay availability or explicit missing reasons;
-- no raw debug logs are included in user report files.
+- runtime evidence JSON exists: yes;
+- validator JSON/Markdown exists: yes;
+- report contract JSON exists: yes;
+- HTML/Markdown exports exist: yes;
+- manifest records overlay availability or explicit missing reasons: yes;
+- no raw debug logs are included in user report files: yes.
+
+The remaining blocker is runtime model availability, not export workflow.

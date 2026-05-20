@@ -234,7 +234,10 @@ Phase 8B adds a deterministic Android validation row that avoids camera/gallery/
 - fixture id: `white_tiger_ion71`;
 - asset: `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg`;
 - metadata: `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.metadata.json`;
-- trigger: `adb shell am start -S -n com.chromalab.app/.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71`;
+- safe install path: build and install `androidApp/build/outputs/apk/validation/androidApp-validation.apk`, which uses package `com.chromalab.app.validation` and preserves existing `com.chromalab.app` data;
+- trigger: `adb shell am start -S -n com.chromalab.app.validation/com.chromalab.app.MainActivity -a com.chromalab.app.RUN_VALIDATION_FIXTURE --es fixture white_tiger_ion71`;
 - required result: real autonomous pipeline run after acquisition bypass, runtime evidence export, validator JSON/Markdown, final report contract JSON, report exports, stage timings, overlays when available, and manifest.
+
+Phase 8B device run `white_tiger_ion71_20260520_162317` reached the real processing path and exported terminal artifacts, but stopped before graph analysis because the required chromatogram VLM was unavailable. The run is classified as `VLM_MODEL_UNAVAILABLE`, report gate `BLOCKED`, validator verdict `FAIL`, and Phase 9 remains blocked until model availability is resolved and the fixture is rerun.
 
 Expected status remains `DIAGNOSTIC_ONLY` or `REVIEW_ONLY` until autonomous axis/tick/calibration evidence is valid. A release-ready result from this fixture is only acceptable when all Phase 0-8 evidence gates pass.

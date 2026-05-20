@@ -93,6 +93,8 @@ import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.ReportWarning
+import com.chromalab.feature.reports.RuntimeFailureClass
+import com.chromalab.feature.validation.AutonomousValidationTerminalFailureExporter
 import com.chromalab.core.data.DatabaseProvider
 import com.chromalab.core.data.entity.ChromatogramEntity
 import com.chromalab.core.data.model.SourceType
@@ -572,6 +574,25 @@ fun ProcessingFlowScreen(
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            runCatching {
+                val failureDuration = (System.currentTimeMillis() - stepStartedAt).coerceAtLeast(0L)
+                val failureTimings = stageDurationMillis.toMap().toMutableMap().apply {
+                    this[timedStep] = (this[timedStep] ?: 0L) + failureDuration
+                }.toReportStageTimings()
+                AutonomousValidationTerminalFailureExporter.exportFailureArtifacts(
+                    sourceImagePath = imagePath,
+                    sourceType = sourceType,
+                    failureClass = e.toRuntimeFailureClass(timedStep),
+                    stageId = timedStep.name,
+                    failureMessage = e.message ?: "Unknown processing failure.",
+                    analysisStartedAtEpochMillis = flowStartedAt,
+                    analysisCompletedAtEpochMillis = System.currentTimeMillis(),
+                    stageTimings = failureTimings,
+                    deviceName = currentReportDeviceName(),
+                )
+            }.onFailure { exportError ->
+                println("PIPELINE[VALIDATION_FAILURE_EVIDENCE] export_failed=${exportError.message}")
+            }
             if (currentStep == ProcessingStep.GRAPH_SELECTION || currentStep == ProcessingStep.GRAPH_ROI) {
                 runCatching {
                     val path = DebugPackageExporter.writeRoiFailureEvidencePackage(
@@ -1208,6 +1229,31 @@ private fun Map<ProcessingStep, Long>.toReportStageTimings(): List<ReportStageTi
             durationMillis = duration,
         )
     }
+
+private fun Throwable.toRuntimeFailureClass(step: ProcessingStep): RuntimeFailureClass {
+    val message = this.message.orEmpty().lowercase()
+    return when {
+        "vision model is required" in message ||
+            "model unavailable" in message ||
+            "no chromatogram vision model" in message -> RuntimeFailureClass.VLM_MODEL_UNAVAILABLE
+        "decode" in message || "load source image" in message -> RuntimeFailureClass.IMAGE_DECODE_FAILURE
+        "orientation" in message -> RuntimeFailureClass.ORIENTATION_FAILURE
+        "tick" in message -> RuntimeFailureClass.TICK_LOCALIZATION_FAILURE
+        "ocr" in message -> RuntimeFailureClass.OCR_TICK_FAILURE
+        "calibration" in message -> RuntimeFailureClass.CALIBRATION_FAILURE
+        "trace" in message || "curve" in message -> RuntimeFailureClass.TRACE_EXTRACTION_FAILURE
+        "peak" in message -> RuntimeFailureClass.PEAK_EVIDENCE_FAILURE
+        "timeout" in message -> RuntimeFailureClass.PERFORMANCE_TIMEOUT
+        step == ProcessingStep.GRAPH_SELECTION -> RuntimeFailureClass.MULTI_GRAPH_SPLIT_FAILURE
+        step == ProcessingStep.GRAPH_ROI -> RuntimeFailureClass.GRAPH_PANEL_FAILURE
+        step == ProcessingStep.AXIS_DETECTION -> RuntimeFailureClass.AXIS_DETECTION_FAILURE
+        step == ProcessingStep.X_CALIBRATION || step == ProcessingStep.Y_CALIBRATION ->
+            RuntimeFailureClass.CALIBRATION_FAILURE
+        step == ProcessingStep.CURVE_EXTRACTION || step == ProcessingStep.SIGNAL_PREVIEW ->
+            RuntimeFailureClass.TRACE_EXTRACTION_FAILURE
+        else -> RuntimeFailureClass.UNKNOWN_FAILURE
+    }
+}
 
 private fun SourceType.toGeometrySourceType(): GeometrySourceType =
     when (this) {
