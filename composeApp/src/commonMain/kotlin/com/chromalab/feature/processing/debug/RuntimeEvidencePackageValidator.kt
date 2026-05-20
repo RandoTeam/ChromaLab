@@ -1,5 +1,8 @@
 package com.chromalab.feature.processing.debug
 
+import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
+import com.chromalab.feature.knowledge.KnowledgeUsePolicyValidator
+import com.chromalab.feature.knowledge.KnowledgeUseValidationVerdict
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.graph.GraphRegion
@@ -102,6 +105,17 @@ data class RuntimeEvidenceStageJudgeRow(
 )
 
 @Serializable
+data class RuntimeEvidenceKnowledgeRow(
+    val graphIndex: Int,
+    val outputId: String,
+    val taskId: String,
+    val usedEntryIds: List<String>,
+    val decision: String,
+    val unsupportedClaims: List<String> = emptyList(),
+    val verdict: String,
+)
+
+@Serializable
 data class RuntimeEvidenceGraphValidationSummary(
     val graphIndex: Int,
     val rawDetectedPeaks: Int? = null,
@@ -111,6 +125,7 @@ data class RuntimeEvidenceGraphValidationSummary(
     val rejectedRecoveredCandidates: Int = 0,
     val peakEvidenceRows: List<RuntimeEvidencePeakRow> = emptyList(),
     val stageJudgeRows: List<RuntimeEvidenceStageJudgeRow> = emptyList(),
+    val knowledgeRows: List<RuntimeEvidenceKnowledgeRow> = emptyList(),
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
     val calibrationStatuses: List<String> = emptyList(),
@@ -184,6 +199,7 @@ object RuntimeEvidencePackageValidator {
             validateGraph(evidencePackage, graphPackage, fileExists, issues)
         }
         validatePackageMetadata(evidencePackage, issues)
+        validateKnowledgePackageMetadata(evidencePackage, issues)
         val blocking = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.BLOCKING }
         val warnings = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.WARNING }
         return RuntimeEvidenceValidationSummary(
@@ -317,6 +333,21 @@ object RuntimeEvidencePackageValidator {
             appendLine("| - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
+        appendLine("## Knowledge-Grounded VLM Outputs")
+        appendLine()
+        appendLine("| Graph | Output | Task | Used entries | Decision | Unsupported claims | Verdict |")
+        appendLine("| --- | --- | --- | --- | --- | --- | --- |")
+        summary.graphSummaries.flatMap { it.knowledgeRows }.forEach { row ->
+            appendLine(
+                "| ${row.graphIndex} | `${row.outputId}` | `${row.taskId}` | " +
+                    "${row.usedEntryIds.joinToString(", ").ifBlank { "-" }} | ${row.decision} | " +
+                    "${row.unsupportedClaims.joinToString(", ").ifBlank { "-" }} | ${row.verdict} |",
+            )
+        }
+        if (summary.graphSummaries.all { it.knowledgeRows.isEmpty() }) {
+            appendLine("| - | - | - | - | - | - | - |")
+        }
+        appendLine()
         appendLine("## Graph Counts")
         appendLine()
         appendLine("| Graph | Raw | Validated | Runtime recovered | Test-only recovered | Rejected recovery | Production reportable | Review-grade | Calibration |")
@@ -368,6 +399,41 @@ object RuntimeEvidencePackageValidator {
         }
     }
 
+    private fun validateKnowledgePackageMetadata(
+        evidencePackage: RuntimeEvidencePackage,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ) {
+        val knowledgeUsed = evidencePackage.knowledgeRetrievalContexts.isNotEmpty() ||
+            evidencePackage.graphs.any { it.knowledgeGroundedVlmOutputs.isNotEmpty() }
+        if (!knowledgeUsed) return
+
+        if (evidencePackage.knowledgePackVersion.isNullOrBlank()) {
+            issues.block(
+                "knowledge.pack_version_missing",
+                "Knowledge pack version is required when knowledge retrieval or knowledge-grounded VLM output is present.",
+            )
+        }
+        evidencePackage.knowledgeRetrievalContexts.forEach { context ->
+            if (context.knowledgePackVersion.isBlank()) {
+                issues.block("knowledge.context_pack_version_missing", "Knowledge retrieval context has no pack version.", candidateId = context.retrievalId)
+            }
+            if (context.results.isEmpty()) {
+                issues.warn("knowledge.context_results_empty", "Knowledge retrieval context has no retrieved entries.", candidateId = context.retrievalId)
+            }
+            context.results.forEach { result ->
+                if (result.entryId.isBlank() || result.entry.entryId.isBlank()) {
+                    issues.block("knowledge.retrieved_entry_id_missing", "Retrieved knowledge entry id is missing.", candidateId = context.retrievalId)
+                }
+                if (result.entry.policy.forbiddenUse.isEmpty()) {
+                    issues.block("knowledge.entry_forbidden_use_missing", "Retrieved knowledge entry lacks forbidden_use policy.", candidateId = result.entryId)
+                }
+                if (result.entry.policy.allowedUse.isEmpty()) {
+                    issues.block("knowledge.entry_allowed_use_missing", "Retrieved knowledge entry lacks allowed_use policy.", candidateId = result.entryId)
+                }
+            }
+        }
+    }
+
     private fun validateGraph(
         evidencePackage: RuntimeEvidencePackage,
         graphPackage: RuntimeEvidenceGraphPackage,
@@ -408,6 +474,7 @@ object RuntimeEvidencePackageValidator {
         validateGeometry(graphPackage, graph?.source?.geometryReportStatus, issues)
         validateCalibration(graphPackage, graph, issues)
         val stageJudgeRows = validateMultimodalEvidence(evidencePackage, graphPackage, fileExists, issues)
+        val knowledgeRows = validateKnowledgeOutputs(evidencePackage, graphPackage, issues)
         val peakRows = validatePeakEvidence(graphPackage, issues)
         validatePeakLabelEvidence(graphPackage, fileExists, issues)
         val recoveryRows = validateRecovery(graphPackage, graph?.peaks.orEmpty(), issues)
@@ -421,6 +488,7 @@ object RuntimeEvidencePackageValidator {
             rejectedRecoveredCandidates = graphPackage.summaryCounts.rejectedRecoveredCandidates,
             peakEvidenceRows = peakRows,
             stageJudgeRows = stageJudgeRows,
+            knowledgeRows = knowledgeRows,
             productionReportablePeaks = graphPackage.summaryCounts.productionReportablePeaks,
             reviewGradePeaks = graphPackage.summaryCounts.reviewGradePeaks,
             calibrationStatuses = listOfNotNull(
@@ -428,6 +496,54 @@ object RuntimeEvidencePackageValidator {
                 graph?.axisCalibration?.yCalibrationFit?.status?.name,
             ),
             recoveryCandidates = recoveryRows,
+        )
+    }
+
+    private fun validateKnowledgeOutputs(
+        evidencePackage: RuntimeEvidencePackage,
+        graphPackage: RuntimeEvidenceGraphPackage,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceKnowledgeRow> =
+        graphPackage.knowledgeGroundedVlmOutputs.map { output ->
+            validateKnowledgeOutput(evidencePackage, graphPackage.graphIndex, output, issues)
+        }
+
+    private fun validateKnowledgeOutput(
+        evidencePackage: RuntimeEvidencePackage,
+        graphIndex: Int,
+        output: KnowledgeGroundedVlmOutput,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): RuntimeEvidenceKnowledgeRow {
+        if (output.outputId.isBlank()) {
+            issues.block("knowledge.output_id_missing", "Knowledge-grounded VLM output id is missing.", graphIndex)
+        }
+        if (output.taskId.isBlank()) {
+            issues.block("knowledge.output_task_id_missing", "Knowledge-grounded VLM output task id is missing.", graphIndex, output.outputId)
+        }
+        val validation = KnowledgeUsePolicyValidator.validateOutput(output, evidencePackage.knowledgeRetrievalContexts)
+        validation.issues.forEach { issue ->
+            when (validation.verdict) {
+                KnowledgeUseValidationVerdict.REJECTED -> issues.block(issue.code, issue.message, graphIndex, output.outputId)
+                KnowledgeUseValidationVerdict.REVIEW -> issues.warn(issue.code, issue.message, graphIndex, output.outputId)
+                KnowledgeUseValidationVerdict.ACCEPTED -> Unit
+            }
+        }
+        if (output.rejectedForbiddenUses.isEmpty() && output.attemptedUses.any { it.startsWith("fabricate_") || it.startsWith("override_") }) {
+            issues.block(
+                "knowledge.forbidden_use_not_rejected",
+                "Knowledge-grounded output attempted forbidden use without recording rejectedForbiddenUses.",
+                graphIndex,
+                output.outputId,
+            )
+        }
+        return RuntimeEvidenceKnowledgeRow(
+            graphIndex = graphIndex,
+            outputId = output.outputId,
+            taskId = output.taskId,
+            usedEntryIds = output.usedEntryIds,
+            decision = output.decision,
+            unsupportedClaims = output.unsupportedClaims,
+            verdict = validation.verdict.name,
         )
     }
 

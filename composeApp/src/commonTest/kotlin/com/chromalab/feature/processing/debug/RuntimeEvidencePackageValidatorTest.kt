@@ -1,5 +1,9 @@
 package com.chromalab.feature.processing.debug
 
+import com.chromalab.feature.knowledge.CHROMALAB_KNOWLEDGE_PACK_VERSION_V1
+import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
+import com.chromalab.feature.knowledge.KnowledgeRetrievalEngine
+import com.chromalab.feature.knowledge.KnowledgeSearchQuery
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
@@ -251,6 +255,70 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
         assertTrue(result.blockingIssues.any { it.code == "multimodal.retry_forbidden_action" })
+    }
+
+    @Test
+    fun validatorCatchesForbiddenKnowledgeUse() {
+        val packageWithKnowledge = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithKnowledge.graphs.single()
+        val context = KnowledgeRetrievalEngine.search(
+            query = KnowledgeSearchQuery("knowledge cannot measure peak area"),
+        )
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithKnowledge.copy(
+                knowledgePackVersion = CHROMALAB_KNOWLEDGE_PACK_VERSION_V1,
+                knowledgeRetrievalContexts = listOf(context),
+                graphs = listOf(
+                    graph.copy(
+                        knowledgeGroundedVlmOutputs = listOf(
+                            KnowledgeGroundedVlmOutput(
+                                outputId = "knowledge-output:forbidden",
+                                taskId = "report-warning:1",
+                                usedEntryIds = listOf("kp-safety-knowledge-cannot-measure"),
+                                decision = "reject_metric",
+                                confidence = 0.95f,
+                                explanation = "Knowledge cannot measure peak area.",
+                                attemptedUses = listOf("create_numeric_peak_metric"),
+                                createdNumericPeakMetric = true,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "knowledge.created_numeric_peak_metric" })
+    }
+
+    @Test
+    fun validatorMarksKnowledgeExplanationWithoutCitationsReview() {
+        val packageWithKnowledge = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = packageWithKnowledge.graphs.single()
+        val result = RuntimeEvidencePackageValidator.validate(
+            packageWithKnowledge.copy(
+                knowledgePackVersion = CHROMALAB_KNOWLEDGE_PACK_VERSION_V1,
+                graphs = listOf(
+                    graph.copy(
+                        knowledgeGroundedVlmOutputs = listOf(
+                            KnowledgeGroundedVlmOutput(
+                                outputId = "knowledge-output:uncited",
+                                taskId = "report-warning:2",
+                                usedEntryIds = emptyList(),
+                                decision = "explain_warning",
+                                confidence = 0.6f,
+                                explanation = "No Kovats can be reported.",
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.REVIEW, result.verdict)
+        assertTrue(result.warnings.any { it.code == "knowledge.used_entry_ids_missing" })
     }
 
     @Test

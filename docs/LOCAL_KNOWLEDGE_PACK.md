@@ -1,5 +1,6 @@
 # ChromaLab Local Knowledge Pack
 
+Phase 6B adds the local retrieval/citation layer for VLM/OCR semantic grounding. Earlier
 Phase 7.1 defines the offline knowledge-pack schema. Phase 7.2 adds the first conservative
 GC-MS EI `m/z 92` and alkylbenzene-oriented reference data. Phase 7.3 adds n-paraffin
 reference-series support for Kovats calculations. Phase 7.4 expands the built-in
@@ -12,6 +13,8 @@ The goal is to keep chemical interpretation conservative and auditable:
 - the knowledge pack provides local facts, labels, ranges, and interpretation notes;
 - every fact can carry evidence type, confidence, and source IDs;
 - dangling references or invalid ranges are rejected before interpretation uses the pack.
+- VLM/report explanations cite retrieved `used_entry_ids`;
+- knowledge entries can explain/classify but cannot create numeric chromatographic metrics.
 
 ## Schema Location
 
@@ -19,9 +22,29 @@ The goal is to keep chemical interpretation conservative and auditable:
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgePackModels.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/LocalKnowledgePackValidator.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/ChromaLabBaseKnowledgePack.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/KnowledgeRetrievalModels.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/KnowledgeRetrievalEngine.kt
+composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/ChromaLabKnowledgeSeedV1.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/knowledge/KovatsIndexCalculator.kt
 composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/ReportKnowledgeInterpreter.kt
+docs/knowledge/chromalab_knowledge_seed_v1.json
 ```
+
+## Phase 6B Retrieval Layer
+
+The Phase 6B seed and retrieval layer uses:
+
+- `KnowledgeEntry`
+- `KnowledgeEntryType`
+- `KnowledgeSourceRef`
+- `KnowledgeUsePolicy`
+- `KnowledgeSearchQuery`
+- `KnowledgeSearchResult`
+- `KnowledgeRetrievalContext`
+- `KnowledgePackVersion`
+
+V1 search is local/offline lexical BM25-style retrieval. Android SQLite FTS5 / Room is the
+preferred persistent implementation path for a future larger pack.
 
 ## Top-Level Groups
 

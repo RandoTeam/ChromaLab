@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.debug
 
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
+import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
+import com.chromalab.feature.knowledge.KnowledgeRetrievalContext
 import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
@@ -35,6 +37,8 @@ data class RuntimeEvidencePackage(
     val reportGateStatus: ReportGateStatus = ReportGateStatus.DIAGNOSTIC_ONLY,
     val gateEvidence: GateEvidence = GateEvidence(),
     val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
+    val knowledgePackVersion: String? = null,
+    val knowledgeRetrievalContexts: List<KnowledgeRetrievalContext> = emptyList(),
     val graphs: List<RuntimeEvidenceGraphPackage>,
     val reportContract: ChromatogramReport,
 )
@@ -47,6 +51,7 @@ data class RuntimeEvidenceGraphPackage(
     val ocrVlmCropResults: List<VlmOcrCropResult> = emptyList(),
     val ocrVlmDisagreements: List<OcrVlmDisagreement> = emptyList(),
     val overlayJudgeResults: List<OverlayJudgeResult> = emptyList(),
+    val knowledgeGroundedVlmOutputs: List<KnowledgeGroundedVlmOutput> = emptyList(),
     val peakEvidenceTable: List<PeakEvidence> = emptyList(),
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val runtimeRecoveredPeaks: List<RecoveredPeakCandidate>,

@@ -1,0 +1,445 @@
+{
+  "packId": "chromalab-knowledge",
+  "version": "chromalab-knowledge-v1",
+  "schemaVersion": "chromalab-knowledge-pack-1.0",
+  "title": "ChromaLab Knowledge Seed v1",
+  "description": "Small curated offline-first seed for chromatogram terminology, text classification rules, report caveats, and safe prompt snippets.",
+  "sourceRefs": [
+    {
+      "sourceId": "chromalab-curated-v1",
+      "label": "ChromaLab curated chromatogram analysis rules",
+      "citation": "Internal conservative rules derived from ChromaLab Phase 0-6 release gates.",
+      "license": "Project internal",
+      "notes": "Used for product safety boundaries and report caveats; not a chemical database."
+    },
+    {
+      "sourceId": "nist-webbook-srd69",
+      "label": "NIST Chemistry WebBook, SRD 69",
+      "url": "https://webbook.nist.gov/chemistry/",
+      "citation": "NIST Chemistry WebBook, NIST Standard Reference Database 69.",
+      "license": "NIST Standard Reference Data Program terms apply",
+      "notes": "Referenced for general source policy and retention-index context; no bulk data is bundled here."
+    },
+    {
+      "sourceId": "nist-gc-ri",
+      "label": "NIST Chemistry WebBook: Gas Chromatographic Retention Data",
+      "url": "https://webbook.nist.gov/chemistry/gc-ri/",
+      "citation": "NIST gas chromatographic retention data documentation.",
+      "license": "NIST Standard Reference Data Program terms apply",
+      "notes": "Used only for the retention-index caveat that same-method n-alkane references are required."
+    },
+    {
+      "sourceId": "w3c-prov-o",
+      "label": "W3C PROV-O",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "citation": "W3C Provenance Ontology recommendation.",
+      "license": "W3C document license",
+      "notes": "Used for provenance vocabulary and audit-trail expectations."
+    }
+  ],
+  "entries": [
+    {
+      "entryId": "kp-glossary-rt",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Retention time (RT) is the calibrated time coordinate for a chromatographic peak apex.",
+      "aliases": ["RT", "retention time", "peak time"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-abundance",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Abundance is the detector signal magnitude plotted on the Y axis; it is not a compound identity.",
+      "aliases": ["abundance", "intensity", "counts"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-tic",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "A total ion chromatogram (TIC) summarizes total ion current over time.",
+      "aliases": ["TIC", "total ion chromatogram"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-eic",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "An extracted ion chromatogram (EIC) shows signal for a selected ion or m/z window.",
+      "aliases": ["EIC", "extracted ion chromatogram"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-sim",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Selected ion monitoring (SIM) tracks one or more selected ions/channels over time.",
+      "aliases": ["SIM", "selected ion monitoring"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-mz",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "m/z is mass-to-charge ratio and describes an ion/channel label, not retention time.",
+      "aliases": ["m/z", "mass-to-charge", "mass charge"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-ion-channel",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Ion/channel text describes the chromatogram channel such as Ion 71.00 (70.70 to 71.70).",
+      "aliases": ["ion", "channel", "ion range"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-baseline",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Baseline is the local signal background used by deterministic integration; it must not be invented by a model.",
+      "aliases": ["baseline", "background"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-noise",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Noise is local signal variation used for review and S/N evidence when measured.",
+      "aliases": ["noise", "signal noise"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-sn",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "S/N is signal-to-noise ratio and requires measured signal and noise evidence.",
+      "aliases": ["S/N", "snr", "signal-to-noise"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-fwhm",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "FWHM is full width at half maximum and must come from measured trace/peak evidence.",
+      "aliases": ["FWHM", "full width at half maximum"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-area",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Peak area is the deterministic integration result over accepted boundaries.",
+      "aliases": ["area", "peak area"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-area-percent",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Area percent is a derived report value based on measured/integrated areas.",
+      "aliases": ["area percent", "area %", "relative area"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-peak-apex",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Peak apex is the local maximum point of a chromatographic peak on the extracted trace.",
+      "aliases": ["apex", "peak apex", "local maximum"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-shoulder",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "A shoulder peak is a partially resolved peak adjacent to or riding on another peak.",
+      "aliases": ["shoulder", "shoulder peak"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-glossary-overlap",
+      "version": "chromalab-knowledge-v1",
+      "type": "GLOSSARY_TERM",
+      "shortText": "Overlap or coelution means nearby peaks share signal and require review-grade evidence.",
+      "aliases": ["overlap", "coelution", "co-elution"],
+      "keywords": ["chromatography", "glossary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-ri-kovats",
+      "version": "chromalab-knowledge-v1",
+      "type": "RETENTION_INDEX_RULE",
+      "shortText": "Kovats / retention index values require valid reference-series evidence and cannot be inferred from the knowledge pack alone.",
+      "aliases": ["Kovats", "retention index", "RI"],
+      "keywords": ["retention index", "Kovats"],
+      "sourceRefIds": ["chromalab-curated-v1", "nist-gc-ri"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-ri-n-alkane-reference",
+      "version": "chromalab-knowledge-v1",
+      "type": "RETENTION_INDEX_RULE",
+      "shortText": "n-alkane reference series entries define the RI scale, but measured reference retention times must come from the same method/run family.",
+      "aliases": ["n-alkane reference series", "normal alkane", "paraffin reference"],
+      "keywords": ["retention index", "Kovats"],
+      "sourceRefIds": ["chromalab-curated-v1", "nist-gc-ri"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-chemical-n-alkane-c10-c40",
+      "version": "chromalab-knowledge-v1",
+      "type": "COMPOUND_CLASS",
+      "shortText": "n-alkane C10-C40 naming follows the straight-chain saturated hydrocarbon pattern CnH2n+2; this is a naming pattern, not an identification.",
+      "aliases": ["C10", "C40", "n-alkane", "normal alkane"],
+      "keywords": ["chemical dictionary", "domain dictionary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-compound-class-hydrocarbons",
+      "version": "chromalab-knowledge-v1",
+      "type": "COMPOUND_CLASS",
+      "shortText": "Hydrocarbon classes can support report grouping only when ion/channel, retention, and evidence gates support the claim.",
+      "aliases": ["hydrocarbon", "alkane", "alkylbenzene"],
+      "keywords": ["chemical dictionary", "domain dictionary"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-ion-channel-terminology",
+      "version": "chromalab-knowledge-v1",
+      "type": "ION_CHANNEL_TERM",
+      "shortText": "Common GC/MS channel labels include TIC, EIC, XIC, SIM, Ion, and m/z; numeric ion ranges are channel metadata.",
+      "aliases": ["GC/MS labels", "Ion 71.00", "XIC", "SIM"],
+      "keywords": ["ion channel", "GC/MS"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-rule-ion-range-title-channel",
+      "version": "chromalab-knowledge-v1",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "shortText": "Text like Ion 71.00 (70.70 to 71.70) is TITLE_OR_CHANNEL, not PEAK_ANNOTATION; numeric values in the mass range are not RT labels.",
+      "aliases": ["Ion 71.00 (70.70 to 71.70)", "ion range is not peak RT", "TITLE_OR_CHANNEL"],
+      "keywords": ["text classification", "OCR", "VLM"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-rule-peak-label-signal-verification",
+      "version": "chromalab-knowledge-v1",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "shortText": "A numeric text region can become PEAK_ANNOTATION only when its location is compatible with a plot annotation and local signal verification confirms a nearby peak.",
+      "aliases": ["peak label", "5.610", "local signal verification", "plot annotation"],
+      "keywords": ["text classification", "OCR", "VLM"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-rule-tick-label-linkage",
+      "version": "chromalab-knowledge-v1",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "shortText": "Tick labels require deterministic tick-position linkage; OCR text without tick geometry cannot calibrate an axis.",
+      "aliases": ["tick label", "tick-position linkage", "axis tick OCR"],
+      "keywords": ["text classification", "OCR", "VLM"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-rule-axis-label-not-peak",
+      "version": "chromalab-knowledge-v1",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "shortText": "Axis labels such as Abundance or Retention Time are AXIS_LABEL text and must not become peak labels.",
+      "aliases": ["axis label", "Abundance", "Retention Time"],
+      "keywords": ["text classification", "OCR", "VLM"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-caveat-no-kovats-without-reference",
+      "version": "chromalab-knowledge-v1",
+      "type": "REPORT_CAVEAT",
+      "shortText": "Do not report Kovats/RI as calculated unless valid same-method n-alkane reference-series retention times are present.",
+      "aliases": ["no Kovats without reference series", "RI caveat"],
+      "keywords": ["report caveat", "release gate"],
+      "sourceRefIds": ["chromalab-curated-v1", "nist-gc-ri"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-caveat-no-compound-without-evidence",
+      "version": "chromalab-knowledge-v1",
+      "type": "REPORT_CAVEAT",
+      "shortText": "Do not assign compound names without explicit evidence such as validated library/spectrum/method/RI/user confirmation.",
+      "aliases": ["compound assignment requires explicit evidence", "no compound assignment"],
+      "keywords": ["report caveat", "release gate"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-caveat-release-needs-calibration",
+      "version": "chromalab-knowledge-v1",
+      "type": "REPORT_CAVEAT",
+      "shortText": "No release-quality report is allowed without valid calibration evidence and a complete runtime evidence package.",
+      "aliases": ["release-quality requires calibration evidence", "calibration evidence"],
+      "keywords": ["report caveat", "release gate"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-caveat-no-metric-without-evidence",
+      "version": "chromalab-knowledge-v1",
+      "type": "REPORT_CAVEAT",
+      "shortText": "No peak metric claim is allowed without linked trace, calibration, and peak evidence.",
+      "aliases": ["no peak metric without evidence", "trace evidence"],
+      "keywords": ["report caveat", "release gate"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-safety-knowledge-cannot-measure",
+      "version": "chromalab-knowledge-v1",
+      "type": "SAFETY_BOUNDARY",
+      "shortText": "Knowledge can explain and classify; it cannot measure RT, height, area, FWHM, S/N, baseline, Kovats, or integration boundaries.",
+      "aliases": ["knowledge cannot measure", "numeric metrics forbidden"],
+      "keywords": ["safety", "forbidden use"],
+      "sourceRefIds": ["chromalab-curated-v1"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    },
+    {
+      "entryId": "kp-prompt-warning-explanation",
+      "version": "chromalab-knowledge-v1",
+      "type": "PROMPT_SNIPPET",
+      "shortText": "Explain warnings using cited entries only. If evidence is missing, say what is missing and keep the result REVIEW/DIAGNOSTIC.",
+      "aliases": ["warning explanation template", "unsupported claim rejection"],
+      "keywords": ["prompt", "template"],
+      "sourceRefIds": ["chromalab-curated-v1", "w3c-prov-o"],
+      "policy": {
+        "allowedUse": ["semantic_explanation", "text_classification", "warning_explanation", "prompt_grounding", "report_caveat"],
+        "forbiddenUse": ["fabricate_rt", "fabricate_height", "fabricate_area", "fabricate_fwhm", "fabricate_sn", "fabricate_baseline", "fabricate_kovats", "create_numeric_peak_metric", "override_calibration", "override_integration", "identify_compound_without_evidence"]
+      }
+    }
+  ]
+}
