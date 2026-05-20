@@ -10,4 +10,12 @@
 - `AGENT_07_SCIENTIFIC_REPORT_PROVENANCE`: Scientific Report / Provenance -> `agents/AGENT_07_SCIENTIFIC_REPORT_PROVENANCE.md`
 - `AGENT_08_SECURITY_PRIVACY`: Security / Privacy / Data Handling -> `agents/AGENT_08_SECURITY_PRIVACY.md`
 
+## Mandatory Selection Protocol
+
+Every non-trivial future task must start with the universal agent/skill selection protocol:
+
+- `protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`
+
+The Orchestrator must classify the task, select required agents and skills, list skipped agents with rationale, define scope boundaries, and define validation/regression obligations before implementation begins.
+
 This is an orchestration document. Do not modify application logic, CalculationEngine, geometry, OCR, VLM runtime, Android runtime, report rendering, UI implementation, tests, or chromatographic math unless a later active phase explicitly allows it.

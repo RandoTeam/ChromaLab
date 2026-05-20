@@ -15,16 +15,18 @@ Forbidden: exact numeric geometry for calculation, RT as final measurement, heig
 
 ## Operating Model
 
-1. Orchestrator owns phase boundaries, activation, gates, regression, and closeout.
-2. Research Intelligence and source-quality triage are mandatory for current technical methods.
-3. QA / Regression and Product Acceptance are mandatory before closeout.
-4. Evidence and report gates decide release-ready, review-only, diagnostic-only, or blocked status.
+1. Every non-trivial task starts with `protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
+2. Orchestrator owns phase boundaries, activation, gates, regression, and closeout.
+3. Research Intelligence and source-quality triage are mandatory for current technical methods.
+4. QA / Regression and Product Acceptance are mandatory before closeout.
+5. Evidence and report gates decide release-ready, review-only, diagnostic-only, or blocked status.
 
 ## Entry Points
 
 - `AGENTS.md`
 - `CODEX_BOOTSTRAP_PROMPT.md`
 - `agents/AGENT_00_ORCHESTRATOR.md`
+- `protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`
 - `prompts/CODEX_REQUEST_ORDER.md`
 - `config/agent_registry.json`
 - `config/skills_registry.json`

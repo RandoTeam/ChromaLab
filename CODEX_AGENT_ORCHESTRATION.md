@@ -12,6 +12,7 @@ Core entry points:
 - `docs/agent-orchestration/README.md`
 - `docs/agent-orchestration/CODEX_BOOTSTRAP_PROMPT.md`
 - `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
+- `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`
 - `docs/agent-orchestration/prompts/CODEX_REQUEST_ORDER.md`
 
 `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md` is the source of
@@ -20,6 +21,10 @@ policy, evidence policy, VLM boundaries, and stop conditions.
 
 ## Operating Notes
 
+- Every future non-trivial task must begin with task classification, required
+  agent selection, required skill selection, scope boundaries, regression
+  obligations, and final response format according to
+  `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
 - Full-auto analysis is diagnostic, not production.
 - `GUIDED_PRODUCTION` is the reliable target path.
 - `MANUAL_ADVANCED` is the fallback for difficult photos, screenshots, or failed

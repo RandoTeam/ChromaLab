@@ -11,6 +11,7 @@ Execute `EXPANDED_CODEX_REQUEST_ORDER` with Orchestrator governance and phase-sp
 ## Scope
 
 - Use required agents from the activation matrix.
+- Apply `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md` before implementation.
 - Keep work within the named phase or setup task.
 - Produce evidence, validation, and closeout notes.
 
@@ -29,12 +30,16 @@ Execute `EXPANDED_CODEX_REQUEST_ORDER` with Orchestrator governance and phase-sp
 - product_acceptance_agent
 - Additional domain agents required by activation matrix.
 
+Before work begins, list activated agents, why each was selected, and any agents intentionally skipped with rationale.
+
 ## Required Skills
 
 - current-web-research-deep
 - source-quality-triage
 - definition-of-done
 - test-plan-authoring
+
+Add domain-specific skills from `AGENT_SKILL_SELECTION_PROTOCOL.md` according to the task classification.
 
 ## Required Web Research
 
@@ -43,6 +48,7 @@ Assume model knowledge is outdated. Before changing behavior or approving a tech
 
 ## Files To Inspect
 
+- `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`
 - `docs/agent-orchestration/agents/AGENT_00_ORCHESTRATOR.md`
 - `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
 - Relevant phase, protocol, prompt, skill, and registry files.
@@ -69,17 +75,19 @@ Create one focused commit. Do not stage unrelated dirty files.
 
 ## Final Response Format
 
-Changed:
-- ...
+Every final response must include:
 
-Files:
-- ...
-
-Validation:
-- ...
-
-Notes:
-- ...
+1. Task classification.
+2. Agents activated.
+3. Skills used.
+4. Research notes created or reason research was not needed.
+5. Files changed.
+6. Application code changed: yes/no.
+7. Tests run.
+8. Regression against previous phases.
+9. Open risks.
+10. Whether next phase may start.
+11. Commit hash.
 
 ## Anti-Overfit Rules
 

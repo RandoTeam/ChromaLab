@@ -16,6 +16,7 @@ Registry and orchestration indexes:
 - `docs/agent-orchestration/expansion/config/expanded_agent_registry.json`
 - `docs/agent-orchestration/expansion/config/expanded_skills_registry.json`
 - `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`
+- `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`
 
 Preserved base-pack skill links:
 
@@ -88,20 +89,24 @@ For documentation-only governance work, the output must also confirm that no app
 
 ## Agent Activation Procedure
 
-1. Classify the task by domain: governance, UI/UX, geometry/calibration, OCR/VLM, trace/peaks, report/evidence, runtime/performance, security/privacy, accessibility/localization, or release.
+Before any non-trivial task begins, apply `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
+
+1. Classify the task by domain using the protocol's task classification matrix.
 2. Load `docs/agent-orchestration/expansion/config/agent_activation_matrix.yaml`.
 3. Activate all globally required agents: Orchestrator, Research Intelligence, QA / Regression, and Product Acceptance.
 4. Activate conditional agents based on touched domain. For example, VLM/OCR changes require VLM Evaluation and Security/Privacy; scientific claims require Chromatography SME and Scientific Reporting & Validation.
-5. Record activated agents in the work plan or phase closeout.
-6. If fewer agents are used than the matrix requires, mark the phase `REVIEW_ONLY` and do not close it until the gap is resolved.
+5. Explicitly list agents that are not needed and why.
+6. Record activated agents in the work plan or phase closeout.
+7. If fewer agents are used than the matrix requires, mark the phase `REVIEW_ONLY` and do not close it until the gap is resolved.
 
 ## Skill Selection Procedure
 
-1. Start with `current-web-research-deep` and `source-quality-triage` for all technical, scientific, UX, Android/KMP, OCR/VLM, report, security, or performance decisions because model knowledge may be outdated.
-2. Select domain skills from the base and expansion registries according to the files and behavior affected.
-3. Prefer official docs, maintained repositories, peer-reviewed sources, standards, and current API references over blogs, forum posts, marketing claims, or uncited examples.
-4. Treat weak blogs, uncited claims, and unmaintained snippets as background only. They must not drive implementation decisions.
-5. Record selected skills and required artifacts before implementation begins.
+1. Apply `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
+2. Start with `current-web-research-deep` and `source-quality-triage` for all technical, scientific, UX, Android/KMP, OCR/VLM, report, security, or performance decisions because model knowledge may be outdated.
+3. Select domain skills from the base and expansion registries according to the files and behavior affected.
+4. Prefer official docs, maintained repositories, peer-reviewed sources, standards, and current API references over blogs, forum posts, marketing claims, or uncited examples.
+5. Treat weak blogs, uncited claims, and unmaintained snippets as background only. They must not drive implementation decisions.
+6. Record selected skills and required artifacts before implementation begins.
 
 ## Phase Gate Procedure
 
@@ -172,10 +177,14 @@ Before approving a work slice or phase, confirm:
 
 The Orchestrator final response must state:
 
+- task classification;
 - summary of the decision or change;
 - activated agents and skills when relevant;
+- research notes created or reason research was not needed;
 - files inspected and changed;
+- whether application code changed;
 - validation run and result;
+- regression against previous phases;
 - evidence artifacts produced or required;
 - remaining risks or blockers;
 - whether the next phase may start;

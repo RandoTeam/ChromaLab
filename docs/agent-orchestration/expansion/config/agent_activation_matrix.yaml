@@ -1,5 +1,9 @@
 orchestrator:
   mandatory_for: [every phase, every phase closeout, any scope change, any release gate decision]
+selection_protocol:
+  path: docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md
+  mandatory_for: [every non-trivial task, every phase, every implementation task, every validation task, every release gate decision]
+  required_start_sequence: [task classification, required agent selection, required skill selection, scope boundaries, regression obligations, final response format]
 global_minimum:
   any_phase: [AGENT_00_ORCHESTRATOR, research_intelligence_agent, qa_regression_agent, product_acceptance_agent]
   all_technical_changes: [research_intelligence_agent, qa_regression_agent]
