@@ -30,3 +30,31 @@ Before adding any external data:
 - NIST/AMDIS library bundling.
 - Vector retrieval.
 - Automated compound assignment from knowledge alone.
+# Phase 6C Acquisition Pipeline
+
+Date: 2026-05-20
+
+Future data acquisition must go through `tools/knowledge-builder/`.
+
+## Required Sequence
+
+1. Add source metadata to `tools/knowledge-builder/sources.yaml`.
+2. Update `docs/KNOWLEDGE_PACK_LICENSE_REGISTER.md`.
+3. Validate license, attribution, bundle, transform, and API-only status.
+4. Add a transform only after the source is accepted.
+5. Generate a manifest and rejected-source report.
+6. Add tests for aliases, source references, forbidden uses, and no measured metric creation.
+
+## Future Candidates
+
+- ChEBI curated synonym/class slices after CC BY 4.0 attribution manifest and source snapshot review.
+- PubChem API-derived metadata only after contributor-level source license review.
+- User-supplied local packs with explicit provenance and no silent merging into production packs.
+
+## Still Forbidden
+
+- NIST/AMDIS/WebBook database rows without explicit license clearance.
+- Proprietary mass-spectral libraries.
+- Scraped web content.
+- Model-generated chemistry facts.
+- Any source without license metadata.

@@ -1,0 +1,6360 @@
+{
+  "packId": "chromalab-knowledge",
+  "version": "chromalab-knowledge-v2",
+  "schemaVersion": "chromalab-knowledge-pack-1.0",
+  "title": "ChromaLab Knowledge Seed v2",
+  "description": "Expanded curated offline-first knowledge pack for chromatogram terminology, OCR/text classification, report caveats, safe VLM grounding, and compound-class stubs. It contains no measured sample RT, peak area, spectrum, or proprietary library data.",
+  "sourceRefs": [
+    {
+      "sourceId": "chromalab-curated-v2",
+      "label": "ChromaLab curated chromatography safety rules v2",
+      "url": null,
+      "citation": "Internal conservative rules derived from ChromaLab Phase 0-6C evidence gates.",
+      "license": "Project internal curated content",
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "attributionRequired": false,
+      "canBundle": true,
+      "canTransform": true,
+      "apiLookupOnly": false,
+      "notes": "Primary source for text classification rules, release caveats, and safe prompt snippets."
+    },
+    {
+      "sourceId": "w3c-prov-o",
+      "label": "W3C PROV-O",
+      "url": "https://www.w3.org/TR/prov-o/",
+      "citation": "W3C PROV-O recommendation.",
+      "license": "W3C document license",
+      "licenseStatus": "OPEN_VERIFIED",
+      "trustTier": "OFFICIAL_STANDARD",
+      "attributionRequired": true,
+      "canBundle": true,
+      "canTransform": true,
+      "apiLookupOnly": false,
+      "notes": "Used to align knowledge and report provenance vocabulary."
+    },
+    {
+      "sourceId": "chebi-cc-by-4",
+      "label": "ChEBI, Chemical Entities of Biological Interest",
+      "url": "https://www.ebi.ac.uk/chebi/aboutChebiForward.do",
+      "citation": "EMBL-EBI ChEBI data, CC BY 4.0 subject to EMBL-EBI terms.",
+      "license": "CC BY 4.0",
+      "licenseStatus": "ATTRIBUTION_REQUIRED",
+      "trustTier": "OPEN_ONTOLOGY",
+      "attributionRequired": true,
+      "canBundle": true,
+      "canTransform": true,
+      "apiLookupOnly": false,
+      "notes": "Permitted candidate for future curated chemical synonyms after attribution and source snapshot review."
+    },
+    {
+      "sourceId": "pubchem-provenance-policy",
+      "label": "PubChem download and provenance policy",
+      "url": "https://pubchem.ncbi.nlm.nih.gov/docs/downloads",
+      "citation": "PubChem download documentation and NCBI/NLM policies.",
+      "license": "NCBI/NLM policies plus contributor-specific source terms",
+      "licenseStatus": "NEEDS_REVIEW",
+      "trustTier": "OFFICIAL_DATABASE",
+      "attributionRequired": true,
+      "canBundle": false,
+      "canTransform": false,
+      "apiLookupOnly": true,
+      "notes": "Use only through reviewed source definitions until contributor-level licenses are checked."
+    },
+    {
+      "sourceId": "nist-srd-review-required",
+      "label": "NIST Chemistry WebBook / AMDIS / SRD policy review",
+      "url": "https://webbook.nist.gov/chemistry/",
+      "citation": "NIST Chemistry WebBook, Standard Reference Database 69.",
+      "license": "NIST Standard Reference Data Program terms; bundling requires explicit product review",
+      "licenseStatus": "NEEDS_REVIEW",
+      "trustTier": "OFFICIAL_DATABASE",
+      "attributionRequired": true,
+      "canBundle": false,
+      "canTransform": false,
+      "apiLookupOnly": false,
+      "notes": "Referenced for policy and caveats only here; no NIST spectral, RI, AMDIS, or WebBook database data is bundled."
+    }
+  ],
+  "entries": [
+    {
+      "entryId": "kp2-term-chromatogram",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Chromatogram",
+      "language": "en",
+      "shortText": "A chromatogram is a signal trace plotted against retention coordinate, usually time, and must be interpreted through calibrated axes and trace evidence.",
+      "longText": null,
+      "aliases": [
+        "chromatogram",
+        "chromatographic trace"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "chromatogram",
+        "chromatographic trace"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-retention-time",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Retention time",
+      "language": "en",
+      "shortText": "Retention time (RT) is the calibrated X coordinate of a chromatographic event, normally reported at the peak apex after X-axis calibration.",
+      "longText": null,
+      "aliases": [
+        "RT",
+        "retention time",
+        "peak time"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "RT",
+        "retention time",
+        "peak time"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Peak",
+      "language": "en",
+      "shortText": "A chromatographic peak is a local signal feature with apex, boundaries, baseline context, and integration evidence.",
+      "longText": null,
+      "aliases": [
+        "peak",
+        "chromatographic peak"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "peak",
+        "chromatographic peak"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-peak-apex",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Peak apex",
+      "language": "en",
+      "shortText": "Peak apex is the local maximum point of a detected peak on the extracted trace.",
+      "longText": null,
+      "aliases": [
+        "apex",
+        "peak apex",
+        "local maximum"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "apex",
+        "peak apex",
+        "local maximum"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-peak-area",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Peak area",
+      "language": "en",
+      "shortText": "Peak area is the deterministic integration result between accepted boundaries; knowledge entries cannot create it.",
+      "longText": null,
+      "aliases": [
+        "area",
+        "peak area",
+        "integrated area"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "area",
+        "peak area",
+        "integrated area"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-area-percent",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Area percent",
+      "language": "en",
+      "shortText": "Area percent is a derived relative value based on measured peak areas and report policy.",
+      "longText": null,
+      "aliases": [
+        "area percent",
+        "area %",
+        "relative area"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "area percent",
+        "area %",
+        "relative area"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-abundance",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Abundance",
+      "language": "en",
+      "shortText": "Abundance is a Y-axis detector signal magnitude, not a compound identity.",
+      "longText": null,
+      "aliases": [
+        "abundance",
+        "counts"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "abundance",
+        "counts"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-intensity",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Intensity",
+      "language": "en",
+      "shortText": "Intensity is detector signal magnitude and must be linked to Y calibration before release-quality metric claims.",
+      "longText": null,
+      "aliases": [
+        "intensity",
+        "signal intensity"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "intensity",
+        "signal intensity"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-baseline",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Baseline",
+      "language": "en",
+      "shortText": "Baseline is the local signal background used by deterministic integration and quality review.",
+      "longText": null,
+      "aliases": [
+        "baseline",
+        "background"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "baseline",
+        "background"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-baseline-drift",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Baseline drift",
+      "language": "en",
+      "shortText": "Baseline drift is slow background movement that can affect integration boundaries and should trigger review when severe.",
+      "longText": null,
+      "aliases": [
+        "baseline drift"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "baseline drift"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-noise",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Noise",
+      "language": "en",
+      "shortText": "Noise is local signal variation used for quality review and S/N calculations when measured.",
+      "longText": null,
+      "aliases": [
+        "noise",
+        "signal noise"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "noise",
+        "signal noise"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-rms-noise",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "RMS noise",
+      "language": "en",
+      "shortText": "RMS noise is a measured noise estimate; it must not be inferred from glossary knowledge.",
+      "longText": null,
+      "aliases": [
+        "RMS noise",
+        "root mean square noise"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "RMS noise",
+        "root mean square noise"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-sn",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Signal-to-noise",
+      "language": "en",
+      "shortText": "S/N is signal-to-noise ratio and requires measured signal and measured noise evidence.",
+      "longText": null,
+      "aliases": [
+        "S/N",
+        "snr",
+        "signal-to-noise"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "S/N",
+        "snr",
+        "signal-to-noise"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-fwhm",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "FWHM",
+      "language": "en",
+      "shortText": "FWHM is full width at half maximum and must come from measured trace and peak evidence.",
+      "longText": null,
+      "aliases": [
+        "FWHM",
+        "full width at half maximum"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "FWHM",
+        "full width at half maximum"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-peak-width",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Peak width",
+      "language": "en",
+      "shortText": "Peak width describes the span of a peak under an explicit width definition such as FWHM or integration bounds.",
+      "longText": null,
+      "aliases": [
+        "peak width",
+        "width"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "peak width",
+        "width"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-integration-boundary",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Integration boundary",
+      "language": "en",
+      "shortText": "Integration boundaries delimit deterministic area calculation and must be visible in evidence when reported.",
+      "longText": null,
+      "aliases": [
+        "integration boundary",
+        "peak boundary"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "integration boundary",
+        "peak boundary"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-shoulder-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Shoulder peak",
+      "language": "en",
+      "shortText": "A shoulder peak is a partially resolved feature on the side of a larger peak and normally requires review.",
+      "longText": null,
+      "aliases": [
+        "shoulder",
+        "shoulder peak"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "shoulder",
+        "shoulder peak"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-overlap",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Overlapping peak",
+      "language": "en",
+      "shortText": "Overlapping peaks share signal and require boundary/provenance caveats before release-quality integration.",
+      "longText": null,
+      "aliases": [
+        "overlap",
+        "overlapping peak"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "overlap",
+        "overlapping peak"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-coelution",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Coelution",
+      "language": "en",
+      "shortText": "Coelution means two or more compounds or chromatographic features elute together and cannot be separated by image evidence alone.",
+      "longText": null,
+      "aliases": [
+        "coelution",
+        "co-elution"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "coelution",
+        "co-elution"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-resolution",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Resolution",
+      "language": "en",
+      "shortText": "Resolution describes chromatographic separation quality; it is not inferred without peak width and spacing evidence.",
+      "longText": null,
+      "aliases": [
+        "resolution",
+        "chromatographic resolution"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "resolution",
+        "chromatographic resolution"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-term-tailing-asymmetry",
+      "version": "chromalab-knowledge-v2",
+      "type": "GLOSSARY_TERM",
+      "canonicalLabel": "Tailing/asymmetry",
+      "language": "en",
+      "shortText": "Tailing or asymmetry is a peak-shape review flag and should not be converted into a compound identity.",
+      "longText": null,
+      "aliases": [
+        "tailing",
+        "asymmetry",
+        "peak asymmetry"
+      ],
+      "keywords": [
+        "chromatography",
+        "glossary",
+        "tailing",
+        "asymmetry",
+        "peak asymmetry"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chromatography",
+        "glossary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-tic",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "TIC",
+      "language": "en",
+      "shortText": "A total ion chromatogram summarizes total ion current over retention time.",
+      "longText": null,
+      "aliases": [
+        "TIC",
+        "total ion chromatogram"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "TIC",
+        "total ion chromatogram"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-eic",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "EIC",
+      "language": "en",
+      "shortText": "An extracted ion chromatogram shows signal from a selected m/z or mass window.",
+      "longText": null,
+      "aliases": [
+        "EIC",
+        "extracted ion chromatogram"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "EIC",
+        "extracted ion chromatogram"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-sim",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "SIM",
+      "language": "en",
+      "shortText": "Selected ion monitoring tracks chosen ion channels and does not by itself identify compounds.",
+      "longText": null,
+      "aliases": [
+        "SIM",
+        "selected ion monitoring"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "SIM",
+        "selected ion monitoring"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-scan",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "SCAN",
+      "language": "en",
+      "shortText": "SCAN mode records mass spectra over a range and may accompany TIC data, but report identities still require evidence.",
+      "longText": null,
+      "aliases": [
+        "SCAN",
+        "scan mode"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "SCAN",
+        "scan mode"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-mz",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "m/z",
+      "language": "en",
+      "shortText": "m/z is mass-to-charge ratio; values in ion/channel headings are channel metadata, not retention-time labels.",
+      "longText": null,
+      "aliases": [
+        "m/z",
+        "mass-to-charge",
+        "mass charge"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "m/z",
+        "mass-to-charge",
+        "mass charge"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-extracted-ion-chromatogram",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "Extracted ion chromatogram",
+      "language": "en",
+      "shortText": "An extracted ion chromatogram is channel-specific trace evidence, not standalone compound identification.",
+      "longText": null,
+      "aliases": [
+        "extracted ion chromatogram",
+        "XIC",
+        "EIC"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "extracted ion chromatogram",
+        "XIC",
+        "EIC"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ms-selected-ion-monitoring",
+      "version": "chromalab-knowledge-v2",
+      "type": "MASS_SPECTROMETRY_TERM",
+      "canonicalLabel": "Selected ion monitoring",
+      "language": "en",
+      "shortText": "Selected ion monitoring panels must preserve channel provenance and confidence limits.",
+      "longText": null,
+      "aliases": [
+        "selected ion monitoring",
+        "SIM chromatogram"
+      ],
+      "keywords": [
+        "GC/MS",
+        "mass spectrometry",
+        "selected ion monitoring",
+        "SIM chromatogram"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "GC/MS",
+        "mass spectrometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ion-ion",
+      "version": "chromalab-knowledge-v2",
+      "type": "ION_CHANNEL_TERM",
+      "canonicalLabel": "Ion",
+      "language": "en",
+      "shortText": "Ion labels identify a mass channel or ion selection and must not be treated as peak annotations.",
+      "longText": null,
+      "aliases": [
+        "ion",
+        "ion label"
+      ],
+      "keywords": [
+        "ion channel",
+        "text classification",
+        "ion",
+        "ion label"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "ion channel",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ion-channel",
+      "version": "chromalab-knowledge-v2",
+      "type": "ION_CHANNEL_TERM",
+      "canonicalLabel": "Ion channel",
+      "language": "en",
+      "shortText": "Ion/channel text such as Ion 71.00 (70.70 to 71.70) names a signal channel, not a peak RT.",
+      "longText": null,
+      "aliases": [
+        "ion channel",
+        "channel",
+        "ion range"
+      ],
+      "keywords": [
+        "ion channel",
+        "text classification",
+        "ion channel",
+        "channel",
+        "ion range"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "ion channel",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ion-mass-range",
+      "version": "chromalab-knowledge-v2",
+      "type": "ION_CHANNEL_TERM",
+      "canonicalLabel": "Mass range",
+      "language": "en",
+      "shortText": "Mass range values in parentheses describe the m/z extraction window and are not retention times.",
+      "longText": null,
+      "aliases": [
+        "mass range",
+        "70.70 to 71.70"
+      ],
+      "keywords": [
+        "ion channel",
+        "text classification",
+        "mass range",
+        "70.70 to 71.70"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "ion channel",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-x",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "X-axis",
+      "language": "en",
+      "shortText": "The X-axis maps pixel position to retention coordinate after calibration.",
+      "longText": null,
+      "aliases": [
+        "x-axis",
+        "time axis"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "x-axis",
+        "time axis"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-y",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Y-axis",
+      "language": "en",
+      "shortText": "The Y-axis maps pixel position to abundance or intensity after calibration.",
+      "longText": null,
+      "aliases": [
+        "y-axis",
+        "abundance axis"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "y-axis",
+        "abundance axis"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-tick-label",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Tick label",
+      "language": "en",
+      "shortText": "Tick labels may calibrate an axis only when linked to deterministic tick geometry.",
+      "longText": null,
+      "aliases": [
+        "tick label",
+        "axis tick"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "tick label",
+        "axis tick"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-axis-label",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Axis label",
+      "language": "en",
+      "shortText": "Axis labels describe units or signal meaning and are not peak labels.",
+      "longText": null,
+      "aliases": [
+        "axis label",
+        "Ret.Time",
+        "Abundance"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "axis label",
+        "Ret.Time",
+        "Abundance"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-plot-area",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Plot area",
+      "language": "en",
+      "shortText": "Plot area is the coordinate rectangle containing trace/grid/frame content, excluding titles and labels.",
+      "longText": null,
+      "aliases": [
+        "plot area",
+        "plotArea"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "plot area",
+        "plotArea"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-graph-panel",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Graph panel",
+      "language": "en",
+      "shortText": "Graph panel is the full chart block, including title/channel text, axes, tick labels, and plot area.",
+      "longText": null,
+      "aliases": [
+        "graph panel",
+        "graphPanel",
+        "chart panel"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "graph panel",
+        "graphPanel",
+        "chart panel"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-title",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Title",
+      "language": "en",
+      "shortText": "Title/header text describes the graph or channel and must not become peak evidence.",
+      "longText": null,
+      "aliases": [
+        "title",
+        "header"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "title",
+        "header"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-legend",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Legend",
+      "language": "en",
+      "shortText": "Legend text labels series or channels and is not a peak annotation.",
+      "longText": null,
+      "aliases": [
+        "legend",
+        "series label"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "legend",
+        "series label"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-grid-line",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Grid line",
+      "language": "en",
+      "shortText": "Grid lines are visual guides and must be suppressed before trace or peak evidence is accepted.",
+      "longText": null,
+      "aliases": [
+        "grid line",
+        "grid"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "grid line",
+        "grid"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-axis-calibration-anchor",
+      "version": "chromalab-knowledge-v2",
+      "type": "AXIS_TERM",
+      "canonicalLabel": "Calibration anchor",
+      "language": "en",
+      "shortText": "A calibration anchor pairs deterministic pixel geometry with an OCR/user value; text alone is not enough.",
+      "longText": null,
+      "aliases": [
+        "calibration anchor",
+        "axis anchor"
+      ],
+      "keywords": [
+        "axis",
+        "geometry",
+        "calibration anchor",
+        "axis anchor"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "axis",
+        "geometry"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-kovats-index",
+      "version": "chromalab-knowledge-v2",
+      "type": "RETENTION_INDEX_RULE",
+      "canonicalLabel": "Kovats index",
+      "language": "en",
+      "shortText": "Kovats index requires valid reference-series retention data and cannot be calculated from glossary knowledge.",
+      "longText": null,
+      "aliases": [
+        "Kovats index",
+        "Kovats"
+      ],
+      "keywords": [
+        "retention index",
+        "Kovats",
+        "Kovats index",
+        "Kovats"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "retention index",
+        "Kovats"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-retention-index",
+      "version": "chromalab-knowledge-v2",
+      "type": "RETENTION_INDEX_RULE",
+      "canonicalLabel": "Retention index",
+      "language": "en",
+      "shortText": "Retention index is a derived chromatographic value requiring method-compatible reference evidence.",
+      "longText": null,
+      "aliases": [
+        "retention index",
+        "RI"
+      ],
+      "keywords": [
+        "retention index",
+        "Kovats",
+        "retention index",
+        "RI"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "retention index",
+        "Kovats"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-n-alkane-reference",
+      "version": "chromalab-knowledge-v2",
+      "type": "RETENTION_INDEX_RULE",
+      "canonicalLabel": "n-alkane reference series",
+      "language": "en",
+      "shortText": "n-alkane reference series entries define the RI scale, but measured reference RTs must come from the same method or run family.",
+      "longText": null,
+      "aliases": [
+        "n-alkane reference series",
+        "normal alkane reference"
+      ],
+      "keywords": [
+        "retention index",
+        "Kovats",
+        "n-alkane reference series",
+        "normal alkane reference"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "retention index",
+        "Kovats"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-c10-c40-pattern",
+      "version": "chromalab-knowledge-v2",
+      "type": "KNOWN_PATTERN",
+      "canonicalLabel": "C10-C40 n-alkane pattern",
+      "language": "en",
+      "shortText": "C10-C40 labels follow straight-chain saturated hydrocarbon naming; this is a naming stub only.",
+      "longText": null,
+      "aliases": [
+        "C10-C40",
+        "n-C10 to n-C40"
+      ],
+      "keywords": [
+        "pattern",
+        "n-alkane",
+        "C10-C40",
+        "n-C10 to n-C40"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "pattern",
+        "n-alkane"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-interpolation-caveat",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Retention-index interpolation caveat",
+      "language": "en",
+      "shortText": "RI interpolation must use adjacent reference alkanes around the target peak and preserve the method context.",
+      "longText": null,
+      "aliases": [
+        "interpolation caveat",
+        "RI interpolation"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "interpolation caveat",
+        "RI interpolation"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-ri-missing-reference-caveat",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Missing reference caveat",
+      "language": "en",
+      "shortText": "If the reference series is missing or not method-compatible, RI/Kovats must be omitted or marked unavailable.",
+      "longText": null,
+      "aliases": [
+        "missing reference caveat",
+        "no RI references"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "missing reference caveat",
+        "no RI references"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-ion-title-not-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Ion/channel title is not peak label",
+      "language": "en",
+      "shortText": "Ion/channel title text, including numeric m/z windows, is TITLE_OR_CHANNEL and must not create PeakLabelEvidence.",
+      "longText": null,
+      "aliases": [
+        "Ion 71.00 (70.70 to 71.70)",
+        "ion title not peak",
+        "TITLE_OR_CHANNEL"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "Ion 71.00 (70.70 to 71.70)",
+        "ion title not peak",
+        "TITLE_OR_CHANNEL"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-mz-not-rt",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "m/z value is not retention time",
+      "language": "en",
+      "shortText": "An m/z value or mass range number is not a retention-time peak label.",
+      "longText": null,
+      "aliases": [
+        "m/z value not RT",
+        "mass number not retention time"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "m/z value not RT",
+        "mass number not retention time"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-mass-range-not-peak-rt",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Mass range number is not peak RT",
+      "language": "en",
+      "shortText": "Numbers inside an ion/mass range are channel metadata and must be classified away from peak annotation.",
+      "longText": null,
+      "aliases": [
+        "70.70 to 71.70",
+        "mass range number"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "70.70 to 71.70",
+        "mass range number"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-title-header-not-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Title/header numbers are not peak annotations",
+      "language": "en",
+      "shortText": "Numbers in title/header regions are graph metadata unless local plot and signal verification proves otherwise.",
+      "longText": null,
+      "aliases": [
+        "title numbers",
+        "header numbers"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "title numbers",
+        "header numbers"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-peak-annotation-signal-verified",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Peak annotation requires signal verification",
+      "language": "en",
+      "shortText": "Peak annotations require plot proximity and local signal verification before they can seed a peak review candidate.",
+      "longText": null,
+      "aliases": [
+        "5.610",
+        "peak label",
+        "signal verification"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "5.610",
+        "peak label",
+        "signal verification"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-tick-label-geometry",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Tick label requires geometry linkage",
+      "language": "en",
+      "shortText": "Tick labels participate in calibration only when linked to deterministic tick pixel positions.",
+      "longText": null,
+      "aliases": [
+        "tick geometry",
+        "tick label linkage"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "tick geometry",
+        "tick label linkage"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-axis-label-not-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Axis label is not peak label",
+      "language": "en",
+      "shortText": "Axis labels such as Abundance, Intensity, or Retention Time must not become peak annotations.",
+      "longText": null,
+      "aliases": [
+        "axis label not peak",
+        "Abundance label"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "axis label not peak",
+        "Abundance label"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-rule-legend-not-peak",
+      "version": "chromalab-knowledge-v2",
+      "type": "TEXT_CLASSIFICATION_RULE",
+      "canonicalLabel": "Legend text is not peak label",
+      "language": "en",
+      "shortText": "Legend/series text labels signals or channels and cannot create peak evidence.",
+      "longText": null,
+      "aliases": [
+        "legend text",
+        "legend not peak"
+      ],
+      "keywords": [
+        "OCR",
+        "VLM",
+        "text classification",
+        "legend text",
+        "legend not peak"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "OCR",
+        "VLM",
+        "text classification"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-calibration-required",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Calibration required for release metrics",
+      "language": "en",
+      "shortText": "No release-quality RT, height, area, FWHM, or S/N claim is allowed without valid calibration evidence.",
+      "longText": null,
+      "aliases": [
+        "calibration required",
+        "release metrics require calibration"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "calibration required",
+        "release metrics require calibration"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-trace-required",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Trace evidence required for peak metrics",
+      "language": "en",
+      "shortText": "Peak metrics require linked trace, boundaries, and peak evidence; knowledge cannot fill missing trace evidence.",
+      "longText": null,
+      "aliases": [
+        "trace evidence required",
+        "peak metrics require trace"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "trace evidence required",
+        "peak metrics require trace"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-no-compound-assignment",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "No compound assignment without explicit evidence",
+      "language": "en",
+      "shortText": "Compound assignment requires explicit library, spectrum, retention-index, method, or user-confirmed evidence.",
+      "longText": null,
+      "aliases": [
+        "compound assignment requires explicit evidence",
+        "no compound assignment"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "compound assignment requires explicit evidence",
+        "no compound assignment"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-no-kovats-without-reference",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "No Kovats without reference series",
+      "language": "en",
+      "shortText": "Kovats/RI must not be reported as calculated without valid same-method reference-series data.",
+      "longText": null,
+      "aliases": [
+        "no Kovats without reference series",
+        "no RI references"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "no Kovats without reference series",
+        "no RI references"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-review-grade-peaks",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Review-grade peaks must be labelled",
+      "language": "en",
+      "shortText": "Peaks with weak, shoulder, overlap, sparse-trace, or low-S/N evidence must be clearly labelled review-grade.",
+      "longText": null,
+      "aliases": [
+        "review-grade peaks",
+        "peak review label"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "review-grade peaks",
+        "peak review label"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-vlm-semantic-only",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "VLM explanation is semantic assistance only",
+      "language": "en",
+      "shortText": "VLM may explain warnings and classify text, but deterministic CV/math owns numeric measurements.",
+      "longText": null,
+      "aliases": [
+        "VLM semantic only",
+        "model cannot measure"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "VLM semantic only",
+        "model cannot measure"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-caveat-image-uncertainty",
+      "version": "chromalab-knowledge-v2",
+      "type": "REPORT_CAVEAT",
+      "canonicalLabel": "Image-derived analysis has uncertainty",
+      "language": "en",
+      "shortText": "Image-derived chromatogram analysis must expose calibration, trace, OCR, and peak evidence limits.",
+      "longText": null,
+      "aliases": [
+        "image uncertainty",
+        "image-derived analysis"
+      ],
+      "keywords": [
+        "report caveat",
+        "release gate",
+        "image uncertainty",
+        "image-derived analysis"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "report caveat",
+        "release gate"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-safety-knowledge-cannot-measure",
+      "version": "chromalab-knowledge-v2",
+      "type": "SAFETY_BOUNDARY",
+      "canonicalLabel": "Knowledge cannot create numeric metrics",
+      "language": "en",
+      "shortText": "Knowledge can explain and classify; it cannot fabricate RT, height, area, FWHM, S/N, baseline, Kovats, or integration boundaries.",
+      "longText": null,
+      "aliases": [
+        "knowledge cannot measure",
+        "create numeric metric forbidden"
+      ],
+      "keywords": [
+        "safety",
+        "forbidden use",
+        "knowledge cannot measure",
+        "create numeric metric forbidden"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "safety",
+        "forbidden use"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Alkane",
+      "language": "en",
+      "shortText": "Alkane is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "alkane"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-n-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "N-Alkane",
+      "language": "en",
+      "shortText": "N-Alkane is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "n-alkane"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-hydrocarbon",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Hydrocarbon",
+      "language": "en",
+      "shortText": "Hydrocarbon is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "hydrocarbon"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "hydrocarbon"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-aromatic-hydrocarbon",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Aromatic Hydrocarbon",
+      "language": "en",
+      "shortText": "Aromatic Hydrocarbon is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "aromatic hydrocarbon"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "aromatic hydrocarbon"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-biomarker",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Biomarker",
+      "language": "en",
+      "shortText": "Biomarker is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "biomarker"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "biomarker"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-sterane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Sterane",
+      "language": "en",
+      "shortText": "Sterane is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "sterane"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "sterane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-terpane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Terpane",
+      "language": "en",
+      "shortText": "Terpane is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "terpane"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "terpane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-pah",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Pah",
+      "language": "en",
+      "shortText": "Pah is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "PAH"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "PAH"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-compound-class",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Compound Class",
+      "language": "en",
+      "shortText": "Compound Class is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "compound class"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "compound class"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-class-unresolved-complex-mixture",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_CLASS",
+      "canonicalLabel": "Unresolved Complex Mixture",
+      "language": "en",
+      "shortText": "Unresolved Complex Mixture is a chemical/domain class term; it cannot identify a sample peak without explicit evidence.",
+      "longText": null,
+      "aliases": [
+        "unresolved complex mixture"
+      ],
+      "keywords": [
+        "chemical class",
+        "domain dictionary",
+        "unresolved complex mixture"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "chemical class",
+        "domain dictionary"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-roi-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "ROI warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain ROI warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "ROI warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "ROI warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-calibration-invalid-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "calibration invalid warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain calibration invalid warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "calibration invalid warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "calibration invalid warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-sparse-trace-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "sparse trace warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain sparse trace warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "sparse trace warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "sparse trace warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-peak-overlap-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "peak overlap warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain peak overlap warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "peak overlap warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "peak overlap warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-shoulder-peak-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "shoulder peak warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain shoulder peak warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "shoulder peak warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "shoulder peak warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-ocr-ambiguity-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "OCR ambiguity warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain OCR ambiguity warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "OCR ambiguity warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "OCR ambiguity warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-vlm-disagreement-warning",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "VLM disagreement warning",
+      "language": "en",
+      "shortText": "Use this snippet to explain VLM disagreement warning with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "VLM disagreement warning"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "VLM disagreement warning"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-snippet-diagnostic-only-report-explanation",
+      "version": "chromalab-knowledge-v2",
+      "type": "PROMPT_SNIPPET",
+      "canonicalLabel": "diagnostic-only report explanation",
+      "language": "en",
+      "shortText": "Use this snippet to explain diagnostic-only report explanation with evidence and without creating numeric metrics.",
+      "longText": null,
+      "aliases": [
+        "diagnostic-only report explanation"
+      ],
+      "keywords": [
+        "prompt",
+        "warning explanation",
+        "diagnostic-only report explanation"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "prompt",
+        "warning explanation"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c10-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C10 alkane",
+      "language": "en",
+      "shortText": "n-C10 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C10H22; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C10",
+        "n-C10",
+        "n-Decane",
+        "C10 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C10",
+        "n-C10",
+        "n-Decane",
+        "C10 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c11-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C11 alkane",
+      "language": "en",
+      "shortText": "n-C11 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C11H24; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C11",
+        "n-C11",
+        "n-Undecane",
+        "C11 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C11",
+        "n-C11",
+        "n-Undecane",
+        "C11 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c12-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C12 alkane",
+      "language": "en",
+      "shortText": "n-C12 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C12H26; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C12",
+        "n-C12",
+        "n-Dodecane",
+        "C12 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C12",
+        "n-C12",
+        "n-Dodecane",
+        "C12 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c13-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C13 alkane",
+      "language": "en",
+      "shortText": "n-C13 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C13H28; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C13",
+        "n-C13",
+        "n-Tridecane",
+        "C13 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C13",
+        "n-C13",
+        "n-Tridecane",
+        "C13 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c14-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C14 alkane",
+      "language": "en",
+      "shortText": "n-C14 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C14H30; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C14",
+        "n-C14",
+        "n-Tetradecane",
+        "C14 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C14",
+        "n-C14",
+        "n-Tetradecane",
+        "C14 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c15-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C15 alkane",
+      "language": "en",
+      "shortText": "n-C15 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C15H32; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C15",
+        "n-C15",
+        "n-Pentadecane",
+        "C15 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C15",
+        "n-C15",
+        "n-Pentadecane",
+        "C15 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c16-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C16 alkane",
+      "language": "en",
+      "shortText": "n-C16 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C16H34; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C16",
+        "n-C16",
+        "n-Hexadecane",
+        "C16 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C16",
+        "n-C16",
+        "n-Hexadecane",
+        "C16 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c17-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C17 alkane",
+      "language": "en",
+      "shortText": "n-C17 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C17H36; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C17",
+        "n-C17",
+        "n-Heptadecane",
+        "C17 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C17",
+        "n-C17",
+        "n-Heptadecane",
+        "C17 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c18-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C18 alkane",
+      "language": "en",
+      "shortText": "n-C18 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C18H38; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C18",
+        "n-C18",
+        "n-Octadecane",
+        "C18 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C18",
+        "n-C18",
+        "n-Octadecane",
+        "C18 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c19-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C19 alkane",
+      "language": "en",
+      "shortText": "n-C19 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C19H40; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C19",
+        "n-C19",
+        "n-Nonadecane",
+        "C19 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C19",
+        "n-C19",
+        "n-Nonadecane",
+        "C19 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c20-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C20 alkane",
+      "language": "en",
+      "shortText": "n-C20 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C20H42; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C20",
+        "n-C20",
+        "n-Eicosane",
+        "C20 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C20",
+        "n-C20",
+        "n-Eicosane",
+        "C20 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c21-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C21 alkane",
+      "language": "en",
+      "shortText": "n-C21 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C21H44; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C21",
+        "n-C21",
+        "n-Heneicosane",
+        "C21 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C21",
+        "n-C21",
+        "n-Heneicosane",
+        "C21 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c22-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C22 alkane",
+      "language": "en",
+      "shortText": "n-C22 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C22H46; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C22",
+        "n-C22",
+        "n-Docosane",
+        "C22 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C22",
+        "n-C22",
+        "n-Docosane",
+        "C22 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c23-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C23 alkane",
+      "language": "en",
+      "shortText": "n-C23 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C23H48; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C23",
+        "n-C23",
+        "n-Tricosane",
+        "C23 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C23",
+        "n-C23",
+        "n-Tricosane",
+        "C23 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c24-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C24 alkane",
+      "language": "en",
+      "shortText": "n-C24 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C24H50; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C24",
+        "n-C24",
+        "n-Tetracosane",
+        "C24 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C24",
+        "n-C24",
+        "n-Tetracosane",
+        "C24 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c25-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C25 alkane",
+      "language": "en",
+      "shortText": "n-C25 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C25H52; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C25",
+        "n-C25",
+        "n-Pentacosane",
+        "C25 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C25",
+        "n-C25",
+        "n-Pentacosane",
+        "C25 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c26-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C26 alkane",
+      "language": "en",
+      "shortText": "n-C26 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C26H54; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C26",
+        "n-C26",
+        "n-Hexacosane",
+        "C26 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C26",
+        "n-C26",
+        "n-Hexacosane",
+        "C26 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c27-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C27 alkane",
+      "language": "en",
+      "shortText": "n-C27 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C27H56; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C27",
+        "n-C27",
+        "n-Heptacosane",
+        "C27 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C27",
+        "n-C27",
+        "n-Heptacosane",
+        "C27 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c28-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C28 alkane",
+      "language": "en",
+      "shortText": "n-C28 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C28H58; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C28",
+        "n-C28",
+        "n-Octacosane",
+        "C28 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C28",
+        "n-C28",
+        "n-Octacosane",
+        "C28 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c29-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C29 alkane",
+      "language": "en",
+      "shortText": "n-C29 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C29H60; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C29",
+        "n-C29",
+        "n-Nonacosane",
+        "C29 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C29",
+        "n-C29",
+        "n-Nonacosane",
+        "C29 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c30-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C30 alkane",
+      "language": "en",
+      "shortText": "n-C30 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C30H62; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C30",
+        "n-C30",
+        "n-Triacontane",
+        "C30 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C30",
+        "n-C30",
+        "n-Triacontane",
+        "C30 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c31-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C31 alkane",
+      "language": "en",
+      "shortText": "n-C31 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C31H64; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C31",
+        "n-C31",
+        "n-Hentriacontane",
+        "C31 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C31",
+        "n-C31",
+        "n-Hentriacontane",
+        "C31 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c32-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C32 alkane",
+      "language": "en",
+      "shortText": "n-C32 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C32H66; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C32",
+        "n-C32",
+        "n-Dotriacontane",
+        "C32 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C32",
+        "n-C32",
+        "n-Dotriacontane",
+        "C32 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c33-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C33 alkane",
+      "language": "en",
+      "shortText": "n-C33 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C33H68; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C33",
+        "n-C33",
+        "n-Tritriacontane",
+        "C33 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C33",
+        "n-C33",
+        "n-Tritriacontane",
+        "C33 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c34-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C34 alkane",
+      "language": "en",
+      "shortText": "n-C34 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C34H70; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C34",
+        "n-C34",
+        "n-Tetratriacontane",
+        "C34 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C34",
+        "n-C34",
+        "n-Tetratriacontane",
+        "C34 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c35-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C35 alkane",
+      "language": "en",
+      "shortText": "n-C35 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C35H72; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C35",
+        "n-C35",
+        "n-Pentatriacontane",
+        "C35 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C35",
+        "n-C35",
+        "n-Pentatriacontane",
+        "C35 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c36-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C36 alkane",
+      "language": "en",
+      "shortText": "n-C36 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C36H74; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C36",
+        "n-C36",
+        "n-Hexatriacontane",
+        "C36 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C36",
+        "n-C36",
+        "n-Hexatriacontane",
+        "C36 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c37-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C37 alkane",
+      "language": "en",
+      "shortText": "n-C37 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C37H76; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C37",
+        "n-C37",
+        "n-Heptatriacontane",
+        "C37 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C37",
+        "n-C37",
+        "n-Heptatriacontane",
+        "C37 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c38-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C38 alkane",
+      "language": "en",
+      "shortText": "n-C38 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C38H78; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C38",
+        "n-C38",
+        "n-Octatriacontane",
+        "C38 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C38",
+        "n-C38",
+        "n-Octatriacontane",
+        "C38 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c39-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C39 alkane",
+      "language": "en",
+      "shortText": "n-C39 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C39H80; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C39",
+        "n-C39",
+        "n-Nonatriacontane",
+        "C39 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C39",
+        "n-C39",
+        "n-Nonatriacontane",
+        "C39 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    },
+    {
+      "entryId": "kp2-compound-stub-n-c40-alkane",
+      "version": "chromalab-knowledge-v2",
+      "type": "COMPOUND_REFERENCE_STUB",
+      "canonicalLabel": "n-C40 alkane",
+      "language": "en",
+      "shortText": "n-C40 alkane is a straight-chain saturated hydrocarbon reference-label stub with formula C40H82; it contains no measured RT, spectrum, RI record, or sample identification.",
+      "longText": null,
+      "aliases": [
+        "C40",
+        "n-C40",
+        "n-Tetracontane",
+        "C40 n-alkane"
+      ],
+      "keywords": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40",
+        "C40",
+        "n-C40",
+        "n-Tetracontane",
+        "C40 n-alkane"
+      ],
+      "sourceRefIds": [
+        "chromalab-curated-v2",
+        "chebi-cc-by-4"
+      ],
+      "licenseStatus": "INTERNAL_CURATED",
+      "trustTier": "INTERNAL_CURATED",
+      "confidence": 1.0,
+      "lastReviewed": "2026-05-20",
+      "tags": [
+        "n-alkane",
+        "compound reference stub",
+        "C10-C40"
+      ],
+      "policy": {
+        "allowedUse": [
+          "semantic_explanation",
+          "text_classification",
+          "warning_explanation",
+          "prompt_grounding",
+          "report_caveat",
+          "synonym_lookup"
+        ],
+        "forbiddenUse": [
+          "fabricate_rt",
+          "fabricate_height",
+          "fabricate_area",
+          "fabricate_fwhm",
+          "fabricate_sn",
+          "fabricate_baseline",
+          "fabricate_kovats",
+          "create_numeric_peak_metric",
+          "override_calibration",
+          "override_integration",
+          "identify_compound_without_evidence",
+          "test_fixture_only"
+        ]
+      }
+    }
+  ]
+}

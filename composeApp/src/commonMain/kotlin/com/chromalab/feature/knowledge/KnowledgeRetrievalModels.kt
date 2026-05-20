@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 const val CHROMALAB_KNOWLEDGE_PACK_SCHEMA_VERSION = "chromalab-knowledge-pack-1.0"
 const val CHROMALAB_KNOWLEDGE_PACK_ID = "chromalab-knowledge"
 const val CHROMALAB_KNOWLEDGE_PACK_VERSION_V1 = "chromalab-knowledge-v1"
+const val CHROMALAB_KNOWLEDGE_PACK_VERSION_V2 = "chromalab-knowledge-v2"
 
 @Serializable
 data class KnowledgePackVersion(
@@ -23,10 +24,18 @@ data class KnowledgeEntry(
     val entryId: String,
     val version: String = CHROMALAB_KNOWLEDGE_PACK_VERSION_V1,
     val type: KnowledgeEntryType,
+    val canonicalLabel: String = entryId,
+    val language: String = "en",
     val shortText: String,
+    val longText: String? = null,
     val aliases: List<String> = emptyList(),
     val keywords: List<String> = emptyList(),
     val sourceRefIds: List<String>,
+    val licenseStatus: KnowledgeLicenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
+    val trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+    val confidence: Float = 1f,
+    val lastReviewed: String = "2026-05-20",
+    val tags: List<String> = emptyList(),
     val policy: KnowledgeUsePolicy,
 )
 
@@ -42,6 +51,12 @@ enum class KnowledgeEntryType {
     RETENTION_INDEX_RULE,
     PROMPT_SNIPPET,
     SAFETY_BOUNDARY,
+    KNOWN_PATTERN,
+    UNIT_TERM,
+    AXIS_TERM,
+    MASS_SPECTROMETRY_TERM,
+    CHROMATOGRAPHY_METHOD_TERM,
+    COMPOUND_REFERENCE_STUB,
 }
 
 @Serializable
@@ -51,8 +66,71 @@ data class KnowledgeSourceRef(
     val url: String? = null,
     val citation: String? = null,
     val license: String? = null,
+    val licenseStatus: KnowledgeLicenseStatus = KnowledgeLicenseStatus.INTERNAL_CURATED,
+    val trustTier: KnowledgeSourceTrustTier = KnowledgeSourceTrustTier.INTERNAL_CURATED,
+    val attributionRequired: Boolean = false,
+    val canBundle: Boolean = false,
+    val canTransform: Boolean = false,
+    val apiLookupOnly: Boolean = false,
     val notes: String? = null,
 )
+
+@Serializable
+enum class KnowledgeLicenseStatus {
+    INTERNAL_CURATED,
+    OPEN_VERIFIED,
+    ATTRIBUTION_REQUIRED,
+    API_ONLY,
+    REJECTED,
+    NEEDS_REVIEW,
+    PROPRIETARY_FORBIDDEN,
+}
+
+@Serializable
+enum class KnowledgeSourceTrustTier {
+    INTERNAL_CURATED,
+    OFFICIAL_STANDARD,
+    OFFICIAL_DATABASE,
+    OPEN_ONTOLOGY,
+    PEER_REVIEWED,
+    MAINTAINED_REPOSITORY,
+    USER_SUPPLIED_UNVERIFIED,
+    REJECTED,
+}
+
+@Serializable
+data class KnowledgeAttribution(
+    val sourceId: String,
+    val requiredText: String,
+    val licenseUrl: String? = null,
+    val accessDate: String? = null,
+)
+
+@Serializable
+data class KnowledgeBuildManifest(
+    val packId: String,
+    val version: String,
+    val schemaVersion: String,
+    val generatedAt: String,
+    val builderVersion: String,
+    val sourceIds: List<String>,
+    val entryCount: Int,
+    val rejectedSourceIds: List<String> = emptyList(),
+)
+
+@Serializable
+data class KnowledgeValidationIssue(
+    val severity: KnowledgeValidationSeverity,
+    val path: String,
+    val code: String,
+    val message: String,
+)
+
+@Serializable
+enum class KnowledgeValidationSeverity {
+    WARNING,
+    ERROR,
+}
 
 @Serializable
 data class KnowledgeUsePolicy(
@@ -64,6 +142,9 @@ data class KnowledgeUsePolicy(
 data class KnowledgeSearchQuery(
     val rawQuery: String,
     val requestedTypes: List<KnowledgeEntryType> = emptyList(),
+    val languages: List<String> = emptyList(),
+    val allowedUses: List<String> = emptyList(),
+    val exactAliasOnly: Boolean = false,
     val maxResults: Int = 8,
 )
 
@@ -73,6 +154,8 @@ data class KnowledgeSearchResult(
     val entry: KnowledgeEntry,
     val score: Double,
     val matchedTerms: List<String> = emptyList(),
+    val sourceRefs: List<KnowledgeSourceRef> = emptyList(),
+    val forbiddenUse: List<String> = entry.policy.forbiddenUse,
 )
 
 @Serializable
@@ -127,7 +210,7 @@ data class KnowledgeUseValidationResult(
     val issues: List<KnowledgeUseValidationIssue> = emptyList(),
 )
 
-object KnowledgeUsePolicyValidator {
+object KnowledgePackValidator {
     private val forbiddenMetricUses = setOf(
         "fabricate_rt",
         "fabricate_height",
@@ -144,8 +227,12 @@ object KnowledgeUsePolicyValidator {
 
     fun validatePack(pack: KnowledgePackVersion): KnowledgePackValidationResult {
         val errors = mutableListOf<KnowledgePackIssue>()
+        val warnings = mutableListOf<KnowledgePackIssue>()
         if (pack.packId.isBlank()) errors.add(KnowledgePackIssue("packId", "value must not be blank."))
         if (pack.version.isBlank()) errors.add(KnowledgePackIssue("version", "value must not be blank."))
+        if (!pack.version.matches(Regex("""[A-Za-z0-9_.:-]+"""))) {
+            errors.add(KnowledgePackIssue("version", "version must be stable and machine-readable."))
+        }
         val sourceIds = pack.sourceRefs.map { it.sourceId }.toSet()
         if (sourceIds.size != pack.sourceRefs.size) errors.add(KnowledgePackIssue("sourceRefs", "source IDs must be unique."))
         val entryIds = pack.entries.map { it.entryId }
@@ -153,10 +240,27 @@ object KnowledgeUsePolicyValidator {
         pack.sourceRefs.forEach { source ->
             if (source.sourceId.isBlank()) errors.add(KnowledgePackIssue("sourceRefs.sourceId", "value must not be blank."))
             if (source.label.isBlank()) errors.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].label", "value must not be blank."))
+            if (source.license.isNullOrBlank()) warnings.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].license", "license text is recommended."))
+            if (source.licenseStatus == KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN && source.canBundle) {
+                errors.add(KnowledgePackIssue("sourceRefs[${source.sourceId}].canBundle", "forbidden proprietary source cannot be marked bundleable."))
+            }
         }
         pack.entries.forEach { entry ->
             if (entry.entryId.isBlank()) errors.add(KnowledgePackIssue("entry.entryId", "value must not be blank."))
+            if (entry.canonicalLabel.isBlank()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].canonicalLabel", "value must not be blank."))
+            if (entry.language !in setOf("en", "ru", "und")) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].language", "language must be 'en', 'ru', or 'und'."))
+            }
             if (entry.shortText.isBlank()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].shortText", "value must not be blank."))
+            if (entry.lastReviewed.isBlank()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].lastReviewed", "last reviewed date is required."))
+            if (entry.confidence !in 0f..1f) errors.add(KnowledgePackIssue("entry[${entry.entryId}].confidence", "confidence must be between 0 and 1."))
+            val normalizedAliases = entry.aliases.map { it.trim().lowercase() }
+            if (entry.aliases.any { it.isBlank() }) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].aliases", "aliases must not be blank."))
+            }
+            if (normalizedAliases.toSet().size != normalizedAliases.size) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].aliases", "aliases must be unique after normalization."))
+            }
             if (entry.sourceRefIds.isEmpty()) errors.add(KnowledgePackIssue("entry[${entry.entryId}].sourceRefIds", "at least one source reference is required."))
             entry.sourceRefIds.filterNot(sourceIds::contains).forEach { missing ->
                 errors.add(KnowledgePackIssue("entry[${entry.entryId}].sourceRefIds", "unknown source ref '$missing'."))
@@ -167,11 +271,22 @@ object KnowledgeUsePolicyValidator {
             if (entry.policy.forbiddenUse.isEmpty()) {
                 errors.add(KnowledgePackIssue("entry[${entry.entryId}].forbiddenUse", "at least one forbidden use is required."))
             }
+            if (entry.policy.allowedUse.any { it.isBlank() } || entry.policy.forbiddenUse.any { it.isBlank() }) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].policy", "allowed and forbidden use entries must not be blank."))
+            }
+            if (entry.licenseStatus == KnowledgeLicenseStatus.PROPRIETARY_FORBIDDEN) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].licenseStatus", "proprietary forbidden entries must not be bundled."))
+            }
+            if (entry.shortText.contains(Regex("""(?i)\b(?:measured\s+)?(?:rt|height|area|fwhm|s/n|snr|baseline|kovats)\s*[:=]\s*[0-9]""")) &&
+                "test_fixture_only" !in entry.policy.forbiddenUse
+            ) {
+                errors.add(KnowledgePackIssue("entry[${entry.entryId}].shortText", "entries must not contain sample-specific measured metrics."))
+            }
         }
         return KnowledgePackValidationResult(
             isValid = errors.isEmpty(),
             errors = errors,
-            warnings = emptyList(),
+            warnings = warnings,
         )
     }
 
@@ -273,8 +388,26 @@ object KnowledgeUsePolicyValidator {
     }
 }
 
+object KnowledgeUsePolicyValidator {
+    fun validatePack(pack: KnowledgePackVersion): KnowledgePackValidationResult =
+        KnowledgePackValidator.validatePack(pack)
+
+    fun validateOutput(
+        output: KnowledgeGroundedVlmOutput,
+        retrievalContexts: List<KnowledgeRetrievalContext>,
+    ): KnowledgeUseValidationResult =
+        KnowledgePackValidator.validateOutput(output, retrievalContexts)
+
+    fun snippetsFor(
+        context: KnowledgeRetrievalContext,
+        pack: KnowledgePackVersion,
+    ): List<KnowledgeGroundedSnippet> =
+        KnowledgePackValidator.snippetsFor(context, pack)
+}
+
 object KnowledgeTextClassificationPolicy {
     private val ionRangePattern = Regex("""(?i)\b(?:ion|m/z|xic|eic|sim)\b.*\([^\)]*\bto\b[^\)]*\)""")
+    private val ionOrMassContextPattern = Regex("""(?i)\b(?:ion|m/z|mass\s*range|xic|eic|sim)\b""")
     private val numericPattern = Regex("""^\s*[0-9]+(?:[.,][0-9]+)?\s*$""")
 
     fun classify(
@@ -285,6 +418,7 @@ object KnowledgeTextClassificationPolicy {
     ): MultimodalTextRegionClass =
         when {
             ionRangePattern.containsMatchIn(surroundingText) -> MultimodalTextRegionClass.TITLE_OR_CHANNEL
+            ionOrMassContextPattern.containsMatchIn(surroundingText) && numericPattern.matches(text) -> MultimodalTextRegionClass.TITLE_OR_CHANNEL
             hasLinkedTickPosition && numericPattern.matches(text) -> MultimodalTextRegionClass.TICK_LABEL
             hasLocalSignalVerification && numericPattern.matches(text) -> MultimodalTextRegionClass.PEAK_ANNOTATION
             surroundingText.contains("abundance", ignoreCase = true) ||

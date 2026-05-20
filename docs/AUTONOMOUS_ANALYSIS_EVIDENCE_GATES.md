@@ -64,3 +64,17 @@ Every terminal state must include evidence artifacts if the stage ran:
 - report contract JSON;
 - validator JSON/Markdown;
 - timings and runtime metadata.
+# Phase 6C Knowledge Evidence Gate
+
+Date: 2026-05-20
+
+Knowledge-grounded VLM/OCR/report outputs must satisfy these checks:
+
+- `knowledge_pack_version` is recorded when knowledge was used.
+- Retrieved entry IDs are present in the retrieval context.
+- Scientific explanations cite `used_entry_ids`.
+- `unsupported_claims` are captured and force REVIEW/REJECTED.
+- Forbidden uses reject the output.
+- Knowledge never creates RT, height, area, FWHM, S/N, baseline, Kovats, calibration, integration, or final compound identity.
+
+Passing this gate does not by itself make a report RELEASE_READY. It only proves semantic explanations and text classifications are grounded safely.

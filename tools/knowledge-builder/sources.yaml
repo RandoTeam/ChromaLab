@@ -1,0 +1,68 @@
+# ChromaLab Knowledge Pack source register for Phase 6C.
+# The builder treats every source as rejected unless bundle/transform policy is explicit.
+
+sources:
+  - id: chromalab-curated-v2
+    label: ChromaLab curated chromatography safety rules v2
+    url:
+    license: Project internal curated content
+    license_status: INTERNAL_CURATED
+    trust_tier: INTERNAL_CURATED
+    can_bundle: true
+    can_transform: true
+    api_lookup_only: false
+    attribution_required: false
+    decision: accepted
+    notes: Product safety boundaries, report caveats, and OCR/text classification rules authored for ChromaLab.
+
+  - id: chebi-cc-by-4
+    label: ChEBI, Chemical Entities of Biological Interest
+    url: https://www.ebi.ac.uk/chebi/aboutChebiForward.do
+    license: CC BY 4.0
+    license_status: ATTRIBUTION_REQUIRED
+    trust_tier: OPEN_ONTOLOGY
+    can_bundle: true
+    can_transform: true
+    api_lookup_only: false
+    attribution_required: true
+    decision: future_candidate
+    notes: Candidate for future curated synonyms/classes after attribution manifest and snapshot review.
+
+  - id: pubchem-provenance-policy
+    label: PubChem download and provenance policy
+    url: https://pubchem.ncbi.nlm.nih.gov/docs/downloads
+    license: NCBI/NLM policies plus contributor-specific source terms
+    license_status: NEEDS_REVIEW
+    trust_tier: OFFICIAL_DATABASE
+    can_bundle: false
+    can_transform: false
+    api_lookup_only: true
+    attribution_required: true
+    decision: api_only_until_reviewed
+    notes: Contributor-level license review is required before packaging any metadata.
+
+  - id: nist-srd-review-required
+    label: NIST Chemistry WebBook / AMDIS / SRD policy review
+    url: https://webbook.nist.gov/chemistry/
+    license: NIST Standard Reference Data Program terms; bundling requires explicit product review
+    license_status: NEEDS_REVIEW
+    trust_tier: OFFICIAL_DATABASE
+    can_bundle: false
+    can_transform: false
+    api_lookup_only: false
+    attribution_required: true
+    decision: rejected_for_phase6c_bundle
+    notes: No NIST spectral, RI, AMDIS, or WebBook database data is bundled in Phase 6C.
+
+  - id: w3c-prov-o
+    label: W3C PROV-O
+    url: https://www.w3.org/TR/prov-o/
+    license: W3C document license
+    license_status: OPEN_VERIFIED
+    trust_tier: OFFICIAL_STANDARD
+    can_bundle: true
+    can_transform: true
+    api_lookup_only: false
+    attribution_required: true
+    decision: accepted
+    notes: Used for provenance and audit-trail design references.

@@ -45,3 +45,24 @@ The VLM output must return:
 - `explanation`
 
 Missing `used_entry_ids` marks the result REVIEW. Forbidden use is rejected and recorded in the runtime evidence package.
+# Phase 6C v2 Expansion
+
+Date: 2026-05-20
+
+The Knowledge Pack now has a v2 seed and a source-controlled acquisition scaffold.
+
+## Runtime Shape
+
+- `KnowledgeEntry` includes canonical label, language, license status, trust tier, confidence, last-reviewed date, tags, allowed uses, and forbidden uses.
+- `KnowledgeEntryType` now covers known patterns, unit terms, axis terms, mass-spectrometry terms, chromatography method terms, and compound-reference stubs.
+- Retrieval supports exact aliases, lexical matching, type filtering, language filtering, and allowed-use filtering.
+- Results return source references and forbidden-use policy so VLM prompts can carry bounded snippets only.
+
+## Safety Boundary
+
+Knowledge entries are semantic aids. They cannot generate measured RT, height, area, FWHM, S/N, baseline, Kovats, calibration coefficients, integration boundaries, or compound identities. Any VLM output that uses knowledge for those purposes is rejected by policy.
+
+## Pack Versions
+
+- v1 remains a small Phase 6B seed.
+- v2 is the expanded Phase 6C seed for autonomous semantic grounding and report caveats.

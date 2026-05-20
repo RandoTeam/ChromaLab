@@ -67,3 +67,33 @@ Amendment 6B adds the local/offline Knowledge Pack and retrieval layer for seman
 ## Phase 7 Readiness
 
 Phase 7 may start. It should consume the new evidence contracts in report presentation without exposing raw model internals unnecessarily.
+# Phase 6C Closeout Addendum
+
+Date: 2026-05-20
+
+Phase 6C expands the local/offline Knowledge Pack and adds a controlled computer-side acquisition scaffold. It does not start Phase 7 and does not modify CalculationEngine or chromatographic math.
+
+## Completed
+
+- Added Knowledge Pack v2 runtime seed and documentation JSON.
+- Added license/source register and source policy update.
+- Added builder scaffold under `tools/knowledge-builder/`.
+- Added source validation output and rejected-source report.
+- Extended retrieval with exact alias lookup, lexical search, type/language/allowed-use filters, and source/forbidden-use propagation.
+- Added tests for seed v2 validation, retrieval filters, ion-title classification, Kovats/compound caveats, VLM grounding, and builder artifacts.
+
+## Agent Roles Applied
+
+- Orchestrator: kept scope Phase 6C only.
+- Research Intelligence: current source/license/retrieval research.
+- QA / Regression: knowledge tests and broader validation.
+- Product Acceptance: checked no cloud dependency and no metric fabrication.
+- Chromatography SME: reviewed terminology/caveats.
+- Scientific Reporting & Validation: enforced provenance and release caveats.
+- VLM Evaluation and OCR/Text Semantics: enforced `used_entry_ids` and title/channel rules.
+- Security & Privacy: source policy, no scraping/cloud, no external database dump.
+- Android Performance & On-Device AI: kept retrieval local/in-memory for v2 and documented FTS5 future path.
+
+## Phase 7 Gate
+
+Phase 7 may start after Phase 6C validation completes and this closeout remains accurate. Phase 7 must preserve the rule that knowledge can explain and classify but cannot measure.

@@ -43,3 +43,19 @@ The Knowledge Pack improves semantic reliability without changing numeric analys
 ## Evidence Required
 
 Every multimodal stage result must include task type, source, verdict, confidence, linked evidence ids, crop or overlay path when applicable, warnings, and runtime profile for VLM-backed work.
+# Phase 6C Addendum: Local Knowledge Pack Expansion
+
+Date: 2026-05-20
+
+The Phase 6 multimodal layer now includes a local/offline Knowledge Pack v2. It is used to ground semantic VLM/OCR tasks and report caveats without making the model a measurement engine.
+
+Integration rules:
+
+- VLM receives bounded retrieved snippets only.
+- VLM output must cite `used_entry_ids`.
+- Unsupported claims produce REVIEW/REJECTED.
+- Any attempt to use knowledge for numeric chromatographic metrics is rejected.
+- No cloud dependency or hidden remote lookup is introduced.
+- Source/license policy controls future external data acquisition.
+
+The Knowledge Pack helps classify text such as `Ion 71.00 (70.70 to 71.70)` as title/channel metadata and helps explain why calibration, trace, peak, Kovats, or compound-identification claims are blocked when evidence is missing.

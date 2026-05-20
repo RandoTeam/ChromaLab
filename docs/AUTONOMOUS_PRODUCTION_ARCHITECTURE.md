@@ -64,3 +64,26 @@ Autonomous peak detection remains the primary path. `CalculationRun` peaks are w
 ## Phase 6 Multimodal Intelligence Layer
 
 Phase 6 adds `AutonomousStageJudgeResult`, OCR/VLM crop results, model runtime profiles, and strict VLM JSON boundaries. These records explain why a stage passed, entered review, timed out, or requested a retry. They do not replace deterministic geometry, calibration, trace extraction, or peak integration.
+# Phase 6C Knowledge Pack Integration
+
+Date: 2026-05-20
+
+AUTONOMOUS_PRODUCTION can use the local Knowledge Pack for semantic grounding only. The autonomous pipeline still owns measurement through deterministic image/geometry/calibration/trace/peak stages.
+
+Knowledge Pack responsibilities:
+
+- classify OCR text such as ion/channel titles versus peak annotations;
+- explain warnings and caveats;
+- provide terminology and synonym lookup;
+- ground report language with cited entry IDs;
+- preserve source/license provenance.
+
+Knowledge Pack non-responsibilities:
+
+- no numeric peak metrics;
+- no calibration coefficients;
+- no integration override;
+- no compound identification without explicit evidence;
+- no cloud lookup.
+
+Assisted Review and Manual Advanced may use the same knowledge snippets to explain why a gate failed, but manual/user intervention remains visible in provenance.

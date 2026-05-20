@@ -179,3 +179,19 @@ Future regression rows that exercise multimodal evidence should record:
 - whether validator rejected any accepted VLM numeric metric.
 
 VLM/OCR disagreement must not create numeric geometry, calibration, trace, or peak metrics. Strong deterministic geometry, trace, and peak evidence must remain able to proceed without VLM.
+# Phase 6C Knowledge Regression Additions
+
+Date: 2026-05-20
+
+Add these knowledge-specific checks to every future release gate that touches VLM/OCR/report semantics:
+
+| Case | Expected behavior |
+|---|---|
+| Ion title `Ion 71.00 (70.70 to 71.70)` | Retrieves title/channel rule and cannot become `PEAK_ANNOTATION`. |
+| m/z or mass-range number | Classified as channel metadata unless independent plot/signal verification exists. |
+| Numeric annotation such as `5.610` near plot | May retrieve peak annotation verification rule, but still requires local signal evidence. |
+| Kovats requested without reference series | Retrieves caveat and blocks calculated RI/Kovats claim. |
+| Compound assignment requested without explicit evidence | Retrieves caveat and blocks compound identity. |
+| Knowledge-grounded VLM explanation without `used_entry_ids` | REVIEW/REJECTED. |
+| Knowledge entry used to create numeric metric | REJECTED and validator issue. |
+| Source with `NEEDS_REVIEW` license | Cannot contribute bundled production entries. |

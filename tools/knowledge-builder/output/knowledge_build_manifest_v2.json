@@ -1,0 +1,19 @@
+{
+  "packId": "chromalab-knowledge",
+  "version": "chromalab-knowledge-v2",
+  "schemaVersion": "chromalab-knowledge-pack-1.0",
+  "generatedAt": "2026-05-20T08:55:50.084347+00:00",
+  "builderVersion": "phase6c-scaffold-1",
+  "sourceIds": [
+    "chromalab-curated-v2",
+    "chebi-cc-by-4",
+    "pubchem-provenance-policy",
+    "nist-srd-review-required",
+    "w3c-prov-o"
+  ],
+  "entryCount": 112,
+  "rejectedSourceIds": [
+    "pubchem-provenance-policy",
+    "nist-srd-review-required"
+  ]
+}

@@ -10,7 +10,16 @@ object KnowledgeRetrievalEngine {
         retrievalId: String = "knowledge:${query.rawQuery.hashCode()}",
     ): KnowledgeRetrievalContext {
         val requested = query.requestedTypes.toSet()
-        val candidates = pack.entries.filter { requested.isEmpty() || it.type in requested }
+        val requestedLanguages = query.languages.map { it.lowercase() }.toSet()
+        val requestedUses = query.allowedUses.toSet()
+        val sourceRefs = pack.sourceRefs.associateBy { it.sourceId }
+        val normalizedQuery = normalize(query.rawQuery)
+        val candidates = pack.entries.filter { entry ->
+            (requested.isEmpty() || entry.type in requested) &&
+                (requestedLanguages.isEmpty() || entry.language.lowercase() in requestedLanguages) &&
+                (requestedUses.isEmpty() || requestedUses.any { it in entry.policy.allowedUse }) &&
+                (!query.exactAliasOnly || entry.aliasesWithCanonical().any { normalize(it) == normalizedQuery })
+        }
         val queryTerms = tokenize(query.rawQuery).toSet()
         val documentTerms = candidates.associateWith { tokenize(it.searchableText()) }
         val documentFrequency = queryTerms.associateWith { term ->
@@ -21,20 +30,23 @@ object KnowledgeRetrievalEngine {
         val results = candidates.mapNotNull { entry ->
             val terms = documentTerms.getValue(entry)
             val matched = queryTerms.filter { it in terms }.distinct()
-            if (matched.isEmpty()) {
+            val exactAlias = entry.aliasesWithCanonical().any { normalize(it) == normalizedQuery }
+            if (matched.isEmpty() && !exactAlias) {
                 null
             } else {
+                val baseScore = bm25Score(
+                    queryTerms = matched.ifEmpty { queryTerms.toList() },
+                    documentTerms = terms,
+                    documentFrequency = documentFrequency,
+                    documentCount = candidates.size.coerceAtLeast(1),
+                    averageLength = averageLength,
+                )
                 KnowledgeSearchResult(
                     entryId = entry.entryId,
                     entry = entry,
-                    score = bm25Score(
-                        queryTerms = matched,
-                        documentTerms = terms,
-                        documentFrequency = documentFrequency,
-                        documentCount = candidates.size.coerceAtLeast(1),
-                        averageLength = averageLength,
-                    ),
+                    score = if (exactAlias) baseScore + 100.0 else baseScore,
                     matchedTerms = matched,
+                    sourceRefs = entry.sourceRefIds.mapNotNull(sourceRefs::get),
                 )
             }
         }.sortedWith(
@@ -58,14 +70,23 @@ object KnowledgeRetrievalEngine {
 
     private fun KnowledgeEntry.searchableText(): String =
         buildString {
+            append(canonicalLabel)
+            append(' ')
             append(shortText)
+            append(' ')
+            append(longText.orEmpty())
             append(' ')
             append(type.name)
             append(' ')
             append(aliases.joinToString(" "))
             append(' ')
             append(keywords.joinToString(" "))
+            append(' ')
+            append(tags.joinToString(" "))
         }
+
+    private fun KnowledgeEntry.aliasesWithCanonical(): List<String> =
+        aliases + canonicalLabel + entryId
 
     private fun bm25Score(
         queryTerms: List<String>,
@@ -92,4 +113,7 @@ object KnowledgeRetrievalEngine {
             .split(Regex("""\s+"""))
             .map { it.trim('.', ',', ':', ';', '(', ')', '[', ']') }
             .filter { it.length >= 2 }
+
+    private fun normalize(text: String): String =
+        tokenize(text).joinToString(" ")
 }

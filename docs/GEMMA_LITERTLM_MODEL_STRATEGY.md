@@ -44,3 +44,27 @@ All models are forbidden from producing final numeric chromatographic measuremen
 - integration boundaries.
 
 The model may only explain, classify, judge overlays, and recommend deterministic retries. Deterministic CV/OCR/calibration/trace/peak evidence remains authoritative.
+# Knowledge-Grounded Semantic Layer
+
+Date: 2026-05-20
+
+Gemma-4-E4B LiteRT-LM remains documented as the primary FULL_ANALYSIS semantic/VLM assistant model. Gemma-4-E2B LiteRT-LM remains the FAST/fallback model for lower memory or shorter semantic classification tasks.
+
+For Phase 6C, model prompts that use scientific/domain knowledge must receive only bounded Knowledge Pack snippets:
+
+- `entry_id`
+- `version`
+- `short_text`
+- `allowed_use`
+- `forbidden_use`
+- `source_ref`
+
+Model output must include:
+
+- `used_entry_ids`
+- `decision`
+- `confidence`
+- `unsupported_claims`
+- `explanation`
+
+If scientific explanation lacks `used_entry_ids`, the output is REVIEW or rejected. If the model uses a knowledge entry for a forbidden purpose, the output is rejected. Knowledge never creates measured chromatographic metrics.
