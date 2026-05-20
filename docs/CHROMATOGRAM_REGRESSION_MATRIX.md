@@ -293,3 +293,24 @@ Current Phase 9B suite result:
 | Rotated photographed page | 1 graph, REVIEW_ONLY in both modes | Keep orientation path stable while closing release evidence gaps. |
 
 Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 must not start until these blockers are fixed or formally deferred by Product, Scientific, and QA.
+
+# Phase 9C Multi-Fixture Repair Status
+
+Date: 2026-05-20
+
+Phase 9C repaired evidence and OCR-anchor handling but did not pass acceptance.
+
+| Fixture class | Phase 9C deterministic | Phase 9C E2B | Remaining blocker |
+| --- | --- | --- | --- |
+| Ion 71 / White Tiger | 1 graph, REVIEW_ONLY | 1 graph, REVIEW_ONLY | Review-only baseline, not release-ready. |
+| Printed page / m/z 71 | 1 graph package, BLOCKED | 1 graph package, BLOCKED | Expected 2 graphs; `TICK_LOCALIZATION_FAILURE`. |
+| Belyi Tigr m/z 92 | 1 graph, DIAGNOSTIC_ONLY | 1 graph package, BLOCKED | E2B regression remains. |
+| Small TIC export | 1 graph, DIAGNOSTIC_ONLY | 1 graph, DIAGNOSTIC_ONLY | Diagnostic graphPanel confidence. |
+| Stacked XIC | 1 graph package, BLOCKED | 1 graph package, BLOCKED | Expected 4 graphs; `TICK_LOCALIZATION_FAILURE`. |
+| TIC plus ions | 1 graph package, BLOCKED | 1 graph package, BLOCKED | Expected 4 graphs; `TICK_LOCALIZATION_FAILURE`. |
+| Two-graph page photo | 1 graph package, BLOCKED | 1 graph package, BLOCKED | Expected 2 graphs; `TICK_LOCALIZATION_FAILURE`. |
+| Rotated page photo | 1 graph, REVIEW_ONLY | 1 graph, REVIEW_ONLY | Review-only baseline, not release-ready. |
+
+Artifacts are local under `artifacts/phase9c-multi-fixture-android/`. They are not committed because they include diagnostic logs and device-local paths.
+
+Phase 9 remains blocked; Phase 10 must not start.

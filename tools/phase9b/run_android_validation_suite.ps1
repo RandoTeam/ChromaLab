@@ -3,6 +3,7 @@ param(
     [string]$Activity = "com.chromalab.app.MainActivity",
     [string]$SuiteId = "phase9b_all",
     [string]$OutputRoot = "artifacts/phase9b-multi-fixture-android",
+    [string]$SummaryPrefix = "phase9b",
     [string[]]$Fixtures = @(
         "white_tiger_ion71",
         "bench_01_mz71_screenshot_page",
@@ -71,11 +72,25 @@ function Summarize-Run {
     $evidencePath = Get-ChildItem -LiteralPath $nested -Filter "runtime_evidence_package_*.json" -File -ErrorAction SilentlyContinue | Select-Object -First 1
     $validator = if ($validatorPath) { Read-JsonFileOrNull $validatorPath.FullName } else { $null }
     $report = if ($reportPath) { Read-JsonFileOrNull $reportPath.FullName } else { $null }
+    $evidence = if ($evidencePath) { Read-JsonFileOrNull $evidencePath.FullName } else { $null }
+    $reportGraphCount = if ($report -and $report.graphs) { @($report.graphs).Count } else { 0 }
+    $graphFailurePackageCount = if ($evidence -and $evidence.graphFailurePackages) { @($evidence.graphFailurePackages).Count } else { 0 }
+    $metadataGraphCount = if ($report -and $report.metadata) { $report.metadata.detectedGraphCount } else { $null }
+    $graphCount = if ($reportGraphCount -gt 0) {
+        $reportGraphCount
+    } elseif ($graphFailurePackageCount -gt 0) {
+        $graphFailurePackageCount
+    } else {
+        $metadataGraphCount
+    }
     [pscustomobject]@{
         fixtureId = $FixtureId
         mode = $Mode
         runId = $RunId
-        graphCount = if ($report -and $report.metadata) { $report.metadata.detectedGraphCount } else { $null }
+        graphCount = $graphCount
+        reportGraphCount = $reportGraphCount
+        graphFailurePackageCount = $graphFailurePackageCount
+        metadataDetectedGraphCount = $metadataGraphCount
         reportGate = if ($validator) { $validator.reportGateStatus } else { $null }
         validatorVerdict = if ($validator) { $validator.verdict } else { $null }
         runtimeFailureClass = if ($validator) { $validator.runtimeFailureClass } else { $null }
@@ -151,12 +166,12 @@ foreach ($fixture in $Fixtures) {
     }
 }
 
-$summaryPath = Join-Path $OutputRoot "phase9b_suite_summary.json"
+$summaryPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary.json"
 $summary | ConvertTo-Json -Depth 8 | Set-Content -Encoding UTF8 -LiteralPath $summaryPath
 
-$mdPath = Join-Path $OutputRoot "phase9b_suite_summary.md"
+$mdPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary.md"
 $lines = @(
-    "# Phase 9B Android Validation Suite",
+    "# $($SummaryPrefix.ToUpperInvariant()) Android Validation Suite",
     "",
     "- Suite: ``$SuiteId``",
     "- Package: ``$Package``",

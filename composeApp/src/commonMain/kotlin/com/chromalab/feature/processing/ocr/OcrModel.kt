@@ -30,6 +30,9 @@ data class OcrTextElement(
     val width: Float,
     val height: Float,
     val confidence: Float,
+    val sourceAxis: String? = null,
+    val sourceTickPixelPosition: Float? = null,
+    val sourceCropPath: String? = null,
 )
 
 /**

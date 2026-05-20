@@ -101,3 +101,31 @@ Evidence:
 ## Phase 10 Readiness
 
 Phase 10 may not start. Phase 9 remains blocked until the multi-fixture Android runtime failures above are fixed or formally deferred with Product, Scientific, and QA approval. No fixture failure may be converted into an expected pass without evidence.
+
+## Phase 9C Root-Cause Repair Sprint
+
+Phase 9C made code and runner repairs, then reran all eight fixtures in deterministic and E2B modes on `10AF5M15FY003YL`.
+
+Closed or improved:
+
+- local tick OCR values now carry source crop axis, deterministic tick pixel, and crop path;
+- semantic OCR values without deterministic tick pixels are no longer accepted as calibration anchors;
+- lone OCR artifacts with no digit are not parsed into numeric tick values;
+- terminal failure manifests no longer claim every fixture is `white_tiger_ion71`;
+- suite summaries distinguish completed report graphs, graph failure packages, and report metadata graph counts.
+
+Still blocked:
+
+- `bench_01`, `bench_04`, `bench_05`, and `bench_06` remain `BLOCKED` at `TICK_LOCALIZATION_FAILURE`;
+- `bench_02` deterministic is no longer a suite-count mismatch, but E2B mode still regresses to `BLOCKED`;
+- expected multi-graph counts are not met for the photographed/stacked page fixtures.
+
+Evidence:
+
+- `docs/PHASE9C_ROOT_CAUSE_BOARD.md`
+- `docs/PHASE9C_FIXTURE_FAILURE_MATRIX.md`
+- `docs/PHASE9C_ANDROID_RERUN_RESULTS.md`
+- `docs/PHASE9C_CLOSEOUT_REPORT.md`
+- local artifacts under `artifacts/phase9c-multi-fixture-android/`
+
+Final Phase 9C verdict: `PHASE_9B_BLOCKED_RUNTIME_FAILURE`. Phase 10 may not start.

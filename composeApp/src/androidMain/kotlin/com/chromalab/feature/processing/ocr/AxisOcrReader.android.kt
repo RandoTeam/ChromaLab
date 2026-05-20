@@ -230,12 +230,30 @@ actual class AxisOcrReader actual constructor() {
             } finally {
                 bitmap.recycle()
             }
-            elements.addAll(cropElements)
-            val values = cropElements.mapNotNull { it.numericValue }
-            if (values.isEmpty()) warnings.add("tick_crop_ocr.no_numeric_text:$index")
+            val numericElements = cropElements.filter { it.numericValue != null }
+            if (numericElements.isEmpty()) {
+                warnings.add("tick_crop_ocr.no_numeric_text:$index")
+                return@forEachIndexed
+            }
+            if (numericElements.size > 1) {
+                warnings.add("tick_crop_ocr.multiple_numeric_candidates:$index")
+            }
+            val selectedElement = numericElements.minByOrNull { element ->
+                val elementCenter = when (crop.axis) {
+                    GeometryAxis.X -> element.x + element.width / 2f
+                    GeometryAxis.Y -> element.y + element.height / 2f
+                }
+                abs(elementCenter - crop.tickPixelPosition)
+            } ?: return@forEachIndexed
+            val sourcedElement = selectedElement.copy(
+                sourceAxis = crop.axis.name,
+                sourceTickPixelPosition = crop.tickPixelPosition,
+                sourceCropPath = crop.path,
+            )
+            elements.add(sourcedElement)
             when (crop.axis) {
-                GeometryAxis.X -> xValues.addAll(values)
-                GeometryAxis.Y -> yValues.addAll(values)
+                GeometryAxis.X -> xValues.addNotNull(sourcedElement.numericValue)
+                GeometryAxis.Y -> yValues.addNotNull(sourcedElement.numericValue)
             }
         }
 
@@ -687,8 +705,11 @@ actual class AxisOcrReader actual constructor() {
      * Handles various formats: "35.00", "350", "0.5", "1,5", etc.
      */
     private fun parseNumeric(text: String): Float? {
+        val raw = text.trim()
+        if (raw.none { it.isDigit() }) return null
+
         // Clean up common OCR artifacts
-        val cleaned = text
+        val cleaned = raw
             .replace(",", ".") // European decimal
             .replace("O", "0") // Common OCR mistake
             .replace("l", "1") // Common OCR mistake
@@ -718,4 +739,8 @@ actual class AxisOcrReader actual constructor() {
         if (values.isEmpty() || (xValues.isEmpty() && yValues.isEmpty())) return null
         return values.average().toFloat().coerceIn(0f, 1f)
     }
+}
+
+private fun MutableList<Float>.addNotNull(value: Float?) {
+    if (value != null) add(value)
 }

@@ -41,6 +41,7 @@ Every dataset item requires:
 | `phase8b_white_tiger_ion71_android_fixture` | `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg` | bundled Android validation fixture, original Ion 71 / White Tiger style screenshot | 1 | `BLOCKED` until chromatogram VLM is installed/activated, then `DIAGNOSTIC_ONLY` or better based on evidence gates | `VLM_MODEL_UNAVAILABLE` on device `a36d1946`; after model activation expected failures may be `AXIS_DETECTION_FAILURE`, `TICK_LOCALIZATION_FAILURE`, `OCR_TICK_FAILURE`, or `CALIBRATION_FAILURE` until autonomous evidence passes | camera/gallery validation ambiguity; axis detection failure in real usage | Fixture run completed via side-by-side validation package; terminal evidence artifacts exported under `/sdcard/Download/ChromaLab/validation/white_tiger_ion71_20260520_162317/` | QA / Regression Agent |
 | `phase9_white_tiger_model_comparison` | `composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg` | bundled Android validation fixture, deterministic versus Gemma comparison | 1 | `REVIEW_ONLY` | `VLM_SEMANTIC_LAYER_UNAVAILABLE` is allowed for no-model baseline; E4B missing is documented until model is installed | model-enabled run originally regressed to `TICK_LOCALIZATION_FAILURE`; fixed by post-calibration Gemma activation | No-model run `white_tiger_ion71_20260520_192547` and E2B run `white_tiger_ion71_20260520_192400` completed with graph count 1, valid calibration, zero blocking issues | Android Performance & On-Device AI Agent |
 | `phase9b_multi_fixture_android_suite` | `composeApp/src/androidMain/assets/validation/` | bundled Android validation suite with eight fixtures | mixed: 1, 2, and 4 graph cases | `BLOCKED` | `TICK_LOCALIZATION_FAILURE`, `GRAPH_PANEL_FAILURE`, or E2B graph-count regression depending fixture | Phase 9 could not be accepted from one fixture; multi-fixture real Android validation required | Suite run completed on `10AF5M15FY003YL`; 16/16 exports complete, but 9 runs blocked and 1 failed. Phase 9B verdict is `PHASE_9B_BLOCKED_RUNTIME_FAILURE` | QA / Regression Agent |
+| `phase9c_multi_fixture_android_repair` | `composeApp/src/androidMain/assets/validation/` | Phase 9C real-device repair rerun with deterministic and E2B modes | mixed: 1, 2, and 4 graph cases | `BLOCKED` | Remaining failures are primarily `TICK_LOCALIZATION_FAILURE`; `bench_02` E2B remains blocked. | Phase 9C added tick OCR provenance, graph failure package traceability, and suite summary disambiguation. | Final rerun on `10AF5M15FY003YL`: 16/16 exports complete; stable review baselines for `white_tiger` and `bench_07`; blocked multi-graph/tick cases remain. | QA / Regression Agent |
 
 ## Coverage Mapping
 
@@ -66,6 +67,7 @@ Every dataset item requires:
 | fixture-driven Android validation | `phase8b_white_tiger_ion71_android_fixture` |
 | model-enabled Android validation | `phase9_white_tiger_model_comparison` |
 | multi-fixture Android validation | `phase9b_multi_fixture_android_suite` |
+| Phase 9C multi-fixture repair rerun | `phase9c_multi_fixture_android_repair` |
 
 ## Acceptance Notes
 

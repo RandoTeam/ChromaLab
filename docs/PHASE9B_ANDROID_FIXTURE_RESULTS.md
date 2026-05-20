@@ -55,3 +55,14 @@ Phase 9B does not pass. The app now has enough Android evidence to reject Phase 
 - one single-graph fixture is split into two graphs in deterministic mode;
 - E2B model-enabled mode regresses `bench_02_mz92_belyi_tigr` from two diagnostic graphs to zero blocked graphs;
 - all runs exported runtime evidence, validator JSON/Markdown, final report JSON, reports, timings, overlays or explicit missing reasons, so this is a runtime acceptance failure rather than an export failure.
+
+## Phase 9C Update
+
+Phase 9C reran all eight fixtures after tick OCR provenance and suite-summary repairs. The result remains blocked:
+
+- `white_tiger_ion71` and `bench_07_rotated_page_photo` remain stable review-only baselines in both modes;
+- `bench_02_mz92_belyi_tigr` deterministic mode now reports one completed graph in the suite summary, but E2B mode remains `BLOCKED`;
+- `bench_01`, `bench_04`, `bench_05`, and `bench_06` still stop at `TICK_LOCALIZATION_FAILURE` with one graph failure package each, below expected multi-graph counts;
+- all 16 Phase 9C runs exported complete required artifacts.
+
+Final Phase 9C evidence is recorded in `docs/PHASE9C_ANDROID_RERUN_RESULTS.md` and local artifacts under `artifacts/phase9c-multi-fixture-android/`.

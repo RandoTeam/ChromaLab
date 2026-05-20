@@ -58,3 +58,23 @@ artifacts/phase9b-multi-fixture-android/
 ```
 
 Phase 9B verdict is `PHASE_9B_BLOCKED_RUNTIME_FAILURE`. Phase 10 may not start.
+
+## Phase 9C Repair Sprint Result
+
+Phase 9C added deterministic local tick OCR provenance, safer tick OCR matching, terminal failure fixture traceability, and improved suite graph-count reporting. The final real-device rerun used device `10AF5M15FY003YL` and artifact root:
+
+```text
+artifacts/phase9c-multi-fixture-android/
+```
+
+Phase 9C did not close Phase 9:
+
+| Fixture class | Phase 9C result | Acceptance impact |
+| --- | --- | --- |
+| Ion 71 / White Tiger | deterministic REVIEW_ONLY, E2B REVIEW_ONLY | Stable review baseline. |
+| Belyi Tigr m/z 92 | deterministic DIAGNOSTIC_ONLY, E2B BLOCKED | E2B regression remains. |
+| Small TIC export | DIAGNOSTIC_ONLY in both modes | Review/diagnostic only. |
+| Rotated page photo | REVIEW_ONLY in both modes | Stable review baseline. |
+| Printed/two-graph/stacked/multi-ion pages | BLOCKED at `TICK_LOCALIZATION_FAILURE` | Multi-fixture acceptance remains blocked. |
+
+Verdict remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 may not start.

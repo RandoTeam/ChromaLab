@@ -45,6 +45,14 @@ Phase 8D adds graph-stage failure packages for terminal failures after determini
 
 The package must include graphPanel/plotArea bounds or explicit missing reasons, axis/tick candidate evidence, OCR crop evidence or missing reasons, accepted/rejected anchors, calibration status/residual summaries when available, warnings, failure class, failure stage, and stage timings.
 
+## Phase 9C Multi-Fixture Clarifications
+
+Phase 9C keeps `TICK_LOCALIZATION_FAILURE` as the correct blocking class when deterministic graph context exists but usable tick pixels and OCR values cannot be paired into calibration anchors. `GRAPH_PANEL_FAILURE` remains appropriate only when panel selection or multiplicity is the first failing evidence gate.
+
+Model-enabled runs must not rewrite graph count, panel selection, tick geometry, calibration anchors, or numeric chromatographic metrics. If E2B/VLM disagrees with deterministic geometry, the result is review evidence only; dropping deterministic graph candidates without deterministic rejection evidence remains a runtime blocker.
+
+For suite summaries, graph count must distinguish final report graphs from graph-level failure packages. A fixture can have zero report graphs but still have graph-level evidence; missing graph-level evidence for a graph-stage failure remains an export/evidence blocker.
+
 ## Failure Closure Policy
 
 1. Attach evidence before changing expected status.

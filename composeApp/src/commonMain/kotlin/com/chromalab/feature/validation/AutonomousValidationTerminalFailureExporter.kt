@@ -44,6 +44,7 @@ object AutonomousValidationTerminalFailureExporter {
             println("VALIDATION_FIXTURE_FAILURE_EXPORT skipped=no_active_validation_run")
             return emptyList()
         }
+        val fixtureId = runId.toValidationFixtureId()
 
         val report = terminalFailureReport(
             runId = runId,
@@ -57,6 +58,7 @@ object AutonomousValidationTerminalFailureExporter {
             stageTimings = stageTimings,
             deviceName = deviceName,
             modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+            graphFailurePackageCount = graphFailurePackages.size,
         )
         val evidenceJson = DebugPackageExporter.exportRuntimeEvidencePackage(
             report = report,
@@ -153,7 +155,7 @@ object AutonomousValidationTerminalFailureExporter {
         val manifestFileName = "artifact_manifest_$runId.json"
         val manifest = AutonomousValidationRunArtifactManifest(
             runId = runId,
-            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            fixtureId = fixtureId,
             publicArtifactDirectory = validationPublicDirectory(runId),
             records = manifestRecords + AutonomousValidationArtifactRecord(
                 slot = "artifact_manifest",
@@ -186,6 +188,7 @@ object AutonomousValidationTerminalFailureExporter {
         stageTimings: List<ReportStageTiming>,
         deviceName: String?,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic>,
+        graphFailurePackageCount: Int,
     ): ChromatogramReport =
         ChromatogramReport(
             metadata = ReportMetadata(
@@ -196,7 +199,7 @@ object AutonomousValidationTerminalFailureExporter {
                     (analysisCompletedAtEpochMillis - analysisStartedAtEpochMillis).coerceAtLeast(0L),
                 inputSourceType = sourceType.toReportInputSourceType(),
                 sourceName = sourceImagePath.fileNameOnly(),
-                detectedGraphCount = 0,
+                detectedGraphCount = graphFailurePackageCount,
                 executedRuntime = ExecutedRuntime.UNKNOWN,
                 deviceName = deviceName,
                 processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION,
@@ -323,6 +326,12 @@ object AutonomousValidationTerminalFailureExporter {
 
     private fun validationPublicDirectory(runId: String): String =
         "/sdcard/Download/ChromaLab/validation/$runId"
+
+    private fun String.toValidationFixtureId(): String =
+        AutonomousValidationFixtureContracts.phase9bFixtureIds
+            .sortedByDescending { it.length }
+            .firstOrNull { startsWith("${it}_") }
+            ?: WHITE_TIGER_ION71_FIXTURE_ID
 
     private fun String.fileNameOnly(): String =
         substringAfterLast('/').substringAfterLast('\\').ifBlank { this }

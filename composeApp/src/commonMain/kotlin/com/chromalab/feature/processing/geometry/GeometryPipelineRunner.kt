@@ -11,13 +11,10 @@ import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.graph.requiresGraphPanelBoundaryMode
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
-import com.chromalab.feature.processing.ocr.AxisOcrResult
-import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.peaks.PeakLabelEvidence
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceReader
 import com.chromalab.feature.processing.pipeline.DetectionMethod
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GeometryPipelineRunner(
@@ -335,7 +332,7 @@ class GeometryPipelineRunner(
                 warnings = listOf("peak_label_ocr.plot_area_missing"),
             )
         }
-        val tickOcr = axisOcr.toTickOcrResult(candidate.region, tickGeometry, tickCropArtifacts)
+        val tickOcr = TickOcrMatcher.toTickOcrResult(axisOcr, candidate.region, tickGeometry, tickCropArtifacts)
         val xFit = calibrationFitter.fit(
             axis = GeometryAxis.X,
             anchors = tickOcr.acceptedItems
@@ -797,100 +794,6 @@ private fun AxisTickGeometryResult?.toTickGeometry(): TickGeometry =
         warnings = this?.warnings.orEmpty(),
     )
 
-private fun AxisOcrResult?.toTickOcrResult(
-    panelRegion: GraphRegion?,
-    ticks: TickGeometry,
-    cropArtifacts: List<TickOcrCropArtifact> = emptyList(),
-): TickOcrResult {
-    val ocr = this ?: return TickOcrResult(
-        warnings = listOf("tick_ocr.not_available"),
-        timestamp = System.currentTimeMillis(),
-    )
-    val panel = panelRegion ?: return TickOcrResult(
-        warnings = listOf("tick_ocr.panel_missing"),
-        timestamp = ocr.timestamp,
-    )
-    val xTolerance = (panel.width * 0.035f).coerceAtLeast(8f)
-    val yTolerance = (panel.height * 0.035f).coerceAtLeast(8f)
-    val items = ocr.rawElements.mapNotNull { element ->
-        val value = element.numericValue ?: return@mapNotNull null
-        val xItem = element.toTickOcrItemOrNull(
-            axis = GeometryAxis.X,
-            ticks = ticks.xTicks.map { it.pixelCoordinate },
-            tolerance = xTolerance,
-            coordinate = element.centerX,
-            expectedBand = element.centerY >= panel.y + panel.height * 0.45f,
-            cropArtifacts = cropArtifacts,
-        )
-        val yItem = element.toTickOcrItemOrNull(
-            axis = GeometryAxis.Y,
-            ticks = ticks.yTicks.map { it.pixelCoordinate },
-            tolerance = yTolerance,
-            coordinate = element.centerY,
-            expectedBand = element.centerX <= panel.x + panel.width * 0.42f,
-            cropArtifacts = cropArtifacts,
-        )
-        val item = listOfNotNull(xItem, yItem).maxByOrNull {
-            if (it.status == TickOcrItemStatus.ACCEPTED) 1 else 0
-        }
-        item?.copy(parsedNumericValue = value.toDouble())
-    }
-    val semanticOnlyCount = items.count { it.status == TickOcrItemStatus.SEMANTIC_ONLY }
-    return TickOcrResult(
-        items = items,
-        warnings = buildList {
-            addAll(ocr.warnings)
-            if (ticks.xTicks.size < 2) add("tick_geometry.x_positions_insufficient")
-            if (ticks.yTicks.size < 2) add("tick_geometry.y_positions_insufficient")
-            if ((ticks.xTicks.isNotEmpty() || ticks.yTicks.isNotEmpty()) && cropArtifacts.isEmpty()) {
-                add("tick_ocr.local_crops_missing")
-            }
-            if (semanticOnlyCount > 0) add("tick_ocr.semantic_only:$semanticOnlyCount")
-        }.distinct(),
-        timestamp = ocr.timestamp,
-    )
-}
-
-private fun OcrTextElement.toTickOcrItemOrNull(
-    axis: GeometryAxis,
-    ticks: List<Float>,
-    tolerance: Float,
-    coordinate: Float,
-    expectedBand: Boolean,
-    cropArtifacts: List<TickOcrCropArtifact>,
-): TickOcrItem? {
-    if (!expectedBand) return null
-    val nearest = ticks.minByOrNull { abs(it - coordinate) }
-    val distance = nearest?.let { abs(it - coordinate) }
-    val status = when {
-        nearest == null -> TickOcrItemStatus.SEMANTIC_ONLY
-        distance != null && distance <= tolerance -> TickOcrItemStatus.ACCEPTED
-        else -> TickOcrItemStatus.SEMANTIC_ONLY
-    }
-    return TickOcrItem(
-        axis = axis,
-        tickPixelPosition = nearest?.takeIf { status == TickOcrItemStatus.ACCEPTED },
-        localCropPath = nearest
-            ?.takeIf { status == TickOcrItemStatus.ACCEPTED }
-            ?.let { cropArtifacts.pathFor(axis, it) },
-        rawText = text,
-        parsedNumericValue = numericValue?.toDouble(),
-        ocrEngine = TickOcrEngine.BOTH,
-        confidence = confidence,
-        status = status,
-        rejectionReason = if (status == TickOcrItemStatus.SEMANTIC_ONLY) {
-            "tick_ocr.numeric_value_without_deterministic_tick_position"
-        } else {
-            null
-        },
-    )
-}
-
-private fun List<TickOcrCropArtifact>.pathFor(axis: GeometryAxis, tickPixelPosition: Float): String? =
-    firstOrNull {
-        it.axis == axis && abs(it.tickPixelPosition - tickPixelPosition) <= 0.5f
-    }?.path
-
 private fun com.chromalab.feature.processing.inference.GraphBounds.toGraphRegionResult(
     imageWidth: Int,
     imageHeight: Int,
@@ -940,9 +843,3 @@ private fun GraphRegion.clampToImage(imageWidth: Int, imageHeight: Int): GraphRe
         height = clampedBottom - clampedY,
     )
 }
-
-private val OcrTextElement.centerX: Float
-    get() = x + width / 2f
-
-private val OcrTextElement.centerY: Float
-    get() = y + height / 2f
