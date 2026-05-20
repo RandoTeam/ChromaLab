@@ -267,3 +267,29 @@ Phase 8D final run `white_tiger_ion71_20260520_184550` reaches report export wit
 - runtime failure class: `VLM_SEMANTIC_LAYER_UNAVAILABLE`.
 
 This fixture row is now considered closed for tick localization and calibration. It remains review-only until a configured VLM semantic layer is available or Product Acceptance explicitly allows deterministic-only release policy for this fixture class.
+
+# Phase 9B Multi-Fixture Android Regression Additions
+
+Date: 2026-05-20
+
+Phase 9B invalidates the previous single-fixture Phase 9 acceptance attempt. Future Android production validation must include:
+
+- at least five real fixtures when available;
+- deterministic and E2B model-enabled mode for every selected fixture;
+- exact expected graph-count comparison;
+- runtime evidence package, validator JSON/Markdown, final report JSON, report exports, manifest, and stage timings for every run;
+- explicit failure class for every blocked or failed run;
+- deterministic-vs-E2B comparison proving model mode does not regress graph count, calibration, trace, peak evidence, or numeric metrics.
+
+Current Phase 9B suite result:
+
+| Fixture class | Current Android result | Required before acceptance |
+| --- | --- | --- |
+| Ion 71 / White Tiger | 1 graph, REVIEW_ONLY in both modes | May remain review-only, but cannot be the only acceptance fixture. |
+| Printed two-graph page | 0 graphs, BLOCKED | Graph detection/tick localization must produce graph-level evidence for both panels or classify unsupported. |
+| Belyi Tigr m/z 92 single graph | deterministic detects 2 graphs; E2B detects 0 | Fix single-graph split regression and E2B model-enabled regression. |
+| Small TIC export | 1 graph, DIAGNOSTIC_ONLY | Improve graph/calibration evidence before release-ready claims. |
+| Stacked XIC / TIC plus ions | 0 graphs, BLOCKED | Multi-graph split and tick localization must work on stacked pages. |
+| Rotated photographed page | 1 graph, REVIEW_ONLY in both modes | Keep orientation path stable while closing release evidence gaps. |
+
+Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 must not start until these blockers are fixed or formally deferred by Product, Scientific, and QA.

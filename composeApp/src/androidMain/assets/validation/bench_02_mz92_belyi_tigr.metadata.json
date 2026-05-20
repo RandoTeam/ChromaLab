@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_02_mz92_belyi_tigr",
+  "displayName": "Bench 02 Belyi Tigr m/z 92 chromatogram",
+  "assetImagePath": "validation/bench_02_mz92_belyi_tigr.jpg",
+  "expectedGraphCount": 1,
+  "expectedMode": "AUTONOMOUS_SINGLE_GRAPH_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "PLOT_AREA_FAILURE",
+    "TRACE_EXTRACTION_FAILURE",
+    "PEAK_EVIDENCE_FAILURE"
+  ],
+  "notes": [
+    "Single Belyi Tigr reference screenshot.",
+    "Included in Phase 9B to compare a different ion channel against the Ion 71 fixture."
+  ]
+}

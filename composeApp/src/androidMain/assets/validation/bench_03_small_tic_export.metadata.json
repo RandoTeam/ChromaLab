@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_03_small_tic_export",
+  "displayName": "Bench 03 small clean TIC export",
+  "assetImagePath": "validation/bench_03_small_tic_export.jpg",
+  "expectedGraphCount": 1,
+  "expectedMode": "AUTONOMOUS_CLEAN_LOW_RES_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "OCR_TICK_FAILURE",
+    "TICK_LOCALIZATION_FAILURE",
+    "PEAK_EVIDENCE_FAILURE"
+  ],
+  "notes": [
+    "Small clean export with labeled peaks.",
+    "Included in Phase 9B to test low-resolution axis/tick and peak evidence handling."
+  ]
+}

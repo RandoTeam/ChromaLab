@@ -697,7 +697,7 @@ private fun exportAutonomousValidationArtifacts(
     )
     val manifest = AutonomousValidationRunArtifactManifest(
         runId = runId,
-        fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+        fixtureId = validationFixtureIdFromRunId(runId),
         publicArtifactDirectory = validationPublicDirectory(runId),
         records = completeRequiredValidationSlots(textRecords + overlayRecords + manifestRecord),
     )
@@ -788,7 +788,7 @@ private fun ChromatogramReport.validationLogSummary(
     appendLine("# Autonomous Validation Fixture Log Summary")
     appendLine()
     appendLine("- Run id: `$runId`")
-    appendLine("- Fixture id: `$WHITE_TIGER_ION71_FIXTURE_ID`")
+    appendLine("- Fixture id: `${validationFixtureIdFromRunId(runId)}`")
     appendLine("- Calculation run id: `$calculationRunId`")
     appendLine("- Report id: `${metadata.reportId}`")
     appendLine("- Input source: `${metadata.inputSourceType}`")
@@ -814,6 +814,10 @@ private fun ChromatogramReport.validationLogSummary(
     appendLine()
     appendLine("Full logcat capture is intentionally external to the app and remains a diagnostic-only artifact.")
 }
+
+private fun validationFixtureIdFromRunId(runId: String): String =
+    runId.replace(Regex("""_\d{8}_\d{6}$"""), "")
+        .ifBlank { WHITE_TIGER_ION71_FIXTURE_ID }
 
 private fun String?.extensionOrDefault(default: String): String {
     val extension = this

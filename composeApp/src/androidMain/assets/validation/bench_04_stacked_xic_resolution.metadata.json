@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "displayName": "Bench 04 stacked XIC resolution panels",
+  "assetImagePath": "validation/bench_04_stacked_xic_resolution.png",
+  "expectedGraphCount": 4,
+  "expectedMode": "AUTONOMOUS_MULTI_GRAPH_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "MULTI_GRAPH_SPLIT_FAILURE",
+    "SPARSE_TRACE_REVIEW",
+    "PEAK_EVIDENCE_FAILURE"
+  ],
+  "notes": [
+    "Four stacked extracted-ion chromatograms with shared horizontal structure.",
+    "Included in Phase 9B to validate stacked panel splitting and sparse trace review behavior."
+  ]
+}

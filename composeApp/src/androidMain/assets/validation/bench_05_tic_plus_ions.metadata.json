@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_05_tic_plus_ions",
+  "displayName": "Bench 05 TIC plus ion traces",
+  "assetImagePath": "validation/bench_05_tic_plus_ions.png",
+  "expectedGraphCount": 4,
+  "expectedMode": "AUTONOMOUS_MULTI_GRAPH_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "MULTI_GRAPH_SPLIT_FAILURE",
+    "SPARSE_TRACE_REVIEW",
+    "PEAK_EVIDENCE_FAILURE"
+  ],
+  "notes": [
+    "TIC plus multiple ion traces with different intensity scales.",
+    "Included in Phase 9B to validate per-graph evidence and ion/channel metadata separation."
+  ]
+}

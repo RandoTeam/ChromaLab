@@ -6,6 +6,21 @@ import kotlinx.serialization.Serializable
 
 const val WHITE_TIGER_ION71_FIXTURE_ID = "white_tiger_ion71"
 const val WHITE_TIGER_ION71_FIXTURE_METADATA_ASSET = "validation/white_tiger_ion71_fixture.metadata.json"
+const val PHASE9B_ANDROID_VALIDATION_SUITE_ID = "phase9b_all"
+
+private val phase9bFixtureMetadataAssets: Map<String, String> = mapOf(
+    WHITE_TIGER_ION71_FIXTURE_ID to WHITE_TIGER_ION71_FIXTURE_METADATA_ASSET,
+    "bench_01_mz71_screenshot_page" to "validation/bench_01_mz71_screenshot_page.metadata.json",
+    "bench_02_mz92_belyi_tigr" to "validation/bench_02_mz92_belyi_tigr.metadata.json",
+    "bench_03_small_tic_export" to "validation/bench_03_small_tic_export.metadata.json",
+    "bench_04_stacked_xic_resolution" to "validation/bench_04_stacked_xic_resolution.metadata.json",
+    "bench_05_tic_plus_ions" to "validation/bench_05_tic_plus_ions.metadata.json",
+    "bench_06_photo_two_graphs_page" to "validation/bench_06_photo_two_graphs_page.metadata.json",
+    "bench_07_rotated_page_photo" to "validation/bench_07_rotated_page_photo.metadata.json",
+)
+
+val PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS: List<String> =
+    phase9bFixtureMetadataAssets.keys.toList()
 
 @Serializable
 enum class AutonomousValidationModelMode {
@@ -64,6 +79,44 @@ data class AutonomousValidationRunArtifactManifest(
     val records: List<AutonomousValidationArtifactRecord>,
 )
 
+@Serializable
+enum class AutonomousValidationRunDecision {
+    PASS,
+    REVIEW,
+    FAIL,
+    BLOCKED,
+}
+
+@Serializable
+data class AutonomousValidationSuiteRunSummary(
+    val fixtureId: String,
+    val modelMode: AutonomousValidationModelMode,
+    val runId: String? = null,
+    val expectedGraphCount: Int,
+    val graphCount: Int? = null,
+    val reportGate: ReportGateStatus? = null,
+    val validatorVerdict: String? = null,
+    val runtimeFailureClass: RuntimeFailureClass? = null,
+    val runtimeEvidencePackageAvailable: Boolean = false,
+    val validatorJsonAvailable: Boolean = false,
+    val validatorMarkdownAvailable: Boolean = false,
+    val finalReportJsonAvailable: Boolean = false,
+    val exportManifestAvailable: Boolean = false,
+    val criticalBlocker: Boolean = false,
+)
+
+@Serializable
+data class AutonomousValidationModelComparisonSummary(
+    val fixtureId: String,
+    val deterministicRunId: String,
+    val modelEnabledRunId: String,
+    val deterministicGraphCount: Int,
+    val modelEnabledGraphCount: Int,
+    val deterministicNumericFingerprint: String? = null,
+    val modelEnabledNumericFingerprint: String? = null,
+    val modelChangedDeterministicMetrics: Boolean = false,
+)
+
 data class ValidationArtifactSaveResult(
     val success: Boolean,
     val location: String? = null,
@@ -96,8 +149,18 @@ object AutonomousValidationFixtureContracts {
         "final_screen_screenshot",
     )
 
+    val phase9bFixtureIds: List<String> = PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS
+
+    val phase9bModelModes: List<AutonomousValidationModelMode> = listOf(
+        AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+        AutonomousValidationModelMode.MODEL_ENABLED,
+    )
+
     fun isSupportedFixture(fixtureId: String): Boolean =
-        fixtureId == WHITE_TIGER_ION71_FIXTURE_ID
+        fixtureId in phase9bFixtureMetadataAssets
+
+    fun metadataAssetFor(fixtureId: String): String? =
+        phase9bFixtureMetadataAssets[fixtureId]
 
     fun validateMetadata(metadata: AutonomousValidationFixtureMetadata): List<String> = buildList {
         if (metadata.fixtureId.isBlank()) add("fixture_id_missing")
@@ -106,6 +169,53 @@ object AutonomousValidationFixtureContracts {
         if (metadata.assetImagePath.isBlank()) add("asset_image_path_missing")
         if (metadata.expectedGraphCount <= 0) add("expected_graph_count_invalid")
         if (metadata.knownHistoricalFailures.isEmpty()) add("known_historical_failures_missing")
+    }
+
+    fun validatePhase9bFixtureSet(metadata: List<AutonomousValidationFixtureMetadata>): List<String> = buildList {
+        val ids = metadata.map { it.fixtureId }
+        val duplicates = ids.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
+        duplicates.forEach { add("fixture_id_duplicate:$it") }
+        val missing = phase9bFixtureIds.filterNot(ids::contains)
+        missing.forEach { add("phase9b_fixture_missing:$it") }
+        if (metadata.size < 5) add("phase9b_fixture_count_below_minimum:${metadata.size}")
+        metadata.flatMap { fixture ->
+            validateMetadata(fixture).map { issue -> "${fixture.fixtureId}:$issue" }
+        }.forEach(::add)
+    }
+
+    fun evaluateRun(summary: AutonomousValidationSuiteRunSummary): AutonomousValidationRunDecision =
+        when {
+            summary.criticalBlocker -> AutonomousValidationRunDecision.BLOCKED
+            !summary.runtimeEvidencePackageAvailable ||
+                !summary.validatorJsonAvailable ||
+                !summary.validatorMarkdownAvailable ||
+                !summary.exportManifestAvailable -> AutonomousValidationRunDecision.BLOCKED
+            summary.graphCount != null && summary.graphCount != summary.expectedGraphCount -> AutonomousValidationRunDecision.FAIL
+            summary.validatorVerdict == "FAIL" -> AutonomousValidationRunDecision.FAIL
+            summary.reportGate == ReportGateStatus.RELEASE_READY && summary.validatorVerdict == "PASS" ->
+                AutonomousValidationRunDecision.PASS
+            summary.validatorVerdict == "PASS" || summary.validatorVerdict == "REVIEW" ->
+                AutonomousValidationRunDecision.REVIEW
+            else -> AutonomousValidationRunDecision.FAIL
+        }
+
+    fun validateRunSummary(summary: AutonomousValidationSuiteRunSummary): List<String> = buildList {
+        val decision = evaluateRun(summary)
+        if (!isSupportedFixture(summary.fixtureId)) add("fixture_id_unsupported:${summary.fixtureId}")
+        if (summary.expectedGraphCount <= 0) add("expected_graph_count_invalid")
+        if (decision == AutonomousValidationRunDecision.FAIL || decision == AutonomousValidationRunDecision.BLOCKED) {
+            if (summary.runtimeFailureClass == null) add("runtime_failure_class_required:${summary.fixtureId}:${summary.modelMode}")
+        }
+    }
+
+    fun validateModelComparison(summary: AutonomousValidationModelComparisonSummary): List<String> = buildList {
+        if (!isSupportedFixture(summary.fixtureId)) add("fixture_id_unsupported:${summary.fixtureId}")
+        if (summary.deterministicGraphCount != summary.modelEnabledGraphCount) {
+            add("model_enabled_graph_count_regression:${summary.fixtureId}")
+        }
+        if (summary.modelChangedDeterministicMetrics) {
+            add("model_enabled_numeric_metric_override:${summary.fixtureId}")
+        }
     }
 }
 

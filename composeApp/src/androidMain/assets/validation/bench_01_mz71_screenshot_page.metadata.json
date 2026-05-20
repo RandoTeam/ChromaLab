@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_01_mz71_screenshot_page",
+  "displayName": "Bench 01 printed page with two Ion chromatograms",
+  "assetImagePath": "validation/bench_01_mz71_screenshot_page.jpg",
+  "expectedGraphCount": 2,
+  "expectedMode": "AUTONOMOUS_MULTI_GRAPH_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "MULTI_GRAPH_SPLIT_FAILURE",
+    "GRAPH_PANEL_FAILURE",
+    "CALIBRATION_FAILURE"
+  ],
+  "notes": [
+    "Printed-page fixture with two chromatograms and surrounding page text.",
+    "Included in Phase 9B to validate multi-graph splitting and page/background rejection on Android."
+  ]
+}

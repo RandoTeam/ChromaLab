@@ -10,9 +10,13 @@ import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.validation.AutonomousValidationArtifactRecord
 import com.chromalab.feature.validation.AutonomousValidationFixtureContracts
 import com.chromalab.feature.validation.AutonomousValidationFixtureMetadata
+import com.chromalab.feature.validation.AutonomousValidationModelComparisonSummary
 import com.chromalab.feature.validation.AutonomousValidationModelMode
+import com.chromalab.feature.validation.AutonomousValidationRunDecision
 import com.chromalab.feature.validation.AutonomousValidationRunStart
 import com.chromalab.feature.validation.AutonomousValidationRunArtifactManifest
+import com.chromalab.feature.validation.AutonomousValidationSuiteRunSummary
+import com.chromalab.feature.validation.PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS
 import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -59,6 +63,31 @@ class AutonomousValidationFixtureContractTest {
     }
 
     @Test
+    fun phase9bFixtureSuiteSelectsAtLeastFiveFixtures() {
+        assertTrue(PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS.size >= 5)
+        assertTrue(WHITE_TIGER_ION71_FIXTURE_ID in PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS)
+        assertTrue("bench_03_small_tic_export" in PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS)
+        assertTrue("bench_06_photo_two_graphs_page" in PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS)
+    }
+
+    @Test
+    fun phase9bFixtureMetadataSetValidates() {
+        val metadata = PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS.map { fixtureId ->
+            AutonomousValidationFixtureMetadata(
+                fixtureId = fixtureId,
+                displayName = "Fixture $fixtureId",
+                assetImagePath = "validation/$fixtureId.jpg",
+                expectedGraphCount = if (fixtureId.contains("04") || fixtureId.contains("05")) 4 else 1,
+                expectedMode = "AUTONOMOUS_REVIEW",
+                expectedReportGate = ReportGateStatus.REVIEW_ONLY,
+                knownHistoricalFailures = listOf(RuntimeFailureClass.UNKNOWN_FAILURE),
+            )
+        }
+
+        assertTrue(AutonomousValidationFixtureContracts.validatePhase9bFixtureSet(metadata).isEmpty())
+    }
+
+    @Test
     fun validationModelModeParsesAdbExtras() {
         assertEquals(
             AutonomousValidationModelMode.DETERMINISTIC_ONLY,
@@ -94,6 +123,71 @@ class AutonomousValidationFixtureContractTest {
         val decoded = Json.decodeFromString(AutonomousValidationRunStart.serializer(), encoded)
 
         assertEquals(AutonomousValidationModelMode.MODEL_ENABLED, decoded.modelMode)
+    }
+
+    @Test
+    fun suiteRunBlocksWhenValidatorArtifactsAreMissing() {
+        val summary = AutonomousValidationSuiteRunSummary(
+            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            modelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+            expectedGraphCount = 1,
+            graphCount = 1,
+            reportGate = ReportGateStatus.REVIEW_ONLY,
+            validatorVerdict = "REVIEW",
+            runtimeFailureClass = RuntimeFailureClass.VLM_SEMANTIC_LAYER_UNAVAILABLE,
+            runtimeEvidencePackageAvailable = true,
+            validatorJsonAvailable = false,
+            validatorMarkdownAvailable = true,
+            finalReportJsonAvailable = true,
+            exportManifestAvailable = true,
+        )
+
+        assertEquals(
+            AutonomousValidationRunDecision.BLOCKED,
+            AutonomousValidationFixtureContracts.evaluateRun(summary),
+        )
+    }
+
+    @Test
+    fun suiteRunRequiresFailureClassWhenBlocked() {
+        val summary = AutonomousValidationSuiteRunSummary(
+            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            modelMode = AutonomousValidationModelMode.MODEL_ENABLED,
+            expectedGraphCount = 1,
+            graphCount = 0,
+            reportGate = ReportGateStatus.BLOCKED,
+            validatorVerdict = "FAIL",
+            runtimeFailureClass = null,
+            runtimeEvidencePackageAvailable = true,
+            validatorJsonAvailable = true,
+            validatorMarkdownAvailable = true,
+            finalReportJsonAvailable = true,
+            exportManifestAvailable = true,
+        )
+
+        assertTrue(
+            AutonomousValidationFixtureContracts
+                .validateRunSummary(summary)
+                .any { it.startsWith("runtime_failure_class_required") },
+        )
+    }
+
+    @Test
+    fun modelComparisonRejectsGraphCountRegressionAndMetricOverride() {
+        val summary = AutonomousValidationModelComparisonSummary(
+            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            deterministicRunId = "white_tiger_ion71_20260520_120000",
+            modelEnabledRunId = "white_tiger_ion71_20260520_121000",
+            deterministicGraphCount = 1,
+            modelEnabledGraphCount = 0,
+            deterministicNumericFingerprint = "rt=1.0|area=2.0",
+            modelEnabledNumericFingerprint = "rt=9.0|area=9.0",
+            modelChangedDeterministicMetrics = true,
+        )
+
+        val issues = AutonomousValidationFixtureContracts.validateModelComparison(summary)
+        assertTrue("model_enabled_graph_count_regression:$WHITE_TIGER_ION71_FIXTURE_ID" in issues)
+        assertTrue("model_enabled_numeric_metric_override:$WHITE_TIGER_ION71_FIXTURE_ID" in issues)
     }
 
     @Test

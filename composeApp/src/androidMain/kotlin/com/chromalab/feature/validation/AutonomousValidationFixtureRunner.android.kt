@@ -23,7 +23,7 @@ class AutonomousValidationFixtureRunner(
             if (!AutonomousValidationFixtureContracts.isSupportedFixture(fixtureId)) {
                 error("Unsupported validation fixture: $fixtureId")
             }
-            val metadata = loadMetadata()
+            val metadata = loadMetadata(fixtureId)
             val metadataIssues = AutonomousValidationFixtureContracts.validateMetadata(metadata)
             if (metadataIssues.isNotEmpty()) {
                 error("Invalid validation fixture metadata: ${metadataIssues.joinToString()}")
@@ -51,8 +51,11 @@ class AutonomousValidationFixtureRunner(
             start
         }
 
-    private fun loadMetadata(): AutonomousValidationFixtureMetadata =
-        context.assets.open(WHITE_TIGER_ION71_FIXTURE_METADATA_ASSET).bufferedReader().use { reader ->
+    private fun loadMetadata(fixtureId: String): AutonomousValidationFixtureMetadata {
+        val metadataAsset = AutonomousValidationFixtureContracts.metadataAssetFor(fixtureId)
+            ?: error("Unsupported validation fixture metadata: $fixtureId")
+        return context.assets.open(metadataAsset).bufferedReader().use { reader ->
             json.decodeFromString(AutonomousValidationFixtureMetadata.serializer(), reader.readText())
         }
+    }
 }

@@ -2,7 +2,9 @@
 
 Date: 2026-05-20
 
-Verdict: PHASE_9_REVIEW_READY_WITH_KNOWN_LIMITATIONS
+Verdict: PHASE_9B_BLOCKED_RUNTIME_FAILURE
+
+Important correction: the earlier single-fixture verdict `PHASE_9_REVIEW_READY_WITH_KNOWN_LIMITATIONS` is not accepted. Phase 9 acceptance requires multiple real Android fixtures, deterministic and E2B model-enabled comparison, complete artifacts, and precise failure evidence.
 
 ## Agents Activated
 
@@ -66,6 +68,36 @@ Verdict: PHASE_9_REVIEW_READY_WITH_KNOWN_LIMITATIONS
 - Calibration overlay export is still missing with explicit manifest reason.
 - Final screen screenshot is captured externally by ADB, not emitted by in-app artifact manifest.
 
+## Phase 9B Multi-Fixture Correction
+
+Phase 9B selected eight Android validation fixtures and ran 16 real-device analyses on device `10AF5M15FY003YL`:
+
+- 8 deterministic runs;
+- 8 E2B model-enabled runs;
+- 16/16 runs exported runtime evidence, validator JSON/Markdown, final report contract JSON, reports, timings, and manifests.
+
+Result:
+
+| Outcome | Count |
+| --- | ---: |
+| REVIEW | 6 |
+| FAIL | 1 |
+| BLOCKED | 9 |
+| RELEASE_READY | 0 |
+
+Critical blockers:
+
+- `bench_01_mz71_screenshot_page`, `bench_04_stacked_xic_resolution`, `bench_05_tic_plus_ions`, and `bench_06_photo_two_graphs_page` produce zero reportable graphs in both modes.
+- `bench_02_mz92_belyi_tigr` deterministic mode detects two graphs where one is expected, then E2B mode regresses to zero graphs.
+- Multi-graph and photographed-page fixture classes are not accepted as autonomous production-ready.
+
+Evidence:
+
+- `docs/PHASE9B_FIXTURE_INVENTORY.md`
+- `docs/PHASE9B_ANDROID_FIXTURE_RESULTS.md`
+- `docs/PHASE9B_MODEL_COMPARISON.md`
+- local pulled artifacts under `artifacts/phase9b-multi-fixture-android/`
+
 ## Phase 10 Readiness
 
-Phase 10 may start only as production hardening with known limitations above. Do not treat this fixture as release-ready until the remaining evidence/export limitations are closed.
+Phase 10 may not start. Phase 9 remains blocked until the multi-fixture Android runtime failures above are fixed or formally deferred with Product, Scientific, and QA approval. No fixture failure may be converted into an expected pass without evidence.

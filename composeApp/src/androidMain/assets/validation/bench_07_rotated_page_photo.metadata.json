@@ -1,0 +1,17 @@
+{
+  "fixtureId": "bench_07_rotated_page_photo",
+  "displayName": "Bench 07 rotated photographed page",
+  "assetImagePath": "validation/bench_07_rotated_page_photo.jpg",
+  "expectedGraphCount": 1,
+  "expectedMode": "AUTONOMOUS_ROTATED_PHOTO_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "ORIENTATION_FAILURE",
+    "AXIS_DETECTION_FAILURE",
+    "CALIBRATION_FAILURE"
+  ],
+  "notes": [
+    "Rotated printed-page photo.",
+    "Included in Phase 9B to validate orientation correction and axis recovery on Android."
+  ]
+}

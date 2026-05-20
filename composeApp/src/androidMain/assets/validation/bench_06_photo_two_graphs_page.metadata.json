@@ -1,0 +1,18 @@
+{
+  "fixtureId": "bench_06_photo_two_graphs_page",
+  "displayName": "Bench 06 photographed page with two chromatograms",
+  "assetImagePath": "validation/bench_06_photo_two_graphs_page.jpg",
+  "expectedGraphCount": 2,
+  "expectedMode": "AUTONOMOUS_PHOTO_MULTI_GRAPH_REVIEW",
+  "expectedReportGate": "REVIEW_ONLY",
+  "knownHistoricalFailures": [
+    "ORIENTATION_FAILURE",
+    "MULTI_GRAPH_SPLIT_FAILURE",
+    "GRAPH_PANEL_FAILURE",
+    "CALIBRATION_FAILURE"
+  ],
+  "notes": [
+    "Photographed page with perspective and two graph panels.",
+    "Included in Phase 9B to validate real photo preprocessing, graph order, and calibration evidence."
+  ]
+}
