@@ -106,3 +106,29 @@ Confirmation objects must preserve:
 - gate status.
 
 Review-grade ROI warnings remain part of report provenance. A graphPanel or plotArea confirmation alone cannot make a report release-ready; calibration, trace, evidence package, and validator gates still apply.
+
+## Phase 3 Addendum: Calibration Editor Contracts
+
+Phase 3 makes the calibration contracts operational through a reducer-backed editor model.
+
+New editor-side contracts:
+
+- `CalibrationAnchorPlacementState` - selected axis, selected anchor, unit labels, and source.
+- `CalibrationAnchorEditorSnapshot` - lightweight serializable editor state.
+- `CalibrationAxisFitSummary` - per-axis slope/intercept, residual report, fit status, and warnings.
+- `CalibrationEditorEvaluation` - combined X/Y validation result and gate status.
+
+Reducer operations:
+
+- add anchor;
+- move anchor;
+- remove anchor;
+- set anchor value;
+- set anchor axis;
+- reset anchors;
+- evaluate fit;
+- confirm calibration.
+
+Confirmation writes `UserConfirmedCalibration` and advances the guided state to `CALIBRATION_VALIDATED`. The confirmation preserves timestamp, user/session provenance, source, anchor statuses, residual reports, warnings, and optional overlay artifact path.
+
+Two-anchor calibration remains review-grade. Three or more accepted anchors per axis can become `USER_CONFIRMED` when residual checks pass. `AUTO_DIAGNOSTIC` cannot use these confirmation objects as release evidence.

@@ -111,3 +111,27 @@ It must not set:
 - `REPORT_READY`.
 
 After `PLOT_AREA_CONFIRMED`, the UI may show only a disabled `Next: calibration anchors` handoff until Phase 3 implements calibration anchor placement.
+
+## Phase 3 Addendum: X/Y Calibration
+
+Phase 3 implements guided calibration anchor placement and may set:
+
+- `CALIBRATION_POINTS_CONFIRMED`;
+- `CALIBRATION_VALIDATED`.
+
+The calibration editor consumes confirmed graphPanel and plotArea evidence and writes:
+
+- `ManualCalibrationAnchor` entries;
+- `UserCalibrationSet`;
+- `CalibrationResidualReport`;
+- `UserConfirmedCalibration`.
+
+The editor must not set:
+
+- `TRACE_EXTRACTED`;
+- `TRACE_CONFIRMED`;
+- `PEAKS_DETECTED`;
+- `PEAKS_CONFIRMED`;
+- `REPORT_READY`.
+
+Two anchors per axis allow a review-grade linear transform. Three or more anchors per axis may validate the transform when residual checks pass. `AUTO_DIAGNOSTIC` still cannot treat user anchors as release evidence.

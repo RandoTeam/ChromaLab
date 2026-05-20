@@ -91,3 +91,22 @@ Future regression rows that exercise guided ROI confirmation should record:
 - whether plotArea was fully inside graphPanel;
 - whether plotArea equaled graphPanel and therefore became review-grade;
 - serialized `GuidedRoiEditorSnapshot` roundtrip result.
+
+## Phase 3 Addendum
+
+Phase 3 adds guided X/Y calibration anchors. No fixture expectations, auto-analysis algorithms, trace extraction, peak math, or report rendering changed.
+
+Future regression rows that exercise guided calibration should record:
+
+- calibration mode (`GUIDED_PRODUCTION` or `MANUAL_ADVANCED`);
+- anchor count by axis;
+- anchor source by axis;
+- accepted/rejected/outlier anchor ids;
+- slope/intercept by axis when available;
+- RMSE and max residual by axis;
+- monotonicity status;
+- calibration gate status;
+- whether exactly two anchors caused review-grade output;
+- serialized `CalibrationAnchorEditorSnapshot` or guided state roundtrip result.
+
+Guided calibration cannot be used to upgrade `AUTO_DIAGNOSTIC` output. If a regression case needs manual anchors, the mode must explicitly change to guided/manual and the report provenance must show the user-confirmed calibration.

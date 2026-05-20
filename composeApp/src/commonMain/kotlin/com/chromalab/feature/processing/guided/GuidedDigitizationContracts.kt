@@ -183,6 +183,9 @@ enum class CalibrationAxis {
 
 @Serializable
 enum class CalibrationAnchorSource {
+    USER_CONFIRMED,
+    USER_EDITED_AUTO_SUGGESTION,
+    MANUAL,
     USER_CLICK,
     USER_NUMERIC_ENTRY,
     IMPORTED_METHOD,
@@ -248,6 +251,7 @@ data class CalibrationResidualReport(
 data class UserCalibrationSet(
     val calibrationSetId: String,
     val anchors: List<ManualCalibrationAnchor> = emptyList(),
+    val source: CalibrationAnchorSource = CalibrationAnchorSource.USER_CONFIRMED,
     val xUnitLabel: String? = null,
     val yUnitLabel: String? = null,
     val residualReports: List<CalibrationResidualReport> = emptyList(),
@@ -276,6 +280,7 @@ data class UserCalibrationSet(
 @Serializable
 data class UserConfirmedCalibration(
     val calibrationSet: UserCalibrationSet,
+    val source: CalibrationAnchorSource = calibrationSet.source,
     val confirmationStatus: UserConfirmationStatus,
     val timestampEpochMillis: Long,
     val userProvenance: GuidedUserProvenance,

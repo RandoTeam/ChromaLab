@@ -188,3 +188,17 @@ Phase 0 release gates are accepted when:
 - closeout report records validation and open risks.
 
 Phase 1 acceptance adds contract tests for guided state transitions, serialization, calibration anchor minimums, and release-gate mapping.
+
+## Phase 3 Guided Calibration Gate Mapping
+
+Phase 3 can satisfy X and Y calibration gates in `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` through `UserConfirmedCalibration`.
+
+Mapping rules:
+
+- confirmed calibration with three or more accepted anchors per axis and valid residuals maps X/Y to `USER_CONFIRMED`;
+- confirmed calibration with exactly two anchors per axis maps X/Y to `REVIEW`;
+- confirmed calibration with residual warnings, suspicious direction, or weak provenance maps to `REVIEW`;
+- invalid/missing anchors map to `INVALID` or `MISSING`;
+- `AUTO_DIAGNOSTIC` ignores guided calibration objects and uses only auto diagnostic gate evidence.
+
+Phase 3 still cannot make a report `RELEASE_READY` by itself because trace and peak review gates remain missing until later phases.
