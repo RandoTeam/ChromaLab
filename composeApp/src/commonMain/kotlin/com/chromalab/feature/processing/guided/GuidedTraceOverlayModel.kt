@@ -170,6 +170,35 @@ object GuidedTraceOverlayReducer {
             rejectionReason = null,
         )
 
+    fun acceptAutonomousTrace(
+        state: GuidedDigitizationState,
+        snapshot: TraceOverlayEditorSnapshot,
+        timestampEpochMillis: Long,
+        overlayArtifactPath: String? = snapshot.overlayArtifactPath,
+    ): GuidedDigitizationState {
+        val evaluation = evaluate(snapshot)
+        require(evaluation.canAcceptValid) {
+            "Autonomous trace acceptance requires VALID trace quality."
+        }
+        require(state.mode == GuidedDigitizationMode.AUTONOMOUS_PRODUCTION) {
+            "Autonomous trace acceptance is only valid in AUTONOMOUS_PRODUCTION mode."
+        }
+        return confirmInternal(
+            state = state,
+            snapshot = snapshot.copy(overlayArtifactPath = overlayArtifactPath),
+            userProvenance = GuidedUserProvenance(sessionId = "autonomous"),
+            timestampEpochMillis = timestampEpochMillis,
+            confirmationStatus = UserConfirmationStatus.NOT_REQUIRED,
+            source = TraceOverlaySource.AUTO_EXTRACTED,
+            editDecision = TraceEditDecision.ACCEPT_AUTO,
+            traceConfirmationStatus = TraceConfirmationStatus.AUTO_SUGGESTED,
+            gateStatus = TraceGateStatus.AUTO_VALID,
+            warnings = evaluation.warningCodes + snapshot.warnings,
+            action = "trace_auto_valid",
+            actor = "system",
+        )
+    }
+
     fun rejectTrace(
         state: GuidedDigitizationState,
         snapshot: TraceOverlayEditorSnapshot,
@@ -258,6 +287,12 @@ object GuidedTraceOverlayReducer {
         if (plotArea != null && snapshot.tracePoints.any { !it.isInside(plotArea) }) {
             issues += error("trace.points_outside_plot_area", "Trace points must stay inside the confirmed plot area.")
         }
+        if (snapshot.source == TraceOverlaySource.AUTO_EXTRACTED && snapshot.overlayArtifactPath.isNullOrBlank()) {
+            issues += warning("trace.overlay_artifact_missing", "Autonomous trace evidence requires an overlay artifact before release.")
+        }
+        if (snapshot.source == TraceOverlaySource.AUTO_EXTRACTED && snapshot.centerlineArtifactPath.isNullOrBlank()) {
+            issues += warning("trace.centerline_artifact_missing", "Autonomous trace evidence requires a centerline artifact before release.")
+        }
 
         val computedSummary = snapshot.qualitySummary.normalized(snapshot.tracePoints, plotArea)
         if (computedSummary.pointCount == null) {
@@ -285,7 +320,7 @@ object GuidedTraceOverlayReducer {
             else -> TraceQualityStatus.VALID
         }
         val gateStatus = when (qualityStatus) {
-            TraceQualityStatus.VALID -> TraceGateStatus.USER_CONFIRMED
+            TraceQualityStatus.VALID -> TraceGateStatus.AUTO_VALID
             TraceQualityStatus.REVIEW -> TraceGateStatus.REVIEW_REQUIRED
             TraceQualityStatus.INVALID -> TraceGateStatus.INVALID
             TraceQualityStatus.MISSING -> TraceGateStatus.MISSING
@@ -317,13 +352,19 @@ object GuidedTraceOverlayReducer {
         gateStatus: TraceGateStatus,
         warnings: List<String>,
         action: String,
+        actor: String = "user",
     ): GuidedDigitizationState {
         val confirmedPlotArea = state.plotAreaConfirmation?.confirmedPlotArea
-        require(confirmedPlotArea?.confirmationStatus == UserConfirmationStatus.CONFIRMED) {
-            "Trace confirmation requires confirmed plotArea."
+        val autoTraceAllowed = state.mode == GuidedDigitizationMode.AUTONOMOUS_PRODUCTION &&
+            source == TraceOverlaySource.AUTO_EXTRACTED &&
+            gateStatus == TraceGateStatus.AUTO_VALID
+        if (!autoTraceAllowed) {
+            require(confirmedPlotArea?.confirmationStatus == UserConfirmationStatus.CONFIRMED) {
+                "Trace confirmation requires confirmed plotArea."
+            }
         }
         val calibration = state.calibration
-        if (snapshot.calibratedTraceRequired) {
+        if (snapshot.calibratedTraceRequired && !autoTraceAllowed) {
             require(calibration?.confirmationStatus == UserConfirmationStatus.CONFIRMED) {
                 "Trace confirmation requires confirmed calibration."
             }
@@ -371,6 +412,7 @@ object GuidedTraceOverlayReducer {
                     GuidedStepStatus.SUGGESTED
                 },
                 GuidedWorkflowStep.TRACE_CONFIRMED to when (gateStatus) {
+                    TraceGateStatus.AUTO_VALID -> GuidedStepStatus.VALIDATED
                     TraceGateStatus.USER_CONFIRMED -> GuidedStepStatus.CONFIRMED
                     TraceGateStatus.REVIEW_REQUIRED -> GuidedStepStatus.REVIEW_REQUIRED
                     TraceGateStatus.INVALID -> GuidedStepStatus.REJECTED
@@ -383,7 +425,7 @@ object GuidedTraceOverlayReducer {
                 timestampEpochMillis = timestampEpochMillis,
                 step = GuidedWorkflowStep.TRACE_CONFIRMED,
                 action = action,
-                actor = "user",
+                actor = actor,
                 details = buildString {
                     append("sourceTraceId=${snapshot.sourceTraceId}")
                     append(";imageId=${image.imageId}")

@@ -2,6 +2,17 @@
 
 Phase 1 defines the data contracts that future guided and manual workflows will write. These contracts are designed to preserve scientific provenance and prevent `AUTO_DIAGNOSTIC` output from masquerading as confirmed production analysis.
 
+## Phase 4 Autonomous-First Realignment
+
+`GUIDED_PRODUCTION` is now a deprecated compatibility name. New architecture uses:
+
+- `AUTONOMOUS_PRODUCTION` as the primary target path;
+- `AUTO_DIAGNOSTIC` for incomplete automatic runs;
+- `ASSISTED_REVIEW` for the Phase 2 ROI, Phase 3 calibration, and Phase 4 trace review tools;
+- `MANUAL_ADVANCED` for expert fallback.
+
+The contracts in this document remain valid, but they should be interpreted as assisted/manual evidence contracts. They are not the default happy path for normal images.
+
 ## Contract Groups
 
 | Group | Main types | Purpose |

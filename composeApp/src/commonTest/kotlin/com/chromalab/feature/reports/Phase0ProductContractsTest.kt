@@ -15,7 +15,9 @@ class Phase0ProductContractsTest {
 
     @Test
     fun phase0ProductModesAreExplicit() {
+        assertTrue(ProcessingMode.entries.contains(ProcessingMode.AUTONOMOUS_PRODUCTION))
         assertTrue(ProcessingMode.entries.contains(ProcessingMode.AUTO_DIAGNOSTIC))
+        assertTrue(ProcessingMode.entries.contains(ProcessingMode.ASSISTED_REVIEW))
         assertTrue(ProcessingMode.entries.contains(ProcessingMode.GUIDED_PRODUCTION))
         assertTrue(ProcessingMode.entries.contains(ProcessingMode.MANUAL_ADVANCED))
     }
@@ -49,6 +51,24 @@ class Phase0ProductContractsTest {
         assertEquals(EvidenceGateStatus.VALID, gate.evidence.yCalibrationStatus)
         assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
         assertTrue(gate.blockingReasons.isEmpty())
+    }
+
+    @Test
+    fun autonomousProductionRequiredAutomaticEvidenceDoesNotNeedUserConfirmation() {
+        val report = releaseReadyShapeReport().copy(
+            metadata = releaseReadyShapeReport().metadata.copy(
+                processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION,
+            ),
+        )
+
+        val gate = ReportReleaseGateEvaluator.evaluate(
+            report = report,
+            evidencePackageStatus = EvidenceGateStatus.VALID,
+        )
+
+        assertEquals(ReportGateStatus.REVIEW_ONLY, gate.status)
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
+        assertFalse(gate.blockingReasons.any { it.startsWith("trace.") })
     }
 
     @Test

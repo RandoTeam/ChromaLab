@@ -1,0 +1,47 @@
+# Autonomous Analysis Evidence Gates
+
+## Purpose
+
+This document defines how autonomous evidence differs from assisted/manual evidence.
+
+## Gate Sources
+
+| Source class | Evidence state | Meaning |
+| --- | --- | --- |
+| deterministic automatic stage | `VALID` | The stage passed deterministic validation and has artifacts/provenance. |
+| deterministic automatic stage with uncertainty | `REVIEW` | The stage produced evidence but needs review. |
+| deterministic automatic stage failed | `INVALID` or `MISSING` | Release is blocked or diagnostic-only. |
+| assisted user correction | `USER_CONFIRMED` | User corrected/confirmed evidence, and provenance is recorded. |
+| manual expert entry | `USER_CONFIRMED` with manual source | Expert fallback evidence with full provenance. |
+
+## Trace Gate
+
+An autonomous trace may be `VALID` only when:
+
+- plotArea exists;
+- trace points exist and lie inside plotArea;
+- point count, column coverage, gap, confidence, contamination, and frame-touch metrics pass;
+- overlay and centerline artifacts are present;
+- trace source is `AUTO_EXTRACTED`;
+- no blocking trace warnings remain.
+
+An assisted trace may be `USER_CONFIRMED` only when the user explicitly accepts a valid trace in `ASSISTED_REVIEW` or `MANUAL_ADVANCED`.
+
+Review-grade trace acceptance remains `REVIEW`, not release-ready.
+
+## VLM/OCR Gate Boundary
+
+VLM/OCR can support text and semantic gates. It cannot directly satisfy numeric geometry, calibration, trace, or peak metric gates.
+
+## Evidence Package Requirement
+
+Every terminal state must include evidence artifacts if the stage ran:
+
+- original/normalized image;
+- selected/rejected candidates;
+- calibration anchors/residuals;
+- OCR/VLM crops;
+- masks/centerline/trace overlay;
+- report contract JSON;
+- validator JSON/Markdown;
+- timings and runtime metadata.

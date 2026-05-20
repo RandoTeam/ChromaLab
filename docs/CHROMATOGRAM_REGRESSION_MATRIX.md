@@ -1,5 +1,9 @@
 # ChromaLab Regression Matrix
 
+## Autonomous-First Realignment
+
+All regression rows now assume `AUTONOMOUS_PRODUCTION` is the target path for normal analyzable images. `AUTO_DIAGNOSTIC` is used when automatic evidence is incomplete. Phase 2/3/4 editor behavior belongs to `ASSISTED_REVIEW` or `MANUAL_ADVANCED`, not the default path.
+
 Phase 0 matrix for future phases. Every later phase must update this file when behavior, gates, fixtures, or known Android failures change.
 
 ## Baseline Matrix

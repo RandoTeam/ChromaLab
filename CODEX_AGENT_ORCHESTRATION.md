@@ -25,10 +25,11 @@ policy, evidence policy, VLM boundaries, and stop conditions.
   agent selection, required skill selection, scope boundaries, regression
   obligations, and final response format according to
   `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
-- Full-auto analysis is diagnostic, not production.
-- `GUIDED_PRODUCTION` is the reliable target path.
-- `MANUAL_ADVANCED` is the fallback for difficult photos, screenshots, or failed
-  geometry.
+- `AUTONOMOUS_PRODUCTION` is the primary target path when every automatic evidence gate passes.
+- `AUTO_DIAGNOSTIC` is automatic but incomplete/review/diagnostic unless gates pass.
+- `ASSISTED_REVIEW` repairs only failed or low-confidence autonomous stages.
+- `MANUAL_ADVANCED` is the expert fallback for difficult photos, screenshots, or failed geometry.
+- `GUIDED_PRODUCTION` is deprecated compatibility wording for earlier guided docs.
 - VLM is an OCR, semantic, and judge assistant only.
 - VLM must not provide numeric geometry or chromatographic metrics.
 - `CalculationEngine` must not be rewritten without a proven isolated bug.

@@ -2,6 +2,8 @@
 
 This document defines the state machine created in Phase 1. It is a contract for future screens, not a UI implementation.
 
+Phase 4 realigns this state machine as Assisted Review and Manual Advanced infrastructure. `AUTONOMOUS_PRODUCTION` is the primary target path. These states are used when an autonomous stage needs correction or the user explicitly opens evidence review. Deprecated `GUIDED_PRODUCTION` values remain compatibility aliases and should not drive new product architecture.
+
 ## Steps
 
 `GuidedWorkflowStep` is ordered:
@@ -71,7 +73,7 @@ Confirmed objects must include:
 - validation warnings;
 - gate status.
 
-`AUTO_DIAGNOSTIC` must not interpret these objects as release gates. `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` may.
+`AUTO_DIAGNOSTIC` must not interpret these objects as release gates. `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED` may.
 
 ## Terminal Diagnostic Path
 

@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.model
 
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.reports.ExecutedRuntime
+import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportValueSource
 import kotlin.test.Test
@@ -43,6 +45,27 @@ class ModelAssistedAnalysisContractTest {
         assertEquals("model.graph_region", warning.stage)
         assertEquals(2, warning.graphIndex)
         assertTrue(warning.message.contains("cannot be replaced by deterministic-only output"))
+    }
+
+    @Test
+    fun autonomousAndAssistedModesAreAuditedForModelStageEvidence() {
+        val autonomousWarnings = ModelAssistedAnalysisContract.auditWarnings(
+            processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION,
+            selectedModel = null,
+            executedModel = null,
+            executedRuntime = ExecutedRuntime.DETERMINISTIC,
+            stageTimings = emptyList(),
+        )
+        val assistedWarnings = ModelAssistedAnalysisContract.auditWarnings(
+            processingMode = ProcessingMode.ASSISTED_REVIEW,
+            selectedModel = null,
+            executedModel = null,
+            executedRuntime = ExecutedRuntime.DETERMINISTIC,
+            stageTimings = emptyList(),
+        )
+
+        assertTrue(autonomousWarnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
+        assertTrue(assistedWarnings.any { it.code == "model.title_ion_axis.required_vision_failed" })
     }
 
     @Test

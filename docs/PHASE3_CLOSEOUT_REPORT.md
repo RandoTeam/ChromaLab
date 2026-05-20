@@ -107,7 +107,7 @@ The UI component supports:
 
 ## Release Gate Mapping
 
-- `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` may use confirmed calibration as X/Y gate evidence.
+- `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED` may use confirmed calibration as X/Y gate evidence.
 - Three or more valid anchors per axis can map to `USER_CONFIRMED`.
 - Exactly two anchors per axis map to `REVIEW`.
 - Invalid/missing anchors remain `INVALID` or `MISSING`.
@@ -148,3 +148,7 @@ Phase 4 may start after commit, with scope limited to trace overlay confirmation
 ## Orchestrator Sign-Off
 
 Phase 3 is complete for contracts/model/UI component/test/documentation scope. Phase 4 may start after the commit lands.
+
+## Autonomous-First Realignment Addendum
+
+Phase 4 reclassified the Phase 3 calibration editor as `ASSISTED_REVIEW` and `MANUAL_ADVANCED` infrastructure. Normal images should first attempt autonomous tick/OCR/calibration. Manual anchors repair invalid/review calibration and must remain visible in report provenance.

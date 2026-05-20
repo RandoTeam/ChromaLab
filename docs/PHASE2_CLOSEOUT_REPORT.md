@@ -84,7 +84,7 @@ PlotArea:
 
 ## Release Gate Impact
 
-Phase 2 may satisfy only graphPanel and plotArea gates in `GUIDED_PRODUCTION` or `MANUAL_ADVANCED`.
+Phase 2 may satisfy only graphPanel and plotArea gates in `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, or `MANUAL_ADVANCED`.
 
 Phase 2 does not satisfy:
 
@@ -128,3 +128,7 @@ Reason:
 Phase 2 adds graphPanel/plotArea guided editing and confirmation evidence without touching `CalculationEngine`, auto-analysis algorithms, calibration math, trace extraction, peak review, or release-gate bypasses. Required validation passed.
 
 Phase 3 may start from this baseline, limited to guided calibration anchors.
+
+## Autonomous-First Realignment Addendum
+
+Phase 4 reclassified the Phase 2 ROI editor as an `ASSISTED_REVIEW` and `MANUAL_ADVANCED` tool. It should be launched when autonomous graphPanel/plotArea evidence is review-grade, invalid, or explicitly opened for inspection, not as the primary path for normal images.

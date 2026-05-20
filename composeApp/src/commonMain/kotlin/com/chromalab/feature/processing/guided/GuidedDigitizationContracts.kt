@@ -12,14 +12,20 @@ const val CURRENT_GUIDED_DIGITIZATION_STATE_SCHEMA = "1.0.0-phase-1"
 
 @Serializable
 enum class GuidedDigitizationMode {
+    AUTONOMOUS_PRODUCTION,
     AUTO_DIAGNOSTIC,
+    ASSISTED_REVIEW,
+    @Deprecated("GUIDED_PRODUCTION is a compatibility alias. Use ASSISTED_REVIEW.")
     GUIDED_PRODUCTION,
     MANUAL_ADVANCED,
 }
 
+@Suppress("DEPRECATION")
 fun GuidedDigitizationMode.toProcessingMode(): ProcessingMode =
     when (this) {
+        GuidedDigitizationMode.AUTONOMOUS_PRODUCTION -> ProcessingMode.AUTONOMOUS_PRODUCTION
         GuidedDigitizationMode.AUTO_DIAGNOSTIC -> ProcessingMode.AUTO_DIAGNOSTIC
+        GuidedDigitizationMode.ASSISTED_REVIEW -> ProcessingMode.ASSISTED_REVIEW
         GuidedDigitizationMode.GUIDED_PRODUCTION -> ProcessingMode.GUIDED_PRODUCTION
         GuidedDigitizationMode.MANUAL_ADVANCED -> ProcessingMode.MANUAL_ADVANCED
     }
@@ -331,6 +337,7 @@ enum class TraceConfirmationStatus {
 
 @Serializable
 enum class TraceGateStatus {
+    AUTO_VALID,
     USER_CONFIRMED,
     REVIEW_REQUIRED,
     INVALID,
@@ -387,6 +394,7 @@ data class UserConfirmedTrace(
     val gateStatus: TraceGateStatus = TraceGateStatus.MISSING,
     val source: TraceOverlaySource = evidence.source,
     val traceConfirmationStatus: TraceConfirmationStatus = when (gateStatus) {
+        TraceGateStatus.AUTO_VALID -> TraceConfirmationStatus.AUTO_SUGGESTED
         TraceGateStatus.USER_CONFIRMED -> TraceConfirmationStatus.USER_CONFIRMED_VALID
         TraceGateStatus.REVIEW_REQUIRED -> TraceConfirmationStatus.USER_CONFIRMED_REVIEW
         TraceGateStatus.INVALID -> TraceConfirmationStatus.INVALID
@@ -468,9 +476,14 @@ data class GuidedDigitizationState(
     val auditTrail: List<GuidedWorkflowAuditEntry> = emptyList(),
     val warnings: List<String> = emptyList(),
 ) {
-    val isGuidedReleaseMode: Boolean
-        get() = mode == GuidedDigitizationMode.GUIDED_PRODUCTION ||
+    @Suppress("DEPRECATION")
+    val usesAssistedOrManualReview: Boolean
+        get() = mode == GuidedDigitizationMode.ASSISTED_REVIEW ||
+            mode == GuidedDigitizationMode.GUIDED_PRODUCTION ||
             mode == GuidedDigitizationMode.MANUAL_ADVANCED
+
+    val isGuidedReleaseMode: Boolean
+        get() = usesAssistedOrManualReview
 
     fun withStepStatus(
         step: GuidedWorkflowStep,
@@ -561,13 +574,18 @@ object GuidedReportGateMapper {
             state.autoDiagnosticEvidence.copy(
                 userConfirmationStatus = EvidenceGateStatus.NOT_APPLICABLE,
             )
+        } else if (state.mode == GuidedDigitizationMode.AUTONOMOUS_PRODUCTION) {
+            state.autoDiagnosticEvidence.copy(
+                userConfirmationStatus = EvidenceGateStatus.NOT_APPLICABLE,
+                traceStatus = state.trace.toEvidenceGate(allowAutoValid = true),
+            )
         } else {
             GateEvidence(
                 graphPanelStatus = state.graphPanelConfirmation.toEvidenceGate(),
                 plotAreaStatus = state.plotAreaConfirmation.toEvidenceGate(),
                 xCalibrationStatus = state.calibration.toCalibrationEvidenceGate(CalibrationAxis.X),
                 yCalibrationStatus = state.calibration.toCalibrationEvidenceGate(CalibrationAxis.Y),
-                traceStatus = state.trace.toEvidenceGate(),
+                traceStatus = state.trace.toEvidenceGate(allowAutoValid = false),
                 peakReviewStatus = state.peaks.toEvidenceGate(),
                 evidencePackageStatus = state.autoDiagnosticEvidence.evidencePackageStatus,
                 sourceProvenanceStatus = if (state.image?.normalizedImagePath != null) {
@@ -631,9 +649,13 @@ object GuidedReportGateMapper {
             else -> EvidenceGateStatus.MISSING
         }
 
-    private fun UserConfirmedTrace?.toEvidenceGate(): EvidenceGateStatus =
+    private fun UserConfirmedTrace?.toEvidenceGate(allowAutoValid: Boolean): EvidenceGateStatus =
         when {
             this == null -> EvidenceGateStatus.MISSING
+            allowAutoValid &&
+                source == TraceOverlaySource.AUTO_EXTRACTED &&
+                gateStatus == TraceGateStatus.AUTO_VALID &&
+                evidence.qualityStatus == TraceQualityStatus.VALID -> EvidenceGateStatus.VALID
             confirmationStatus == UserConfirmationStatus.CONFIRMED &&
                 gateStatus == TraceGateStatus.USER_CONFIRMED -> EvidenceGateStatus.USER_CONFIRMED
             gateStatus == TraceGateStatus.REVIEW_REQUIRED -> EvidenceGateStatus.REVIEW
@@ -654,9 +676,9 @@ object GuidedReportGateMapper {
         if (
             graphPanelConfirmation.toEvidenceGate() == EvidenceGateStatus.USER_CONFIRMED &&
             plotAreaConfirmation.toEvidenceGate() == EvidenceGateStatus.USER_CONFIRMED &&
-            calibration.toCalibrationEvidenceGate(CalibrationAxis.X) in userSatisfiedOrReview &&
-            calibration.toCalibrationEvidenceGate(CalibrationAxis.Y) in userSatisfiedOrReview &&
-            trace.toEvidenceGate() in userSatisfiedOrReview
+            calibration.toCalibrationEvidenceGate(CalibrationAxis.X) == EvidenceGateStatus.USER_CONFIRMED &&
+            calibration.toCalibrationEvidenceGate(CalibrationAxis.Y) == EvidenceGateStatus.USER_CONFIRMED &&
+            trace.toEvidenceGate(allowAutoValid = false) == EvidenceGateStatus.USER_CONFIRMED
         ) {
             EvidenceGateStatus.USER_CONFIRMED
         } else {
@@ -700,8 +722,4 @@ object GuidedReportGateMapper {
             if (status == EvidenceGateStatus.REVIEW) "$name.review" else null
         }
 
-    private val userSatisfiedOrReview = setOf(
-        EvidenceGateStatus.USER_CONFIRMED,
-        EvidenceGateStatus.REVIEW,
-    )
 }

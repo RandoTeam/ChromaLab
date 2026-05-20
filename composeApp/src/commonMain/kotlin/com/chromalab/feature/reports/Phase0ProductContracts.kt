@@ -88,11 +88,12 @@ object ReportReleaseGateEvaluator {
         evidencePackageStatus: EvidenceGateStatus = EvidenceGateStatus.MISSING,
         userConfirmationStatus: EvidenceGateStatus = EvidenceGateStatus.NOT_APPLICABLE,
     ): ReportGateEvaluation {
+        val autonomousProduction = report.metadata.processingMode == ProcessingMode.AUTONOMOUS_PRODUCTION
         val evidence = GateEvidence(
             graphPanelStatus = report.aggregateGraphGate { graph ->
                 val trace = graph.source.geometryTrace
                 when {
-                    graph.source.manuallyAdjusted -> EvidenceGateStatus.USER_CONFIRMED
+                    graph.source.manuallyAdjusted && !autonomousProduction -> EvidenceGateStatus.USER_CONFIRMED
                     trace?.selectedGraphPanelBounds != null || graph.source.detectedGraphBounds != null ->
                         graph.source.geometryReportStatus.toEvidenceGate()
                     else -> EvidenceGateStatus.MISSING
@@ -100,7 +101,7 @@ object ReportReleaseGateEvaluator {
             },
             plotAreaStatus = report.aggregateGraphGate { graph ->
                 when {
-                    graph.source.manuallyAdjusted -> EvidenceGateStatus.USER_CONFIRMED
+                    graph.source.manuallyAdjusted && !autonomousProduction -> EvidenceGateStatus.USER_CONFIRMED
                     graph.source.geometryTrace?.selectedPlotAreaBounds != null ->
                         graph.source.geometryReportStatus.toEvidenceGate()
                     else -> EvidenceGateStatus.MISSING
@@ -109,7 +110,7 @@ object ReportReleaseGateEvaluator {
             axisStatus = report.aggregateGraphGate { graph ->
                 val axis = graph.source.geometryTrace?.axisGeometry
                 when {
-                    graph.source.manuallyAdjusted -> EvidenceGateStatus.USER_CONFIRMED
+                    graph.source.manuallyAdjusted && !autonomousProduction -> EvidenceGateStatus.USER_CONFIRMED
                     axis?.xAxisLinePx != null && axis.yAxisLinePx != null -> EvidenceGateStatus.VALID
                     graph.axisCalibration.pixelToUnitTransform != null -> EvidenceGateStatus.REVIEW
                     else -> EvidenceGateStatus.MISSING
@@ -118,7 +119,7 @@ object ReportReleaseGateEvaluator {
             tickStatus = report.aggregateGraphGate { graph ->
                 val ticks = graph.source.geometryTrace?.tickGeometry
                 when {
-                    graph.source.manuallyAdjusted -> EvidenceGateStatus.USER_CONFIRMED
+                    graph.source.manuallyAdjusted && !autonomousProduction -> EvidenceGateStatus.USER_CONFIRMED
                     ticks?.xTicks?.isNotEmpty() == true && ticks.yTicks.isNotEmpty() -> EvidenceGateStatus.VALID
                     graph.axisCalibration.xAxis.majorTicks.isNotEmpty() ||
                         graph.axisCalibration.yAxis.majorTicks.isNotEmpty() -> EvidenceGateStatus.REVIEW
@@ -126,15 +127,19 @@ object ReportReleaseGateEvaluator {
                 }
             },
             xCalibrationStatus = report.aggregateGraphGate { graph ->
-                graph.axisCalibration.xCalibrationFit?.status.toEvidenceGate(graph.source.manuallyAdjusted)
+                graph.axisCalibration.xCalibrationFit?.status.toEvidenceGate(
+                    graph.source.manuallyAdjusted && !autonomousProduction,
+                )
             },
             yCalibrationStatus = report.aggregateGraphGate { graph ->
-                graph.axisCalibration.yCalibrationFit?.status.toEvidenceGate(graph.source.manuallyAdjusted)
+                graph.axisCalibration.yCalibrationFit?.status.toEvidenceGate(
+                    graph.source.manuallyAdjusted && !autonomousProduction,
+                )
             },
             traceStatus = report.aggregateGraphGate { graph ->
                 val trace = graph.source.geometryTrace
                 when {
-                    graph.source.manuallyAdjusted -> EvidenceGateStatus.USER_CONFIRMED
+                    graph.source.manuallyAdjusted && !autonomousProduction -> EvidenceGateStatus.USER_CONFIRMED
                     trace?.finalCenterlineOverlayPath != null ||
                         trace?.curveSelectedComponentPath != null ||
                         trace?.curveSkeletonPath != null -> EvidenceGateStatus.VALID

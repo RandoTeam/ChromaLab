@@ -1,6 +1,6 @@
-# Guided Trace Quality Model
+# Autonomous Trace Quality Model
 
-Phase 4 trace quality is a gate for user confirmation. It does not change curve extraction. It evaluates the trace evidence already produced by upstream extraction or supplied to the guided editor.
+Phase 4 trace quality is first an autonomous evidence gate. It does not change curve extraction. It evaluates trace evidence already produced by upstream extraction and decides whether the trace is automatic `VALID`, `REVIEW`, or `INVALID`. The same model also powers Assisted Review when automatic evidence is weak.
 
 ## Inputs
 
@@ -52,6 +52,7 @@ No unavailable metric is fabricated. Unknown evidence creates review warnings.
 - low text contamination;
 - low frame touch;
 - points inside plotArea;
+- overlay and centerline artifacts for autonomous release;
 - no blocking warnings.
 
 `REVIEW` is used for:
@@ -80,12 +81,13 @@ No unavailable metric is fabricated. Unknown evidence creates review warnings.
 
 | Trace decision | Gate |
 | --- | --- |
-| accept valid | `TraceGateStatus.USER_CONFIRMED` |
-| accept review | `TraceGateStatus.REVIEW_REQUIRED` |
+| automatic valid evidence | `TraceGateStatus.AUTO_VALID` |
+| user accepts valid in Assisted Review | `TraceGateStatus.USER_CONFIRMED` |
+| automatic or user review-grade evidence | `TraceGateStatus.REVIEW_REQUIRED` |
 | reject | `TraceGateStatus.INVALID` |
 | missing | `TraceGateStatus.MISSING` |
 
-`GuidedReportGateMapper` maps those gate statuses to Phase 0 report gates. `AUTO_DIAGNOSTIC` remains isolated and cannot use guided trace confirmation as user evidence.
+`GuidedReportGateMapper` maps `AUTO_VALID` to `EvidenceGateStatus.VALID` only in `AUTONOMOUS_PRODUCTION`. `AUTO_DIAGNOSTIC` remains isolated and cannot use assisted/manual trace confirmation as user evidence. `ASSISTED_REVIEW` and `MANUAL_ADVANCED` map explicit user acceptance to `USER_CONFIRMED`.
 
 ## Provenance
 

@@ -34,9 +34,7 @@ object ReportWarningRuleEngine {
     ): List<ReportWarning> = buildList {
         val executedRuntime = metadata.resolvedExecutedRuntime()
 
-        if (metadata.processingMode == ProcessingMode.FULL_ANALYSIS ||
-            metadata.processingMode == ProcessingMode.AUTO_DIAGNOSTIC
-        ) {
+        if (metadata.processingMode in auditedAnalysisModes) {
             when (executedRuntime) {
                 ExecutedRuntime.DETERMINISTIC -> add(
                     ReportWarning(
@@ -339,4 +337,11 @@ object ReportWarningRuleEngine {
     private const val DOMINANT_AREA_SERIOUS_PERCENT = 60.0
     private const val DOMINANT_HEIGHT_RATIO_WARNING = 10.0
     private const val MIN_HEIGHT_OUTLIER_PEAK_COUNT = 3
+
+    private val auditedAnalysisModes = setOf(
+        ProcessingMode.AUTONOMOUS_PRODUCTION,
+        ProcessingMode.AUTO_DIAGNOSTIC,
+        ProcessingMode.ASSISTED_REVIEW,
+        ProcessingMode.FULL_ANALYSIS,
+    )
 }

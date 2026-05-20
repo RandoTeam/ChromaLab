@@ -1,14 +1,34 @@
 # ChromaLab Product Modes
 
-Phase 0 freezes the previous fully automatic photo/screenshot pipeline as `AUTO_DIAGNOSTIC`. This is a product honesty reset: the app may continue to attempt automatic analysis, but it must not silently present weak evidence as production science.
+Phase 4 realigns the product around an autonomous-first architecture. The primary target is no longer a mandatory guided workflow. The app should analyze chromatogram photos and screenshots autonomously as far as evidence allows, then escalate only the failed or low-confidence stages to review tools.
 
 ## Modes
 
-| Mode | Purpose | Release-quality allowed? | Phase 0 state |
+| Mode | Purpose | Release-quality allowed? | Current role |
 | --- | --- | --- | --- |
-| `AUTO_DIAGNOSTIC` | Automatic attempt for quick diagnostics, candidate geometry, OCR, trace, and peak suggestions. | Only when every release gate passes. Otherwise `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, or `BLOCKED`. | Explicit contract and metadata. |
-| `GUIDED_PRODUCTION` | Future main workflow where the user confirms graphPanel, plotArea, calibration anchors, trace, and peaks. | Yes, after evidence or explicit user-confirmation gates pass. | Contract only; UI is not implemented in Phase 0. |
-| `MANUAL_ADVANCED` | Future fallback for hard images where the user manually defines geometry, calibration, trace, and peak decisions. | Yes, after manual evidence is captured and validated. | Contract only; UI is not implemented in Phase 0. |
+| `AUTONOMOUS_PRODUCTION` | Primary target path. The app automatically performs image normalization, graphPanel/plotArea detection, axis/tick/OCR calibration, trace extraction, peak detection, evidence validation, and report generation. | Yes, only when every automatic evidence gate is `VALID`, the evidence package is complete, and the validator has no blocking issues. | Target production architecture; individual gates are being built across phases. |
+| `AUTO_DIAGNOSTIC` | Automatic attempt when evidence is incomplete or confidence is low. | No by default. It may show diagnostics, suggestions, and review reasons, but must not look release-ready unless all gates pass under the autonomous contract. | Existing automatic fallback/diagnostic mode. |
+| `ASSISTED_REVIEW` | User reviews or corrects only failed/review stages from the autonomous run. | Yes, if corrections are explicit, persisted, evidence-backed, and visible in report provenance. | Phase 2/3/4 editors belong here. |
+| `MANUAL_ADVANCED` | Expert fallback for hard images where the user manually defines graphPanel, plotArea, calibration, trace, and later peaks. | Yes, if manual evidence is complete, validated, and disclosed. | Future advanced workflow. |
+| `GUIDED_PRODUCTION` | Deprecated compatibility alias for earlier Phase 1-4 guided contracts. | Treated as `ASSISTED_REVIEW` behavior for compatibility. | Do not use for new architecture decisions. |
+
+## AUTONOMOUS_PRODUCTION Rules
+
+`AUTONOMOUS_PRODUCTION`:
+
+- is the primary product target;
+- attempts the complete chromatogram pipeline automatically;
+- may produce `RELEASE_READY` only with valid graphPanel, plotArea, X/Y calibration, trace, peak evidence, source provenance, evidence package, and validator results;
+- must record deterministic evidence for numeric geometry and chromatographic metrics;
+- must export a runtime evidence package for every terminal state;
+- must not require manual axes/calibration for normal images.
+
+`AUTONOMOUS_PRODUCTION` must not:
+
+- hide missing geometry, invalid calibration, sparse trace, missing overlays, or VLM failure;
+- use VLM/LLM output as numeric truth;
+- treat user-edited/manual evidence as automatic evidence;
+- produce release-quality results without a complete audit trail.
 
 ## AUTO_DIAGNOSTIC Rules
 
@@ -16,48 +36,35 @@ Phase 0 freezes the previous fully automatic photo/screenshot pipeline as `AUTO_
 
 - may run automatically from camera, gallery, screenshot, scan, or file input;
 - may generate graphPanel, plotArea, axis/tick, OCR, trace, peak, and report suggestions;
-- may produce a diagnostic report;
+- may produce diagnostic or review reports;
 - must export evidence for every terminal state;
-- must clearly label review/diagnostic output;
-- may be `RELEASE_READY` only if graphPanel, plotArea, X calibration, Y calibration, trace, evidence package, source provenance, and validator gates pass.
+- must clearly label review/diagnostic output.
 
 `AUTO_DIAGNOSTIC` must not:
 
-- hide missing geometry, invalid calibration, sparse trace, missing overlays, or VLM failure;
-- use VLM/LLM output as numeric truth;
-- produce a release-quality peak table when required evidence is missing;
+- present incomplete evidence as production science;
 - use fixture hints or image-specific branches as production evidence;
+- use guided/manual confirmations as release evidence;
 - rewrite `CalculationEngine` to compensate for upstream failures.
 
-## GUIDED_PRODUCTION Rules
+## ASSISTED_REVIEW Rules
 
-`GUIDED_PRODUCTION` is the future reliable path.
+`ASSISTED_REVIEW` is the review and repair path for low-confidence autonomous stages.
 
-The user must confirm:
+The user may review or correct:
 
-- graphPanel;
-- plotArea;
+- graphPanel and plotArea suggestions;
 - X and Y calibration anchors;
-- extracted trace overlay;
-- peak apexes, boundaries, and review decisions;
-- report evidence package.
+- extracted trace overlay quality;
+- later peak apex/boundary/review decisions.
 
-User confirmation must be explicit, persisted, and visible in the report/evidence package as `USER_CONFIRMED`. Phase 0 does not implement this UI.
+User intervention must be explicit, persisted, and visible in the report/evidence package as user-reviewed or user-confirmed provenance. Assisted review is not the default happy path; it starts only when the autonomous pipeline needs correction or when the user explicitly asks to review evidence.
 
-Phase 1 adds the shared contract layer for this mode:
-
-- `GuidedDigitizationState`;
-- graphPanel and plotArea confirmation contracts;
-- calibration anchor and residual contracts;
-- trace confirmation contracts;
-- peak review decision contracts;
-- guided-to-release-gate mapping.
-
-The Phase 1 contract still does not implement the Guided UI. It only defines the state that future screens must write.
+Phase 2 ROI editor, Phase 3 calibration editor, and Phase 4 trace overlay screen are Assisted Review tools.
 
 ## MANUAL_ADVANCED Rules
 
-`MANUAL_ADVANCED` is the future fallback for difficult photos, rotated scans, weak traces, missing tick labels, or failed automatic geometry.
+`MANUAL_ADVANCED` is an expert fallback for difficult photos, rotated scans, weak traces, missing tick labels, failed automatic geometry, or cases where the user intentionally wants full manual control.
 
 It may allow the user to define:
 
@@ -68,9 +75,7 @@ It may allow the user to define:
 - trace points or corrections;
 - peak decisions.
 
-Manual values must still carry provenance and review status. Phase 0 does not implement this UI.
-
-Phase 1 defines the same confirmation contracts for future manual fallback. Manual values can satisfy release gates only when they are persisted as user-confirmed evidence and remain visible in report provenance.
+Manual values must carry provenance, warnings, and review status. Manual intervention must never be hidden in a release report.
 
 ## Report Mode Requirements
 
@@ -80,10 +85,11 @@ Every final report or evidence package must identify:
 - gate status;
 - terminal state;
 - evidence package status;
+- whether evidence is automatic, assisted, or manual;
 - user confirmation status if applicable;
 - VLM evidence status if applicable.
 
-Legacy `FULL_ANALYSIS` labels must not be interpreted as production-ready unless the Phase 0 gates pass.
+Legacy `FULL_ANALYSIS` and deprecated `GUIDED_PRODUCTION` labels must not be interpreted as production-ready unless the current release gates pass.
 
 ## VLM Boundary
 
@@ -111,6 +117,6 @@ VLM/LLM must not provide:
 
 ## Current Status
 
-Phase 0 defines modes and gates. Phase 1 adds shared guided/manual state contracts and tests.
+Phase 0 defined the original gate contract. Phase 1 created shared guided/manual state contracts. Phase 2, Phase 3, and Phase 4 implemented ROI, calibration, and trace review components that now belong to `ASSISTED_REVIEW` and `MANUAL_ADVANCED`.
 
-Phase 2 adds the guided graphPanel/plotArea editor component and confirmation reducer. It does not yet implement calibration anchors, trace editing, peak review, report release, or a complete guided navigation flow. Full-auto remains diagnostic by default.
+Future work must prioritize `AUTONOMOUS_PRODUCTION`: automatic evidence first, assisted/manual repair only when a stage fails or falls below confidence.

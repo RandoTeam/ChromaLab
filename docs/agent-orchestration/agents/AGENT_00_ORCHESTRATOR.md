@@ -211,22 +211,31 @@ The Orchestrator does **not** implement algorithmic changes directly unless no s
 
 ## Mission
 
-Convert ChromaLab from an unstable fully automatic chromatogram-photo pipeline into an evidence-gated mobile digitization system with three explicit modes:
+Convert ChromaLab from an unstable fully automatic chromatogram-photo pipeline into an evidence-gated mobile digitization system with autonomous-first modes:
 
-1. `AUTO_DIAGNOSTIC`
+1. `AUTONOMOUS_PRODUCTION`
+   - primary product target;
+   - automatic evidence may become release-ready only when all gates pass;
+   - manual/user-confirmed evidence must not be hidden as automatic evidence.
+
+2. `AUTO_DIAGNOSTIC`
    - automatic attempt;
    - useful for quick diagnosis and suggestions;
    - not release-quality unless all evidence gates pass.
 
-2. `GUIDED_PRODUCTION`
-   - main reliable production workflow;
-   - user confirms graph panel, plot area, calibration anchors, trace, and peaks;
-   - release-quality reports are allowed only after required evidence is valid or user-confirmed.
+3. `ASSISTED_REVIEW`
+   - review/repair workflow for failed or low-confidence autonomous stages;
+   - user confirms or corrects graph panel, plot area, calibration anchors, trace, and peaks only when needed;
+   - intervention must be explicit in provenance.
 
-3. `MANUAL_ADVANCED`
+4. `MANUAL_ADVANCED`
    - fallback workflow;
    - user can manually define geometry, calibration, trace corrections, and peak decisions;
    - used when automatic or guided suggestions are insufficient.
+
+5. `GUIDED_PRODUCTION`
+   - deprecated compatibility alias for earlier guided docs;
+   - do not use as the primary target in new phase planning.
 
 ---
 

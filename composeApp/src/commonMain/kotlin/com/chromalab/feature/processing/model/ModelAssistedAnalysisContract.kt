@@ -257,7 +257,9 @@ object ModelAssistedAnalysisContract {
     )
 
     private val auditedAnalysisModes = setOf(
+        ProcessingMode.AUTONOMOUS_PRODUCTION,
         ProcessingMode.AUTO_DIAGNOSTIC,
+        ProcessingMode.ASSISTED_REVIEW,
         ProcessingMode.FULL_ANALYSIS,
     )
 

@@ -67,7 +67,10 @@ enum class InputSourceType {
 
 @Serializable
 enum class ProcessingMode {
+    AUTONOMOUS_PRODUCTION,
     AUTO_DIAGNOSTIC,
+    ASSISTED_REVIEW,
+    @Deprecated("GUIDED_PRODUCTION is a compatibility alias. Use ASSISTED_REVIEW.")
     GUIDED_PRODUCTION,
     MANUAL_ADVANCED,
     FULL_ANALYSIS,

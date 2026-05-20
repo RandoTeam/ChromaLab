@@ -101,6 +101,38 @@ class ReportWarningRuleEngineTest {
             "runtime.full_analysis_without_neural_vision",
             ReportSeverity.FAILED,
         )
+
+        val autonomousWithoutVision = ReportWarningRuleEngine.apply(
+            base.copy(
+                metadata = base.metadata.copy(
+                    selectedModel = null,
+                    executedModel = null,
+                    executedRuntime = ExecutedRuntime.DETERMINISTIC,
+                    processingMode = ProcessingMode.AUTONOMOUS_PRODUCTION,
+                ),
+            ),
+        )
+        assertHasWarning(
+            autonomousWithoutVision.warnings,
+            "runtime.full_analysis_without_neural_vision",
+            ReportSeverity.FAILED,
+        )
+
+        val assistedWithoutVision = ReportWarningRuleEngine.apply(
+            base.copy(
+                metadata = base.metadata.copy(
+                    selectedModel = null,
+                    executedModel = null,
+                    executedRuntime = ExecutedRuntime.DETERMINISTIC,
+                    processingMode = ProcessingMode.ASSISTED_REVIEW,
+                ),
+            ),
+        )
+        assertHasWarning(
+            assistedWithoutVision.warnings,
+            "runtime.full_analysis_without_neural_vision",
+            ReportSeverity.FAILED,
+        )
     }
 
     @Test

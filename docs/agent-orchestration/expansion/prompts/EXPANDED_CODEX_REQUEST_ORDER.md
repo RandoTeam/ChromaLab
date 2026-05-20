@@ -92,3 +92,7 @@ Every final response must include:
 ## Anti-Overfit Rules
 
 No fixture-specific hacks, no hardcoded image coordinates, no VLM numeric truth, no weakened regression expectations, and no production-ready claims without evidence gates.
+
+## Autonomous-First Rule
+
+For chromatogram phases after the Phase 4 realignment, treat `AUTONOMOUS_PRODUCTION` as the primary target path. `ASSISTED_REVIEW` and `MANUAL_ADVANCED` tools repair failed or low-confidence autonomous stages. Do not make guided/manual confirmation the default happy path unless the active phase explicitly says so.

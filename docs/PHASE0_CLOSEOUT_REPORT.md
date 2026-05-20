@@ -36,7 +36,7 @@ Visual Design System and Accessibility / Localization were considered for report
 
 - 0.1 current web research: updated with expanded source matrix and source-quality triage.
 - 0.2 current pipeline audit: updated in `docs/PHASE0_CURRENT_PIPELINE_AUDIT.md`.
-- 0.3 product mode contract: `AUTO_DIAGNOSTIC`, `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED` documented in `docs/CHROMATOGRAM_PRODUCT_MODES.md`.
+- 0.3 product mode contract: originally `AUTO_DIAGNOSTIC`, `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED`; Phase 4 realigns this to `AUTONOMOUS_PRODUCTION`, `AUTO_DIAGNOSTIC`, `ASSISTED_REVIEW`, and `MANUAL_ADVANCED`.
 - 0.4 release gate contract: documented in `docs/CHROMATOGRAM_RELEASE_GATES.md`; existing code contracts confirmed in `Phase0ProductContracts.kt`.
 - 0.5 terminal-state evidence guarantee: documented for all terminal states.
 - 0.6 VLM boundary enforcement: documented and confirmed against existing `VlmBoundaryPolicy`.
@@ -61,8 +61,10 @@ Visual Design System and Accessibility / Localization were considered for report
 
 | Mode | Phase 0 result |
 | --- | --- |
+| `AUTONOMOUS_PRODUCTION` | Added by Phase 4 realignment as primary target path. |
 | `AUTO_DIAGNOSTIC` | Explicitly diagnostic by default; release-ready only if evidence gates pass. |
-| `GUIDED_PRODUCTION` | Defined as future main reliable path; not implemented in Phase 0. |
+| `ASSISTED_REVIEW` | Added by Phase 4 realignment for user repair of low-confidence stages. |
+| `GUIDED_PRODUCTION` | Deprecated compatibility alias for earlier guided docs. |
 | `MANUAL_ADVANCED` | Defined as future fallback; not implemented in Phase 0. |
 
 ## Release Gates
@@ -161,7 +163,7 @@ Observed non-blocking warnings:
 - Real Android evidence export must still be proven for all terminal states.
 - Current contracts/validators exist, but runtime terminal-state enforcement is incomplete outside the strongest report/ROI paths; later phases must prove or implement package export for `CALIBRATION_FAILURE`, `CURVE_FAILURE`, `OCR_FAILURE`, `VLM_TIMEOUT`, and `FATAL_PIPELINE_ERROR`.
 - Axis/tick gates are supporting gates in the current release evaluator; future phases should decide whether missing ticks should directly block release in addition to X/Y calibration.
-- `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` are contracts only; their UI and persistence flows start later.
+- Earlier `GUIDED_PRODUCTION` wording is now `ASSISTED_REVIEW` infrastructure; `MANUAL_ADVANCED` remains a fallback.
 
 ## Product Acceptance Decision
 
@@ -186,3 +188,7 @@ Phase 1 must not start by weakening Phase 0 gates. It must preserve:
 ## Orchestrator Sign-Off
 
 Signed off for Phase 0 contract/documentation scope after validation. Phase 0 does not claim full-auto production readiness.
+
+## Autonomous-First Realignment Addendum
+
+Phase 4 corrected the product hierarchy after this closeout. `AUTONOMOUS_PRODUCTION` is now the primary target. `AUTO_DIAGNOSTIC` remains the automatic diagnostic fallback. Earlier `GUIDED_PRODUCTION` wording is deprecated and should be read as `ASSISTED_REVIEW` infrastructure. Phase 0 gates still stand: no report is release-ready without valid graphPanel, plotArea, calibration, trace, evidence package, source provenance, and validator status.

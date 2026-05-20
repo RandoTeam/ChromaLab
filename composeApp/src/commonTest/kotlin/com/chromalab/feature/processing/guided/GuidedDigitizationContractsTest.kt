@@ -19,7 +19,9 @@ class GuidedDigitizationContractsTest {
 
     @Test
     fun guidedModesMapToReportProcessingModes() {
+        assertEquals(ProcessingMode.AUTONOMOUS_PRODUCTION, GuidedDigitizationMode.AUTONOMOUS_PRODUCTION.toProcessingMode())
         assertEquals(ProcessingMode.AUTO_DIAGNOSTIC, GuidedDigitizationMode.AUTO_DIAGNOSTIC.toProcessingMode())
+        assertEquals(ProcessingMode.ASSISTED_REVIEW, GuidedDigitizationMode.ASSISTED_REVIEW.toProcessingMode())
         assertEquals(ProcessingMode.GUIDED_PRODUCTION, GuidedDigitizationMode.GUIDED_PRODUCTION.toProcessingMode())
         assertEquals(ProcessingMode.MANUAL_ADVANCED, GuidedDigitizationMode.MANUAL_ADVANCED.toProcessingMode())
     }
@@ -68,7 +70,7 @@ class GuidedDigitizationContractsTest {
         val decoded = json.decodeFromString<GuidedDigitizationState>(encoded)
 
         assertEquals(state.stateId, decoded.stateId)
-        assertEquals(GuidedDigitizationMode.GUIDED_PRODUCTION, decoded.mode)
+        assertEquals(GuidedDigitizationMode.ASSISTED_REVIEW, decoded.mode)
         assertEquals(UserConfirmationStatus.CONFIRMED, decoded.graphPanelConfirmation?.confirmationStatus)
         assertEquals(3, decoded.calibration?.calibrationSet?.acceptedAnchors(CalibrationAxis.X)?.size)
         assertEquals(3, decoded.calibration?.calibrationSet?.acceptedAnchors(CalibrationAxis.Y)?.size)
@@ -85,6 +87,64 @@ class GuidedDigitizationContractsTest {
         assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.yCalibrationStatus)
         assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.traceStatus)
         assertTrue(gate.blockingReasons.isEmpty())
+    }
+
+    @Test
+    fun assistedReviewStateMapsToReleaseReadyWithExplicitUserConfirmedEvidence() {
+        val gate = GuidedReportGateMapper.evaluate(
+            releaseReadyGuidedState().copy(mode = GuidedDigitizationMode.ASSISTED_REVIEW),
+        )
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
+        assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.traceStatus)
+        assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun guidedProductionCompatibilityAliasStillMapsToAssistedReviewBehavior() {
+        val gate = GuidedReportGateMapper.evaluate(
+            releaseReadyGuidedState().copy(mode = GuidedDigitizationMode.GUIDED_PRODUCTION),
+        )
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
+        assertEquals(EvidenceGateStatus.USER_CONFIRMED, gate.evidence.traceStatus)
+    }
+
+    @Test
+    fun autonomousProductionCanSatisfyTraceGateWithAutoValidEvidence() {
+        val state = GuidedTraceOverlayReducer.acceptAutonomousTrace(
+            state = releaseReadyAutonomousState(),
+            snapshot = validTraceSnapshot(),
+            timestampEpochMillis = 30L,
+        )
+
+        val gate = GuidedReportGateMapper.evaluate(state)
+
+        assertEquals(ReportGateStatus.RELEASE_READY, gate.status)
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
+        assertEquals(EvidenceGateStatus.NOT_APPLICABLE, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun autoDiagnosticCannotUseAutoValidTraceAsReleaseEvidence() {
+        val state = releaseReadyAutonomousState().copy(
+            mode = GuidedDigitizationMode.AUTO_DIAGNOSTIC,
+            trace = autoValidTrace(),
+            autoDiagnosticEvidence = GateEvidence(
+                graphPanelStatus = EvidenceGateStatus.VALID,
+                plotAreaStatus = EvidenceGateStatus.VALID,
+                xCalibrationStatus = EvidenceGateStatus.VALID,
+                yCalibrationStatus = EvidenceGateStatus.VALID,
+                traceStatus = EvidenceGateStatus.MISSING,
+                evidencePackageStatus = EvidenceGateStatus.VALID,
+                sourceProvenanceStatus = EvidenceGateStatus.VALID,
+            ),
+        )
+
+        val gate = GuidedReportGateMapper.evaluate(state)
+
+        assertEquals(ReportGateStatus.DIAGNOSTIC_ONLY, gate.status)
+        assertEquals(EvidenceGateStatus.MISSING, gate.evidence.traceStatus)
     }
 
     @Test
@@ -150,7 +210,7 @@ class GuidedDigitizationContractsTest {
     private fun baseState(): GuidedDigitizationState =
         GuidedDigitizationState(
             stateId = "guided-state-1",
-            mode = GuidedDigitizationMode.GUIDED_PRODUCTION,
+            mode = GuidedDigitizationMode.ASSISTED_REVIEW,
             image = GuidedImageReference(
                 imageId = "image-1",
                 originalImagePath = "original.png",
@@ -250,6 +310,83 @@ class GuidedDigitizationContractsTest {
                 evidencePackageStatus = EvidenceGateStatus.VALID,
                 sourceProvenanceStatus = EvidenceGateStatus.VALID,
             ),
+        )
+
+    private fun releaseReadyAutonomousState(): GuidedDigitizationState =
+        GuidedDigitizationState(
+            stateId = "autonomous-state-1",
+            mode = GuidedDigitizationMode.AUTONOMOUS_PRODUCTION,
+            image = GuidedImageReference(
+                imageId = "image-1",
+                originalImagePath = "original.png",
+                normalizedImagePath = "normalized.png",
+            ),
+            autoDiagnosticEvidence = GateEvidence(
+                graphPanelStatus = EvidenceGateStatus.VALID,
+                plotAreaStatus = EvidenceGateStatus.VALID,
+                xCalibrationStatus = EvidenceGateStatus.VALID,
+                yCalibrationStatus = EvidenceGateStatus.VALID,
+                traceStatus = EvidenceGateStatus.MISSING,
+                evidencePackageStatus = EvidenceGateStatus.VALID,
+                sourceProvenanceStatus = EvidenceGateStatus.VALID,
+            ),
+            createdAtEpochMillis = 1L,
+            updatedAtEpochMillis = 1L,
+        )
+
+    private fun validTraceSnapshot(): TraceOverlayEditorSnapshot =
+        GuidedTraceOverlayReducer.initialSnapshot(
+            imageWidth = 200,
+            imageHeight = 120,
+            graphPanelBounds = graphPanel,
+            plotAreaBounds = plotArea,
+            sourceTraceId = "trace-auto",
+            tracePoints = (0 until 80).map { index ->
+                TraceOverlayPoint(
+                    x = 20f + index * 1.5f,
+                    y = 60f + (index % 4) * 0.25f,
+                    confidence = 0.96f,
+                )
+            },
+            qualitySummary = TraceQualitySummary(
+                pointCount = 80,
+                columnCoverageRatio = 0.86,
+                maxGapColumns = 2,
+                componentCount = 1,
+                branchPointCount = 0,
+                selectedComponentCoverage = 0.86,
+                textContaminationScore = 0.02,
+                baselineTouchRatio = 0.03,
+                frameTouchRatio = 0.02,
+                traceConfidence = 0.96,
+                confidence = 0.96,
+            ),
+            calibratedTraceRequired = false,
+            overlayArtifactPath = "trace-overlay.png",
+            maskArtifactPath = "mask.png",
+            centerlineArtifactPath = "centerline.png",
+        )
+
+    private fun autoValidTrace(): UserConfirmedTrace =
+        UserConfirmedTrace(
+            sourceTraceId = "trace-auto",
+            confirmationStatus = UserConfirmationStatus.NOT_REQUIRED,
+            editDecisions = listOf(TraceEditDecision.ACCEPT_AUTO),
+            evidence = TraceConfirmationEvidence(
+                sourceTraceId = "trace-auto",
+                overlayArtifactPath = "trace-overlay.png",
+                centerlineArtifactPath = "centerline.png",
+                qualityStatus = TraceQualityStatus.VALID,
+                qualitySummary = TraceQualitySummary(pointCount = 80, columnCoverageRatio = 0.86, confidence = 0.96),
+                source = TraceOverlaySource.AUTO_EXTRACTED,
+                tracePoints = validTraceSnapshot().tracePoints,
+                plotAreaBounds = plotArea,
+            ),
+            timestampEpochMillis = 30L,
+            userProvenance = GuidedUserProvenance(sessionId = "autonomous"),
+            gateStatus = TraceGateStatus.AUTO_VALID,
+            source = TraceOverlaySource.AUTO_EXTRACTED,
+            traceConfirmationStatus = TraceConfirmationStatus.AUTO_SUGGESTED,
         )
 
     private fun confirmedCalibration(

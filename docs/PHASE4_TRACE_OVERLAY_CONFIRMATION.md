@@ -1,6 +1,6 @@
-# Phase 4: Guided Trace Overlay Confirmation
+# Phase 4: Autonomous Trace Extraction + Evidence Review
 
-Phase 4 implements guided trace overlay confirmation. It lets the user review an extracted trace over the confirmed plotArea and persist a valid, review-grade, or rejected trace decision.
+Phase 4 was first implemented as guided trace overlay confirmation. It is now realigned as the autonomous trace evidence layer with Assisted Review fallback. The existing overlay UI remains useful, but it is not the default production path.
 
 This phase does not implement manual trace drawing, peak editing, peak integration changes, VLM changes, or `CalculationEngine` changes.
 
@@ -14,7 +14,7 @@ Implemented:
 - `TraceOverlayEditorSnapshot` and `TraceOverlayEvaluation`;
 - reducer logic for reset, accept valid, accept review, and reject;
 - reusable Compose/KMP trace overlay screen;
-- guided report-gate mapping through existing `UserConfirmedTrace`;
+- autonomous `AUTO_VALID` trace gate plus assisted report-gate mapping through existing `UserConfirmedTrace`;
 - tests for missing plotArea, missing points, out-of-plot points, sparse/review traces, rejection, reset, AUTO isolation, guided gate mapping, and serialization.
 
 Out of scope:
@@ -33,8 +33,8 @@ flowchart LR
     B["Confirmed calibration"] --> C
     D["Auto trace candidate"] --> C
     C --> E["TraceOverlayEvaluation"]
-    E --> F["TraceConfirmationEvidence"]
-    F --> G["UserConfirmedTrace"]
+    E --> F["Trace evidence gate"]
+    F --> G["AUTO_VALID or Assisted Review"]
     G --> H["GuidedReportGateMapper"]
 ```
 
@@ -82,11 +82,12 @@ If available metrics are incomplete, the trace is review-grade. Missing metrics 
 
 `VALID`:
 
-- confirmed plotArea exists;
-- confirmed calibration exists;
+- plotArea exists;
+- calibration exists when calibrated trace is required;
 - trace points exist and stay inside plotArea;
 - quality metrics pass thresholds;
-- user confirms valid trace.
+- overlay/centerline artifacts exist for autonomous release;
+- automatic trace can satisfy the trace gate without user confirmation in `AUTONOMOUS_PRODUCTION`.
 
 ## Evidence
 
@@ -106,9 +107,14 @@ If available metrics are incomplete, the trace is review-grade. Missing metrics 
 
 ## Release Gate Behavior
 
-- `USER_CONFIRMED_VALID` trace maps to `EvidenceGateStatus.USER_CONFIRMED`.
+- automatic valid trace maps to `EvidenceGateStatus.VALID` in `AUTONOMOUS_PRODUCTION`.
+- `USER_CONFIRMED_VALID` trace maps to `EvidenceGateStatus.USER_CONFIRMED` in `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, or `MANUAL_ADVANCED`.
 - `USER_CONFIRMED_REVIEW` trace maps to `EvidenceGateStatus.REVIEW`.
 - rejected/invalid trace maps to `EvidenceGateStatus.INVALID`.
 - `AUTO_DIAGNOSTIC` ignores guided trace confirmation objects.
 
 Phase 4 cannot complete peak review. Phase 5 must add peak review/edit evidence before peak-specific claims are treated as user-reviewed.
+
+## Realignment Note
+
+`GUIDED_PRODUCTION` is now a compatibility alias for earlier contracts. New product planning should use `AUTONOMOUS_PRODUCTION` for the primary path and `ASSISTED_REVIEW` for the trace overlay UI.

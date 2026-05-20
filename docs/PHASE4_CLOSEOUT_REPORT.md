@@ -4,6 +4,17 @@ Status: completed after validation; commit recorded in git history
 Phase: 4
 Scope: guided trace overlay confirmation model, reusable Compose component, gate mapping, provenance, docs, and tests.
 
+## Autonomous-First Realignment Addendum
+
+Phase 4 has been realigned after initial completion. The trace quality model and overlay UI remain, but the product architecture now treats them as:
+
+- autonomous trace evidence gate for `AUTONOMOUS_PRODUCTION`;
+- review/repair surface for `ASSISTED_REVIEW`;
+- expert fallback surface for `MANUAL_ADVANCED`;
+- compatibility path for deprecated `GUIDED_PRODUCTION`.
+
+The overlay UI must not be treated as mandatory for normal images. Automatic valid trace evidence can satisfy the trace gate when quality and artifacts pass. User confirmation remains explicit provenance when review/repair is needed.
+
 ## Agents Activated
 
 - Orchestrator
@@ -88,7 +99,8 @@ Phase 4 adds:
 
 ## Release Gate Mapping
 
-- valid accepted trace maps to `USER_CONFIRMED`;
+- automatic valid trace maps to `VALID` in `AUTONOMOUS_PRODUCTION`;
+- valid user-accepted trace maps to `USER_CONFIRMED` in `ASSISTED_REVIEW` or `MANUAL_ADVANCED`;
 - review accepted trace maps to `REVIEW`;
 - rejected trace maps to `INVALID`;
 - `AUTO_DIAGNOSTIC` cannot use guided trace confirmation as release evidence.

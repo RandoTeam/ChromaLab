@@ -1,17 +1,19 @@
-# Phase 4: Trace Overlay Confirmation
+# Phase 4: Autonomous Trace Extraction + Evidence Review
 
 ## Phase Name
 
-Trace Overlay Confirmation
+Autonomous Trace Extraction + Evidence Review
 
 ## Product Goal
 
-Trace extraction is reviewed/confirmed before calculations. This phase must move ChromaLab toward honest, evidence-gated mobile chromatogram digitization without pretending fully automatic photo analysis is production-ready by default.
+Autonomous trace extraction is scored first, with trace overlay review used only when evidence is review-grade, invalid, or explicitly opened for inspection. This phase must move ChromaLab toward honest, evidence-gated mobile chromatogram digitization without making manual confirmation the default production path.
 
 Product modes:
-- AUTO_DIAGNOSTIC: automatic attempt, diagnostic by default, every terminal state exports evidence.
-- GUIDED_PRODUCTION: reliable target workflow, user confirms graphPanel, plotArea, calibration anchors, trace, and peaks before release-quality output.
+- AUTONOMOUS_PRODUCTION: primary target, automatic evidence can be release-ready only when all gates pass.
+- AUTO_DIAGNOSTIC: automatic incomplete/review attempt, every terminal state exports evidence.
+- ASSISTED_REVIEW: user reviews or corrects failed/low-confidence stages.
 - MANUAL_ADVANCED: fallback for difficult images, user can manually define geometry, calibration, trace, and peak decisions.
+- GUIDED_PRODUCTION: deprecated compatibility alias for earlier guided docs.
 
 ## Scope
 

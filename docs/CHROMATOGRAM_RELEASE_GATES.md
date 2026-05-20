@@ -1,12 +1,12 @@
 # ChromaLab Release Gates
 
-Phase 0 freezes the previous fully automatic photo/screenshot workflow as `AUTO_DIAGNOSTIC` and defines the gate contract that prevents diagnostic output from looking release-quality.
+Release gates prevent ChromaLab from presenting incomplete automatic analysis as production science. Phase 4 realigns those gates around an autonomous-first path with assisted/manual repair as fallback.
 
 ## Gate Statuses
 
 | Status | Meaning | User/product implication |
 | --- | --- | --- |
-| `RELEASE_READY` | Required evidence is valid or user-confirmed, and the report validator has no blocking issues. | Scientific report may be presented as release-quality for the captured evidence. |
+| `RELEASE_READY` | Required evidence is valid automatically or explicitly user-confirmed/manual with provenance, and the report validator has no blocking issues. | Scientific report may be presented as release-quality for the captured evidence. |
 | `REVIEW_ONLY` | Core evidence exists but at least one required or supporting gate is review-grade. | Numeric output may be shown with review warnings and evidence; not a final release claim. |
 | `DIAGNOSTIC_ONLY` | Required evidence is missing, invalid, or blocked by validator findings. | Show diagnostic evidence and reasons; do not present a release-quality peak table or scientific conclusion. |
 | `BLOCKED` | Pipeline failed before a report can support diagnostic interpretation. | Export failure evidence and stop. |
@@ -40,8 +40,8 @@ Supporting gates may produce `REVIEW_ONLY` or `DIAGNOSTIC_ONLY` depending on sev
 
 | Evidence state | Meaning |
 | --- | --- |
-| `VALID` | Deterministic or validated evidence satisfies the gate. |
-| `USER_CONFIRMED` | Future guided/manual workflows captured explicit user confirmation. |
+| `VALID` | Deterministic or validated automatic evidence satisfies the gate. |
+| `USER_CONFIRMED` | Assisted/manual workflow captured explicit user confirmation or correction. |
 | `REVIEW` | Evidence exists but is marginal, incomplete, or uncertain. |
 | `INVALID` | Evidence exists and fails required quality checks. |
 | `MISSING` | Evidence is absent. |
@@ -49,62 +49,71 @@ Supporting gates may produce `REVIEW_ONLY` or `DIAGNOSTIC_ONLY` depending on sev
 
 ## Product Mode Interaction
 
+### AUTONOMOUS_PRODUCTION
+
+- Primary production target.
+- May become `RELEASE_READY` only if every required gate is `VALID`, the evidence package exists, source provenance is present, and validator findings are non-blocking.
+- Must not use manual/user-edited evidence as automatic evidence.
+- Must still disclose VLM/OCR use as auxiliary evidence only.
+
 ### AUTO_DIAGNOSTIC
 
-- Diagnostic by default.
-- May become `RELEASE_READY` only if every required gate is valid.
+- Automatic diagnostic attempt.
+- Does not consume user confirmations as release evidence.
+- Produces `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, or `BLOCKED` when gates are incomplete.
 - Must export evidence for every terminal state.
-- Must not hide missing evidence behind polished report UI.
 
-### GUIDED_PRODUCTION
+### ASSISTED_REVIEW
 
-- Future main production path.
-- May satisfy geometry, calibration, trace, and peak gates through explicit stored user confirmation.
-- Phase 1 adds shared confirmation contracts and `GuidedReportGateMapper`.
-- Guided UI is not implemented yet.
+- Review/repair path for failed or low-confidence autonomous stages.
+- May satisfy geometry, calibration, trace, and later peak gates through explicit stored user confirmation.
+- User intervention must remain visible in report provenance and evidence packages.
+- Review-grade user acceptance remains `REVIEW_ONLY` unless a later explicit release policy says otherwise.
 
 ### MANUAL_ADVANCED
 
-- Future fallback for hard images.
+- Expert fallback.
 - May satisfy gates through full manual geometry/calibration/trace/peak definitions.
-- Phase 1 adds the shared state contracts needed for future manual fallback.
-- Manual UI is not implemented yet.
+- Manual UI and future editors must record provenance, warnings, artifacts, and audit trail.
 
-## Phase 1 Guided Mapping
+### GUIDED_PRODUCTION
 
-Phase 1 adds:
+- Deprecated compatibility alias for earlier Phase 1-4 docs and serialized state.
+- Treat as `ASSISTED_REVIEW` behavior in new architecture.
+- Do not use it as the primary target for new phase work.
 
-- `GuidedDigitizationState`
-- `GuidedReportGateMapper`
-- geometry confirmation contracts
-- calibration confirmation contracts
-- trace confirmation contracts
-- peak review contracts
+## Assisted Review Mapping
+
+Phase 1-4 review components write confirmation contracts:
+
+- `GraphPanelConfirmation`
+- `PlotAreaConfirmation`
+- `UserConfirmedCalibration`
+- `UserConfirmedTrace`
+- future `UserConfirmedPeakSet`
 
 Mapping rules:
 
-- `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` can map confirmed graphPanel, plotArea, calibration, and trace evidence to `USER_CONFIRMED`.
+- `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED` can map confirmed evidence to `USER_CONFIRMED`.
 - `AUTO_DIAGNOSTIC` cannot use guided/user confirmation objects as release evidence.
+- `AUTONOMOUS_PRODUCTION` uses automatic `VALID` evidence, not `USER_CONFIRMED` evidence.
 - evidence package and source provenance must still be `VALID`.
-- two-anchor calibration is structurally valid but review-grade by default until robust validation or explicit future policy.
-- missing guided confirmations produce `DIAGNOSTIC_ONLY` or `BLOCKED`, never `RELEASE_READY`.
+- review-grade corrections produce `REVIEW_ONLY`, not silent release.
 
-## Phase 2 ROI Gate Mapping
+## Phase 4 Trace Gate Mapping
 
-Phase 2 can satisfy only these gate inputs:
+Phase 4 now means autonomous trace extraction plus evidence review.
 
-- graphPanel, through `GraphPanelConfirmation.confirmedGraphPanel`;
-- plotArea, through `PlotAreaConfirmation.confirmedPlotArea`.
+Mapping rules:
 
-The confirmed ROI source is recorded as:
+- automatic valid trace maps to `EvidenceGateStatus.VALID` only when trace quality is `VALID`, trace points are inside plotArea, and required overlay/centerline artifacts exist;
+- user accepted valid trace maps to `EvidenceGateStatus.USER_CONFIRMED` in `ASSISTED_REVIEW` or `MANUAL_ADVANCED`;
+- accepted review-grade trace maps to `EvidenceGateStatus.REVIEW`;
+- rejected or invalid trace maps to `EvidenceGateStatus.INVALID`;
+- missing trace maps to `EvidenceGateStatus.MISSING`;
+- `AUTO_DIAGNOSTIC` ignores assisted/manual trace confirmation objects.
 
-- `USER_CONFIRMED`;
-- `USER_EDITED_AUTO_SUGGESTION`;
-- `MANUAL`.
-
-If the editor validation returns warnings, the corresponding gate remains `REVIEW_REQUIRED` and the final report must stay `REVIEW_ONLY` or lower until later gates and validator checks allow otherwise.
-
-Phase 2 does not satisfy calibration, trace, peak review, source provenance, or evidence package gates. A report must not become `RELEASE_READY` only because graphPanel and plotArea were confirmed.
+Phase 4 does not implement peak review. Phase 5 must add peak evidence before peak-specific claims are treated as reviewed or release-ready.
 
 ## Terminal-State Evidence Requirement
 
@@ -165,54 +174,15 @@ VLM/LLM is forbidden from producing:
 
 VLM output must preserve provenance: task type, local crop or overlay path, raw output, parsed output, confidence, and rejection reason when invalid.
 
-## Current Code Contract
-
-The current code already includes Phase 0 gate contracts in:
-
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/reports/Phase0ProductContracts.kt`
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing/debug/RuntimeEvidencePackage.kt`
-- `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing/debug/RuntimeEvidencePackageValidator.kt`
-
-Phase 0 does not rewrite `CalculationEngine`, geometry, OCR, VLM, trace extraction, peak detection, or report math.
-
 ## Acceptance
 
-Phase 0 release gates are accepted when:
+The autonomous-first release-gate contract is accepted when:
 
 - product modes are explicit;
 - gate statuses are explicit;
 - terminal states are explicit;
 - VLM boundaries are explicit and tested;
+- autonomous valid evidence and user-confirmed evidence are distinct;
+- review/manual intervention is visible in provenance;
 - current pipeline risks are documented;
-- regression matrix exists;
-- closeout report records validation and open risks.
-
-Phase 1 acceptance adds contract tests for guided state transitions, serialization, calibration anchor minimums, and release-gate mapping.
-
-## Phase 3 Guided Calibration Gate Mapping
-
-Phase 3 can satisfy X and Y calibration gates in `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` through `UserConfirmedCalibration`.
-
-Mapping rules:
-
-- confirmed calibration with three or more accepted anchors per axis and valid residuals maps X/Y to `USER_CONFIRMED`;
-- confirmed calibration with exactly two anchors per axis maps X/Y to `REVIEW`;
-- confirmed calibration with residual warnings, suspicious direction, or weak provenance maps to `REVIEW`;
-- invalid/missing anchors map to `INVALID` or `MISSING`;
-- `AUTO_DIAGNOSTIC` ignores guided calibration objects and uses only auto diagnostic gate evidence.
-
-Phase 3 still cannot make a report `RELEASE_READY` by itself because trace and peak review gates remain missing until later phases.
-
-## Phase 4 Guided Trace Gate Mapping
-
-Phase 4 can satisfy the trace gate in `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` through `UserConfirmedTrace`.
-
-Mapping rules:
-
-- accepted valid trace maps to `EvidenceGateStatus.USER_CONFIRMED`;
-- accepted review-grade trace maps to `EvidenceGateStatus.REVIEW`;
-- rejected or invalid trace maps to `EvidenceGateStatus.INVALID`;
-- missing trace maps to `EvidenceGateStatus.MISSING`;
-- `AUTO_DIAGNOSTIC` ignores guided trace confirmation objects and uses only automatic diagnostic evidence.
-
-Trace confirmation requires confirmed plotArea and, for calibrated trace review, confirmed calibration. Phase 4 does not implement peak review; peak-specific claims must still wait for Phase 5 evidence.
+- regression matrix exists and is updated by future phases.

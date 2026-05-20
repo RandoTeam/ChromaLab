@@ -93,7 +93,7 @@ The Phase 1 model is serializable commonMain state with schema version `1.0.0-ph
 
 ## Report-Gate Mapping
 
-`GuidedReportGateMapper` maps guided/manual confirmations into Phase 0 gates. `GUIDED_PRODUCTION` and `MANUAL_ADVANCED` may satisfy required gates through `USER_CONFIRMED` state. `AUTO_DIAGNOSTIC` cannot use user confirmation objects as release evidence.
+`GuidedReportGateMapper` maps assisted/manual confirmations into Phase 0 gates. `ASSISTED_REVIEW`, deprecated `GUIDED_PRODUCTION`, and `MANUAL_ADVANCED` may satisfy required gates through `USER_CONFIRMED` state. `AUTO_DIAGNOSTIC` cannot use user confirmation objects as release evidence.
 
 ## Validation
 
@@ -136,3 +136,7 @@ Phase 2 must not:
 - change peak math;
 - bypass release gates;
 - implement calibration/trace/peak editors before graphPanel/plotArea guided confirmation is working.
+
+## Autonomous-First Realignment Addendum
+
+Phase 4 corrected the product hierarchy after this closeout. The Phase 1 contracts are now shared evidence contracts for `AUTONOMOUS_PRODUCTION`, `ASSISTED_REVIEW`, and `MANUAL_ADVANCED`. Earlier `GUIDED_PRODUCTION` wording is retained only as a compatibility alias and should be interpreted as Assisted Review infrastructure.

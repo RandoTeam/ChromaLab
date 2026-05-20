@@ -135,6 +135,43 @@ class GuidedTraceOverlayModelTest {
     }
 
     @Test
+    fun autonomousProductionCanAcceptAutoValidTrace() {
+        val state = GuidedTraceOverlayReducer.acceptAutonomousTrace(
+            state = baseState(GuidedDigitizationMode.AUTONOMOUS_PRODUCTION),
+            snapshot = validSnapshot().copy(calibratedTraceRequired = false),
+            timestampEpochMillis = 24L,
+        )
+
+        val gate = GuidedReportGateMapper.evaluate(state)
+
+        assertEquals(TraceGateStatus.AUTO_VALID, state.trace?.gateStatus)
+        assertEquals(TraceOverlaySource.AUTO_EXTRACTED, state.trace?.source)
+        assertEquals(EvidenceGateStatus.VALID, gate.evidence.traceStatus)
+        assertEquals(EvidenceGateStatus.NOT_APPLICABLE, gate.evidence.userConfirmationStatus)
+    }
+
+    @Test
+    fun autonomousTraceRequiresEvidenceArtifactsForValidAcceptance() {
+        val snapshot = validSnapshot().copy(
+            calibratedTraceRequired = false,
+            overlayArtifactPath = null,
+            centerlineArtifactPath = null,
+        )
+
+        val evaluation = snapshot.evaluation
+
+        assertEquals(TraceQualityStatus.REVIEW, evaluation.qualityStatus)
+        assertTrue(evaluation.warningCodes.contains("trace.overlay_artifact_missing"))
+        assertFailsWith<IllegalArgumentException> {
+            GuidedTraceOverlayReducer.acceptAutonomousTrace(
+                state = baseState(GuidedDigitizationMode.AUTONOMOUS_PRODUCTION),
+                snapshot = snapshot,
+                timestampEpochMillis = 24L,
+            )
+        }
+    }
+
+    @Test
     fun autoDiagnosticTraceCannotCountAsUserConfirmed() {
         val state = GuidedTraceOverlayReducer.acceptTrace(
             state = confirmedGeometryState(GuidedDigitizationMode.AUTO_DIAGNOSTIC),
