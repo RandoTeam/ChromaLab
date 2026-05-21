@@ -1502,6 +1502,7 @@ private fun buildRuntimeGraphFailurePackages(
     val xFit = geometryResult?.xCalibrationFit ?: trace?.xCalibrationFit
     val yFit = geometryResult?.yCalibrationFit ?: trace?.yCalibrationFit
     val scaleResolution = trace?.axisScaleResolution
+    val calibrationArbitration = trace?.calibrationArbitration
     val layoutClassification = trace?.multiplicityResolution?.layoutClassification
     val tickLocalization = TickLocalizationPipeline.evaluate(
         plotAreaBounds = geometryResult?.plotAreaBounds ?: trace?.selectedPlotAreaBounds,
@@ -1592,6 +1593,16 @@ private fun buildRuntimeGraphFailurePackages(
             calibrationSummary = RuntimeCalibrationFailureSummary(
                 xStatus = xFit?.status,
                 yStatus = yFit?.status,
+                selectedXStrategy = calibrationArbitration?.selectedXStrategy,
+                selectedYStrategy = calibrationArbitration?.selectedYStrategy,
+                strategyCount = calibrationArbitration?.strategyResults.orEmpty().size,
+                rejectedStrategyIds = calibrationArbitration?.strategyResults.orEmpty()
+                    .map { it.strategyId }
+                    .filterNot {
+                        it == calibrationArbitration?.selectedXStrategy ||
+                            it == calibrationArbitration?.selectedYStrategy
+                    }
+                    .distinct(),
                 xAcceptedAnchorCount = xFit?.acceptedAnchors.orEmpty().size,
                 yAcceptedAnchorCount = yFit?.acceptedAnchors.orEmpty().size,
                 xRejectedAnchorCount = xFit?.rejectedAnchors.orEmpty().size,
@@ -1602,10 +1613,12 @@ private fun buildRuntimeGraphFailurePackages(
                 yRmsePx = yFit?.rmsePx,
                 xWarnings = xFit?.warnings.orEmpty() + xCalibration?.warnings.orEmpty(),
                 yWarnings = yFit?.warnings.orEmpty() + yCalibration?.warnings.orEmpty(),
-                missingReason = if (xFit == null || yFit == null) {
-                    "calibration fit evidence was incomplete at failure time."
-                } else {
-                    null
+                missingReason = when {
+                    xFit == null || yFit == null ->
+                        "calibration fit evidence was incomplete at failure time."
+                    calibrationArbitration == null || calibrationArbitration.strategyResults.isEmpty() ->
+                        "calibration strategy arbitration did not run before $failureStage."
+                    else -> null
                 },
             ),
             artifactPaths = RuntimeGraphFailureArtifactPaths(
@@ -1622,8 +1635,13 @@ private fun buildRuntimeGraphFailurePackages(
                 axisOverlayMissingReason = trace?.axisOverlayPath
                     .missingReason("axis candidate overlay was not produced before $failureStage."),
                 tickOverlayPath = trace?.tickOverlayPath,
-                tickOverlayMissingReason = trace?.tickOverlayPath
-                    .missingReason("tick candidate overlay was not produced before $failureStage."),
+                tickOverlayMissingReason = when {
+                    trace?.tickOverlayPath == null ->
+                        "tick candidate overlay was not produced before $failureStage."
+                    tickGeometry?.xTicks.orEmpty().isEmpty() && tickGeometry?.yTicks.orEmpty().isEmpty() ->
+                        "deterministic tick detector produced no tick candidates before $failureStage."
+                    else -> null
+                },
                 calibrationOverlayPath = trace?.calibrationFitOverlayPath,
                 calibrationOverlayMissingReason = trace?.calibrationFitOverlayPath
                     .missingReason("calibration overlay was not produced before $failureStage."),
@@ -1639,6 +1657,12 @@ private fun buildRuntimeGraphFailurePackages(
                 addAll(tickOcr?.items.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(xFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(yFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
+                addAll(calibrationArbitration?.strategyResults.orEmpty().flatMap { result ->
+                    listOf(
+                        "calibration_strategy.${result.strategyId.name.lowercase()}.x:${result.xCandidate.fit.status.name}",
+                        "calibration_strategy.${result.strategyId.name.lowercase()}.y:${result.yCandidate.fit.status.name}",
+                    )
+                })
             }.distinct(),
             warnings = buildList {
                 addAll(geometryResult?.warnings.orEmpty())
@@ -1650,6 +1674,7 @@ private fun buildRuntimeGraphFailurePackages(
                 addAll(ocrResult?.warnings.orEmpty())
                 addAll(xFit?.warnings.orEmpty())
                 addAll(yFit?.warnings.orEmpty())
+                addAll(calibrationArbitration?.warnings.orEmpty())
                 addAll(layoutClassification?.reviewReasons.orEmpty())
             }.distinct(),
             stageTimings = stageTimings,

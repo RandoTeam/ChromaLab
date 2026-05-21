@@ -357,3 +357,26 @@ Final Phase 9E rerun result:
 | Failure subreasons | PASS: blocked tick/calibration graph-stage packages include explicit subreasons |
 | E2B advisory safety | PASS: E2B did not reduce graph count/calibration state or create numeric metrics in the final rerun |
 | Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE` |
+
+## Phase 9G Regression Matrix Update
+
+| Area | Phase 9G Requirement |
+| --- | --- |
+| White Tiger regression shield | `white_tiger_ion71` must not regress from a previously valid/review calibration solely because the new resolver fails. |
+| Calibration strategy ensemble | Legacy tick localization, axis-scale resolver, OCR label fit, regular sequence, grid/frame, and endpoint fallback strategy records must be evaluated or explicitly rejected. |
+| Validator evidence | Graph-stage calibration failures must include selected and rejected strategy evidence. |
+| Android suite summary | Phase 9G summary must aggregate all graph failure packages, not only the first one. |
+| Multi-panel propagation | Still blocked unless rerun evidence proves expected graph counts and report propagation are correct. |
+| Acceptance | Phase 10 remains blocked until Android rerun proves no critical runtime blocker or Product/QA/Scientific explicitly approve limitations. |
+
+Final Phase 9G rerun result:
+
+| Area | Phase 9G Result |
+| --- | --- |
+| Android fixture exports | PASS: 16/16 final runs exported evidence/report/validator artifacts |
+| Validator blocking issues | PASS: 0 validator blocking issues after no-tick-candidate reason export |
+| Calibration ensemble evidence | PASS: blocked calibration packages expose selected/rejected strategy evidence or explicit arbitration missing reason |
+| White Tiger regression | FAIL: `white_tiger_ion71` remains `BLOCKED` in deterministic and E2B modes |
+| Tick/calibration closure | FAIL: `white_tiger`, `bench_01`, `bench_02`, and `bench_05` remain blocked |
+| E2B advisory safety | PASS: no E2B graph-count/calibration regression observed |
+| Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE` |

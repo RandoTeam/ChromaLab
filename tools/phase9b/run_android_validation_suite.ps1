@@ -93,8 +93,13 @@ function Summarize-Run {
     } else {
         $metadataGraphCount
     }
-    $firstFailure = if ($evidence -and $evidence.graphFailurePackages -and @($evidence.graphFailurePackages).Count -gt 0) {
-        @($evidence.graphFailurePackages)[0]
+    $graphFailures = if ($evidence -and $evidence.graphFailurePackages -and @($evidence.graphFailurePackages).Count -gt 0) {
+        @($evidence.graphFailurePackages)
+    } else {
+        @()
+    }
+    $firstFailure = if ($graphFailures.Count -gt 0) {
+        $graphFailures[0]
     } else { $null }
     $firstGraph = if ($evidence -and $evidence.graphs -and @($evidence.graphs).Count -gt 0) {
         @($evidence.graphs)[0]
@@ -117,6 +122,11 @@ function Summarize-Run {
         @($firstFailure.scaleSummary.yEvidenceTypes)
     } else { @() }
     $calibration = if ($firstFailure) { $firstFailure.calibrationSummary } else { $null }
+    $allFailureClasses = @($graphFailures | ForEach-Object { $_.failureClass } | Where-Object { $_ } | Select-Object -Unique)
+    $allTickSubreasons = @($graphFailures | ForEach-Object { $_.tickSummary.subreasons } | Where-Object { $_ } | Select-Object -Unique)
+    $allScaleSubreasons = @($graphFailures | ForEach-Object { $_.scaleSummary.subreasons } | Where-Object { $_ } | Select-Object -Unique)
+    $allSelectedXStrategies = @($graphFailures | ForEach-Object { $_.calibrationSummary.selectedXStrategy } | Where-Object { $_ } | Select-Object -Unique)
+    $allSelectedYStrategies = @($graphFailures | ForEach-Object { $_.calibrationSummary.selectedYStrategy } | Where-Object { $_ } | Select-Object -Unique)
     [pscustomobject]@{
         fixtureId = $FixtureId
         mode = $Mode
@@ -131,6 +141,14 @@ function Summarize-Run {
         yAnchorCount = if ($firstFailure) { $firstFailure.ocrSummary.acceptedYAnchorCount } else { $null }
         xCalibrationStatus = if ($calibration) { $calibration.xStatus } else { $null }
         yCalibrationStatus = if ($calibration) { $calibration.yStatus } else { $null }
+        selectedXCalibrationStrategy = if ($calibration) { $calibration.selectedXStrategy } else { $null }
+        selectedYCalibrationStrategy = if ($calibration) { $calibration.selectedYStrategy } else { $null }
+        calibrationStrategyCount = if ($calibration) { $calibration.strategyCount } else { $null }
+        allFailureClasses = $allFailureClasses
+        allSelectedXCalibrationStrategies = $allSelectedXStrategies
+        allSelectedYCalibrationStrategies = $allSelectedYStrategies
+        allTickSubreasons = $allTickSubreasons
+        allScaleSubreasons = $allScaleSubreasons
         tickSubreasons = $subreasons
         scaleSubreasons = $scaleSubreasons
         xScaleEvidenceTypes = $xScaleEvidenceTypes
@@ -253,12 +271,26 @@ $phase9fMdPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary_phase9f.m
 $phase9fLines = @(
     "# $($SummaryPrefix.ToUpperInvariant()) Android Validation Suite - Phase 9F Axis Scale Fields",
     "",
-    "| Fixture | Mode | Layout | Expected graphs | Detected graphs | Scale status | X scale evidence | Y scale evidence | X anchors | Y anchors | Gate | Validator | Failure | Tick subreason | Scale subreason | Export |",
-    "| --- | --- | --- | ---: | ---: | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |"
+    "| Fixture | Mode | Layout | Expected graphs | Detected graphs | Scale status | X strategy | Y strategy | Strategies | X scale evidence | Y scale evidence | X anchors | Y anchors | Gate | Validator | Failure | Tick subreason | Scale subreason | Export |",
+    "| --- | --- | --- | ---: | ---: | --- | --- | --- | ---: | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |"
 )
 foreach ($row in $summary) {
     $exportOk = $row.runtimeEvidencePackageAvailable -and $row.validatorJsonAvailable -and $row.validatorMarkdownAvailable -and $row.finalReportJsonAvailable -and $row.exportManifestAvailable
-    $phase9fLines += "| $($row.fixtureId) | $($row.mode) | $($row.layoutClass) | $($row.expectedGraphCount) | $($row.metadataDetectedGraphCount) | $($row.axisScaleStatus) | $(@($row.xScaleEvidenceTypes) -join '+') | $(@($row.yScaleEvidenceTypes) -join '+') | $($row.xAnchorCount) | $($row.yAnchorCount) | $($row.reportGate) | $($row.validatorVerdict) | $($row.runtimeFailureClass) | $(@($row.tickSubreasons) -join '<br>') | $(@($row.scaleSubreasons) -join '<br>') | $exportOk |"
+    $phase9fLines += "| $($row.fixtureId) | $($row.mode) | $($row.layoutClass) | $($row.expectedGraphCount) | $($row.metadataDetectedGraphCount) | $($row.axisScaleStatus) | $($row.selectedXCalibrationStrategy) | $($row.selectedYCalibrationStrategy) | $($row.calibrationStrategyCount) | $(@($row.xScaleEvidenceTypes) -join '+') | $(@($row.yScaleEvidenceTypes) -join '+') | $($row.xAnchorCount) | $($row.yAnchorCount) | $($row.reportGate) | $($row.validatorVerdict) | $($row.runtimeFailureClass) | $(@($row.tickSubreasons) -join '<br>') | $(@($row.scaleSubreasons) -join '<br>') | $exportOk |"
 }
 $phase9fLines | Set-Content -Encoding UTF8 -LiteralPath $phase9fMdPath
 Write-Host "Wrote $phase9fMdPath"
+
+$phase9gMdPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary_phase9g.md"
+$phase9gLines = @(
+    "# $($SummaryPrefix.ToUpperInvariant()) Android Validation Suite - Phase 9G Calibration Ensemble",
+    "",
+    "| Fixture | Mode | Report graphs | Failure packages | Failure classes | X strategies | Y strategies | Tick subreasons | Scale subreasons | Gate | Validator | Export |",
+    "| --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- |"
+)
+foreach ($row in $summary) {
+    $exportOk = $row.runtimeEvidencePackageAvailable -and $row.validatorJsonAvailable -and $row.validatorMarkdownAvailable -and $row.finalReportJsonAvailable -and $row.exportManifestAvailable
+    $phase9gLines += "| $($row.fixtureId) | $($row.mode) | $($row.reportGraphCount) | $($row.graphFailurePackageCount) | $(@($row.allFailureClasses) -join '<br>') | $(@($row.allSelectedXCalibrationStrategies) -join '<br>') | $(@($row.allSelectedYCalibrationStrategies) -join '<br>') | $(@($row.allTickSubreasons) -join '<br>') | $(@($row.allScaleSubreasons) -join '<br>') | $($row.reportGate) | $($row.validatorVerdict) | $exportOk |"
+}
+$phase9gLines | Set-Content -Encoding UTF8 -LiteralPath $phase9gMdPath
+Write-Host "Wrote $phase9gMdPath"

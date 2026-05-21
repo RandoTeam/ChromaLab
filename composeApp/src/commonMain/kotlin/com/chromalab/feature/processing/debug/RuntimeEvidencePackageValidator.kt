@@ -167,6 +167,8 @@ data class RuntimeEvidenceGraphFailureValidationSummary(
     val acceptedYAnchorCount: Int,
     val xCalibrationStatus: String? = null,
     val yCalibrationStatus: String? = null,
+    val selectedXStrategy: String? = null,
+    val selectedYStrategy: String? = null,
     val tickSubreasons: List<String> = emptyList(),
     val scaleSubreasons: List<String> = emptyList(),
     val xScaleEvidenceTypes: List<String> = emptyList(),
@@ -354,8 +356,8 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Graph Failure Packages")
         appendLine()
-        appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Tick subreasons | Scale subreasons | Scale evidence | Missing artifacts |")
-        appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |")
+            appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Strategy | Tick subreasons | Scale subreasons | Scale evidence | Missing artifacts |")
+            appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |")
         summary.graphFailureSummaries.forEach { row ->
             appendLine(
                 "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.layoutClass ?: "-"} | " +
@@ -363,6 +365,7 @@ object RuntimeEvidencePackageValidator {
                     "${row.plotAreaPresent} | ${row.xTickCandidateCount} | ${row.yTickCandidateCount} | " +
                     "${row.acceptedXAnchorCount} | ${row.acceptedYAnchorCount} | " +
                     "${row.xCalibrationStatus ?: "-"} | ${row.yCalibrationStatus ?: "-"} | " +
+                    "X:${row.selectedXStrategy ?: "-"}<br>Y:${row.selectedYStrategy ?: "-"} | " +
                     "${row.tickSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
                     "${row.scaleSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
                     "X:${row.xScaleEvidenceTypes.joinToString("+").ifBlank { "-" }}<br>Y:${row.yScaleEvidenceTypes.joinToString("+").ifBlank { "-" }} | " +
@@ -682,6 +685,21 @@ object RuntimeEvidencePackageValidator {
                     failure.graphIndex,
                 )
             }
+            val hasCalibrationAttempt = failure.calibrationSummary.xStatus != null || failure.calibrationSummary.yStatus != null
+            if (hasCalibrationAttempt && (
+                    failure.calibrationSummary.selectedXStrategy == null ||
+                        failure.calibrationSummary.selectedYStrategy == null ||
+                        failure.calibrationSummary.strategyCount <= 0 ||
+                        failure.calibrationSummary.rejectedStrategyIds.isEmpty()
+                    ) &&
+                failure.calibrationSummary.missingReason.isNullOrBlank()
+            ) {
+                issues.block(
+                    "graph_failure.calibration_strategy_summary_missing",
+                    "Calibration failure package must include selected and rejected calibration strategy evidence.",
+                    failure.graphIndex,
+                )
+            }
         }
         failure.artifactPaths.presentPaths().forEach { path ->
             if (!fileExists(path)) {
@@ -706,6 +724,8 @@ object RuntimeEvidencePackageValidator {
             acceptedYAnchorCount = failure.ocrSummary.acceptedYAnchorCount,
             xCalibrationStatus = failure.calibrationSummary.xStatus?.name,
             yCalibrationStatus = failure.calibrationSummary.yStatus?.name,
+            selectedXStrategy = failure.calibrationSummary.selectedXStrategy?.name,
+            selectedYStrategy = failure.calibrationSummary.selectedYStrategy?.name,
             tickSubreasons = failure.tickSummary.subreasons.map { it.name },
             scaleSubreasons = failure.scaleSummary.subreasons.map { it.name },
             xScaleEvidenceTypes = failure.scaleSummary.xEvidenceTypes.map { it.name },

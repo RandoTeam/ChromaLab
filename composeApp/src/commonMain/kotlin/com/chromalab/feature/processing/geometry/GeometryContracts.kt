@@ -118,6 +118,38 @@ enum class AxisScaleFailureSubreason {
 }
 
 @Serializable
+enum class CalibrationStrategyId {
+    LEGACY_TICK_LOCALIZATION,
+    AXIS_SCALE_RESOLVER,
+    OCR_LABEL_BOX_DIRECT_FIT,
+    GRID_FRAME_PROJECTION,
+    REGULAR_SEQUENCE_FIT,
+    FRAME_ENDPOINT_REVIEW_FALLBACK,
+}
+
+@Serializable
+enum class CalibrationRejectionReason {
+    INSUFFICIENT_ANCHORS,
+    NON_MONOTONIC_VALUES,
+    HIGH_RESIDUALS,
+    NO_PIXEL_GEOMETRY,
+    FORBIDDEN_TEXT_LABEL,
+    AXIS_FRAME_INCONSISTENT,
+    STRATEGY_NOT_APPLICABLE,
+}
+
+@Serializable
+enum class CalibrationSelectionReason {
+    VALID_STATUS,
+    REVIEW_STATUS,
+    LOWER_RESIDUALS,
+    HIGHER_ANCHOR_COUNT,
+    HIGHER_CONFIDENCE,
+    LEGACY_REGRESSION_SHIELD,
+    ONLY_AVAILABLE,
+}
+
+@Serializable
 enum class GeometryReportStatus {
     SCIENTIFIC_READY,
     REVIEW_READY,
@@ -392,6 +424,39 @@ data class AxisCalibrationFit(
 )
 
 @Serializable
+data class CalibrationCandidate(
+    val strategyId: CalibrationStrategyId,
+    val axis: GeometryAxis,
+    val fit: AxisCalibrationFit,
+    val score: Float = 0f,
+    val rejectionReasons: List<CalibrationRejectionReason> = emptyList(),
+)
+
+@Serializable
+data class CalibrationStrategyResult(
+    val strategyId: CalibrationStrategyId,
+    val xCandidate: CalibrationCandidate,
+    val yCandidate: CalibrationCandidate,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class CalibrationCandidateSet(
+    val candidates: List<CalibrationCandidate> = emptyList(),
+)
+
+@Serializable
+data class CalibrationArbitrationResult(
+    val xFit: AxisCalibrationFit,
+    val yFit: AxisCalibrationFit,
+    val selectedXStrategy: CalibrationStrategyId? = null,
+    val selectedYStrategy: CalibrationStrategyId? = null,
+    val strategyResults: List<CalibrationStrategyResult> = emptyList(),
+    val selectionReasons: List<CalibrationSelectionReason> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class AxisScaleResolutionResult(
     val status: CalibrationFitStatus,
     val xFit: AxisCalibrationFit = AxisCalibrationFit(axis = GeometryAxis.X),
@@ -421,6 +486,7 @@ data class GeometryTrace(
     val tickGeometry: TickGeometry? = null,
     val tickOcrResult: TickOcrResult? = null,
     val axisScaleResolution: AxisScaleResolutionResult? = null,
+    val calibrationArbitration: CalibrationArbitrationResult? = null,
     val xCalibrationFit: AxisCalibrationFit? = null,
     val yCalibrationFit: AxisCalibrationFit? = null,
     val originalImagePath: String? = null,

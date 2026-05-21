@@ -67,3 +67,7 @@ See `docs/PHASE9F_ANDROID_RERUN_RESULTS.md`.
 `PHASE_9B_BLOCKED_RUNTIME_FAILURE`
 
 Phase 10 must not start.
+
+## Phase 9G Follow-Up
+
+Phase 9G was opened because `white_tiger_ion71` regressed from an earlier valid/review calibration path into `BLOCKED` after AxisScaleResolver became the dominant calibration path. Phase 9G adds a calibration strategy ensemble and regression shield rather than accepting the Phase 9F regression.

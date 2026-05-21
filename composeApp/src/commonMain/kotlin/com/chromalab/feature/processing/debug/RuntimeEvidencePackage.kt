@@ -4,6 +4,7 @@ import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
 import com.chromalab.feature.knowledge.KnowledgeRetrievalContext
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.CalibrationStrategyId
 import com.chromalab.feature.processing.geometry.AxisScaleEvidenceType
 import com.chromalab.feature.processing.geometry.AxisScaleFailureSubreason
 import com.chromalab.feature.processing.geometry.GeometryAxis
@@ -168,6 +169,10 @@ data class RuntimeTickAnchorEvidenceSummary(
 data class RuntimeCalibrationFailureSummary(
     val xStatus: CalibrationFitStatus? = null,
     val yStatus: CalibrationFitStatus? = null,
+    val selectedXStrategy: CalibrationStrategyId? = null,
+    val selectedYStrategy: CalibrationStrategyId? = null,
+    val strategyCount: Int = 0,
+    val rejectedStrategyIds: List<CalibrationStrategyId> = emptyList(),
     val xAcceptedAnchorCount: Int = 0,
     val yAcceptedAnchorCount: Int = 0,
     val xRejectedAnchorCount: Int = 0,

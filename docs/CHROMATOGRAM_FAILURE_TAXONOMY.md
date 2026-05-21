@@ -120,3 +120,18 @@ Phase 9F keeps `TICK_LOCALIZATION_FAILURE` as the runtime failure class when cal
 | `TITLE_ION_TEXT_REJECTED_AS_SCALE_LABEL` | Title/ion/m/z/SIM/channel text was rejected as scale evidence. | Correct safety behavior; not an accepted anchor. |
 
 VLM-generated positions are never accepted as final scale geometry. VLM/OCR text can only contribute semantic text evidence unless it is paired with deterministic geometry and passes label-band, monotonicity, and residual gates.
+
+## Phase 9G Calibration Strategy Evidence
+
+Phase 9G keeps `TICK_LOCALIZATION_FAILURE` for calibration-stage terminal failures, but graph failure packages must now expose calibration strategy arbitration:
+
+| Evidence | Requirement |
+| --- | --- |
+| Selected X/Y strategy | Required when a graph-stage calibration attempt exists. |
+| Rejected strategy ids | Required so regressions can show why a candidate was not selected. |
+| Strategy count | Must be greater than zero for graph-stage calibration attempts. |
+| Legacy strategy | `LEGACY_TICK_LOCALIZATION` remains valid evidence when residuals/anchors are sound. |
+| Axis scale strategy | `AXIS_SCALE_RESOLVER` is one strategy, not an exclusive replacement. |
+| Frame endpoint fallback | Disabled from selection in Phase 9G until endpoint direction evidence is proven. |
+
+Missing strategy evidence is a validator failure because it prevents audit of regressions such as the Phase 9F `white_tiger_ion71` calibration regression.

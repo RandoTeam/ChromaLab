@@ -29,6 +29,7 @@ class GeometryPipelineRunner(
     private val peakLabelEvidenceReader: PeakLabelEvidenceReader = PeakLabelEvidenceReader(),
     private val calibrationFitter: AxisCalibrationFitter = AxisCalibrationFitter(),
     private val axisScaleResolver: AxisScaleResolver = AxisScaleResolver(calibrationFitter),
+    private val calibrationStrategyEnsemble: CalibrationStrategyEnsemble = CalibrationStrategyEnsemble(calibrationFitter),
     private val graphMultiplicityResolver: GraphMultiplicityResolver = GraphMultiplicityResolver(),
     private val geometryOverlayArtifactWriter: GeometryOverlayArtifactWriter = GeometryOverlayArtifactWriter(),
 ) {
@@ -169,6 +170,7 @@ class GeometryPipelineRunner(
             timestamp = System.currentTimeMillis(),
         )
         val axisScaleResolution = selectedEvaluation?.axisScaleResolution
+        val calibrationArbitration = selectedEvaluation?.calibrationArbitration
         val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
         val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
         val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
@@ -208,6 +210,7 @@ class GeometryPipelineRunner(
             addAll(tickGeometry.warnings)
             addAll(tickOcr.warnings)
             addAll(axisScaleResolution?.warnings.orEmpty())
+            addAll(calibrationArbitration?.warnings.orEmpty())
             selectedEvaluation?.peakLabelEvidence
                 ?.flatMap { it.warnings }
                 ?.let { addAll(it) }
@@ -226,6 +229,7 @@ class GeometryPipelineRunner(
             tickGeometry = tickGeometry,
             tickOcrResult = tickOcr,
             axisScaleResolution = axisScaleResolution,
+            calibrationArbitration = calibrationArbitration,
             xCalibrationFit = xFit,
             yCalibrationFit = yFit,
             originalImagePath = originalImagePath,
@@ -354,8 +358,14 @@ class GeometryPipelineRunner(
             tickOcrResult = tickOcr,
             axisLabelOcrResult = axisLabelOcr,
         )
-        val xFit = axisScaleResolution.xFit
-        val yFit = axisScaleResolution.yFit
+        val calibrationArbitration = calibrationStrategyEnsemble.arbitrate(
+            plotRegion = plot?.region,
+            axisGeometry = axisGeometry,
+            tickOcrResult = tickOcr,
+            axisScaleResolution = axisScaleResolution,
+        )
+        val xFit = calibrationArbitration.xFit
+        val yFit = calibrationArbitration.yFit
         val reportStatus = when {
             plot == null -> GeometryReportStatus.DIAGNOSTIC_ONLY
             xFit.status == CalibrationFitStatus.VALID && yFit.status == CalibrationFitStatus.VALID ->
@@ -374,6 +384,7 @@ class GeometryPipelineRunner(
             tickGeometry = tickGeometry,
             tickOcr = tickOcr,
             axisScaleResolution = axisScaleResolution,
+            calibrationArbitration = calibrationArbitration,
             tickCropArtifacts = tickCropArtifacts,
             peakLabelEvidence = peakLabelEvidence.labels,
             peakLabelCropPaths = peakLabelEvidence.cropPaths,
@@ -489,6 +500,7 @@ private data class GeometryCandidateEvaluation(
     val tickGeometry: TickGeometry,
     val tickOcr: TickOcrResult,
     val axisScaleResolution: AxisScaleResolutionResult,
+    val calibrationArbitration: CalibrationArbitrationResult,
     val tickCropArtifacts: List<TickOcrCropArtifact>,
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val peakLabelCropPaths: List<String>,

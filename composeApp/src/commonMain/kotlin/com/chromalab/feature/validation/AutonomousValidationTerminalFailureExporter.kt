@@ -288,6 +288,8 @@ object AutonomousValidationTerminalFailureExporter {
                     "yAnchors=${graph.ocrSummary.acceptedYAnchorCount} " +
                     "xCal=${graph.calibrationSummary.xStatus ?: "none"} " +
                     "yCal=${graph.calibrationSummary.yStatus ?: "none"} " +
+                    "xStrategy=${graph.calibrationSummary.selectedXStrategy ?: "none"} " +
+                    "yStrategy=${graph.calibrationSummary.selectedYStrategy ?: "none"} " +
                     "layout=${graph.layoutClass ?: "none"} " +
                     "subreason=${graph.tickSummary.subreasons.joinToString(",").ifBlank { "none" }}",
             )

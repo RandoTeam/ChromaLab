@@ -9,6 +9,7 @@ import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.AxisScaleEvidenceType
 import com.chromalab.feature.processing.geometry.AxisScaleFailureSubreason
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.CalibrationStrategyId
 import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
@@ -581,6 +582,14 @@ class RuntimeEvidencePackageValidatorTest {
         assertEquals(1, result.graphFailureSummaries.single().graphIndex)
         assertEquals(3, result.graphFailureSummaries.single().xTickCandidateCount)
         assertEquals(1, result.graphFailureSummaries.single().acceptedYAnchorCount)
+        assertEquals(
+            CalibrationStrategyId.LEGACY_TICK_LOCALIZATION.name,
+            result.graphFailureSummaries.single().selectedXStrategy,
+        )
+        assertEquals(
+            CalibrationStrategyId.AXIS_SCALE_RESOLVER.name,
+            result.graphFailureSummaries.single().selectedYStrategy,
+        )
     }
 
     @Test
@@ -615,6 +624,46 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
         assertTrue(result.blockingIssues.any { it.code == "graph_failure.axis_scale_subreason_missing" })
+    }
+
+    @Test
+    fun validatorRequiresCalibrationStrategySummaryForGraphFailures() {
+        val badPackage = tickLocalizationFailurePackage().copy(
+            calibrationSummary = tickLocalizationFailurePackage().calibrationSummary.copy(
+                selectedXStrategy = null,
+                selectedYStrategy = null,
+                strategyCount = 0,
+            ),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(badPackage),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.calibration_strategy_summary_missing" })
+    }
+
+    @Test
+    fun validatorRequiresRejectedCalibrationStrategyEvidenceForGraphFailures() {
+        val badPackage = tickLocalizationFailurePackage().copy(
+            calibrationSummary = tickLocalizationFailurePackage().calibrationSummary.copy(
+                rejectedStrategyIds = emptyList(),
+            ),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(badPackage),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.calibration_strategy_summary_missing" })
     }
 
     @Test
@@ -866,6 +915,13 @@ class RuntimeEvidencePackageValidatorTest {
             calibrationSummary = RuntimeCalibrationFailureSummary(
                 xStatus = CalibrationFitStatus.REVIEW,
                 yStatus = CalibrationFitStatus.INVALID,
+                selectedXStrategy = CalibrationStrategyId.LEGACY_TICK_LOCALIZATION,
+                selectedYStrategy = CalibrationStrategyId.AXIS_SCALE_RESOLVER,
+                strategyCount = 6,
+                rejectedStrategyIds = listOf(
+                    CalibrationStrategyId.AXIS_SCALE_RESOLVER,
+                    CalibrationStrategyId.OCR_LABEL_BOX_DIRECT_FIT,
+                ),
                 xAcceptedAnchorCount = 3,
                 yAcceptedAnchorCount = 1,
                 yRejectedAnchorCount = 1,
