@@ -395,6 +395,7 @@ fun ProcessingFlowScreen(
                                 overrideRegion = if (isSubsequentGraph) selectedRegion else null,
                                 requireVlmForAnalysis = false,
                                 preservePanelLabels = normalizedResult?.wasRotated == true,
+                                runVlmGeometryHint = sourceType != SourceType.VALIDATION_FIXTURE,
                                 onProgress = { progress ->
                                     sweepProgress = progress
                                 },
@@ -520,9 +521,24 @@ fun ProcessingFlowScreen(
                                 selectedRegion = calibrationRegion,
                             ) ?: failAutomaticAxisCalibration("confirmed X and Y calibration are required before signal conversion")
 
+                            val validationModelCanLoadNow = if (sourceType == SourceType.VALIDATION_FIXTURE) {
+                                val candidateRegions = graphResult?.filteredRegions.orEmpty()
+                                val completedRegions = buildList {
+                                    addAll(processedGraphs.map { it.selectedRegion })
+                                    add(selectedRegion)
+                                }
+                                nextUnprocessedGraphRegionIndex(
+                                    candidateRegions = candidateRegions,
+                                    currentIndex = currentGraphIndex,
+                                    processedRegions = completedRegions,
+                                ) == null
+                            } else {
+                                true
+                            }
                             if (
                                 sourceType == SourceType.VALIDATION_FIXTURE &&
                                 validationModelMode == AutonomousValidationModelMode.MODEL_ENABLED &&
+                                validationModelCanLoadNow &&
                                 !vlmReady
                             ) {
                                 vlmLoadingStatus = "Loading AI model after deterministic calibration..."

@@ -1,5 +1,6 @@
 package com.chromalab.feature.processing.ocr
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.geometry.GeometryAxis
@@ -220,7 +221,7 @@ actual class AxisOcrReader actual constructor() {
                 return@forEachIndexed
             }
             val cropElements = try {
-                scanWithMlKit(bitmap).map {
+                scanTickCrop(bitmap).map {
                     it.copy(
                         x = it.x + crop.cropRegion.x,
                         y = it.y + crop.cropRegion.y,
@@ -243,7 +244,25 @@ actual class AxisOcrReader actual constructor() {
                     GeometryAxis.X -> element.x + element.width / 2f
                     GeometryAxis.Y -> element.y + element.height / 2f
                 }
-                abs(elementCenter - crop.tickPixelPosition)
+                val axisDistance = abs(elementCenter - crop.tickPixelPosition)
+                val crossAxisBias = when (crop.axis) {
+                    GeometryAxis.X -> {
+                        val preferredY = crop.cropRegion.y + crop.cropRegion.height * 0.72f
+                        val centerY = element.y + element.height / 2f
+                        val upperBandPenalty = if (centerY < crop.cropRegion.y + crop.cropRegion.height * 0.35f) {
+                            crop.cropRegion.height * 2f
+                        } else {
+                            0f
+                        }
+                        abs(centerY - preferredY) * 0.25f + upperBandPenalty
+                    }
+                    GeometryAxis.Y -> {
+                        val preferredX = crop.cropRegion.x + crop.cropRegion.width * 0.62f
+                        val centerX = element.x + element.width / 2f
+                        abs(centerX - preferredX) * 0.12f
+                    }
+                }
+                axisDistance + crossAxisBias
             } ?: return@forEachIndexed
             val sourcedElement = selectedElement.copy(
                 sourceAxis = crop.axis.name,
@@ -345,6 +364,24 @@ actual class AxisOcrReader actual constructor() {
                 .addOnFailureListener {
                     cont.resume(emptyList())
                 }
+        }
+    }
+
+    private suspend fun scanTickCrop(bitmap: Bitmap): List<OcrTextElement> {
+        val scale = if (maxOf(bitmap.width, bitmap.height) < 180) 2 else 1
+        if (scale == 1) return scanWithMlKit(bitmap)
+        val scaled = Bitmap.createScaledBitmap(bitmap, bitmap.width * scale, bitmap.height * scale, false)
+        return try {
+            scanWithMlKit(scaled).map {
+                it.copy(
+                    x = it.x / scale,
+                    y = it.y / scale,
+                    width = it.width / scale,
+                    height = it.height / scale,
+                )
+            }
+        } finally {
+            scaled.recycle()
         }
     }
 

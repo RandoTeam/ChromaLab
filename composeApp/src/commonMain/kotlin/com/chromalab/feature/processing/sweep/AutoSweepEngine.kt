@@ -23,6 +23,7 @@ import com.chromalab.feature.processing.axis.AxesResult
 import com.chromalab.feature.processing.axis.AxisOrigin
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryPipelineRunner
+import com.chromalab.feature.processing.geometry.GraphMultiplicityStatus
 import com.chromalab.feature.processing.geometry.SourceType as GeometrySourceType
 import com.chromalab.feature.processing.pipeline.DetectionMethod
 import com.chromalab.feature.processing.peaks.PeakLabelTextClassification
@@ -220,6 +221,7 @@ class AutoSweepEngine {
         sourceType: GeometrySourceType = GeometrySourceType.UNKNOWN,
         requireVlmForAnalysis: Boolean = false,
         preservePanelLabels: Boolean = false,
+        runVlmGeometryHint: Boolean = true,
         onProgress: (SweepProgress) -> Unit = {},
     ): List<SweepResult> {
         val preprocessor = ImagePreprocessor()
@@ -265,7 +267,7 @@ class AutoSweepEngine {
                 cachedGraphResult = cvGraphRes,
                 overridePanel = overrideRegion,
                 preservePanelLabels = preservePanelLabels,
-                runVlmHint = cachedGraphResult == null && overrideRegion == null,
+                runVlmHint = runVlmGeometryHint && cachedGraphResult == null && overrideRegion == null,
                 runTickOcr = true,
             )
         } catch (e: Exception) {
@@ -277,7 +279,12 @@ class AutoSweepEngine {
         val graphRes = selectGraphResult(cvGraphRes, geometryGraphResult)
 
         // Region selection priority: override > validated geometry pipeline > legacy CV merge.
-        val detectedRegion = overrideRegion ?: geometryRegion ?: graphRes?.selectedRegion
+        val detectedRegion = chooseSweepGraphRegion(
+            overrideRegion = overrideRegion,
+            graphResult = graphRes,
+            geometryRegion = geometryRegion,
+            geometryMultiplicityStatus = geometryResult?.trace?.multiplicityResolution?.multiplicityStatus,
+        )
         val preservePanelLabelsForRun = preservePanelLabels ||
             graphRes?.filteredRegions.orEmpty().any { it.requiresGraphPanelBoundaryMode(w, h) } ||
             detectedRegion?.requiresGraphPanelBoundaryMode(w, h) == true
@@ -877,4 +884,21 @@ class AutoSweepEngine {
             timestamp = System.currentTimeMillis(),
         )
     }
+}
+
+internal fun chooseSweepGraphRegion(
+    overrideRegion: GraphRegion?,
+    graphResult: GraphRegionResult?,
+    geometryRegion: GraphRegion?,
+    geometryMultiplicityStatus: GraphMultiplicityStatus?,
+): GraphRegion? {
+    if (overrideRegion != null) return overrideRegion
+    val orderedRegions = graphResult?.filteredRegions.orEmpty()
+    if (
+        orderedRegions.size > 1 &&
+        geometryMultiplicityStatus == GraphMultiplicityStatus.MULTI_GRAPH_VALID
+    ) {
+        return orderedRegions.first()
+    }
+    return geometryRegion ?: graphResult?.selectedRegion
 }

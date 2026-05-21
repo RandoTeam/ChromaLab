@@ -64,3 +64,17 @@ Evidence root: `artifacts/phase9c-multi-fixture-android/`.
 Product, QA, and Scientific review do not approve Phase 9 acceptance. The app now exports better evidence and no longer hides graph-stage failure packages, but it does not yet satisfy autonomous production behavior across multiple real fixtures.
 
 Phase 10 must not start.
+## Phase 9D Follow-Up
+
+Phase 9D was run on 2026-05-21 against the Phase 9C blockers.
+
+Result: `PHASE_9B_BLOCKED_RUNTIME_FAILURE`.
+
+Key update:
+- E2B no longer regresses `bench_02_mz92_belyi_tigr` to zero graphs.
+- Final Phase 9D Android suite exported all 16 runtime/report/validator artifacts.
+- Phase 9 remains blocked because tick localization and multi-panel graph-count handling still fail required fixtures.
+
+See:
+- `docs/PHASE9D_CLOSEOUT_REPORT.md`
+- `docs/PHASE9D_ANDROID_RERUN_RESULTS.md`

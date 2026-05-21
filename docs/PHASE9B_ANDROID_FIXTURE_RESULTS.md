@@ -66,3 +66,18 @@ Phase 9C reran all eight fixtures after tick OCR provenance and suite-summary re
 - all 16 Phase 9C runs exported complete required artifacts.
 
 Final Phase 9C evidence is recorded in `docs/PHASE9C_ANDROID_RERUN_RESULTS.md` and local artifacts under `artifacts/phase9c-multi-fixture-android/`.
+## Phase 9D Update
+
+Phase 9D final Android suite root:
+
+`artifacts/phase9d-final-multi-fixture-android/`
+
+Summary:
+
+- 8 fixtures.
+- 16 runs: deterministic and E2B/model-enabled.
+- 16/16 exports complete.
+- E2B no longer reduces `bench_02_mz92_belyi_tigr` to zero graphs.
+- Remaining BLOCKED fixtures: `bench_01`, `bench_04`, `bench_05`, `bench_06`.
+
+Acceptance remains blocked. See `docs/PHASE9D_ANDROID_RERUN_RESULTS.md`.

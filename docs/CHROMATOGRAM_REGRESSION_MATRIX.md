@@ -314,3 +314,13 @@ Phase 9C repaired evidence and OCR-anchor handling but did not pass acceptance.
 Artifacts are local under `artifacts/phase9c-multi-fixture-android/`. They are not committed because they include diagnostic logs and device-local paths.
 
 Phase 9 remains blocked; Phase 10 must not start.
+## Phase 9D Regression Matrix Update
+
+| Area | Phase 9D Result |
+| --- | --- |
+| Android fixture exports | PASS: 16/16 final runs exported evidence/report/validator artifacts |
+| E2B graph-count regression | IMPROVED: `bench_02` no longer collapses to zero graphs in E2B mode |
+| Tick localization | FAIL: required fixtures remain BLOCKED |
+| Multi-panel graph count | FAIL: stacked XIC, TIC+ions, and two-graph page remain unresolved |
+| VLM numeric boundaries | PASS: no VLM numeric metric authority introduced |
+| CalculationEngine | PASS: untouched |

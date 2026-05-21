@@ -75,3 +75,19 @@ Every dataset item requires:
 - A dataset item may only move from `REVIEW_ONLY`/`DIAGNOSTIC_ONLY` to `RELEASE_READY` after its evidence package, validator JSON/Markdown, report JSON, overlays, and privacy checks are present.
 - Product Acceptance and QA must approve any change from expected failure to expected pass.
 - The Phase 8B fixture row bypasses only image acquisition. It must still enter the same autonomous processing flow after the fixture is copied into app-private capture storage.
+## Phase 9D Dataset Status
+
+Phase 9D reran the full Android validation fixture set in deterministic and E2B modes.
+
+| Fixture | Phase 9D Status |
+| --- | --- |
+| `white_tiger_ion71` | REVIEW_ONLY / E2B PASS validator |
+| `bench_01_mz71_screenshot_page` | BLOCKED: `TICK_LOCALIZATION_FAILURE` |
+| `bench_02_mz92_belyi_tigr` | DIAGNOSTIC_ONLY; metadata graph count still over-detects |
+| `bench_03_small_tic_export` | REVIEW_ONLY |
+| `bench_04_stacked_xic_resolution` | BLOCKED: `TICK_LOCALIZATION_FAILURE` and panel split incomplete |
+| `bench_05_tic_plus_ions` | BLOCKED: `TICK_LOCALIZATION_FAILURE` and panel split incomplete |
+| `bench_06_photo_two_graphs_page` | BLOCKED: `TICK_LOCALIZATION_FAILURE` and multi-graph split incomplete |
+| `bench_07_rotated_page_photo` | REVIEW_ONLY / E2B PASS validator |
+
+Artifact root: `artifacts/phase9d-final-multi-fixture-android/`

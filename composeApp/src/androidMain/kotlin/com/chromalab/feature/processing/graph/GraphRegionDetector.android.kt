@@ -128,11 +128,15 @@ actual class GraphRegionDetector actual constructor() {
         val leftLine = vLines.first()
         val rightLine = if (vLines.size >= 2) vLines.last() else w - 1
 
-        // Build regions from consecutive pairs of horizontal lines
+        val panelLines = inferredLeadingPanelTop(hLines, h)
+            ?.let { listOf(it) + hLines }
+            ?: hLines
+
+        // Build regions from consecutive pairs of horizontal panel bounds.
         val regions = mutableListOf<GraphRegion>()
-        for (i in 0 until hLines.size - 1) {
-            val topLine = hLines[i]
-            val bottomLine = hLines[i + 1]
+        for (i in 0 until panelLines.size - 1) {
+            val topLine = panelLines[i]
+            val bottomLine = panelLines[i + 1]
             if (bottomLine - topLine < h / 10) continue
 
             val region = GraphRegion(
@@ -140,7 +144,7 @@ actual class GraphRegionDetector actual constructor() {
                 y = (topLine * scale).roundToInt(),
                 width = ((rightLine - leftLine) * scale).roundToInt().coerceAtLeast(1),
                 height = ((bottomLine - topLine) * scale).roundToInt().coerceAtLeast(1),
-                label = if (hLines.size > 2) "График ${i + 1}" else "",
+                label = if (panelLines.size > 2) "График ${i + 1}" else "",
             )
 
             val areaRatio = region.area.toFloat() / (imgW * imgH)
@@ -159,6 +163,17 @@ actual class GraphRegionDetector actual constructor() {
             imageHeight = imgH,
             timestamp = System.currentTimeMillis(),
         )
+    }
+
+    private fun inferredLeadingPanelTop(hLines: List<Int>, imageHeight: Int): Int? {
+        if (hLines.size < 3) return null
+        val gaps = hLines.zipWithNext { first, second -> second - first }
+            .filter { it > imageHeight / 10 }
+        val representativeGap = gaps.sorted().getOrNull(gaps.size / 2) ?: return null
+        val firstLine = hLines.first()
+        if (firstLine < representativeGap * 0.45f) return null
+        val inferredTop = (firstLine - representativeGap).coerceAtLeast(0)
+        return inferredTop.takeIf { firstLine - it >= imageHeight / 10 }
     }
 
     /**

@@ -69,3 +69,12 @@ Phase 8B adds a first-class `runtimeFailureClass` field to runtime evidence pack
 - `runtimeFailureClass` is required for non-pass terminal states.
 - Runtime evidence package and embedded final report contract must agree.
 - Fixture-driven Android validation must use these taxonomy values instead of generic failure strings.
+## Phase 9D Failure Taxonomy Notes
+
+Observed active failure classes:
+
+- `TICK_LOCALIZATION_FAILURE`: still blocking `bench_01`, `bench_04`, `bench_05`, and `bench_06`. Evidence required: graph package, tick candidates, OCR crops, accepted/rejected anchors, and calibration invalid reason.
+- `GRAPH_PANEL_FAILURE`: still used for `bench_02` metadata over-detection and low-confidence diagnostic graph cases. Evidence required: selected/rejected graphPanel candidates and multiplicity resolution.
+- `VLM_SEMANTIC_LAYER_UNAVAILABLE`: acceptable as a deterministic-mode warning only when deterministic evidence remains available and no release-ready claim is made.
+
+Phase 9D does not reclassify any BLOCKED fixture as expected unsupported input.
