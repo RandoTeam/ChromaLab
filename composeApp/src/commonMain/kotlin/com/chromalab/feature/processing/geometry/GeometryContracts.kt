@@ -72,6 +72,23 @@ enum class CalibrationFitStatus {
 }
 
 @Serializable
+enum class TickLocalizationFailureSubreason {
+    AXIS_LINE_MISSING,
+    PLOT_FRAME_MISSING,
+    TICK_MARKS_MISSING,
+    LABEL_BAND_MISSING,
+    OCR_NO_NUMERIC_TEXT,
+    OCR_NUMERIC_NO_TICK_PIXEL,
+    NON_MONOTONIC_TICK_VALUES,
+    INSUFFICIENT_X_ANCHORS,
+    INSUFFICIENT_Y_ANCHORS,
+    HIGH_RESIDUALS,
+    TITLE_OR_ION_TEXT_REJECTED,
+    GRID_ONLY_NO_TICKS,
+    LOW_RESOLUTION_LABELS_UNREADABLE,
+}
+
+@Serializable
 enum class GeometryReportStatus {
     SCIENTIFIC_READY,
     REVIEW_READY,
@@ -84,6 +101,20 @@ enum class GraphMultiplicityStatus {
     MULTI_GRAPH_VALID,
     MULTI_GRAPH_REVIEW,
     INVALID,
+}
+
+@Serializable
+enum class GraphLayoutClass {
+    SINGLE_TRACE_SINGLE_AXIS,
+    DENSE_PEAK_SINGLE_AXIS,
+    STACKED_TRACES_SHARED_AXIS,
+    MULTI_PANEL_SEPARATE_AXES,
+    TIC_PLUS_ION_PANELS,
+    TWO_GRAPH_PAGE,
+    EMBEDDED_SCREENSHOT_GRAPH,
+    ROTATED_PAGE_GRAPH,
+    LOW_RES_EXPORT_GRAPH,
+    UNKNOWN_REVIEW,
 }
 
 @Serializable
@@ -186,7 +217,26 @@ data class GraphMultiplicityResolution(
     val rejectedNestedPanels: List<RejectedGraphPanelCandidate> = emptyList(),
     val rejectedSubregions: List<RejectedGraphPanelCandidate> = emptyList(),
     val multiplicityStatus: GraphMultiplicityStatus = GraphMultiplicityStatus.INVALID,
+    val layoutClassification: GraphLayoutClassification? = null,
     val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class GraphLayoutPanelGroup(
+    val groupId: String,
+    val panelIndexes: List<Int>,
+    val sharedXAxis: Boolean = false,
+    val sharedYAxis: Boolean = false,
+    val notes: List<String> = emptyList(),
+)
+
+@Serializable
+data class GraphLayoutClassification(
+    val layoutClass: GraphLayoutClass,
+    val physicalGraphCount: Int,
+    val panelGroups: List<GraphLayoutPanelGroup> = emptyList(),
+    val confidence: Float = 0f,
+    val reviewReasons: List<String> = emptyList(),
 )
 
 @Serializable
@@ -253,6 +303,19 @@ data class TickOcrResult(
     val acceptedItems: List<TickOcrItem>
         get() = items.filter { it.status == TickOcrItemStatus.ACCEPTED }
 }
+
+@Serializable
+data class TickLocalizationResult(
+    val status: CalibrationFitStatus,
+    val subreasons: List<TickLocalizationFailureSubreason> = emptyList(),
+    val xTickCandidateCount: Int = 0,
+    val yTickCandidateCount: Int = 0,
+    val xAcceptedAnchorCount: Int = 0,
+    val yAcceptedAnchorCount: Int = 0,
+    val xRejectedAnchorCount: Int = 0,
+    val yRejectedAnchorCount: Int = 0,
+    val warnings: List<String> = emptyList(),
+)
 
 @Serializable
 data class CalibrationAnchorEvidence(

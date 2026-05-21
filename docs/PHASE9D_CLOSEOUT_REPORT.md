@@ -54,3 +54,14 @@ Artifact root: `artifacts/phase9d-final-multi-fixture-android/`
 ## Final Decision
 
 Phase 9 remains blocked. Phase 10 must not start until tick localization and multi-panel graph-count blockers are closed or formally rejected as unsupported by Product, QA, and Scientific reviewers with evidence.
+
+## Phase 9E Follow-Up
+
+Phase 9E supersedes the Phase 9D patchy repair path with:
+
+- deterministic graph layout taxonomy and classifier;
+- tick-localization subreasons in runtime graph failure packages;
+- validator enforcement that tick/calibration failures include subreasons;
+- Android suite summaries that expose layout, expected graph count, anchor counts, calibration state, and subreasons.
+
+Phase 9D remains blocked. Phase 9E added layout/tick evidence and precisely classified failures, but final Android rerun `artifacts/phase9e-multi-fixture-android-final2/` still produced 12/16 `BLOCKED` runs. Phase 10 must not start.

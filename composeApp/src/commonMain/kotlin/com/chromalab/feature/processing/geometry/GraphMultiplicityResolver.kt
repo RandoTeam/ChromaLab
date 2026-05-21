@@ -9,6 +9,7 @@ class GraphMultiplicityResolver(
     private val nestedContainmentThreshold: Float = 0.72f,
     private val sameAxisHorizontalOverlapThreshold: Float = 0.72f,
     private val minDistinctGapRatio: Float = 0.035f,
+    private val layoutClassifier: GraphLayoutClassifier = GraphLayoutClassifier(),
 ) {
     fun resolve(
         candidates: List<GraphPanelBounds>,
@@ -23,12 +24,16 @@ class GraphMultiplicityResolver(
             )
         }
 
+        val candidatePool = candidates.preferDetectedPanelsOverFullImageFallback()
+        val fullImageFallbackSuppressed = candidatePool.size < candidates.size &&
+            candidates.any { it.candidateSource == GeometryCandidateSource.FULL_IMAGE_FALLBACK }
+
         val selected = mutableListOf<GraphPanelBounds>()
         val duplicate = mutableListOf<RejectedGraphPanelCandidate>()
         val nested = mutableListOf<RejectedGraphPanelCandidate>()
         val subregion = mutableListOf<RejectedGraphPanelCandidate>()
 
-        candidates.sortedWith(candidateComparator()).forEach { candidate ->
+        candidatePool.sortedWith(candidateComparator()).forEach { candidate ->
             val conflict = selected
                 .mapNotNull { accepted -> candidate.classifyAgainst(accepted, imageWidth, imageHeight) }
                 .firstOrNull()
@@ -45,34 +50,75 @@ class GraphMultiplicityResolver(
         }
 
         val sortedSelected = selected.sortedWith(readingOrderComparator())
-        val distinct = sortedSelected.size
+        val initialLayout = layoutClassifier.classify(
+            resolvedPanels = sortedSelected,
+            rejectedDuplicatePanels = duplicate,
+            rejectedNestedPanels = nested,
+            rejectedSubregions = subregion,
+            imageWidth = imageWidth,
+            imageHeight = imageHeight,
+        )
+        val layoutSelected = if (
+            initialLayout.physicalGraphCount == 1 &&
+            sortedSelected.size > 1 &&
+            initialLayout.layoutClass == GraphLayoutClass.DENSE_PEAK_SINGLE_AXIS
+        ) {
+            sortedSelected
+                .maxWithOrNull(candidateComparator())
+                ?.let { listOf(it) }
+                .orEmpty()
+        } else {
+            sortedSelected
+        }
+        val layoutClassification = if (layoutSelected.size == sortedSelected.size) {
+            initialLayout
+        } else {
+            initialLayout.copy(
+                panelGroups = listOf(
+                    GraphLayoutPanelGroup(
+                        groupId = "single-axis-merged",
+                        panelIndexes = listOf(1),
+                        sharedXAxis = true,
+                        sharedYAxis = true,
+                        notes = initialLayout.reviewReasons + "layout.graph_count_finalized_to_one",
+                    ),
+                ),
+                reviewReasons = (initialLayout.reviewReasons + "layout.graph_count_finalized_to_one").distinct(),
+            )
+        }
+        val distinct = layoutSelected.size
         val warnings = buildList {
             if (vlmGraphCountHint != null && vlmGraphCountHint > distinct) {
                 add("multiplicity.vlm_count_advisory_reduced:$vlmGraphCountHint->$distinct")
             }
+            if (fullImageFallbackSuppressed) add("multiplicity.full_image_fallback_suppressed")
             if (duplicate.isNotEmpty()) add("multiplicity.duplicate_panels_rejected:${duplicate.size}")
             if (nested.isNotEmpty()) add("multiplicity.nested_panels_rejected:${nested.size}")
             if (subregion.isNotEmpty()) add("multiplicity.subregions_rejected:${subregion.size}")
             if (distinct == 1 && candidates.size > 1) add("multiplicity.single_physical_graph_from_overlapping_candidates")
+            add("layout.class:${layoutClassification.layoutClass.name}")
+            add("layout.physical_graph_count:${layoutClassification.physicalGraphCount}")
+            addAll(layoutClassification.reviewReasons)
         }
 
         return GraphMultiplicityResolution(
-            resolvedGraphPanels = sortedSelected,
+            resolvedGraphPanels = layoutSelected,
             rejectedDuplicatePanels = duplicate,
             rejectedNestedPanels = nested,
             rejectedSubregions = subregion,
             multiplicityStatus = when {
-                sortedSelected.isEmpty() -> GraphMultiplicityStatus.INVALID
-                sortedSelected.size == 1 -> {
+                layoutSelected.isEmpty() -> GraphMultiplicityStatus.INVALID
+                layoutSelected.size == 1 -> {
                     if (vlmGraphCountHint != null && vlmGraphCountHint > 1) {
                         GraphMultiplicityStatus.SINGLE_GRAPH
                     } else {
                         GraphMultiplicityStatus.SINGLE_GRAPH
                     }
                 }
-                sortedSelected.areSpatiallyDistinct(imageHeight) -> GraphMultiplicityStatus.MULTI_GRAPH_VALID
+                layoutSelected.areSpatiallyDistinct(imageHeight) -> GraphMultiplicityStatus.MULTI_GRAPH_VALID
                 else -> GraphMultiplicityStatus.MULTI_GRAPH_REVIEW
             },
+            layoutClassification = layoutClassification,
             warnings = warnings,
         )
     }
@@ -81,6 +127,11 @@ class GraphMultiplicityResolver(
         compareByDescending<GraphPanelBounds> { it.scoreBreakdown.total }
             .thenByDescending { it.confidence }
             .thenByDescending { it.region.area }
+
+    private fun List<GraphPanelBounds>.preferDetectedPanelsOverFullImageFallback(): List<GraphPanelBounds> {
+        if (none { it.candidateSource != GeometryCandidateSource.FULL_IMAGE_FALLBACK }) return this
+        return filter { it.candidateSource != GeometryCandidateSource.FULL_IMAGE_FALLBACK }
+    }
 
     private fun readingOrderComparator(): Comparator<GraphPanelBounds> =
         compareBy<GraphPanelBounds> { it.region.y }

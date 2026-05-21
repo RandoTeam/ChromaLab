@@ -324,3 +324,24 @@ Phase 9 remains blocked; Phase 10 must not start.
 | Multi-panel graph count | FAIL: stacked XIC, TIC+ions, and two-graph page remain unresolved |
 | VLM numeric boundaries | PASS: no VLM numeric metric authority introduced |
 | CalculationEngine | PASS: untouched |
+
+## Phase 9E Regression Matrix Update
+
+| Area | Phase 9E Requirement |
+| --- | --- |
+| Graph layout semantics | `GraphLayoutClassifier` must record layout class, physical graph count, and review reasons before graph count finalization. |
+| Tick localization | Graph-stage tick/calibration failures must include subreasons and anchor evidence. |
+| Android suite summary | Phase 9E summary must expose expected graph count, layout class, anchor counts, calibration statuses, and subreasons. |
+| E2B advisory safety | Model-enabled mode must not change graph count, layout class, calibration anchors, or numeric metrics without deterministic rejection evidence. |
+| Acceptance | Phase 9 remains blocked until Android rerun proves no critical BLOCKED fixtures or Product/QA/Scientific explicitly approve limitations. |
+
+Final Phase 9E rerun result:
+
+| Area | Phase 9E Result |
+| --- | --- |
+| Android fixture exports | PASS: 16/16 final runs exported evidence/report/validator artifacts |
+| Layout evidence | PARTIAL: layout class and physical count are recorded, but stacked/TIC/two-page semantics remain incomplete |
+| Tick localization | FAIL: 12/16 runs remain blocked by tick/calibration failures |
+| Failure subreasons | PASS: blocked tick/calibration graph-stage packages include explicit subreasons |
+| E2B advisory safety | PASS: E2B did not reduce graph count/calibration state or create numeric metrics in the final rerun |
+| Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE` |

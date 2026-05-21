@@ -157,6 +157,8 @@ data class RuntimeEvidenceGraphFailureValidationSummary(
     val graphIndex: Int,
     val failureClass: String,
     val failureStage: String,
+    val layoutClass: String? = null,
+    val layoutPhysicalGraphCount: Int? = null,
     val graphPanelPresent: Boolean,
     val plotAreaPresent: Boolean,
     val xTickCandidateCount: Int,
@@ -165,6 +167,7 @@ data class RuntimeEvidenceGraphFailureValidationSummary(
     val acceptedYAnchorCount: Int,
     val xCalibrationStatus: String? = null,
     val yCalibrationStatus: String? = null,
+    val tickSubreasons: List<String> = emptyList(),
     val missingArtifactReasons: List<String> = emptyList(),
 )
 
@@ -348,19 +351,21 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Graph Failure Packages")
         appendLine()
-        appendLine("| Graph | Failure | Stage | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Missing artifacts |")
-        appendLine("| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |")
+        appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Subreasons | Missing artifacts |")
+        appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |")
         summary.graphFailureSummaries.forEach { row ->
             appendLine(
-                "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.graphPanelPresent} | " +
+                "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.layoutClass ?: "-"} | " +
+                    "${row.graphPanelPresent} | " +
                     "${row.plotAreaPresent} | ${row.xTickCandidateCount} | ${row.yTickCandidateCount} | " +
                     "${row.acceptedXAnchorCount} | ${row.acceptedYAnchorCount} | " +
                     "${row.xCalibrationStatus ?: "-"} | ${row.yCalibrationStatus ?: "-"} | " +
+                    "${row.tickSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
                     "${row.missingArtifactReasons.joinToString("<br>").ifBlank { "-" }} |",
             )
         }
         if (summary.graphFailureSummaries.isEmpty()) {
-            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - |")
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Recovery Candidates")
@@ -615,6 +620,13 @@ object RuntimeEvidencePackageValidator {
             )
         }
         if (failure.failureClass in tickCalibrationFailureClasses) {
+            if (failure.tickSummary.subreasons.isEmpty()) {
+                issues.block(
+                    "graph_failure.tick_subreason_missing",
+                    "Tick/calibration failure package must include a precise tick-localization subreason.",
+                    failure.graphIndex,
+                )
+            }
             if (failure.artifactPaths.tickOverlayPath.isNullOrBlank() &&
                 failure.artifactPaths.tickOverlayMissingReason.isNullOrBlank()
             ) {
@@ -672,6 +684,8 @@ object RuntimeEvidencePackageValidator {
             graphIndex = failure.graphIndex,
             failureClass = failure.failureClass.name,
             failureStage = failure.failureStage,
+            layoutClass = failure.layoutClass?.name,
+            layoutPhysicalGraphCount = failure.layoutPhysicalGraphCount,
             graphPanelPresent = failure.graphPanelBounds != null,
             plotAreaPresent = failure.plotAreaBounds != null,
             xTickCandidateCount = failure.tickSummary.xTickCandidateCount,
@@ -680,6 +694,7 @@ object RuntimeEvidencePackageValidator {
             acceptedYAnchorCount = failure.ocrSummary.acceptedYAnchorCount,
             xCalibrationStatus = failure.calibrationSummary.xStatus?.name,
             yCalibrationStatus = failure.calibrationSummary.yStatus?.name,
+            tickSubreasons = failure.tickSummary.subreasons.map { it.name },
             missingArtifactReasons = missingArtifactReasons,
         )
     }

@@ -68,6 +68,30 @@ class GraphMultiplicityResolverTest {
         assertTrue(rejected.any { GraphPanelRejectionReason.SAME_AXIS_SYSTEM in it.reasons })
     }
 
+    @Test
+    fun pageFallbackDoesNotSuppressDetectedPanelCandidates() {
+        val resolution = resolver.resolve(
+            candidates = listOf(
+                panel(
+                    x = 0,
+                    y = 0,
+                    width = 600,
+                    height = 800,
+                    totalScore = 96f,
+                    label = "full image fallback",
+                    source = GeometryCandidateSource.FULL_IMAGE_FALLBACK,
+                ),
+                panel(48, 210, 510, 310, 72f, "detected chart panel"),
+            ),
+            imageWidth = 600,
+            imageHeight = 800,
+        )
+
+        assertEquals(1, resolution.resolvedGraphPanels.size)
+        assertEquals("detected chart panel", resolution.resolvedGraphPanels.single().region.label)
+        assertTrue("multiplicity.full_image_fallback_suppressed" in resolution.warnings)
+    }
+
     private fun panel(
         x: Int,
         y: Int,
@@ -75,10 +99,11 @@ class GraphMultiplicityResolverTest {
         height: Int,
         totalScore: Float,
         label: String,
+        source: GeometryCandidateSource = GeometryCandidateSource.CV,
     ): GraphPanelBounds =
         GraphPanelBounds(
             region = GraphRegion(x, y, width, height, label),
-            candidateSource = GeometryCandidateSource.CV,
+            candidateSource = source,
             confidence = totalScore / 100f,
             scoreBreakdown = RoiCandidateScoreBreakdown(total = totalScore),
         )

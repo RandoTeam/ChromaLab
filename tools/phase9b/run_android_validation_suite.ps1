@@ -55,6 +55,15 @@ function Read-JsonFileOrNull {
     return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
 }
 
+function Read-FixtureMetadataOrNull {
+    param([string]$FixtureId)
+    $metadataPath = Join-Path "composeApp/src/androidMain/assets/validation" "$FixtureId.metadata.json"
+    if ($FixtureId -eq "white_tiger_ion71") {
+        $metadataPath = "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.metadata.json"
+    }
+    return Read-JsonFileOrNull $metadataPath
+}
+
 function Summarize-Run {
     param(
         [string]$FixtureId,
@@ -73,6 +82,7 @@ function Summarize-Run {
     $validator = if ($validatorPath) { Read-JsonFileOrNull $validatorPath.FullName } else { $null }
     $report = if ($reportPath) { Read-JsonFileOrNull $reportPath.FullName } else { $null }
     $evidence = if ($evidencePath) { Read-JsonFileOrNull $evidencePath.FullName } else { $null }
+    $metadata = Read-FixtureMetadataOrNull -FixtureId $FixtureId
     $reportGraphCount = if ($report -and $report.graphs) { @($report.graphs).Count } else { 0 }
     $graphFailurePackageCount = if ($evidence -and $evidence.graphFailurePackages) { @($evidence.graphFailurePackages).Count } else { 0 }
     $metadataGraphCount = if ($report -and $report.metadata) { $report.metadata.detectedGraphCount } else { $null }
@@ -83,14 +93,36 @@ function Summarize-Run {
     } else {
         $metadataGraphCount
     }
+    $firstFailure = if ($evidence -and $evidence.graphFailurePackages -and @($evidence.graphFailurePackages).Count -gt 0) {
+        @($evidence.graphFailurePackages)[0]
+    } else { $null }
+    $firstGraph = if ($evidence -and $evidence.graphs -and @($evidence.graphs).Count -gt 0) {
+        @($evidence.graphs)[0]
+    } else { $null }
+    $layoutClass = if ($firstFailure -and $firstFailure.layoutClass) {
+        $firstFailure.layoutClass
+    } elseif ($firstGraph -and $firstGraph.multiplicityResolution -and $firstGraph.multiplicityResolution.layoutClassification) {
+        $firstGraph.multiplicityResolution.layoutClassification.layoutClass
+    } else { $null }
+    $subreasons = if ($firstFailure -and $firstFailure.tickSummary -and $firstFailure.tickSummary.subreasons) {
+        @($firstFailure.tickSummary.subreasons)
+    } else { @() }
+    $calibration = if ($firstFailure) { $firstFailure.calibrationSummary } else { $null }
     [pscustomobject]@{
         fixtureId = $FixtureId
         mode = $Mode
         runId = $RunId
+        expectedGraphCount = if ($metadata) { $metadata.expectedGraphCount } else { $null }
         graphCount = $graphCount
         reportGraphCount = $reportGraphCount
         graphFailurePackageCount = $graphFailurePackageCount
         metadataDetectedGraphCount = $metadataGraphCount
+        layoutClass = $layoutClass
+        xAnchorCount = if ($firstFailure) { $firstFailure.ocrSummary.acceptedXAnchorCount } else { $null }
+        yAnchorCount = if ($firstFailure) { $firstFailure.ocrSummary.acceptedYAnchorCount } else { $null }
+        xCalibrationStatus = if ($calibration) { $calibration.xStatus } else { $null }
+        yCalibrationStatus = if ($calibration) { $calibration.yStatus } else { $null }
+        tickSubreasons = $subreasons
         reportGate = if ($validator) { $validator.reportGateStatus } else { $null }
         validatorVerdict = if ($validator) { $validator.verdict } else { $null }
         runtimeFailureClass = if ($validator) { $validator.runtimeFailureClass } else { $null }
@@ -187,5 +219,19 @@ foreach ($row in $summary) {
 }
 $lines | Set-Content -Encoding UTF8 -LiteralPath $mdPath
 
+$phase9eMdPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary_phase9e.md"
+$phase9eLines = @(
+    "# $($SummaryPrefix.ToUpperInvariant()) Android Validation Suite - Phase 9E Fields",
+    "",
+    "| Fixture | Mode | Layout | Expected graphs | Detected graphs | Report graphs | Failure packages | X anchors | Y anchors | X cal | Y cal | Gate | Validator | Failure | Subreason | Export |",
+    "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |"
+)
+foreach ($row in $summary) {
+    $exportOk = $row.runtimeEvidencePackageAvailable -and $row.validatorJsonAvailable -and $row.validatorMarkdownAvailable -and $row.finalReportJsonAvailable -and $row.exportManifestAvailable
+    $phase9eLines += "| $($row.fixtureId) | $($row.mode) | $($row.layoutClass) | $($row.expectedGraphCount) | $($row.metadataDetectedGraphCount) | $($row.reportGraphCount) | $($row.graphFailurePackageCount) | $($row.xAnchorCount) | $($row.yAnchorCount) | $($row.xCalibrationStatus) | $($row.yCalibrationStatus) | $($row.reportGate) | $($row.validatorVerdict) | $($row.runtimeFailureClass) | $(@($row.tickSubreasons) -join '<br>') | $exportOk |"
+}
+$phase9eLines | Set-Content -Encoding UTF8 -LiteralPath $phase9eMdPath
+
 Write-Host "Wrote $summaryPath"
 Write-Host "Wrote $mdPath"
+Write-Host "Wrote $phase9eMdPath"

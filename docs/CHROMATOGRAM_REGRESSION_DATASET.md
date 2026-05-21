@@ -91,3 +91,30 @@ Phase 9D reran the full Android validation fixture set in deterministic and E2B 
 | `bench_07_rotated_page_photo` | REVIEW_ONLY / E2B PASS validator |
 
 Artifact root: `artifacts/phase9d-final-multi-fixture-android/`
+
+## Phase 9E Dataset Status
+
+Phase 9E keeps the same eight Android validation fixtures and adds first-class layout and tick-localization evidence requirements.
+
+| Fixture | Expected layout class | Phase 9E acceptance requirement |
+| --- | --- | --- |
+| `white_tiger_ion71` | `SINGLE_TRACE_SINGLE_AXIS` / embedded single graph | Must remain 1 graph in deterministic and E2B modes with no model numeric override. |
+| `bench_01_mz71_screenshot_page` | `TWO_GRAPH_PAGE` | Must produce two graph units or remain blocked with precise graph-count and tick subreasons. |
+| `bench_02_mz92_belyi_tigr` | `DENSE_PEAK_SINGLE_AXIS` or `SINGLE_TRACE_SINGLE_AXIS` | Must not over-split one physical graph; E2B must not alter deterministic geometry. |
+| `bench_03_small_tic_export` | `LOW_RES_EXPORT_GRAPH` | May remain review/diagnostic if low-resolution tick evidence is explicit. |
+| `bench_04_stacked_xic_resolution` | `STACKED_TRACES_SHARED_AXIS` | Must expose stacked panel graph units or remain blocked with graph-count evidence. |
+| `bench_05_tic_plus_ions` | `TIC_PLUS_ION_PANELS` | Must keep ion/channel semantics separate from tick and peak labels. |
+| `bench_06_photo_two_graphs_page` | `TWO_GRAPH_PAGE` | Must expose both page graphs or remain blocked with panel-generation evidence. |
+| `bench_07_rotated_page_photo` | `ROTATED_PAGE_GRAPH` | Must keep the stable review baseline and preserve orientation evidence. |
+
+Final Phase 9E Android rerun root: `artifacts/phase9e-multi-fixture-android-final2/`.
+
+Phase 9E did not close the dataset. All eight fixtures exported evidence in deterministic and model-enabled modes, but the dataset remains blocked:
+
+- 12/16 runs are `BLOCKED`;
+- `bench_03_small_tic_export` remains `REVIEW_ONLY`;
+- `bench_06_photo_two_graphs_page` remains `DIAGNOSTIC_ONLY`;
+- `bench_05_tic_plus_ions` has validator `FAIL` in both modes;
+- E2B did not regress deterministic graph count or calibration state in the final rerun.
+
+The active blocker class is now precise evidence failure, primarily `TICK_LOCALIZATION_FAILURE` with subreasons, rather than missing runtime exports.

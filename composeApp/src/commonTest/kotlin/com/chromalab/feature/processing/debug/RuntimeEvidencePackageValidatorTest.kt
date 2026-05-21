@@ -582,6 +582,23 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun validatorRequiresTickLocalizationSubreasonForTickFailures() {
+        val badPackage = tickLocalizationFailurePackage().copy(
+            tickSummary = tickLocalizationFailurePackage().tickSummary.copy(subreasons = emptyList()),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(badPackage),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.tick_subreason_missing" })
+    }
+
+    @Test
     fun validatorRejectsAcceptedOcrTickWithoutDeterministicPixel() {
         val badPackage = tickLocalizationFailurePackage().copy(
             ocrSummary = tickLocalizationFailurePackage().ocrSummary.copy(
@@ -781,6 +798,7 @@ class RuntimeEvidencePackageValidatorTest {
                 xTickPixelPositions = listOf(20f, 50f, 80f),
                 yTickPixelPositions = listOf(40f),
                 readyForOcrValueMatching = false,
+                subreasons = listOf(com.chromalab.feature.processing.geometry.TickLocalizationFailureSubreason.INSUFFICIENT_Y_ANCHORS),
                 warnings = listOf("axis_tick_geometry.y_tick_positions_insufficient"),
             ),
             ocrSummary = RuntimeTickOcrFailureSummary(

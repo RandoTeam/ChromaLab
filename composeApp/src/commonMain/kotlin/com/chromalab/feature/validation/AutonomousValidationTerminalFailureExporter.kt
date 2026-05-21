@@ -287,7 +287,9 @@ object AutonomousValidationTerminalFailureExporter {
                     "xAnchors=${graph.ocrSummary.acceptedXAnchorCount} " +
                     "yAnchors=${graph.ocrSummary.acceptedYAnchorCount} " +
                     "xCal=${graph.calibrationSummary.xStatus ?: "none"} " +
-                    "yCal=${graph.calibrationSummary.yStatus ?: "none"}",
+                    "yCal=${graph.calibrationSummary.yStatus ?: "none"} " +
+                    "layout=${graph.layoutClass ?: "none"} " +
+                    "subreason=${graph.tickSummary.subreasons.joinToString(",").ifBlank { "none" }}",
             )
         }
         appendLine("- Model diagnostics: ${modelAvailabilityDiagnostics.size}")

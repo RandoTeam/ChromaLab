@@ -78,3 +78,25 @@ Observed active failure classes:
 - `VLM_SEMANTIC_LAYER_UNAVAILABLE`: acceptable as a deterministic-mode warning only when deterministic evidence remains available and no release-ready claim is made.
 
 Phase 9D does not reclassify any BLOCKED fixture as expected unsupported input.
+
+## Phase 9E Tick Subreasons
+
+Phase 9E keeps `TICK_LOCALIZATION_FAILURE` as the runtime failure class when the terminal gate is still tick/calibration related, but graph failure packages must include a precise subreason:
+
+| Subreason | Meaning | Release impact |
+| --- | --- | --- |
+| `AXIS_LINE_MISSING` | X or Y axis line was not deterministically localized. | Blocks release. |
+| `PLOT_FRAME_MISSING` | No validated plot frame was available for tick localization. | Blocks release. |
+| `TICK_MARKS_MISSING` | Deterministic tick pixel candidates are insufficient. | Blocks release unless user-confirmed calibration exists. |
+| `LABEL_BAND_MISSING` | Expected tick-label crop band could not be established. | Blocks autonomous release. |
+| `OCR_NO_NUMERIC_TEXT` | Local tick crops did not yield numeric labels. | Blocks autonomous calibration. |
+| `OCR_NUMERIC_NO_TICK_PIXEL` | OCR read a number but it was not linked to deterministic tick geometry. | Blocks calibration use of that value. |
+| `NON_MONOTONIC_TICK_VALUES` | Accepted anchors are not monotonic along the axis. | Blocks release; review only. |
+| `INSUFFICIENT_X_ANCHORS` | Fewer than two usable X anchors. | Blocks calibrated RT/area claims. |
+| `INSUFFICIENT_Y_ANCHORS` | Fewer than two usable Y anchors. | Blocks calibrated height/abundance claims. |
+| `HIGH_RESIDUALS` | Fit residuals/outliers exceed review thresholds. | Review or blocked depending status. |
+| `TITLE_OR_ION_TEXT_REJECTED` | Title, ion, channel, or m/z text was rejected as non-tick evidence. | Correct safety behavior; not an accepted anchor. |
+| `GRID_ONLY_NO_TICKS` | Grid evidence exists but tick labels/marks are insufficient. | Diagnostic/review only. |
+| `LOW_RESOLUTION_LABELS_UNREADABLE` | Labels are too low-resolution for reliable OCR. | Diagnostic/review only. |
+
+The runtime validator fails tick/calibration graph-stage failure packages that omit subreasons.

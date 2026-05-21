@@ -40,6 +40,7 @@ import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryStageStatus
+import com.chromalab.feature.processing.geometry.TickLocalizationPipeline
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
 import com.chromalab.feature.processing.inference.ModelRuntime
@@ -1499,6 +1500,15 @@ private fun buildRuntimeGraphFailurePackages(
     val tickOcr = geometryResult?.tickOcrResult ?: trace?.tickOcrResult
     val xFit = geometryResult?.xCalibrationFit ?: trace?.xCalibrationFit
     val yFit = geometryResult?.yCalibrationFit ?: trace?.yCalibrationFit
+    val layoutClassification = trace?.multiplicityResolution?.layoutClassification
+    val tickLocalization = TickLocalizationPipeline.evaluate(
+        plotAreaBounds = geometryResult?.plotAreaBounds ?: trace?.selectedPlotAreaBounds,
+        axisGeometry = axisGeometry,
+        tickGeometry = tickGeometry,
+        tickOcrResult = tickOcr,
+        xCalibrationFit = xFit,
+        yCalibrationFit = yFit,
+    )
     val acceptedAnchors = tickOcr?.acceptedItems.orEmpty()
     val rejectedAnchors = tickOcr?.items.orEmpty()
         .filterNot { it.status == TickOcrItemStatus.ACCEPTED }
@@ -1509,6 +1519,8 @@ private fun buildRuntimeGraphFailurePackages(
             failureClass = failureClass,
             failureStage = failureStage,
             failureReason = failureReason,
+            layoutClass = layoutClassification?.layoutClass,
+            layoutPhysicalGraphCount = layoutClassification?.physicalGraphCount,
             graphPanelBounds = graphPanelBounds,
             graphPanelMissingReason = graphPanelBounds.missingReason("graphPanel bounds were not available at failure time."),
             plotAreaBounds = plotAreaBounds,
@@ -1529,7 +1541,8 @@ private fun buildRuntimeGraphFailurePackages(
                 readyForOcrValueMatching = tickGeometry?.let {
                     it.xTicks.size >= 2 && it.yTicks.size >= 2
                 } == true,
-                warnings = tickGeometry?.warnings.orEmpty(),
+                subreasons = tickLocalization.subreasons,
+                warnings = tickGeometry?.warnings.orEmpty() + tickLocalization.warnings,
             ),
             ocrSummary = RuntimeTickOcrFailureSummary(
                 rawElementCount = ocrResult?.rawElements?.size ?: tickOcr?.items.orEmpty().size,
@@ -1609,6 +1622,7 @@ private fun buildRuntimeGraphFailurePackages(
             ),
             rejectionReasons = buildList {
                 add(failureReason)
+                addAll(tickLocalization.subreasons.map { "tick_localization.subreason:${it.name}" })
                 addAll(tickOcr?.items.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(xFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(yFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
@@ -1622,6 +1636,7 @@ private fun buildRuntimeGraphFailurePackages(
                 addAll(ocrResult?.warnings.orEmpty())
                 addAll(xFit?.warnings.orEmpty())
                 addAll(yFit?.warnings.orEmpty())
+                addAll(layoutClassification?.reviewReasons.orEmpty())
             }.distinct(),
             stageTimings = stageTimings,
         ),

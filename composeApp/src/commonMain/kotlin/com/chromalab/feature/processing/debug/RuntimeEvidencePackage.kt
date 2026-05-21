@@ -5,8 +5,10 @@ import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
 import com.chromalab.feature.knowledge.KnowledgeRetrievalContext
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryAxis
+import com.chromalab.feature.processing.geometry.GraphLayoutClass
 import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
+import com.chromalab.feature.processing.geometry.TickLocalizationFailureSubreason
 import com.chromalab.feature.processing.geometry.TickOcrItemStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
@@ -67,6 +69,8 @@ data class RuntimeGraphFailurePackage(
     val failureClass: RuntimeFailureClass,
     val failureStage: String,
     val failureReason: String,
+    val layoutClass: GraphLayoutClass? = null,
+    val layoutPhysicalGraphCount: Int? = null,
     val graphPanelBounds: GraphRegion? = null,
     val graphPanelMissingReason: String? = null,
     val plotAreaBounds: GraphRegion? = null,
@@ -117,6 +121,7 @@ data class RuntimeTickFailureSummary(
     val xTickPixelPositions: List<Float> = emptyList(),
     val yTickPixelPositions: List<Float> = emptyList(),
     val readyForOcrValueMatching: Boolean = false,
+    val subreasons: List<TickLocalizationFailureSubreason> = emptyList(),
     val warnings: List<String> = emptyList(),
 )
 
