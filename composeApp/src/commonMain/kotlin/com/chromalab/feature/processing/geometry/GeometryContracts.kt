@@ -89,6 +89,35 @@ enum class TickLocalizationFailureSubreason {
 }
 
 @Serializable
+enum class AxisScaleEvidenceType {
+    EXPLICIT_TICK_MARK,
+    GRID_LINE,
+    OCR_LABEL_BOX,
+    LABEL_PROJECTION,
+    FRAME_ENDPOINT,
+    REGULAR_SEQUENCE,
+    AXIS_ENDPOINT,
+    PLOT_FRAME_EDGE,
+    OCR_VALUE_ONLY_REJECTED,
+    SEMANTIC_TEXT_REJECTED,
+}
+
+@Serializable
+enum class AxisScaleFailureSubreason {
+    NUMERIC_LABELS_MISSING,
+    NUMERIC_LABELS_UNREADABLE,
+    LABEL_BOXES_FOUND_NO_GEOMETRY,
+    LABEL_SEQUENCE_NON_MONOTONIC,
+    LABEL_PROJECTION_FAILED,
+    GRID_LINES_FOUND_LABELS_MISSING,
+    TICK_MARKS_MISSING_BUT_LABELS_AVAILABLE,
+    INSUFFICIENT_SCALE_ANCHORS,
+    SCALE_FIT_HIGH_RESIDUAL,
+    AXIS_FRAME_INCONSISTENT,
+    TITLE_ION_TEXT_REJECTED_AS_SCALE_LABEL,
+}
+
+@Serializable
 enum class GeometryReportStatus {
     SCIENTIFIC_READY,
     REVIEW_READY,
@@ -318,6 +347,19 @@ data class TickLocalizationResult(
 )
 
 @Serializable
+data class AxisScaleAnchor(
+    val axis: GeometryAxis,
+    val pixelCoordinate: Float,
+    val numericValue: Double?,
+    val evidenceType: AxisScaleEvidenceType,
+    val confidence: Float,
+    val rawText: String? = null,
+    val cropPath: String? = null,
+    val projectionSource: String? = null,
+    val rejectionReason: String? = null,
+)
+
+@Serializable
 data class CalibrationAnchorEvidence(
     val axis: GeometryAxis,
     val tickPixelPosition: Float,
@@ -326,6 +368,9 @@ data class CalibrationAnchorEvidence(
     val localCropPath: String? = null,
     val confidence: Float = 0f,
     val rejectionReason: String? = null,
+    val evidenceType: AxisScaleEvidenceType = AxisScaleEvidenceType.EXPLICIT_TICK_MARK,
+    val evidenceSource: String = "deterministic_tick",
+    val projectionSource: String? = null,
 )
 
 @Serializable
@@ -347,6 +392,18 @@ data class AxisCalibrationFit(
 )
 
 @Serializable
+data class AxisScaleResolutionResult(
+    val status: CalibrationFitStatus,
+    val xFit: AxisCalibrationFit = AxisCalibrationFit(axis = GeometryAxis.X),
+    val yFit: AxisCalibrationFit = AxisCalibrationFit(axis = GeometryAxis.Y),
+    val xAnchors: List<AxisScaleAnchor> = emptyList(),
+    val yAnchors: List<AxisScaleAnchor> = emptyList(),
+    val rejectedAnchors: List<AxisScaleAnchor> = emptyList(),
+    val subreasons: List<AxisScaleFailureSubreason> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class GeometryStageTiming(
     val stageId: String,
     val durationMillis: Long,
@@ -363,6 +420,7 @@ data class GeometryTrace(
     val axisGeometry: AxisGeometry? = null,
     val tickGeometry: TickGeometry? = null,
     val tickOcrResult: TickOcrResult? = null,
+    val axisScaleResolution: AxisScaleResolutionResult? = null,
     val xCalibrationFit: AxisCalibrationFit? = null,
     val yCalibrationFit: AxisCalibrationFit? = null,
     val originalImagePath: String? = null,

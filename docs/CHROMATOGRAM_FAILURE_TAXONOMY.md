@@ -100,3 +100,23 @@ Phase 9E keeps `TICK_LOCALIZATION_FAILURE` as the runtime failure class when the
 | `LOW_RESOLUTION_LABELS_UNREADABLE` | Labels are too low-resolution for reliable OCR. | Diagnostic/review only. |
 
 The runtime validator fails tick/calibration graph-stage failure packages that omit subreasons.
+
+## Phase 9F Axis Scale Subreasons
+
+Phase 9F keeps `TICK_LOCALIZATION_FAILURE` as the runtime failure class when calibration cannot be formed, but the graph failure package and validator output must now expose axis-scale evidence/subreasons:
+
+| Subreason | Meaning | Release impact |
+| --- | --- | --- |
+| `NUMERIC_LABELS_MISSING` | No axis numeric labels were found in the expected label bands. | Blocks autonomous calibration. |
+| `NUMERIC_LABELS_UNREADABLE` | Labels appear present but OCR quality is insufficient. | Blocks release; diagnostic/review only. |
+| `LABEL_BOXES_FOUND_NO_GEOMETRY` | OCR boxes exist but cannot be tied to axis/frame/tick geometry. | Blocks calibration use. |
+| `LABEL_SEQUENCE_NON_MONOTONIC` | Numeric labels are not monotonic along the axis. | Blocks release. |
+| `LABEL_PROJECTION_FAILED` | Labels could not be projected to ticks, grid lines, or frame endpoints. | Blocks autonomous calibration. |
+| `GRID_LINES_FOUND_LABELS_MISSING` | Grid/frame evidence exists but labels are missing. | Blocks release unless user-confirmed anchors exist. |
+| `TICK_MARKS_MISSING_BUT_LABELS_AVAILABLE` | Explicit ticks are missing but label boxes exist; resolver may produce review-grade scale evidence. | Review unless residuals/geometry are strong. |
+| `INSUFFICIENT_SCALE_ANCHORS` | Fewer than two usable scale anchors exist for an axis. | Blocks release. |
+| `SCALE_FIT_HIGH_RESIDUAL` | Candidate scale fit residuals exceed acceptance. | Blocks release; review only. |
+| `AXIS_FRAME_INCONSISTENT` | Plot frame or axis evidence conflicts with scale evidence. | Blocks release. |
+| `TITLE_ION_TEXT_REJECTED_AS_SCALE_LABEL` | Title/ion/m/z/SIM/channel text was rejected as scale evidence. | Correct safety behavior; not an accepted anchor. |
+
+VLM-generated positions are never accepted as final scale geometry. VLM/OCR text can only contribute semantic text evidence unless it is paired with deterministic geometry and passes label-band, monotonicity, and residual gates.

@@ -6,6 +6,8 @@ import com.chromalab.feature.knowledge.KnowledgeRetrievalEngine
 import com.chromalab.feature.knowledge.KnowledgeSearchQuery
 import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
+import com.chromalab.feature.processing.geometry.AxisScaleEvidenceType
+import com.chromalab.feature.processing.geometry.AxisScaleFailureSubreason
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
@@ -599,6 +601,23 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun validatorRequiresAxisScaleSubreasonForTickFailures() {
+        val badPackage = tickLocalizationFailurePackage().copy(
+            scaleSummary = tickLocalizationFailurePackage().scaleSummary.copy(subreasons = emptyList()),
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = terminalGraphFailureReport(RuntimeFailureClass.TICK_LOCALIZATION_FAILURE),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+            graphFailurePackages = listOf(badPackage),
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "graph_failure.axis_scale_subreason_missing" })
+    }
+
+    @Test
     fun validatorRejectsAcceptedOcrTickWithoutDeterministicPixel() {
         val badPackage = tickLocalizationFailurePackage().copy(
             ocrSummary = tickLocalizationFailurePackage().ocrSummary.copy(
@@ -800,6 +819,16 @@ class RuntimeEvidencePackageValidatorTest {
                 readyForOcrValueMatching = false,
                 subreasons = listOf(com.chromalab.feature.processing.geometry.TickLocalizationFailureSubreason.INSUFFICIENT_Y_ANCHORS),
                 warnings = listOf("axis_tick_geometry.y_tick_positions_insufficient"),
+            ),
+            scaleSummary = RuntimeAxisScaleFailureSummary(
+                status = CalibrationFitStatus.INVALID,
+                xAnchorCount = 3,
+                yAnchorCount = 1,
+                rejectedAnchorCount = 1,
+                xEvidenceTypes = listOf(AxisScaleEvidenceType.EXPLICIT_TICK_MARK),
+                yEvidenceTypes = listOf(AxisScaleEvidenceType.EXPLICIT_TICK_MARK),
+                subreasons = listOf(AxisScaleFailureSubreason.INSUFFICIENT_SCALE_ANCHORS),
+                warnings = listOf("axis_scale.insufficient_scale_anchors"),
             ),
             ocrSummary = RuntimeTickOcrFailureSummary(
                 rawElementCount = 4,

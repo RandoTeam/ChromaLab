@@ -18,6 +18,12 @@ enum class OcrStatus {
     NOT_AVAILABLE,
 }
 
+@Serializable
+enum class OcrElementSourceKind {
+    ML_KIT,
+    VLM_AXIS_EXTRACTION,
+}
+
 /**
  * A single OCR-detected text element with position.
  */
@@ -33,6 +39,7 @@ data class OcrTextElement(
     val sourceAxis: String? = null,
     val sourceTickPixelPosition: Float? = null,
     val sourceCropPath: String? = null,
+    val sourceKind: OcrElementSourceKind = OcrElementSourceKind.ML_KIT,
 )
 
 /**

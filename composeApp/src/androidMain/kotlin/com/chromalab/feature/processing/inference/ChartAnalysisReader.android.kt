@@ -8,6 +8,7 @@ import com.chromalab.feature.processing.multimodal.StageJudgeTaskType
 import com.chromalab.feature.processing.multimodal.VlmStructuredTaskContracts
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
+import com.chromalab.feature.processing.ocr.OcrElementSourceKind
 import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.ocr.OcrStatus
 
@@ -94,12 +95,8 @@ actual class ChartAnalysisReader actual constructor() {
                 if (analysis.hasUsableAxisEvidence()) {
                     log("Axis extraction success x=${analysis.xValues.size} y=${analysis.yValues.size} confidence=${analysis.confidence}")
                     val vlmResult = chartAnalysisToOcrResult(analysis, graphRegion)
-                    if (vlmResult.hasXSuggestions && vlmResult.hasYSuggestions) {
-                        return vlmResult
-                    }
-
                     log(
-                        "Axis extraction incomplete; supplementing with ML Kit " +
+                        "Axis extraction supplementing with ML Kit geometry boxes " +
                             "x=${vlmResult.suggestedXValues.size} y=${vlmResult.suggestedYValues.size}",
                     )
                     val fallbackResult = fallbackOcr.readAxisLabels(imagePath, graphRegion)
@@ -108,12 +105,9 @@ actual class ChartAnalysisReader actual constructor() {
                         "Axis extraction merged x=${merged.suggestedXValues.size} " +
                             "y=${merged.suggestedYValues.size} warnings=${merged.warnings}",
                     )
-                    if (merged.hasXSuggestions && merged.hasYSuggestions) {
-                        return merged
+                    if (!merged.hasXSuggestions || !merged.hasYSuggestions) {
+                        log("AI axis extraction returned incomplete axes after supplemental OCR")
                     }
-
-                    val message = "AI axis extraction returned incomplete axes after supplemental OCR"
-                    log(message)
                     return merged
                 }
 
@@ -380,6 +374,7 @@ private fun ChartAxisTick.toOcrElement(
         width = textWidth,
         height = textHeight,
         confidence = confidence ?: defaultConfidence,
+        sourceKind = OcrElementSourceKind.VLM_AXIS_EXTRACTION,
     )
 }
 

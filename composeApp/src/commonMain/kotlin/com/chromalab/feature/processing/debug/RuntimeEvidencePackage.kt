@@ -4,6 +4,8 @@ import com.chromalab.feature.processing.curve.CurveMaskTextSuppressionRegion
 import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
 import com.chromalab.feature.knowledge.KnowledgeRetrievalContext
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
+import com.chromalab.feature.processing.geometry.AxisScaleEvidenceType
+import com.chromalab.feature.processing.geometry.AxisScaleFailureSubreason
 import com.chromalab.feature.processing.geometry.GeometryAxis
 import com.chromalab.feature.processing.geometry.GraphLayoutClass
 import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
@@ -77,6 +79,7 @@ data class RuntimeGraphFailurePackage(
     val plotAreaMissingReason: String? = null,
     val axisSummary: RuntimeAxisFailureSummary = RuntimeAxisFailureSummary(),
     val tickSummary: RuntimeTickFailureSummary = RuntimeTickFailureSummary(),
+    val scaleSummary: RuntimeAxisScaleFailureSummary = RuntimeAxisScaleFailureSummary(),
     val ocrSummary: RuntimeTickOcrFailureSummary = RuntimeTickOcrFailureSummary(),
     val calibrationSummary: RuntimeCalibrationFailureSummary = RuntimeCalibrationFailureSummary(),
     val artifactPaths: RuntimeGraphFailureArtifactPaths = RuntimeGraphFailureArtifactPaths(),
@@ -122,6 +125,18 @@ data class RuntimeTickFailureSummary(
     val yTickPixelPositions: List<Float> = emptyList(),
     val readyForOcrValueMatching: Boolean = false,
     val subreasons: List<TickLocalizationFailureSubreason> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class RuntimeAxisScaleFailureSummary(
+    val status: CalibrationFitStatus? = null,
+    val xAnchorCount: Int = 0,
+    val yAnchorCount: Int = 0,
+    val rejectedAnchorCount: Int = 0,
+    val xEvidenceTypes: List<AxisScaleEvidenceType> = emptyList(),
+    val yEvidenceTypes: List<AxisScaleEvidenceType> = emptyList(),
+    val subreasons: List<AxisScaleFailureSubreason> = emptyList(),
     val warnings: List<String> = emptyList(),
 )
 

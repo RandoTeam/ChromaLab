@@ -168,6 +168,9 @@ data class RuntimeEvidenceGraphFailureValidationSummary(
     val xCalibrationStatus: String? = null,
     val yCalibrationStatus: String? = null,
     val tickSubreasons: List<String> = emptyList(),
+    val scaleSubreasons: List<String> = emptyList(),
+    val xScaleEvidenceTypes: List<String> = emptyList(),
+    val yScaleEvidenceTypes: List<String> = emptyList(),
     val missingArtifactReasons: List<String> = emptyList(),
 )
 
@@ -351,8 +354,8 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Graph Failure Packages")
         appendLine()
-        appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Subreasons | Missing artifacts |")
-        appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |")
+        appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Tick subreasons | Scale subreasons | Scale evidence | Missing artifacts |")
+        appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- |")
         summary.graphFailureSummaries.forEach { row ->
             appendLine(
                 "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.layoutClass ?: "-"} | " +
@@ -361,11 +364,13 @@ object RuntimeEvidencePackageValidator {
                     "${row.acceptedXAnchorCount} | ${row.acceptedYAnchorCount} | " +
                     "${row.xCalibrationStatus ?: "-"} | ${row.yCalibrationStatus ?: "-"} | " +
                     "${row.tickSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
+                    "${row.scaleSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
+                    "X:${row.xScaleEvidenceTypes.joinToString("+").ifBlank { "-" }}<br>Y:${row.yScaleEvidenceTypes.joinToString("+").ifBlank { "-" }} | " +
                     "${row.missingArtifactReasons.joinToString("<br>").ifBlank { "-" }} |",
             )
         }
         if (summary.graphFailureSummaries.isEmpty()) {
-            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - | - |")
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Recovery Candidates")
@@ -627,6 +632,13 @@ object RuntimeEvidencePackageValidator {
                     failure.graphIndex,
                 )
             }
+            if (failure.scaleSummary.subreasons.isEmpty()) {
+                issues.block(
+                    "graph_failure.axis_scale_subreason_missing",
+                    "Tick/calibration failure package must include precise axis-scale resolution subreasons.",
+                    failure.graphIndex,
+                )
+            }
             if (failure.artifactPaths.tickOverlayPath.isNullOrBlank() &&
                 failure.artifactPaths.tickOverlayMissingReason.isNullOrBlank()
             ) {
@@ -695,6 +707,9 @@ object RuntimeEvidencePackageValidator {
             xCalibrationStatus = failure.calibrationSummary.xStatus?.name,
             yCalibrationStatus = failure.calibrationSummary.yStatus?.name,
             tickSubreasons = failure.tickSummary.subreasons.map { it.name },
+            scaleSubreasons = failure.scaleSummary.subreasons.map { it.name },
+            xScaleEvidenceTypes = failure.scaleSummary.xEvidenceTypes.map { it.name },
+            yScaleEvidenceTypes = failure.scaleSummary.yEvidenceTypes.map { it.name },
             missingArtifactReasons = missingArtifactReasons,
         )
     }

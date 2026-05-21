@@ -107,6 +107,15 @@ function Summarize-Run {
     $subreasons = if ($firstFailure -and $firstFailure.tickSummary -and $firstFailure.tickSummary.subreasons) {
         @($firstFailure.tickSummary.subreasons)
     } else { @() }
+    $scaleSubreasons = if ($firstFailure -and $firstFailure.scaleSummary -and $firstFailure.scaleSummary.subreasons) {
+        @($firstFailure.scaleSummary.subreasons)
+    } else { @() }
+    $xScaleEvidenceTypes = if ($firstFailure -and $firstFailure.scaleSummary -and $firstFailure.scaleSummary.xEvidenceTypes) {
+        @($firstFailure.scaleSummary.xEvidenceTypes)
+    } else { @() }
+    $yScaleEvidenceTypes = if ($firstFailure -and $firstFailure.scaleSummary -and $firstFailure.scaleSummary.yEvidenceTypes) {
+        @($firstFailure.scaleSummary.yEvidenceTypes)
+    } else { @() }
     $calibration = if ($firstFailure) { $firstFailure.calibrationSummary } else { $null }
     [pscustomobject]@{
         fixtureId = $FixtureId
@@ -123,6 +132,10 @@ function Summarize-Run {
         xCalibrationStatus = if ($calibration) { $calibration.xStatus } else { $null }
         yCalibrationStatus = if ($calibration) { $calibration.yStatus } else { $null }
         tickSubreasons = $subreasons
+        scaleSubreasons = $scaleSubreasons
+        xScaleEvidenceTypes = $xScaleEvidenceTypes
+        yScaleEvidenceTypes = $yScaleEvidenceTypes
+        axisScaleStatus = if ($firstFailure -and $firstFailure.scaleSummary) { $firstFailure.scaleSummary.status } else { $null }
         reportGate = if ($validator) { $validator.reportGateStatus } else { $null }
         validatorVerdict = if ($validator) { $validator.verdict } else { $null }
         runtimeFailureClass = if ($validator) { $validator.runtimeFailureClass } else { $null }
@@ -235,3 +248,17 @@ $phase9eLines | Set-Content -Encoding UTF8 -LiteralPath $phase9eMdPath
 Write-Host "Wrote $summaryPath"
 Write-Host "Wrote $mdPath"
 Write-Host "Wrote $phase9eMdPath"
+
+$phase9fMdPath = Join-Path $OutputRoot "${SummaryPrefix}_suite_summary_phase9f.md"
+$phase9fLines = @(
+    "# $($SummaryPrefix.ToUpperInvariant()) Android Validation Suite - Phase 9F Axis Scale Fields",
+    "",
+    "| Fixture | Mode | Layout | Expected graphs | Detected graphs | Scale status | X scale evidence | Y scale evidence | X anchors | Y anchors | Gate | Validator | Failure | Tick subreason | Scale subreason | Export |",
+    "| --- | --- | --- | ---: | ---: | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |"
+)
+foreach ($row in $summary) {
+    $exportOk = $row.runtimeEvidencePackageAvailable -and $row.validatorJsonAvailable -and $row.validatorMarkdownAvailable -and $row.finalReportJsonAvailable -and $row.exportManifestAvailable
+    $phase9fLines += "| $($row.fixtureId) | $($row.mode) | $($row.layoutClass) | $($row.expectedGraphCount) | $($row.metadataDetectedGraphCount) | $($row.axisScaleStatus) | $(@($row.xScaleEvidenceTypes) -join '+') | $(@($row.yScaleEvidenceTypes) -join '+') | $($row.xAnchorCount) | $($row.yAnchorCount) | $($row.reportGate) | $($row.validatorVerdict) | $($row.runtimeFailureClass) | $(@($row.tickSubreasons) -join '<br>') | $(@($row.scaleSubreasons) -join '<br>') | $exportOk |"
+}
+$phase9fLines | Set-Content -Encoding UTF8 -LiteralPath $phase9fMdPath
+Write-Host "Wrote $phase9fMdPath"

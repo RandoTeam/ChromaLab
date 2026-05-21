@@ -74,6 +74,7 @@ import com.chromalab.feature.processing.export.ExportScreen
 import com.chromalab.feature.processing.export.ExportBundle
 import com.chromalab.feature.processing.debug.DebugPackageExporter
 import com.chromalab.feature.processing.debug.RuntimeAxisFailureSummary
+import com.chromalab.feature.processing.debug.RuntimeAxisScaleFailureSummary
 import com.chromalab.feature.processing.debug.RuntimeCalibrationFailureSummary
 import com.chromalab.feature.processing.debug.RuntimeGraphFailureArtifactPaths
 import com.chromalab.feature.processing.debug.RuntimeGraphFailurePackage
@@ -1500,6 +1501,7 @@ private fun buildRuntimeGraphFailurePackages(
     val tickOcr = geometryResult?.tickOcrResult ?: trace?.tickOcrResult
     val xFit = geometryResult?.xCalibrationFit ?: trace?.xCalibrationFit
     val yFit = geometryResult?.yCalibrationFit ?: trace?.yCalibrationFit
+    val scaleResolution = trace?.axisScaleResolution
     val layoutClassification = trace?.multiplicityResolution?.layoutClassification
     val tickLocalization = TickLocalizationPipeline.evaluate(
         plotAreaBounds = geometryResult?.plotAreaBounds ?: trace?.selectedPlotAreaBounds,
@@ -1543,6 +1545,16 @@ private fun buildRuntimeGraphFailurePackages(
                 } == true,
                 subreasons = tickLocalization.subreasons,
                 warnings = tickGeometry?.warnings.orEmpty() + tickLocalization.warnings,
+            ),
+            scaleSummary = RuntimeAxisScaleFailureSummary(
+                status = scaleResolution?.status,
+                xAnchorCount = scaleResolution?.xAnchors.orEmpty().size,
+                yAnchorCount = scaleResolution?.yAnchors.orEmpty().size,
+                rejectedAnchorCount = scaleResolution?.rejectedAnchors.orEmpty().size,
+                xEvidenceTypes = scaleResolution?.xAnchors.orEmpty().map { it.evidenceType }.distinct(),
+                yEvidenceTypes = scaleResolution?.yAnchors.orEmpty().map { it.evidenceType }.distinct(),
+                subreasons = scaleResolution?.subreasons.orEmpty(),
+                warnings = scaleResolution?.warnings.orEmpty(),
             ),
             ocrSummary = RuntimeTickOcrFailureSummary(
                 rawElementCount = ocrResult?.rawElements?.size ?: tickOcr?.items.orEmpty().size,
@@ -1623,6 +1635,7 @@ private fun buildRuntimeGraphFailurePackages(
             rejectionReasons = buildList {
                 add(failureReason)
                 addAll(tickLocalization.subreasons.map { "tick_localization.subreason:${it.name}" })
+                addAll(scaleResolution?.subreasons.orEmpty().map { "axis_scale.subreason:${it.name}" })
                 addAll(tickOcr?.items.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(xFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
                 addAll(yFit?.rejectedAnchors.orEmpty().mapNotNull { it.rejectionReason })
@@ -1633,6 +1646,7 @@ private fun buildRuntimeGraphFailurePackages(
                 addAll(axisGeometry?.warnings.orEmpty())
                 addAll(tickGeometry?.warnings.orEmpty())
                 addAll(tickOcr?.warnings.orEmpty())
+                addAll(scaleResolution?.warnings.orEmpty())
                 addAll(ocrResult?.warnings.orEmpty())
                 addAll(xFit?.warnings.orEmpty())
                 addAll(yFit?.warnings.orEmpty())

@@ -118,3 +118,22 @@ Phase 9E did not close the dataset. All eight fixtures exported evidence in dete
 - E2B did not regress deterministic graph count or calibration state in the final rerun.
 
 The active blocker class is now precise evidence failure, primarily `TICK_LOCALIZATION_FAILURE` with subreasons, rather than missing runtime exports.
+
+## Phase 9F Dataset Status
+
+Phase 9F reran the same eight Android fixtures after adding axis-scale evidence from OCR label boxes, label projection, and semantic-text rejection.
+
+Artifact root: `artifacts/phase9f-multi-fixture-android-final/`
+
+| Fixture | Phase 9F Status |
+| --- | --- |
+| `white_tiger_ion71` | `BLOCKED`: 1 graph, insufficient Y scale anchors. |
+| `bench_01_mz71_screenshot_page` | `BLOCKED`: final report graph count 1 vs expected 2; insufficient Y anchors. |
+| `bench_02_mz92_belyi_tigr` | `BLOCKED`: graph count stable at 1, but scale anchors insufficient. |
+| `bench_03_small_tic_export` | `REVIEW_ONLY`: low-res/peak evidence limitations remain. |
+| `bench_04_stacked_xic_resolution` | `REVIEW_ONLY`: no longer tick-blocked, but final report graph propagation remains incomplete against expected 4 panels. |
+| `bench_05_tic_plus_ions` | `BLOCKED`: plot-frame inconsistency and zero accepted scale anchors. |
+| `bench_06_photo_two_graphs_page` | `REVIEW_ONLY`: no longer tick-blocked, but final report graph propagation remains incomplete against expected 2 panels. |
+| `bench_07_rotated_page_photo` | `REVIEW_ONLY`: stable no-regression result. |
+
+Phase 9F does not accept Phase 9. Product/QA/Scientific remain blocked because supported fixtures still end in `BLOCKED` and multi-panel report propagation is incomplete.

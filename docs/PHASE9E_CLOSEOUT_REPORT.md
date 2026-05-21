@@ -66,3 +66,7 @@ See `docs/PHASE9E_ANDROID_RERUN_RESULTS.md` for the per-fixture table.
 `PHASE_9B_BLOCKED_RUNTIME_FAILURE`
 
 Phase 10 must not start.
+
+## Phase 9F Superseding Note
+
+Phase 9F added a multi-evidence `AxisScaleResolver` and reran the same Android suite. The result remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`: 16/16 exports completed, E2B did not regress deterministic graph count, but `white_tiger_ion71`, `bench_01`, `bench_02`, and `bench_05` still block on insufficient scale anchors or frame inconsistency. See `docs/PHASE9F_CLOSEOUT_REPORT.md`.

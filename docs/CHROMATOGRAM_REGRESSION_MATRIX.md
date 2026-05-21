@@ -72,6 +72,18 @@ Current Android fixture evidence:
 
 Regression rule: model activation must not run before deterministic calibration in validation fixture comparison mode, because the model is not the source of graphPanel, plotArea, tick, calibration, trace, or peak metric evidence.
 
+## Phase 9F Addendum
+
+Phase 9F adds axis-scale evidence from OCR label boxes and label projections. Explicit tick marks are no longer the only evidence path, but calibration still requires monotonic, residual-backed anchors.
+
+Current real-device status:
+
+- 16/16 Phase 9F Android exports completed under `artifacts/phase9f-multi-fixture-android-final/`.
+- `bench_04`, `bench_06`, and `bench_07` remained or improved to `REVIEW_ONLY`.
+- `white_tiger_ion71`, `bench_01`, `bench_02`, and `bench_05` remain `BLOCKED`.
+- E2B/model-enabled mode did not regress deterministic graph count or calibration state.
+- Phase 9 remains blocked; Phase 10 may not start.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.
