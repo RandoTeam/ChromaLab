@@ -98,3 +98,7 @@ E2B is safe enough to keep as the intended FAST/weaker-device baseline under the
 `PHASE_9B_BLOCKED_RUNTIME_FAILURE`
 
 Phase 10 must not start.
+
+## Phase 9H Follow-Up
+
+Phase 9H fixed the immediate White Tiger regression by preserving rejected overlapping single-physical-graph candidates as retry alternatives. White Tiger now returns `REVIEW_ONLY` in deterministic and E2B modes, but Phase 9 remains blocked by other Android fixture failures.

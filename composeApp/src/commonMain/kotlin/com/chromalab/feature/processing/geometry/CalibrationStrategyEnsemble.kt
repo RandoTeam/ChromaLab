@@ -349,10 +349,20 @@ class CalibrationStrategyEnsemble(
 
     private fun AxisCalibrationFit.rejectionReasons(): List<CalibrationRejectionReason> =
         buildList {
-            if (acceptedAnchors.size < 2) add(CalibrationRejectionReason.INSUFFICIENT_ANCHORS)
-            if (warnings.any { it.contains("residual", ignoreCase = true) }) add(CalibrationRejectionReason.HIGH_RESIDUALS)
+            if (acceptedAnchors.size < 2) {
+                add(CalibrationRejectionReason.INSUFFICIENT_ANCHORS)
+                add(CalibrationRejectionReason.REJECTED_INSUFFICIENT_ANCHORS)
+            }
+            if (warnings.any { it.contains("residual", ignoreCase = true) }) {
+                add(CalibrationRejectionReason.HIGH_RESIDUALS)
+                add(CalibrationRejectionReason.REJECTED_INVALID_RESIDUAL)
+            }
             if (warnings.any { it.contains("frame", ignoreCase = true) }) add(CalibrationRejectionReason.AXIS_FRAME_INCONSISTENT)
-            if (acceptedAnchors.any { it.rawText.orEmpty().isForbiddenScaleLabel() }) add(CalibrationRejectionReason.FORBIDDEN_TEXT_LABEL)
+            if (acceptedAnchors.any { it.rawText.orEmpty().isForbiddenScaleLabel() }) {
+                add(CalibrationRejectionReason.FORBIDDEN_TEXT_LABEL)
+                add(CalibrationRejectionReason.REJECTED_FORBIDDEN_TEXT)
+            }
+            if (acceptedAnchors.any { it.tickPixelPosition.isNaN() }) add(CalibrationRejectionReason.REJECTED_NO_PIXEL_GEOMETRY)
             if (status == CalibrationFitStatus.INVALID && isEmpty()) add(CalibrationRejectionReason.STRATEGY_NOT_APPLICABLE)
         }
 
@@ -365,8 +375,12 @@ class CalibrationStrategyEnsemble(
 
     private fun CalibrationCandidate.selectionReason(): CalibrationSelectionReason =
         when (fit.status) {
-            CalibrationFitStatus.VALID -> CalibrationSelectionReason.VALID_STATUS
-            CalibrationFitStatus.REVIEW -> CalibrationSelectionReason.REVIEW_STATUS
+            CalibrationFitStatus.VALID -> CalibrationSelectionReason.SELECTED_VALID_LOW_RESIDUAL
+            CalibrationFitStatus.REVIEW -> when {
+                strategyId == CalibrationStrategyId.LEGACY_TICK_LOCALIZATION -> CalibrationSelectionReason.SELECTED_REVIEW_LEGACY_FALLBACK
+                fit.acceptedAnchors.size == 2 -> CalibrationSelectionReason.SELECTED_REVIEW_TWO_ANCHOR_FIT
+                else -> CalibrationSelectionReason.SELECTED_REVIEW_BEST_AVAILABLE
+            }
             CalibrationFitStatus.INVALID -> CalibrationSelectionReason.ONLY_AVAILABLE
         }
 

@@ -36,7 +36,9 @@ actual class AxisDetector actual constructor() {
         val rh = (graphRegion.height / scale).roundToInt().coerceIn(1, fullBitmap.height - ry)
 
         val cropped = Bitmap.createBitmap(fullBitmap, rx, ry, rw, rh)
-        fullBitmap.recycle()
+        if (cropped != fullBitmap) {
+            fullBitmap.recycle()
+        }
 
         val w = cropped.width
         val h = cropped.height

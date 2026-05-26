@@ -143,7 +143,7 @@ class GeometryPipelineRunner(
                 vlmGraphCountHint = vlmHintResult?.regions?.size,
             )
         }
-        val candidates = multiplicityResolution.resolvedGraphPanels.ifEmpty { allCandidates }
+        val candidates = multiplicityResolution.retryGraphPanelCandidatesForSinglePhysicalGraph(allCandidates)
         val evaluatedCandidates = timedStage("graph_panel.candidate_evaluation", timings) {
             candidates.take(MAX_GEOMETRY_RETRY_CANDIDATES).mapIndexed { retryIndex, candidate ->
                 evaluateCandidate(
@@ -540,6 +540,26 @@ private val GeometryReportStatus.selectionPriority: Int
         GeometryReportStatus.REVIEW_READY -> 2
         GeometryReportStatus.DIAGNOSTIC_ONLY -> 1
     }
+
+internal fun GraphMultiplicityResolution.retryGraphPanelCandidatesForSinglePhysicalGraph(
+    allCandidates: List<GraphPanelBounds>,
+): List<GraphPanelBounds> {
+    val primary = resolvedGraphPanels.ifEmpty { allCandidates }
+    if (layoutClassification?.physicalGraphCount != 1) return primary
+    val rejectedAlternates = (
+        rejectedDuplicatePanels.map { it.candidate } +
+            rejectedNestedPanels.map { it.candidate } +
+            rejectedSubregions.map { it.candidate }
+        )
+    val primaryKeys = primary.map {
+        "${it.candidateSource}:${it.region.x}:${it.region.y}:${it.region.width}:${it.region.height}"
+    }.toSet()
+    val sortedAlternates = rejectedAlternates
+        .filterNot { "${it.candidateSource}:${it.region.x}:${it.region.y}:${it.region.width}:${it.region.height}" in primaryKeys }
+        .sortedByDescending { it.scoreBreakdown.total }
+    return (primary + sortedAlternates)
+        .distinctBy { "${it.candidateSource}:${it.region.x}:${it.region.y}:${it.region.width}:${it.region.height}" }
+}
 
 private fun RawRoiCandidate.expandedVariants(imageWidth: Int, imageHeight: Int): List<RawRoiCandidate> {
     if (source == GeometryCandidateSource.FULL_IMAGE_FALLBACK) return emptyList()

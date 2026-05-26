@@ -92,6 +92,26 @@ class GraphMultiplicityResolverTest {
         assertTrue("multiplicity.full_image_fallback_suppressed" in resolution.warnings)
     }
 
+    @Test
+    fun singlePhysicalGraphKeepsRejectedPanelsAsRetryAlternates() {
+        val broadPageCandidate = panel(0, 324, 576, 521, 142f, "broad page")
+        val calibratedPanelCandidate = panel(0, 418, 576, 425, 175f, "chart panel")
+        val resolution = resolver.resolve(
+            candidates = listOf(broadPageCandidate, calibratedPanelCandidate),
+            imageWidth = 576,
+            imageHeight = 1280,
+        )
+
+        val retryCandidates = resolution.retryGraphPanelCandidatesForSinglePhysicalGraph(
+            listOf(broadPageCandidate, calibratedPanelCandidate),
+        )
+
+        assertEquals(1, resolution.layoutClassification?.physicalGraphCount)
+        assertTrue(retryCandidates.any { it.region.label == "broad page" })
+        assertTrue(retryCandidates.any { it.region.label == "chart panel" })
+        assertEquals(resolution.resolvedGraphPanels.first().region.label, retryCandidates.first().region.label)
+    }
+
     private fun panel(
         x: Int,
         y: Int,

@@ -27,3 +27,7 @@ Phase 9 cannot be accepted unless Android rerun evidence shows:
 E2B is allowed to improve local crop OCR, semantic classification, Knowledge Pack grounded explanations, warning explanations, and overlay review warnings. E2B is only advisory for graph candidate quality, plotArea warning, axis/tick visibility warning, and multi-graph suspicion.
 
 The shield fails if E2B erases deterministic graph candidates, changes graph count by itself, creates pixel coordinates, creates calibration coefficients, creates chromatographic metrics, overrides deterministic peak metrics, or identifies compounds without explicit evidence. If E2B disagrees with deterministic geometry, deterministic evidence remains primary; the run is marked `REVIEW` with disagreement evidence unless deterministic evidence independently fails.
+
+## Phase 9H Outcome
+
+White Tiger was restored to `REVIEW_ONLY` by preserving single-physical-graph retry alternatives and keeping primary resolved candidates first. Phase 9 remains blocked because `bench_01_mz71_screenshot_page` and `bench_05_tic_plus_ions` still fail in Android validation.

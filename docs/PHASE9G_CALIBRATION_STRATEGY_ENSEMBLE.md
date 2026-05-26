@@ -29,3 +29,9 @@ Phase 9G replaces single-path calibration selection with deterministic strategy 
 `E2B_BASELINE` is the supported production FAST/weaker-device model mode. It remains part of every Android acceptance rerun and is not removed or demoted to experimental-only status.
 
 No VLM/E2B output can provide calibration pixel geometry or numeric chromatographic calibration. VLM/OCR text remains advisory unless paired with deterministic geometry and accepted by the calibration fitter. E2B may improve local crop OCR, text classification, Knowledge Pack grounded explanation, warning explanation, and overlay review warnings, but deterministic graph count, geometry, calibration coefficients, chromatographic metrics, and report gates remain primary.
+
+## Phase 9H Correction
+
+Phase 9H confirmed the White Tiger regression was not caused by a valid legacy strategy being discarded by arbitration. The usable legacy evidence was starved because the lower chromatogram panel candidate was not evaluated after single-physical-graph multiplicity collapsed overlapping candidates.
+
+The corrected behavior keeps overlapping rejected candidates as retry alternatives while preserving one physical graph as the graph-count decision.
