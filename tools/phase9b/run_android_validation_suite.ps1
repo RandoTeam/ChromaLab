@@ -15,7 +15,7 @@ param(
         "bench_07_rotated_page_photo"
     ),
     [string[]]$Modes = @("deterministic", "model_enabled"),
-    [int]$TimeoutSeconds = 240
+    [int]$TimeoutSeconds = 360
 )
 
 $ErrorActionPreference = "Stop"

@@ -135,3 +135,13 @@ Phase 9G keeps `TICK_LOCALIZATION_FAILURE` for calibration-stage terminal failur
 | Frame endpoint fallback | Disabled from selection in Phase 9G until endpoint direction evidence is proven. |
 
 Missing strategy evidence is a validator failure because it prevents audit of regressions such as the Phase 9F `white_tiger_ion71` calibration regression.
+
+## Phase 9I Timeout and Calibration Clarifications
+
+| Class | Phase 9I clarification |
+| --- | --- |
+| `PERFORMANCE_TIMEOUT` | External runner messages such as `timed out waiting for validation manifest` are timeout failures. A timeout must produce terminal evidence when the app reaches a terminal state; otherwise the suite result remains an export/evidence blocker. |
+| `TICK_LOCALIZATION_FAILURE` | Still applies when an axis cannot produce enough usable tick/label anchors after OCR/tick pairing. Phase 9I observed this on `bench_01_mz71_screenshot_page` for Y calibration. |
+| `CALIBRATION_FAILURE` | Applies when calibration evidence exists but cannot be used safely for signal conversion. Phase 9I observed review-grade Y evidence on `bench_05_tic_plus_ions` with an invalid image-coordinate direction; this must remain blocked rather than downgraded to review. |
+
+Direction-inconsistent Y calibration is a calibration failure because chromatogram intensity must map upward in image coordinates. Review-grade anchors do not unlock reportable signal or peak metrics when the fitted direction is incompatible with that geometry.

@@ -36,6 +36,7 @@ import com.chromalab.feature.processing.graph.GraphRegionDetector
 import com.chromalab.feature.processing.graph.GraphRegionResult
 import com.chromalab.feature.processing.graph.GraphRoiEditorScreen
 import com.chromalab.feature.processing.graph.GraphSelectionScreen
+import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
@@ -513,7 +514,12 @@ fun ProcessingFlowScreen(
                                 val cal = yCalibration!!.calibration
                                 println("PIPELINE[Y_CAL] auto: py1=${cal.point1.pixelPos}->${cal.point1.realValue}, py2=${cal.point2.pixelPos}->${cal.point2.realValue}, unit=${yCalibration!!.unit}")
                             } else {
-                                failAutomaticAxisCalibration("at least two Y tick labels are required before signal conversion")
+                                failAutomaticAxisCalibration(
+                                    geometryResult?.yCalibrationFit.preciseCalibrationFailureReason(
+                                        axisLabel = "Y",
+                                        fallback = "at least two Y tick labels are required before signal conversion",
+                                    ),
+                                )
                             }
 
                             pixelCalibration = buildConfirmedPixelCalibration(
@@ -1418,7 +1424,7 @@ private fun Throwable.toRuntimeFailureClass(step: ProcessingStep): RuntimeFailur
         "calibration" in message -> RuntimeFailureClass.CALIBRATION_FAILURE
         "trace" in message || "curve" in message -> RuntimeFailureClass.TRACE_EXTRACTION_FAILURE
         "peak" in message -> RuntimeFailureClass.PEAK_EVIDENCE_FAILURE
-        "timeout" in message -> RuntimeFailureClass.PERFORMANCE_TIMEOUT
+        "timeout" in message || "timed out" in message -> RuntimeFailureClass.PERFORMANCE_TIMEOUT
         step == ProcessingStep.GRAPH_SELECTION -> RuntimeFailureClass.MULTI_GRAPH_SPLIT_FAILURE
         step == ProcessingStep.GRAPH_ROI -> RuntimeFailureClass.GRAPH_PANEL_FAILURE
         step == ProcessingStep.AXIS_DETECTION -> RuntimeFailureClass.AXIS_DETECTION_FAILURE
@@ -1469,6 +1475,27 @@ private fun buildConfirmedPixelCalibration(
         originPixelY = (origin?.y ?: (selectedRegion.y + selectedRegion.height).toFloat()) -
         selectedRegion.y.toFloat(),
     )
+}
+
+private fun AxisCalibrationFit?.preciseCalibrationFailureReason(axisLabel: String, fallback: String): String {
+    val fit = this ?: return fallback
+    val anchorCount = fit.acceptedAnchors.size
+    val fitScale = fit.slope
+    val warnings = fit.warnings.joinToString(",")
+    return when {
+        anchorCount < 2 ->
+            "insufficient $axisLabel calibration anchors after OCR/tick pairing; $fallback"
+        axisLabel == "Y" && fitScale != null && fitScale >= 0.0 ->
+            "Y calibration evidence is ${fit.status.name.lowercase()} but axis direction is inconsistent; " +
+                "intensity must decrease as pixel Y increases"
+        fit.status == CalibrationFitStatus.INVALID ->
+            "$axisLabel calibration strategy result is invalid" +
+                warnings.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()
+        fit.status == CalibrationFitStatus.REVIEW ->
+            "$axisLabel calibration evidence is review-grade and cannot unlock autonomous signal conversion" +
+                warnings.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()
+        else -> fallback
+    }
 }
 
 private fun buildRuntimeGraphFailurePackages(

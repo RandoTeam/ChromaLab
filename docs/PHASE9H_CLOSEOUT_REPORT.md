@@ -83,3 +83,14 @@ Full 8-fixture rerun was performed. Phase 9 remains blocked:
 `PHASE_9H_WHITE_TIGER_FIXED_PHASE9_STILL_BLOCKED`
 
 Phase 10 must not start.
+
+## Phase 9I Follow-Up
+
+Phase 9I closed the `bench_01_mz71_screenshot_page` deterministic timeout/no-export ambiguity by increasing the Android suite wait budget and rerunning targeted plus all-fixture suites. The final Phase 9I suite produced 16/16 exports.
+
+Phase 9 remains blocked because:
+
+- `bench_01_mz71_screenshot_page` still ends `BLOCKED` with `TICK_LOCALIZATION_FAILURE` from insufficient Y calibration anchors.
+- `bench_05_tic_plus_ions` still ends `BLOCKED` with `CALIBRATION_FAILURE` from direction-inconsistent Y calibration evidence.
+
+Phase 10 must not start.

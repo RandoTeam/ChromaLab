@@ -149,6 +149,30 @@ class AutonomousValidationFixtureContractTest {
     }
 
     @Test
+    fun suiteRunBlocksWhenTerminalExportManifestIsMissing() {
+        val summary = AutonomousValidationSuiteRunSummary(
+            fixtureId = "bench_01_mz71_screenshot_page",
+            modelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+            expectedGraphCount = 2,
+            graphCount = null,
+            reportGate = null,
+            validatorVerdict = null,
+            runtimeFailureClass = RuntimeFailureClass.PERFORMANCE_TIMEOUT,
+            runtimeEvidencePackageAvailable = false,
+            validatorJsonAvailable = false,
+            validatorMarkdownAvailable = false,
+            finalReportJsonAvailable = false,
+            exportManifestAvailable = false,
+        )
+
+        assertEquals(
+            AutonomousValidationRunDecision.BLOCKED,
+            AutonomousValidationFixtureContracts.evaluateRun(summary),
+        )
+        assertTrue(AutonomousValidationFixtureContracts.validateRunSummary(summary).isEmpty())
+    }
+
+    @Test
     fun suiteRunRequiresFailureClassWhenBlocked() {
         val summary = AutonomousValidationSuiteRunSummary(
             fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,

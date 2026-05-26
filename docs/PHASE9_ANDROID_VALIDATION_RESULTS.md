@@ -78,3 +78,31 @@ Phase 9C did not close Phase 9:
 | Printed/two-graph/stacked/multi-ion pages | BLOCKED at `TICK_LOCALIZATION_FAILURE` | Multi-fixture acceptance remains blocked. |
 
 Verdict remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 may not start.
+
+## Phase 9I Final Blocker Closure Attempt
+
+Phase 9I targeted the last two blockers from Phase 9H:
+
+- `bench_01_mz71_screenshot_page`
+- `bench_05_tic_plus_ions`
+
+Final Android artifact root:
+
+```text
+artifacts/phase9i-final-android/
+```
+
+| Fixture | Deterministic result | E2B result | Acceptance impact |
+| --- | --- | --- | --- |
+| `bench_01_mz71_screenshot_page` | `BLOCKED`, validator `REVIEW`, `TICK_LOCALIZATION_FAILURE`, export complete | `BLOCKED`, validator `REVIEW`, `TICK_LOCALIZATION_FAILURE`, export complete | Timeout/no-export ambiguity closed, but Y anchors remain insufficient. |
+| `bench_05_tic_plus_ions` | `BLOCKED`, validator `REVIEW`, `CALIBRATION_FAILURE`, export complete | `BLOCKED`, validator `REVIEW`, `CALIBRATION_FAILURE`, export complete | Y evidence is direction-inconsistent; no safe signal conversion. |
+
+Full suite result:
+
+- 8 fixtures x 2 modes.
+- 16/16 exports complete.
+- No app crash.
+- No E2B regression observed.
+- Phase 9 remains blocked by supported fixture runtime failures.
+
+Verdict remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 may not start.

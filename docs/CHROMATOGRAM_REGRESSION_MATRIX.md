@@ -380,3 +380,15 @@ Final Phase 9G rerun result:
 | Tick/calibration closure | FAIL: `white_tiger`, `bench_01`, `bench_02`, and `bench_05` remain blocked |
 | E2B advisory safety | PASS: no E2B graph-count/calibration regression observed |
 | Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE` |
+
+## Phase 9I Regression Matrix Update
+
+| Area | Phase 9I Result |
+| --- | --- |
+| Android fixture exports | PASS: final all-fixture rerun exported 16/16 evidence/report/validator artifact sets |
+| Timeout/no-export reliability | IMPROVED: `bench_01` deterministic no-export was not reproduced with 360 second suite wait budget |
+| Missing terminal evidence | PASS: no final Phase 9I run missed RuntimeEvidencePackage or validator output |
+| E2B advisory safety | PASS: E2B did not regress graph count, gate, failure class, export status, or numeric metrics |
+| bench_01 | FAIL: remains `BLOCKED` at `TICK_LOCALIZATION_FAILURE` due insufficient Y anchors |
+| bench_05 | FAIL: remains `BLOCKED` at `CALIBRATION_FAILURE` due direction-inconsistent Y calibration evidence |
+| Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 must not start |
