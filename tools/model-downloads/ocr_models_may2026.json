@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "chromalab-model-download-pack-1.0",
+  "createdDate": "2026-06-01",
+  "purpose": "Download verification catalog for late-May 2026 OCR/document models. These are OCR benchmark assets unless a later runtime integration explicitly promotes them.",
+  "excluded": [
+    {
+      "id": "infinity-parser2-pro",
+      "repository": "infly/Infinity-Parser2-Pro",
+      "reason": "Excluded from Android/weak-device download pack: safetensors total is approximately 65.4 GiB and requires a separate server-class evaluation path."
+    }
+  ],
+  "packages": [
+    {
+      "id": "nemotron-ocr-v2",
+      "displayName": "NVIDIA Nemotron OCR v2",
+      "repository": "nvidia/nemotron-ocr-v2",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 551237466,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_ASSET",
+      "notes": "OCR pipeline weights. Not promoted as ChromaLab chromatogram VLM or numeric authority.",
+      "files": [
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_english/model_config.json", "expectedBytes": 371 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_english/detector.pth", "expectedBytes": 181974624 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_english/recognizer.pth", "expectedBytes": 24550133 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_english/relational.pth", "expectedBytes": 9044661 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_multilingual/model_config.json", "expectedBytes": 377 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_multilingual/detector.pth", "expectedBytes": 181974624 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_multilingual/recognizer.pth", "expectedBytes": 144516943 },
+        { "repository": "nvidia/nemotron-ocr-v2", "path": "v2_multilingual/relational.pth", "expectedBytes": 9175733 }
+      ]
+    },
+    {
+      "id": "surya-ocr-2",
+      "displayName": "Surya OCR 2",
+      "repository": "datalab-to/surya-ocr-2",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 1374033916,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_ASSET",
+      "notes": "Transformers safetensors package for OCR/layout/table benchmark use.",
+      "files": [
+        { "repository": "datalab-to/surya-ocr-2", "path": "chat_template.jinja", "expectedBytes": 2872 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "config.json", "expectedBytes": 2582 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "generation_config.json", "expectedBytes": 131 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "model.safetensors", "expectedBytes": 1372368672 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "preprocessor_config.json", "expectedBytes": 482 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "processor_config.json", "expectedBytes": 1301 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "tokenizer.json", "expectedBytes": 1656690 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "tokenizer_config.json", "expectedBytes": 571 },
+        { "repository": "datalab-to/surya-ocr-2", "path": "video_preprocessor_config.json", "expectedBytes": 615 }
+      ]
+    },
+    {
+      "id": "surya-ocr-2-gguf",
+      "displayName": "Surya OCR 2 GGUF",
+      "repository": "datalab-to/surya-ocr-2-gguf",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 1471387552,
+      "runtimeStatus": "DOWNLOAD_ONLY_GGUF_OCR_ASSET",
+      "notes": "GGUF base + mmproj package. Downloadable now; runtime benchmark must still prove llama.cpp compatibility before app promotion.",
+      "files": [
+        { "repository": "datalab-to/surya-ocr-2-gguf", "path": "surya-2.gguf", "expectedBytes": 1266400864 },
+        { "repository": "datalab-to/surya-ocr-2-gguf", "path": "surya-2-mmproj.gguf", "expectedBytes": 204986688 }
+      ]
+    },
+    {
+      "id": "glm-ocr",
+      "displayName": "GLM-OCR",
+      "repository": "zai-org/GLM-OCR",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 2657425847,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_ASSET",
+      "notes": "0.9B OCR/document VLM package. Benchmark OCR text only; never numeric calibration authority.",
+      "files": [
+        { "repository": "zai-org/GLM-OCR", "path": "chat_template.jinja", "expectedBytes": 4606 },
+        { "repository": "zai-org/GLM-OCR", "path": "config.json", "expectedBytes": 1570 },
+        { "repository": "zai-org/GLM-OCR", "path": "generation_config.json", "expectedBytes": 165 },
+        { "repository": "zai-org/GLM-OCR", "path": "model.safetensors", "expectedBytes": 2650579464 },
+        { "repository": "zai-org/GLM-OCR", "path": "preprocessor_config.json", "expectedBytes": 367 },
+        { "repository": "zai-org/GLM-OCR", "path": "tokenizer.json", "expectedBytes": 6838609 },
+        { "repository": "zai-org/GLM-OCR", "path": "tokenizer_config.json", "expectedBytes": 1066 }
+      ]
+    },
+    {
+      "id": "lightonocr-2-1b",
+      "displayName": "LightOnOCR-2 1B",
+      "repository": "lightonai/LightOnOCR-2-1B",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 2022801518,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_ASSET",
+      "notes": "1B OCR/document package. llama.cpp conversion exists upstream, but this pack verifies HF safetensors download only.",
+      "files": [
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "added_tokens.json", "expectedBytes": 707 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "chat_template.jinja", "expectedBytes": 720 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "config.json", "expectedBytes": 2363 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "generation_config.json", "expectedBytes": 219 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "model.safetensors", "expectedBytes": 2011367489 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "processor_config.json", "expectedBytes": 1023 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "special_tokens_map.json", "expectedBytes": 613 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "tokenizer.json", "expectedBytes": 11422822 },
+        { "repository": "lightonai/LightOnOCR-2-1B", "path": "tokenizer_config.json", "expectedBytes": 5562 }
+      ]
+    },
+    {
+      "id": "paddleocr-v5-mobile",
+      "displayName": "PaddleOCRv5 Mobile det+rec",
+      "repository": "PaddlePaddle/PP-OCRv5_mobile_det + PaddlePaddle/PP-OCRv5_mobile_rec",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 22103475,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_PIPELINE_ASSET",
+      "notes": "Tiny detector+recognizer package. Best first candidate for Android crop OCR benchmark, but not wired into app runtime yet.",
+      "files": [
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_det", "path": "config.json", "expectedBytes": 2871 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_det", "path": "inference.json", "expectedBytes": 229777 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_det", "path": "inference.pdiparams", "expectedBytes": 4692937 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_det", "path": "inference.yml", "expectedBytes": 903 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_rec", "path": "config.json", "expectedBytes": 352253 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_rec", "path": "inference.json", "expectedBytes": 217724 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_rec", "path": "inference.pdiparams", "expectedBytes": 16458665 },
+        { "repository": "PaddlePaddle/PP-OCRv5_mobile_rec", "path": "inference.yml", "expectedBytes": 148345 }
+      ]
+    },
+    {
+      "id": "paddleocr-v5-server",
+      "displayName": "PaddleOCRv5 Server det+rec",
+      "repository": "PaddlePaddle/PP-OCRv5_server_det + PaddlePaddle/PP-OCRv5_server_rec",
+      "lastVerifiedUtc": "2026-06-01T00:00:00Z",
+      "expectedTotalBytes": 173555060,
+      "runtimeStatus": "DOWNLOAD_ONLY_OCR_PIPELINE_ASSET",
+      "notes": "Server detector+recognizer package. Still compact enough for desktop/benchmark use.",
+      "files": [
+        { "repository": "PaddlePaddle/PP-OCRv5_server_det", "path": "config.json", "expectedBytes": 2871 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_det", "path": "inference.json", "expectedBytes": 402480 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_det", "path": "inference.pdiparams", "expectedBytes": 87932887 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_det", "path": "inference.yml", "expectedBytes": 903 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_rec", "path": "config.json", "expectedBytes": 352253 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_rec", "path": "inference.json", "expectedBytes": 325204 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_rec", "path": "inference.pdiparams", "expectedBytes": 84390117 },
+        { "repository": "PaddlePaddle/PP-OCRv5_server_rec", "path": "inference.yml", "expectedBytes": 148345 }
+      ]
+    }
+  ]
+}
