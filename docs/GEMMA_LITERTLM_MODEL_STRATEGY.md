@@ -155,3 +155,22 @@ Private model paths are not exported as raw strings. The package stores only a
 model path class such as `APP_PRIVATE_MODEL` or
 `VALIDATION_PACKAGE_PRIVATE_MODEL`. Normal user report Markdown/HTML does not
 render structured runtime diagnostics.
+
+## Runtime Acceleration R5 GGUF Text-Only MTP Benchmark
+
+As of 2026-06-02, GGUF MTP acceleration is measured through a debug-only
+text benchmark, not through chromatogram analysis. The Android action
+`com.chromalab.app.DEBUG_MTP_AB` runs no-MTP and draft-MTP passes for an
+installed text-only GGUF MTP model and exports technical JSON/Markdown under:
+
+`/sdcard/Download/ChromaLab/runtime/mtp-ab/<run_id>/`
+
+R5 gate rules keep MTP advisory unless timing, first-token latency, and native
+drafted/accepted acceptance evidence are complete. The current bridge exposes
+streaming generated-token counts to Kotlin, but native drafted/accepted counters
+are still logcat-only, so automatic MTP enablement remains blocked until those
+counters are returned structurally.
+
+MTP remains disallowed for GGUF `mmproj` vision and strict chromatogram numeric
+analysis. It must not change graph count, geometry, calibration, trace, peak
+metrics, or report gates.

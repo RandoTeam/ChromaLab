@@ -591,6 +591,19 @@ Implemented follow-up:
   must still be treated as experimental on Android until a per-device A/B run
   proves speedup and no Vulkan driver crash.
 
+2026-06-02 R5 follow-up:
+
+- `com.chromalab.app.DEBUG_MTP_AB` now exports structured JSON/Markdown under
+  `/sdcard/Download/ChromaLab/runtime/mtp-ab/<run_id>/`.
+- The exported schema is `gguf-mtp-benchmark-1.0` and records no-MTP vs
+  draft-MTP timings, generated-token callback counts, gate decision, and
+  missing native metric reasons.
+- MTP promotion remains gated. The Kotlin bridge still does not return native
+  `drafted` / `accepted` token counters, so R5 records timing evidence but
+  keeps automatic enablement in review unless acceptance statistics are present.
+- The safety policy rejects MTP for `mmproj` vision and strict chromatogram
+  numeric analysis.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.

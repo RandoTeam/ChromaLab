@@ -56,6 +56,17 @@ class LlamaEngine : InferenceEngine {
             }
         }
 
+        fun availableBackendCodesForDiagnostics(): IntArray {
+            if (!nativeLoaded) {
+                loadNativeLibrary()
+            }
+            return if (nativeLoaded) {
+                runCatching { nativeGetAvailableBackends() }.getOrDefault(intArrayOf(0))
+            } else {
+                intArrayOf(0)
+            }
+        }
+
         // JNI native methods
         @JvmStatic private external fun nativeGetAvailableBackends(): IntArray
         @JvmStatic private external fun nativeLoadModel(
@@ -293,6 +304,41 @@ class LlamaEngine : InferenceEngine {
                         repeatPenalty = repeatPenalty,
                         repeatLastN = repeatLastN,
                         onPartial = onPartial,
+                        onNativeToken = null,
+                    )
+                } finally {
+                    unloadIfRequestedLocked()
+                }
+            }
+        }
+    }
+
+    suspend fun inferTextOnlyForDiagnostics(
+        prompt: String,
+        options: GenerationOptions,
+        onNativeToken: (text: String, generatedTokens: Int, elapsedMs: Long) -> Unit,
+    ): String {
+        return withContext(Dispatchers.IO) {
+            nativeLock.withLock {
+                check(loaded && nativeLoaded) { "Model not loaded" }
+                val maxTokens = options.maxTokens ?: config.maxTokens
+                val temperature = options.temperature ?: 0f
+                val topP = options.topP ?: 1f
+                val topK = options.topK ?: 0
+                val repeatPenalty = options.repeatPenalty ?: config.repeatPenalty
+                val repeatLastN = options.repeatLastN ?: config.repeatLastN
+
+                try {
+                    inferTextLocked(
+                        prompt = prompt,
+                        maxTokens = maxTokens,
+                        temperature = temperature,
+                        topP = topP,
+                        topK = topK,
+                        repeatPenalty = repeatPenalty,
+                        repeatLastN = repeatLastN,
+                        onPartial = {},
+                        onNativeToken = onNativeToken,
                     )
                 } finally {
                     unloadIfRequestedLocked()
@@ -358,6 +404,7 @@ class LlamaEngine : InferenceEngine {
         repeatPenalty: Float,
         repeatLastN: Int,
         onPartial: ((String) -> Unit)?,
+        onNativeToken: ((text: String, generatedTokens: Int, elapsedMs: Long) -> Unit)? = null,
     ): String {
         val startedAt = System.currentTimeMillis()
         log(
@@ -400,6 +447,7 @@ class LlamaEngine : InferenceEngine {
                     object : NativeTokenCallback {
                         override fun onToken(text: String, generatedTokens: Int, elapsedMs: Long) {
                             callbackCount += 1
+                            onNativeToken?.invoke(text, generatedTokens, elapsedMs)
                             if (callbackCount == 1) {
                                 log("Text first token generatedTokens=$generatedTokens nativeElapsedMs=$elapsedMs wallMs=${System.currentTimeMillis() - startedAt}")
                             } else if (callbackCount % 32 == 0) {

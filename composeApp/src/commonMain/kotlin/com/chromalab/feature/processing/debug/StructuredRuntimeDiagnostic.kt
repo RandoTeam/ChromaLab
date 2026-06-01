@@ -1,6 +1,8 @@
 package com.chromalab.feature.processing.debug
 
 import com.chromalab.feature.processing.inference.LiteRtRuntimeDiagnostics
+import com.chromalab.feature.processing.inference.GgufMtpBenchmarkMode
+import com.chromalab.feature.processing.inference.GgufMtpBenchmarkSummary
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.reports.ReportExportPrivacyClass
 import kotlinx.serialization.Serializable
@@ -94,6 +96,35 @@ object StructuredRuntimeDiagnosticMapper {
             privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
             safeUserReportSummary = "LiteRT runtime ${diagnostics.backendName ?: "unknown backend"}; MTP ${diagnostics.mtpCapability.mtpEnabled.name}.",
         )
+
+    fun fromGgufMtpBenchmark(summary: GgufMtpBenchmarkSummary): List<StructuredRuntimeDiagnostic> =
+        summary.passes.map { pass ->
+            StructuredRuntimeDiagnostic(
+                diagnosticId = "runtime:gguf_mtp:${summary.runId}:${pass.label}",
+                source = RuntimeDiagnosticSource.GGUF_MTP_TEXT_ONLY,
+                modelId = pass.modelId,
+                modelPathClass = runCatching { RuntimeModelPathClass.valueOf(pass.modelPathClass) }
+                    .getOrDefault(RuntimeModelPathClass.UNKNOWN),
+                backend = "llama.cpp ${pass.backend.name}",
+                loadAttempted = true,
+                loadResult = pass.failureReason ?: "completed",
+                loadTimeMillis = pass.loadTimeMillis,
+                firstResponseLatencyMillis = pass.firstTokenLatencyMillis,
+                totalResponseDurationMillis = pass.totalResponseDurationMillis,
+                timeoutMillis = pass.timeoutMillis,
+                timedOut = pass.timedOut,
+                fallbackReason = summary.gate.verdict,
+                modelSupportsMtp = summary.modelSupportsMtp.toString(),
+                runtimeExposesMtp = "TEXT_ONLY_BENCHMARK",
+                mtpEnabled = if (pass.mode == GgufMtpBenchmarkMode.DRAFT_MTP && pass.mtpDraftTokens > 0) {
+                    "ENABLED_DRAFT_${pass.mtpDraftTokens}"
+                } else {
+                    "DISABLED"
+                },
+                privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                safeUserReportSummary = "GGUF text-only ${pass.label}: ${summary.gate.decision.name}.",
+            )
+        }
 
     fun classifyModelPath(path: String?): RuntimeModelPathClass {
         val value = path?.trim()?.takeIf { it.isNotEmpty() } ?: return RuntimeModelPathClass.NOT_AVAILABLE

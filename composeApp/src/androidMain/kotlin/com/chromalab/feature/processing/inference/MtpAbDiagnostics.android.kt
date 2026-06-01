@@ -5,14 +5,15 @@ import android.os.SystemClock
 import android.util.Log
 import com.chromalab.feature.chat.ChatMtpRuntimeProfile
 import com.chromalab.feature.chat.ChatRuntimeAccelerator
+import com.chromalab.feature.processing.debug.StructuredRuntimeDiagnosticMapper
 import com.chromalab.feature.processing.model.DownloadedModel
 import com.chromalab.feature.processing.model.ModelManager
 import com.chromalab.feature.processing.model.ModelRegistry
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 private const val MTP_AB_TAG = "ChromaLabMtpAB"
+private const val DEFAULT_MTP_AB_TIMEOUT_MS = 180_000L
 
 private fun mtpAbLog(message: String) {
     Log.i(MTP_AB_TAG, message)
@@ -27,6 +28,7 @@ class MtpAbDiagnostics(
 ) {
     private val appContext = context.applicationContext
     private val manager = ModelManager(appContext)
+    private val exporter = MtpAbBenchmarkArtifactExporter(appContext)
 
     suspend fun run(
         requestedModelId: String?,
@@ -36,17 +38,39 @@ class MtpAbDiagnostics(
         requestedContextTokens: Int?,
         requestedBatchTokens: Int?,
         requestedMaxTokens: Int?,
-    ) = withContext(Dispatchers.IO) {
+    ): GgufMtpBenchmarkSummary? = withContext(Dispatchers.IO) {
         val runId = System.currentTimeMillis().toString()
         val backendMode = MtpAbBackendMode.from(requestedBackend)
+        val prompt = requestedPrompt?.takeIf { it.isNotBlank() } ?: "Reply with exactly OK."
+        val acceleratedBackends = LlamaEngine.availableBackendCodesForDiagnostics().toSet()
+        if (backendMode.preferAccelerated && 1 !in acceleratedBackends) {
+            return@withContext exportAbortSummary(
+                runId = runId,
+                requestedModelId = requestedModelId,
+                backendMode = backendMode,
+                promptChars = prompt.length,
+                reason = "vulkan_preflight_failed_no_accelerated_backend",
+            )
+        }
+
         val model = resolveModel(runId, requestedModelId)
         if (model == null) {
-            mtpAbError("ABORT runId=$runId reason=no_downloaded_mtp_gguf_model")
-            return@withContext
+            return@withContext exportAbortSummary(
+                runId = runId,
+                requestedModelId = requestedModelId,
+                backendMode = backendMode,
+                promptChars = prompt.length,
+                reason = "no_downloaded_mtp_gguf_model",
+            )
         }
         if (!model.info.supportsMtp) {
-            mtpAbError("ABORT runId=$runId reason=model_does_not_advertise_mtp model=${model.info.id}")
-            return@withContext
+            return@withContext exportAbortSummary(
+                runId = runId,
+                requestedModelId = model.info.id,
+                backendMode = backendMode,
+                promptChars = prompt.length,
+                reason = "model_does_not_advertise_mtp",
+            )
         }
 
         VlmEngineHolder.activeEngine?.unload()
@@ -56,8 +80,6 @@ class MtpAbDiagnostics(
         VlmEngineHolder.executedModel = null
 
         val conservative = manager.isConservativeDevice()
-        val prompt = requestedPrompt?.takeIf { it.isNotBlank() }
-            ?: "Reply with exactly OK."
         val contextTokens = requestedContextTokens
             ?.coerceIn(1024, model.info.chatContextLimit)
             ?: ChatMtpRuntimeProfile.coerceContextTokens(
@@ -84,13 +106,13 @@ class MtpAbDiagnostics(
                 "threads=${manager.threadCount} ctx=$contextTokens batch=$batchTokens " +
                 "draft=$effectiveDraftTokens requestedDraft=${requestedDraftTokens ?: 0} " +
                 "profileDraftLimit=${ChatMtpRuntimeProfile.maxDraftTokens(backendMode.accelerator, conservative)} " +
-                "maxTokens=$maxTokens conservative=$conservative " +
-                "promptChars=${prompt.length}",
+                "maxTokens=$maxTokens conservative=$conservative promptChars=${prompt.length}",
         )
 
         val baseline = runProbePass(
             runId = runId,
             label = "no_mtp",
+            mode = GgufMtpBenchmarkMode.NO_MTP,
             model = model,
             prompt = prompt,
             contextTokens = contextTokens,
@@ -101,7 +123,8 @@ class MtpAbDiagnostics(
         )
         val mtp = runProbePass(
             runId = runId,
-            label = "mtp",
+            label = "mtp_draft_$effectiveDraftTokens",
+            mode = GgufMtpBenchmarkMode.DRAFT_MTP,
             model = model,
             prompt = prompt,
             contextTokens = contextTokens,
@@ -110,28 +133,67 @@ class MtpAbDiagnostics(
             maxTokens = maxTokens,
             backendMode = backendMode,
         )
-
-        val speedup = if (mtp.elapsedMs > 0L && baseline.elapsedMs > 0L) {
-            baseline.elapsedMs.toDouble() / mtp.elapsedMs.toDouble()
-        } else {
-            0.0
-        }
-        val verdict = when {
-            baseline.error != null || mtp.error != null -> "INCONCLUSIVE"
-            baseline.firstTokenMs == null || mtp.firstTokenMs == null -> "INCONCLUSIVE"
-            mtp.elapsedMs < baseline.elapsedMs && mtp.firstTokenMs <= baseline.firstTokenMs * 1.2 -> "MTP_FASTER"
-            mtp.firstTokenMs > baseline.firstTokenMs * 1.5 -> "MTP_SLOW_TTFT"
-            mtp.elapsedMs > baseline.elapsedMs -> "MTP_SLOW_TOTAL"
-            else -> "MTP_NEUTRAL"
-        }
-        mtpAbLog(
-            "SUMMARY runId=$runId verdict=$verdict " +
-                "no_mtp_loadMs=${baseline.loadMs} no_mtp_firstMs=${baseline.firstTokenMs} " +
-                "no_mtp_elapsedMs=${baseline.elapsedMs} no_mtp_chars=${baseline.chars} " +
-                "mtp_loadMs=${mtp.loadMs} mtp_firstMs=${mtp.firstTokenMs} " +
-                "mtp_elapsedMs=${mtp.elapsedMs} mtp_chars=${mtp.chars} speedup=${String.format(Locale.US, "%.2f", speedup)}x",
+        val summary = GgufMtpBenchmarkSummary(
+            runId = runId,
+            generatedAtEpochMillis = System.currentTimeMillis(),
+            modelId = model.info.id,
+            backend = backendMode.benchmarkBackend,
+            promptChars = prompt.length,
+            modelSupportsMtp = model.info.supportsMtp,
+            passes = listOf(baseline, mtp),
+            gate = GgufMtpBenchmarkGateEvaluator.evaluate(listOf(baseline, mtp)),
+            notes = listOf(
+                "GGUF MTP benchmark is text-only.",
+                "MTP remains disallowed for mmproj vision and strict chromatogram numeric analysis.",
+            ),
         )
-        mtpAbLog("DONE runId=$runId")
+        exportAndLog(summary)
+        summary
+    }
+
+    private fun exportAbortSummary(
+        runId: String,
+        requestedModelId: String?,
+        backendMode: MtpAbBackendMode,
+        promptChars: Int,
+        reason: String,
+    ): GgufMtpBenchmarkSummary {
+        mtpAbError("ABORT runId=$runId reason=$reason model=${requestedModelId.orEmpty()}")
+        val summary = GgufMtpBenchmarkSummary(
+            runId = runId,
+            generatedAtEpochMillis = System.currentTimeMillis(),
+            modelId = requestedModelId,
+            backend = backendMode.benchmarkBackend,
+            promptChars = promptChars,
+            modelSupportsMtp = false,
+            passes = emptyList(),
+            gate = GgufMtpBenchmarkGate(
+                decision = GgufMtpGateDecision.INCONCLUSIVE,
+                verdict = "INCONCLUSIVE",
+                reasons = listOf(reason),
+            ),
+            notes = listOf("Benchmark did not run because preconditions failed."),
+        )
+        exportAndLog(summary)
+        return summary
+    }
+
+    private fun exportAndLog(summary: GgufMtpBenchmarkSummary) {
+        val exports = exporter.export(summary)
+        val structuredDiagnostics = StructuredRuntimeDiagnosticMapper.fromGgufMtpBenchmark(summary)
+        mtpAbLog(
+            "SUMMARY runId=${summary.runId} verdict=${summary.gate.verdict} " +
+                "decision=${summary.gate.decision} speedup=${summary.gate.speedup ?: 0.0} " +
+                "firstTokenSlowdown=${summary.gate.firstTokenSlowdown ?: 0.0} " +
+                "structuredDiagnostics=${structuredDiagnostics.size}",
+        )
+        exports.forEach { record ->
+            mtpAbLog(
+                "EXPORT runId=${summary.runId} file=${record.fileName} " +
+                    "success=${record.success} path=${record.uriOrPath.orEmpty()} message=${record.message}",
+            )
+        }
+        mtpAbLog("DONE runId=${summary.runId}")
     }
 
     private fun resolveModel(runId: String, requestedModelId: String?): DownloadedModel? {
@@ -169,10 +231,7 @@ class MtpAbDiagnostics(
     ): Int {
         val modelMax = model.info.maxMtpDraftTokens.coerceAtLeast(1)
         val requested = requestedDraftTokens?.takeIf { it > 0 }
-        return if (requested != null) {
-            // Diagnostics must be able to probe upstream-recommended values
-            // such as Qwen3.5 MTP draft=6, even when production Android uses
-            // a safer per-device runtime profile.
+        val draftTokens = if (requested != null) {
             requested.coerceIn(1, modelMax)
         } else {
             ChatMtpRuntimeProfile.coerceDraftTokens(
@@ -181,11 +240,18 @@ class MtpAbDiagnostics(
                 isConservativeDevice = conservative,
             )
         }
+        return GgufMtpSafetyPolicy.resolveLoadPolicy(
+            supportsMtp = model.info.supportsMtp,
+            requestedDraftTokens = draftTokens,
+            hasVisionProjector = false,
+            strictChromatogramAnalysis = false,
+        ).effectiveDraftTokens
     }
 
     private suspend fun runProbePass(
         runId: String,
         label: String,
+        mode: GgufMtpBenchmarkMode,
         model: DownloadedModel,
         prompt: String,
         contextTokens: Int,
@@ -193,12 +259,14 @@ class MtpAbDiagnostics(
         mtpDraftTokens: Int,
         maxTokens: Int,
         backendMode: MtpAbBackendMode,
-    ): MtpAbPassResult {
+    ): GgufMtpBenchmarkPass {
         val engine = LlamaEngine()
-        val started = SystemClock.elapsedRealtime()
+        val loadStarted = SystemClock.elapsedRealtime()
         var firstTokenMs: Long? = null
         var callbacks = 0
-        var chars = 0
+        var callbackChars = 0
+        var generatedTokens: Int? = null
+        val modelPathClass = StructuredRuntimeDiagnosticMapper.classifyModelPath(model.primaryPath).name
         return try {
             mtpAbLog("PASS_START runId=$runId label=$label draft=$mtpDraftTokens")
             engine.loadModel(
@@ -211,11 +279,10 @@ class MtpAbDiagnostics(
                 preferAccelerated = backendMode.preferAccelerated,
                 mtpDraftTokens = mtpDraftTokens,
             )
-            val loadMs = SystemClock.elapsedRealtime() - started
+            val loadMs = SystemClock.elapsedRealtime() - loadStarted
             mtpAbLog("PASS_LOAD_DONE runId=$runId label=$label loadMs=$loadMs backend=${engine.getBackendName()}")
             val inferStarted = SystemClock.elapsedRealtime()
-            val output = engine.inferRawStreaming(
-                imagePath = "__chromalab_text_only__",
+            val output = engine.inferTextOnlyForDiagnostics(
                 prompt = "User: $prompt\nAssistant:",
                 options = GenerationOptions(
                     maxTokens = maxTokens,
@@ -224,42 +291,79 @@ class MtpAbDiagnostics(
                     topK = 40,
                     repeatPenalty = 1.05f,
                     repeatLastN = 128,
+                    timeoutMs = DEFAULT_MTP_AB_TIMEOUT_MS,
                 ),
-                onPartial = { chunk ->
+                onNativeToken = { chunk, tokenCount, _ ->
                     callbacks += 1
-                    chars += chunk.length
+                    callbackChars += chunk.length
+                    generatedTokens = tokenCount
                     if (firstTokenMs == null) {
                         firstTokenMs = SystemClock.elapsedRealtime() - inferStarted
-                        mtpAbLog("PASS_FIRST_TOKEN runId=$runId label=$label firstTokenMs=$firstTokenMs chunkChars=${chunk.length}")
+                        mtpAbLog("PASS_FIRST_TOKEN runId=$runId label=$label firstTokenMs=$firstTokenMs tokenCount=$tokenCount")
                     }
                 },
             )
             val elapsedMs = SystemClock.elapsedRealtime() - inferStarted
-            val tpsApprox = if (elapsedMs > 0L) callbacks * 1000.0 / elapsedMs else 0.0
+            val tokensPerSecond = generatedTokens
+                ?.takeIf { it > 0 && elapsedMs > 0 }
+                ?.let { it * 1000.0 / elapsedMs.toDouble() }
+            val missing = buildList {
+                add("prompt_tokens_not_exported_by_bridge")
+                if (generatedTokens == null) add("generated_tokens_not_exported_by_bridge")
+                if (mtpDraftTokens > 0) {
+                    add("drafted_tokens_not_exported_by_bridge")
+                    add("accepted_tokens_not_exported_by_bridge")
+                    add("acceptance_rate_not_exported_by_bridge")
+                }
+            }
             mtpAbLog(
                 "PASS_DONE runId=$runId label=$label loadMs=$loadMs firstTokenMs=$firstTokenMs " +
-                    "elapsedMs=$elapsedMs callbacks=$callbacks chars=${output.length} approxTps=$tpsApprox " +
-                    "preview=${output.previewForLog()}",
+                    "elapsedMs=$elapsedMs callbacks=$callbacks generatedTokens=${generatedTokens ?: 0} " +
+                    "chars=${output.length} tps=${tokensPerSecond ?: 0.0} preview=${output.previewForLog()}",
             )
-            MtpAbPassResult(
+            GgufMtpBenchmarkPass(
                 label = label,
-                loadMs = loadMs,
-                firstTokenMs = firstTokenMs,
-                elapsedMs = elapsedMs,
-                callbacks = callbacks,
-                chars = output.length,
+                mode = mode,
+                backend = backendMode.benchmarkBackend,
+                modelId = model.info.id,
+                modelPathClass = modelPathClass,
+                contextTokens = contextTokens,
+                batchTokens = batchTokens,
+                maxTokens = maxTokens,
+                mtpDraftTokens = mtpDraftTokens,
+                generatedTokens = generatedTokens,
+                firstTokenLatencyMillis = firstTokenMs,
+                loadTimeMillis = loadMs,
+                totalResponseDurationMillis = elapsedMs,
+                totalTokensPerSecond = tokensPerSecond,
+                tokenCallbackCount = callbacks,
+                outputChars = output.length,
+                timeoutMillis = DEFAULT_MTP_AB_TIMEOUT_MS,
+                missingMetricReasons = missing,
             )
         } catch (t: Throwable) {
-            val elapsedMs = SystemClock.elapsedRealtime() - started
-            mtpAbError("PASS_FAILED runId=$runId label=$label elapsedMs=$elapsedMs ${t::class.simpleName}: ${t.message}", t)
-            MtpAbPassResult(
+            val elapsedMs = SystemClock.elapsedRealtime() - loadStarted
+            val message = t.message ?: t::class.simpleName ?: "unknown_error"
+            mtpAbError("PASS_FAILED runId=$runId label=$label elapsedMs=$elapsedMs ${t::class.simpleName}: $message", t)
+            GgufMtpBenchmarkPass(
                 label = label,
-                loadMs = elapsedMs,
-                firstTokenMs = firstTokenMs,
-                elapsedMs = elapsedMs,
-                callbacks = callbacks,
-                chars = chars,
-                error = t.message ?: t::class.simpleName,
+                mode = mode,
+                backend = backendMode.benchmarkBackend,
+                modelId = model.info.id,
+                modelPathClass = modelPathClass,
+                contextTokens = contextTokens,
+                batchTokens = batchTokens,
+                maxTokens = maxTokens,
+                mtpDraftTokens = mtpDraftTokens,
+                generatedTokens = generatedTokens,
+                firstTokenLatencyMillis = firstTokenMs,
+                loadTimeMillis = elapsedMs,
+                totalResponseDurationMillis = elapsedMs,
+                tokenCallbackCount = callbacks,
+                outputChars = callbackChars,
+                timedOut = message.contains("timeout", ignoreCase = true),
+                timeoutMillis = DEFAULT_MTP_AB_TIMEOUT_MS,
+                failureReason = message,
             )
         } finally {
             engine.unload()
@@ -267,23 +371,14 @@ class MtpAbDiagnostics(
     }
 }
 
-private data class MtpAbPassResult(
-    val label: String,
-    val loadMs: Long,
-    val firstTokenMs: Long?,
-    val elapsedMs: Long,
-    val callbacks: Int,
-    val chars: Int,
-    val error: String? = null,
-)
-
 private enum class MtpAbBackendMode(
     val logName: String,
     val accelerator: ChatRuntimeAccelerator,
+    val benchmarkBackend: GgufMtpBenchmarkBackend,
     val preferAccelerated: Boolean,
 ) {
-    CPU("cpu", ChatRuntimeAccelerator.CPU, false),
-    VULKAN("vulkan", ChatRuntimeAccelerator.VULKAN, true);
+    CPU("cpu", ChatRuntimeAccelerator.CPU, GgufMtpBenchmarkBackend.CPU, false),
+    VULKAN("vulkan", ChatRuntimeAccelerator.VULKAN, GgufMtpBenchmarkBackend.VULKAN, true);
 
     companion object {
         fun from(value: String?): MtpAbBackendMode =
