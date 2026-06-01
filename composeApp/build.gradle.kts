@@ -83,7 +83,7 @@ kotlin {
             implementation(libs.mlkit.document.scanner)
 
             // LiteRT-LM — on-device LLM inference (Gemma 4)
-            implementation("com.google.ai.edge.litertlm:litertlm-android:latest.release")
+            implementation(libs.litertlm.android)
         }
 
         val desktopMain by getting {

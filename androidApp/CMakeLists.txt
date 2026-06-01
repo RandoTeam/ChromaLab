@@ -4,7 +4,7 @@ project(llama_bridge LANGUAGES C CXX)
 # ============================================================
 # llama.cpp JNI Bridge for ChromaLab
 # ============================================================
-# Pinned to llama.cpp b9219 (2026-05-18).
+# Pinned to llama.cpp b9464 (2026-06-01).
 # Builds: ggml + llama + llama-common (text/MTP) + mtmd library (vision/audio).
 # Links statically into llama_bridge.so for Android arm64.
 # ============================================================
@@ -127,7 +127,7 @@ set(LLAMA_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 set(LLAMA_CURL OFF CACHE BOOL "" FORCE)
 
 # Needed by mtmd's set_target_properties(VERSION ...)
-set(LLAMA_INSTALL_VERSION "0.0.9198" CACHE STRING "" FORCE)
+set(LLAMA_INSTALL_VERSION "0.0.9464" CACHE STRING "" FORCE)
 
 # Build llama.cpp core (ggml + llama)
 add_subdirectory(${LLAMA_CPP_DIR} llama.cpp EXCLUDE_FROM_ALL)

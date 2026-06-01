@@ -48,7 +48,7 @@ ChromaLab начинался как мобильное приложение дл
 
 - Единый раздел моделей для научного контура и чата.
 - Поддержка `.litertlm` через Google LiteRT-LM.
-- Поддержка `.gguf` через llama.cpp bridge на актуальном upstream `b9198+6`.
+- Поддержка `.gguf` через llama.cpp bridge на актуальном upstream `b9464`.
 - GGUF text-only чат поддерживает MTP speculative decoding через `draft-mtp` и настраиваемое число draft tokens.
 - Hugging Face поиск по моделям с сортировкой и compatibility metadata.
 - Локальный import/export остается частью основного model manager.
@@ -82,7 +82,7 @@ flowchart LR
     F --> G["Report / Export"]
 
     M["Model Manager"] --> L["LiteRT-LM"]
-    M --> Q["GGUF / llama.cpp b9198+"]
+    M --> Q["GGUF / llama.cpp b9464"]
     L --> V["VLM helpers"]
     Q --> V
     L --> H["Local chat"]
