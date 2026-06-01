@@ -15,6 +15,9 @@ import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.model.ModelInfo
 import com.chromalab.feature.processing.model.ModelManager
 import com.chromalab.feature.processing.model.ModelRegistry
+import com.chromalab.feature.processing.model.ModelAvailabilityMode
+import com.chromalab.feature.processing.model.ModelDeploymentMode
+import com.chromalab.feature.processing.model.ModelSelectionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,6 +37,11 @@ private fun logModel(message: String) {
 private fun logModelError(message: String, throwable: Throwable? = null) {
     Log.e(TAG, message, throwable)
 }
+
+private fun ModelSelectionResult.summary(): String =
+    "selected=$selectedModelId detectedTarget=$detectedDeviceTarget selectedTarget=$selectedDeviceTarget " +
+        "reason=$reason fallback=$fallbackModelAttempted fallbackResult=${fallbackResult.orEmpty()} " +
+        "rejected=${rejectedModelIds.joinToString("|")}"
 
 /**
  * Controller bridging ModelManager (Android) → ModelManagerState (common UI).
@@ -716,25 +724,27 @@ class ModelManagerController(
             return false
         }
 
-        val models = if (selectedDownloadedModel != null) {
+        val compatibleModels = if (selectedDownloadedModel != null) {
             listOf(selectedDownloadedModel)
         } else {
-            downloadedModels
-                .filter { manager.canLoadForChromatogramVision(it.info) }
-                .sortedWith(
-                    compareBy<com.chromalab.feature.processing.model.DownloadedModel> {
-                        ModelRegistry.chromatogramVisionPriority(it.info)
-                    }.thenBy { it.info.totalSizeBytes }
-                )
+            downloadedModels.filter { manager.canLoadForChromatogramVision(it.info) }
         }
-        if (models.isEmpty()) {
+        val (model, selection) = manager.selectPreferredChromatogramModel(
+            candidates = compatibleModels,
+            explicitModelId = selectedDownloadedModel?.info?.id,
+        )
+        val discoveryMode = when (model?.info?.deploymentMode) {
+            ModelDeploymentMode.FULL_ANALYSIS -> ModelAvailabilityMode.FULL_ANALYSIS
+            else -> ModelAvailabilityMode.FAST
+        }
+        logModel("Chromatogram model discovery: ${selection.summary()}")
+        logModel("Chromatogram model availability: ${manager.availabilityDiagnostic(model, discoveryMode, selection)}")
+
+        if (model == null) {
             logModel("No chromatogram vision model can be loaded on this device")
             onProgress?.invoke("No loaded/downloaded chromatogram VLM fits this device")
             return false
         }
-
-        // Priority: selected chromatogram model > chromatography ranking > package size.
-        val model = models.first()
 
         logModel("Auto-loading chromatogram VLM: ${model.info.displayName} (${model.info.family}, ${model.info.runtime})")
         onProgress?.invoke("Загрузка AI модели: ${model.info.displayName}")

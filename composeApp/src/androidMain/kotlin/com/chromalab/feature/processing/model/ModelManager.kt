@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.model
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Build
 import com.chromalab.feature.processing.inference.InferenceConfig
 import com.chromalab.feature.processing.inference.ModelRuntime
 import kotlinx.coroutines.Dispatchers
@@ -386,6 +387,7 @@ class ModelManager(private val context: Context) {
     /** Whether a model can safely receive image input on this device. */
     fun canLoadForVision(model: ModelInfo): Boolean {
         if (!model.supportsVision) return false
+        if (!matchesCurrentDeviceTarget(model)) return false
         if (model.runtime == ModelRuntime.LLAMA_CPP && !ModelRegistry.hasGgufVisionFilePair(model)) {
             return false
         }
@@ -420,6 +422,62 @@ class ModelManager(private val context: Context) {
     fun canLoadForChromatogramVision(model: ModelInfo): Boolean =
         canLoadForVision(model) &&
             ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(model).eligible
+
+    fun currentDeviceProfile(): ModelDeviceProfile =
+        ModelDeviceProfile(
+            manufacturer = Build.MANUFACTURER.orEmpty(),
+            brand = Build.BRAND.orEmpty(),
+            model = Build.MODEL.orEmpty(),
+            hardware = Build.HARDWARE.orEmpty(),
+            board = Build.BOARD.orEmpty(),
+            product = Build.PRODUCT.orEmpty(),
+            supportedAbis = Build.SUPPORTED_ABIS?.toList().orEmpty(),
+        )
+
+    fun matchesCurrentDeviceTarget(model: ModelInfo): Boolean =
+        ModelDeviceSelector.isAllowedOnDevice(model, currentDeviceProfile())
+
+    fun selectPreferredChromatogramModel(
+        candidates: List<DownloadedModel>,
+        explicitModelId: String? = null,
+    ): Pair<DownloadedModel?, ModelSelectionResult> {
+        val result = ModelDeviceSelector.selectChromatogramModel(
+            models = candidates.map { it.info },
+            profile = currentDeviceProfile(),
+            explicitModelId = explicitModelId,
+        )
+        return candidates.firstOrNull { it.info.id == result.selectedModelId } to result
+    }
+
+    fun availabilityDiagnostic(
+        downloadedModel: DownloadedModel?,
+        mode: ModelAvailabilityMode,
+        selection: ModelSelectionResult,
+    ): ModelAvailabilityDiagnostic {
+        val primary = downloadedModel?.let { File(it.localDir, it.info.primaryFileName) }
+        return ModelAvailabilityDiagnostic(
+            diagnosticId = "model_discovery:${System.currentTimeMillis()}",
+            mode = mode,
+            selectedModelId = selection.selectedModelId,
+            expectedBackend = downloadedModel?.info?.runtime?.name,
+            expectedPath = primary?.path,
+            pathExists = primary?.exists(),
+            fileSizeBytes = primary?.takeIf { it.exists() }?.length(),
+            loadAttempted = false,
+            fallbackModelAttempted = selection.fallbackModelAttempted,
+            fallbackResult = selection.fallbackResult,
+            detectedDeviceTarget = selection.detectedDeviceTarget.name,
+            selectedDeviceTarget = selection.selectedDeviceTarget?.name,
+            selectionReason = selection.reason.name,
+            rejectedModelIds = selection.rejectedModelIds,
+            status = if (downloadedModel != null) {
+                ModelAvailabilityStatus.AVAILABLE
+            } else {
+                ModelAvailabilityStatus.UNAVAILABLE
+            },
+            timestampEpochMillis = System.currentTimeMillis(),
+        )
+    }
 
     fun liteRtPreferAccelerator(model: ModelInfo): Boolean =
         model.runtime == ModelRuntime.LITERT_LM && !isConservativeDevice()
@@ -490,6 +548,10 @@ class ModelManager(private val context: Context) {
     fun compatibilityMessage(model: ModelInfo, forVision: Boolean): String {
         val total = getDeviceRamMb()
         val available = getAvailableRamMb()
+        if (!matchesCurrentDeviceTarget(model)) {
+            val detected = ModelDeviceSelector.detectDeviceTarget(currentDeviceProfile())
+            return "Model ${model.displayName} targets ${model.deviceTarget}, but this device is detected as $detected."
+        }
         return if (forVision) {
             "Vision model cannot be loaded for ${model.displayName}: RAM ${total} MB, available ${available} MB."
         } else {

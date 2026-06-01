@@ -34,6 +34,10 @@ data class ModelAvailabilityDiagnostic(
     val sanitizedErrorMessage: String? = null,
     val fallbackModelAttempted: Boolean = false,
     val fallbackResult: String? = null,
+    val detectedDeviceTarget: String? = null,
+    val selectedDeviceTarget: String? = null,
+    val selectionReason: String? = null,
+    val rejectedModelIds: List<String> = emptyList(),
     val status: ModelAvailabilityStatus,
     val timestampEpochMillis: Long,
 )

@@ -110,3 +110,18 @@ explicit and requires download smoke checks for these large LiteRT bundles:
 metadata validation, HTTPS URL validation, free-space headroom, remote
 `X-Linked-Size` / `Content-Length` verification, and partial `.download` cleanup
 on preflight failure. Device-specific selection is reserved for R2.
+
+## Runtime Acceleration R2 Device Selection
+
+As of 2026-06-02, automatic chromatogram model discovery can distinguish generic
+Gemma 4 E2B from device-specific E2B bundles. A device-specific bundle is used
+only when Android device signals explicitly match the target:
+
+- `sm8750` / `snapdragon 8 elite` -> Qualcomm SM8750 E2B;
+- `qcs8275` / `dragonwing iq8` -> Qualcomm QCS8275 E2B;
+- `tensor g5` / `gs501` -> Google Tensor G5 E2B.
+
+If no matching device-specific bundle is downloaded, the generic
+`gemma4-e2b` FAST baseline remains the fallback. Nonmatching device-specific
+bundles are rejected for automatic pipeline use and recorded in model discovery
+diagnostics.
