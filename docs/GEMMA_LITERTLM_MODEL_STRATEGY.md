@@ -94,3 +94,19 @@ files/models/gemma4-e2b/gemma-4-E2B-it.litertlm
 `Gemma-4-E4B LiteRT-LM` was not installed in the validation package during Phase 9, so E4B FULL_ANALYSIS remains a required follow-up validation item.
 
 The validation fixture model-enabled path now defers Gemma activation until deterministic X/Y calibration completes. This preserves the hard boundary that model loading or VLM timeout cannot change graphPanel, plotArea, tick, calibration, trace, peak, or report numeric evidence.
+
+## Runtime Acceleration R1 Catalog Update
+
+As of 2026-06-02, the built-in model catalog includes smoke-check metadata for:
+
+- generic `Gemma-4-E2B LiteRT-LM` as the FAST/weaker-device baseline;
+- `Gemma-4-E2B LiteRT-LM` Qualcomm SM8750 bundle;
+- `Gemma-4-E2B LiteRT-LM` Qualcomm QCS8275 / Dragonwing IQ8 bundle;
+- `Gemma-4-E2B LiteRT-LM` Google Tensor G5 bundle;
+- generic `Gemma-4-E4B LiteRT-LM` as the FULL_ANALYSIS candidate.
+
+These entries are not auto-selected by device yet. R1 only makes the catalog
+explicit and requires download smoke checks for these large LiteRT bundles:
+metadata validation, HTTPS URL validation, free-space headroom, remote
+`X-Linked-Size` / `Content-Length` verification, and partial `.download` cleanup
+on preflight failure. Device-specific selection is reserved for R2.

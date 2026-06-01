@@ -107,6 +107,47 @@ class ModelRegistryVisionPackageTest {
             model.files.single().downloadUrl,
         )
         assertEquals(3_659_530_240L, model.files.single().sizeBytes)
+        assertEquals(ModelDeploymentMode.FULL_ANALYSIS, model.deploymentMode)
+        assertTrue(model.requiresDownloadSmokeCheck)
+    }
+
+    @Test
+    fun gemma4E2BDeviceSpecificLiteRtBundlesAreRegisteredForSmokeCheckedDownloads() {
+        val generic = assertNotNull(ModelRegistry.findById("gemma4-e2b"))
+        val sm8750 = assertNotNull(ModelRegistry.findById("gemma4-e2b-qualcomm-sm8750"))
+        val qcs8275 = assertNotNull(ModelRegistry.findById("gemma4-e2b-qualcomm-qcs8275"))
+        val tensorG5 = assertNotNull(ModelRegistry.findById("gemma4-e2b-google-tensor-g5"))
+
+        assertEquals(ModelDeploymentMode.FAST, generic.deploymentMode)
+        assertEquals(ModelDeviceTarget.GENERIC, generic.deviceTarget)
+        assertEquals(2_588_147_712L, generic.files.single().sizeBytes)
+        assertTrue(generic.requiresDownloadSmokeCheck)
+
+        assertEquals(ModelDeploymentMode.FAST, sm8750.deploymentMode)
+        assertEquals(ModelDeviceTarget.QUALCOMM_SM8750, sm8750.deviceTarget)
+        assertEquals("gemma-4-E2B-it_qualcomm_sm8750.litertlm", sm8750.files.single().fileName)
+        assertEquals(3_016_294_400L, sm8750.files.single().sizeBytes)
+        assertTrue(sm8750.requiresDownloadSmokeCheck)
+
+        assertEquals(ModelDeploymentMode.FAST, qcs8275.deploymentMode)
+        assertEquals(ModelDeviceTarget.QUALCOMM_QCS8275, qcs8275.deviceTarget)
+        assertEquals("gemma-4-E2B-it_qualcomm_qcs8275.litertlm", qcs8275.files.single().fileName)
+        assertEquals(3_294_593_024L, qcs8275.files.single().sizeBytes)
+        assertTrue(qcs8275.requiresDownloadSmokeCheck)
+
+        assertEquals(ModelDeploymentMode.FAST, tensorG5.deploymentMode)
+        assertEquals(ModelDeviceTarget.GOOGLE_TENSOR_G5, tensorG5.deviceTarget)
+        assertEquals("gemma-4-E2B-it_Google_Tensor_G5.litertlm", tensorG5.files.single().fileName)
+        assertEquals(3_953_110_901L, tensorG5.files.single().sizeBytes)
+        assertTrue(tensorG5.requiresDownloadSmokeCheck)
+
+        listOf(generic, sm8750, qcs8275, tensorG5).forEach { model ->
+            assertEquals(ModelRuntime.LITERT_LM, model.runtime)
+            assertTrue(model.supportsVision)
+            assertTrue(ModelRegistry.isChromatogramVisionModel(model))
+            assertEquals(ModelFileType.LITERT_BUNDLE, model.files.single().type)
+            assertTrue(model.files.single().downloadUrl.startsWith("https://huggingface.co/litert-community/"))
+        }
     }
 
     @Test

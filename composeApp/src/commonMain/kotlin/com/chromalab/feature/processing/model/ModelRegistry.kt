@@ -14,6 +14,19 @@ enum class ModelFileType {
     GGUF_MMPROJ,
 }
 
+enum class ModelDeploymentMode {
+    GENERAL,
+    FAST,
+    FULL_ANALYSIS,
+}
+
+enum class ModelDeviceTarget {
+    GENERIC,
+    QUALCOMM_SM8750,
+    QUALCOMM_QCS8275,
+    GOOGLE_TENSOR_G5,
+}
+
 /**
  * A single file that is part of a model.
  */
@@ -41,6 +54,9 @@ data class ModelInfo(
     val groupId: String? = null,
     /** Quantization label for display (e.g. "Q4_K_M", "Q8_0"). */
     val quantLabel: String? = null,
+    val deploymentMode: ModelDeploymentMode = ModelDeploymentMode.GENERAL,
+    val deviceTarget: ModelDeviceTarget = ModelDeviceTarget.GENERIC,
+    val requiresDownloadSmokeCheck: Boolean = false,
 ) {
     val totalSizeBytes: Long get() = files.sumOf { it.sizeBytes }
     val primaryFileName: String get() = files.first().fileName
@@ -120,7 +136,7 @@ data class ModelGroup(
  * URLs verified against HuggingFace API/range probes on 2026-05-18.
  *
  * Available models:
- *   LiteRT-LM:  Gemma 4 E2B (2.59 GB), Gemma 4 E4B (3.66 GB),
+ *   LiteRT-LM:  Gemma 4 E2B generic/device-specific bundles, Gemma 4 E4B,
  *               FastVLM 0.5B (1.08 GB), Qwen3.5 0.8B VLM (1.08 GB)
  *   llama.cpp:  Qwen3-VL-2B (6 quants), Qwen3-VL-4B (6 quants),
  *               Qwen3-VL-8B (6 quants), Qwen3.5-VL-9B (Q4_K_M),
@@ -165,23 +181,78 @@ object ModelRegistry {
 
     // ===== LiteRT-LM models (Gemma 4 family) =====
 
-    private val gemma4E2B = ModelInfo(
-        id = "gemma4-e2b",
-        displayName = "Gemma 4 E2B",
+    private fun gemma4LiteRtBundle(
+        id: String,
+        displayName: String,
+        fileName: String,
+        sizeBytes: Long,
+        minRamMb: Int,
+        description: String,
+        deploymentMode: ModelDeploymentMode,
+        deviceTarget: ModelDeviceTarget = ModelDeviceTarget.GENERIC,
+    ) = ModelInfo(
+        id = id,
+        displayName = displayName,
         family = "gemma-4",
         runtime = ModelRuntime.LITERT_LM,
         files = listOf(
             ModelFile(
-                fileName = "gemma-4-E2B-it.litertlm",
-                sizeBytes = 2_588_147_712L,
+                fileName = fileName,
+                sizeBytes = sizeBytes,
                 type = ModelFileType.LITERT_BUNDLE,
-                downloadUrl = "$HF_BASE/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
+                downloadUrl = "$LITERT_COMMUNITY/gemma-4-E2B-it-litert-lm/resolve/main/$fileName",
             ),
         ),
-        minRamMb = 4096,
+        minRamMb = minRamMb,
         isBuiltin = true,
         supportsVision = true,
-        description = "Быстрая модель с GPU/CPU ускорением. Рекомендуется для большинства устройств.",
+        description = description,
+        deploymentMode = deploymentMode,
+        deviceTarget = deviceTarget,
+        requiresDownloadSmokeCheck = true,
+    )
+
+    private val gemma4E2B = gemma4LiteRtBundle(
+        id = "gemma4-e2b",
+        displayName = "Gemma 4 E2B",
+        fileName = "gemma-4-E2B-it.litertlm",
+        sizeBytes = 2_588_147_712L,
+        minRamMb = 4096,
+        description = "Fast LiteRT-LM baseline for FAST and weaker-device mode. Generic Android package.",
+        deploymentMode = ModelDeploymentMode.FAST,
+    )
+
+    private val gemma4E2BQualcommSm8750 = gemma4LiteRtBundle(
+        id = "gemma4-e2b-qualcomm-sm8750",
+        displayName = "Gemma 4 E2B - Qualcomm SM8750",
+        fileName = "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
+        sizeBytes = 3_016_294_400L,
+        minRamMb = 6144,
+        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm SM8750-class devices. Use only after device match.",
+        deploymentMode = ModelDeploymentMode.FAST,
+        deviceTarget = ModelDeviceTarget.QUALCOMM_SM8750,
+    )
+
+    private val gemma4E2BQualcommQcs8275 = gemma4LiteRtBundle(
+        id = "gemma4-e2b-qualcomm-qcs8275",
+        displayName = "Gemma 4 E2B - Qualcomm QCS8275",
+        fileName = "gemma-4-E2B-it_qualcomm_qcs8275.litertlm",
+        sizeBytes = 3_294_593_024L,
+        minRamMb = 6144,
+        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm QCS8275 / Dragonwing IQ8-class devices.",
+        deploymentMode = ModelDeploymentMode.FAST,
+        deviceTarget = ModelDeviceTarget.QUALCOMM_QCS8275,
+    )
+
+    private val gemma4E2BGoogleTensorG5 = gemma4LiteRtBundle(
+        id = "gemma4-e2b-google-tensor-g5",
+        displayName = "Gemma 4 E2B - Google Tensor G5",
+        fileName = "gemma-4-E2B-it_Google_Tensor_G5.litertlm",
+        sizeBytes = 3_953_110_901L,
+        minRamMb = 8192,
+        description = "Device-specific LiteRT-LM E2B bundle for Google Tensor G5 devices. Falls back to generic E2B otherwise.",
+        deploymentMode = ModelDeploymentMode.FAST,
+        deviceTarget = ModelDeviceTarget.GOOGLE_TENSOR_G5,
     )
 
     private val gemma4E4B = ModelInfo(
@@ -201,6 +272,8 @@ object ModelRegistry {
         isBuiltin = true,
         supportsVision = true,
         description = "High-accuracy LiteRT-LM VLM. GPU/CPU capable. ~3.66 GB download; 8+ GB RAM recommended.",
+        deploymentMode = ModelDeploymentMode.FULL_ANALYSIS,
+        requiresDownloadSmokeCheck = true,
     )
 
     private val fastVlm05B = ModelInfo(
@@ -682,6 +755,9 @@ object ModelRegistry {
     /** All built-in models. LiteRT first, then GGUF variants. */
     val builtinModels: List<ModelInfo> = listOf(
         gemma4E2B,
+        gemma4E2BQualcommSm8750,
+        gemma4E2BQualcommQcs8275,
+        gemma4E2BGoogleTensorG5,
         gemma4E4B,
         fastVlm05B,
         qwen35LiteRt08B,
@@ -826,14 +902,15 @@ object ModelRegistry {
         val id = model.id.lowercase()
         return when {
             id == "gemma4-e2b" -> 0
-            family.contains("fastvlm") -> 1
-            id == "qwen35-08b-litert-vlm" -> 2
-            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q3") -> 3
-            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q4") -> 4
-            family.contains("smolvlm") && id.contains("q4") -> 5
-            family.contains("moondream") -> 6
-            id == "gemma4-e4b" -> 7
-            family.contains("qwen") -> 8
+            id.startsWith("gemma4-e2b-") -> 1
+            family.contains("fastvlm") -> 2
+            id == "qwen35-08b-litert-vlm" -> 3
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q3") -> 4
+            family.contains("qwen3-vl") && id.contains("2b") && id.contains("q4") -> 5
+            family.contains("smolvlm") && id.contains("q4") -> 6
+            family.contains("moondream") -> 7
+            id == "gemma4-e4b" -> 8
+            family.contains("qwen") -> 9
             else -> 100
         }
     }

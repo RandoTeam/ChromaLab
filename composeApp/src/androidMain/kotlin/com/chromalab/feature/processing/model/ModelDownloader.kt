@@ -84,6 +84,28 @@ class ModelDownloader {
     ) = withContext(Dispatchers.IO) {
         targetDir.mkdirs()
 
+        val metadataPreflight = ModelDownloadPreflightPolicy.validateModelBeforeDownload(
+            model = model,
+            availableFreeBytes = targetDir.usableSpace,
+        )
+        if (!metadataPreflight.canProceed) {
+            cleanupPartialDownloads(targetDir, model)
+            metadataPreflight.requireCanProceed()
+        }
+
+        if (model.requiresDownloadSmokeCheck) {
+            val remoteIssues = model.files.mapNotNull { file ->
+                ModelDownloadPreflightPolicy.validateObservedRemoteSize(
+                    file = file,
+                    observedSizeBytes = probeRemoteSize(file.downloadUrl),
+                )
+            }
+            if (remoteIssues.isNotEmpty()) {
+                cleanupPartialDownloads(targetDir, model)
+                throw RuntimeException(remoteIssues.joinToString("; ") { it.message })
+            }
+        }
+
         val totalSize = model.totalSizeBytes
         var cumulativeDownloaded = 0L
 
@@ -530,6 +552,46 @@ class ModelDownloader {
 
     private fun resolveRedirectUrl(baseUrl: String, redirectUrl: String): String =
         URL(URL(baseUrl), redirectUrl).toString()
+
+    private fun probeRemoteSize(url: String, redirects: Int = 0): Long? {
+        if (redirects > 5) return null
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "HEAD"
+            connectTimeout = CONNECT_TIMEOUT_MS
+            readTimeout = READ_TIMEOUT_MS
+            setRequestProperty("User-Agent", "ChromaLab/1.0")
+            setRequestProperty("Accept-Encoding", "identity")
+        }
+
+        return try {
+            connection.connect()
+            when (val responseCode = connection.responseCode) {
+                in 200..299 -> connection.remoteSizeHeader()
+                in 300..399 -> {
+                    val redirectUrl = connection.getHeaderField("Location") ?: return null
+                    probeRemoteSize(resolveRedirectUrl(url, redirectUrl), redirects + 1)
+                }
+                else -> {
+                    println("MODEL[DL] HEAD probe returned HTTP $responseCode")
+                    null
+                }
+            }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun HttpURLConnection.remoteSizeHeader(): Long? {
+        val linkedSize = getHeaderField("X-Linked-Size")?.toLongOrNull()
+        if (linkedSize != null && linkedSize > 0L) return linkedSize
+        return getHeaderFieldLong("Content-Length", -1L).takeIf { it > 0L }
+    }
+
+    private fun cleanupPartialDownloads(targetDir: File, model: ModelInfo) {
+        model.files.forEach { file ->
+            File(targetDir, ModelDownloadPreflightPolicy.partialDownloadFileName(file)).delete()
+        }
+    }
 
     private data class ByteRange(
         val start: Long,
