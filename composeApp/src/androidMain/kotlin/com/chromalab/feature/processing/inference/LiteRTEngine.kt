@@ -1,13 +1,17 @@
 package com.chromalab.feature.processing.inference
 
+import android.os.SystemClock
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
+import com.google.ai.edge.litertlm.Capabilities
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +32,7 @@ class LiteRTEngine : InferenceEngine {
     private var backendName: String = "LiteRT CPU"
     private var loaded: Boolean = false
     private var visionEnabled: Boolean = true
+    private var runtimeDiagnostics: LiteRtRuntimeDiagnostics = LiteRtRuntimeDiagnostics()
 
     suspend fun loadModel(
         modelPath: String,
@@ -39,6 +44,8 @@ class LiteRTEngine : InferenceEngine {
         unload()
 
         log("LOAD model=$modelPath vision=$enableVision maxTokens=$maxNumTokens preferGpu=$preferGpu cacheDir=$cacheDir")
+        val loadStarted = SystemClock.elapsedRealtime()
+        val mtpCapability = probeMtpCapability(modelPath)
 
         val backends = if (preferGpu) {
             listOf("GPU" to Backend.GPU(), "CPU" to Backend.CPU())
@@ -69,7 +76,13 @@ class LiteRTEngine : InferenceEngine {
                 backendName = if (enableVision) "LiteRT $name" else "LiteRT $name text-only"
                 loaded = true
                 visionEnabled = enableVision
-                log("LOAD success backend=$backendName")
+                val loadMs = SystemClock.elapsedRealtime() - loadStarted
+                runtimeDiagnostics = LiteRtRuntimeDiagnostics(
+                    backendName = backendName,
+                    mtpCapability = mtpCapability,
+                    performance = LiteRtPerformanceDiagnostic(loadTimeMillis = loadMs),
+                )
+                log("LOAD success backend=$backendName loadMs=$loadMs mtp=${mtpCapability.mtpEnabled} reason=${mtpCapability.reason}")
                 return@withContext
             } catch (e: Exception) {
                 logError("LOAD backend=$name failed: ${e.message}", e)
@@ -114,6 +127,8 @@ class LiteRTEngine : InferenceEngine {
 
     override fun supportsImageInput(): Boolean = loaded && visionEnabled
 
+    fun getRuntimeDiagnostics(): LiteRtRuntimeDiagnostics = runtimeDiagnostics
+
     override suspend fun inferRaw(
         imagePath: String,
         prompt: String,
@@ -155,21 +170,40 @@ class LiteRTEngine : InferenceEngine {
             log("STREAM infer image=$imagePath backend=$backendName maxTokens=${options.maxTokens} timeoutMs=${options.timeoutMs}")
             val conversation = eng.createConversation(createConversationConfig(options))
             val result = StringBuilder()
+            val inferStarted = SystemClock.elapsedRealtime()
+            var firstResponseMs: Long? = null
 
             try {
                 withTimeout(options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS) {
                     conversation.sendMessageAsync(buildContents(imagePath, prompt)).collect { message ->
                         val chunk = extractText(message).ifBlank { message.toString() }
                         if (chunk.isNotEmpty()) {
+                            if (firstResponseMs == null) {
+                                firstResponseMs = SystemClock.elapsedRealtime() - inferStarted
+                            }
                             result.append(chunk)
                             onPartial(chunk)
                         }
                     }
+                    updatePerformanceDiagnostics(
+                        firstResponseLatencyMillis = firstResponseMs,
+                        totalResponseDurationMillis = SystemClock.elapsedRealtime() - inferStarted,
+                        timeoutMillis = options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS,
+                        timedOut = false,
+                        responseChars = result.length,
+                    )
                 }
                 log("STREAM response chars=${result.length}")
                 result.toString()
             } catch (e: TimeoutCancellationException) {
                 runCatching { conversation.cancelProcess() }
+                updatePerformanceDiagnostics(
+                    firstResponseLatencyMillis = firstResponseMs,
+                    totalResponseDurationMillis = SystemClock.elapsedRealtime() - inferStarted,
+                    timeoutMillis = options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS,
+                    timedOut = true,
+                    responseChars = result.length,
+                )
                 logError("STREAM timeout after ${options.timeoutMs ?: DEFAULT_INFERENCE_TIMEOUT_MS}ms", e)
                 result.toString()
             } finally {
@@ -187,6 +221,7 @@ class LiteRTEngine : InferenceEngine {
         engine = null
         loaded = false
         visionEnabled = true
+        runtimeDiagnostics = LiteRtRuntimeDiagnostics()
         log("UNLOAD done")
     }
 
@@ -247,19 +282,90 @@ class LiteRTEngine : InferenceEngine {
         conversation: Conversation,
         contents: Contents,
         timeoutMs: Long,
-    ): String = try {
+    ): String {
         val result = StringBuilder()
-        withTimeout(timeoutMs) {
-            conversation.sendMessageAsync(contents).collect { message ->
-                val chunk = extractText(message)
-                if (chunk.isNotEmpty()) result.append(chunk)
+        val inferStarted = SystemClock.elapsedRealtime()
+        var firstResponseMs: Long? = null
+        return try {
+            withTimeout(timeoutMs) {
+                conversation.sendMessageAsync(contents).collect { message ->
+                    val chunk = extractText(message)
+                    if (chunk.isNotEmpty()) {
+                        if (firstResponseMs == null) {
+                            firstResponseMs = SystemClock.elapsedRealtime() - inferStarted
+                        }
+                        result.append(chunk)
+                    }
+                }
             }
+            val text = result.toString()
+            updatePerformanceDiagnostics(
+                firstResponseLatencyMillis = firstResponseMs,
+                totalResponseDurationMillis = SystemClock.elapsedRealtime() - inferStarted,
+                timeoutMillis = timeoutMs,
+                timedOut = false,
+                responseChars = text.length,
+            )
+            text
+        } catch (e: TimeoutCancellationException) {
+            runCatching { conversation.cancelProcess() }
+            updatePerformanceDiagnostics(
+                firstResponseLatencyMillis = null,
+                totalResponseDurationMillis = SystemClock.elapsedRealtime() - inferStarted,
+                timeoutMillis = timeoutMs,
+                timedOut = true,
+                responseChars = 0,
+            )
+            logError("TIMEOUT after ${timeoutMs}ms", e)
+            ""
         }
-        result.toString()
-    } catch (e: TimeoutCancellationException) {
-        runCatching { conversation.cancelProcess() }
-        logError("TIMEOUT after ${timeoutMs}ms", e)
-        ""
+    }
+
+    private fun updatePerformanceDiagnostics(
+        firstResponseLatencyMillis: Long?,
+        totalResponseDurationMillis: Long?,
+        timeoutMillis: Long,
+        timedOut: Boolean,
+        responseChars: Int,
+    ) {
+        runtimeDiagnostics = runtimeDiagnostics.copy(
+            performance = runtimeDiagnostics.performance.copy(
+                firstResponseLatencyMillis = firstResponseLatencyMillis,
+                totalResponseDurationMillis = totalResponseDurationMillis,
+                timeoutMillis = timeoutMillis,
+                timedOut = timedOut,
+                responseChars = responseChars,
+            ),
+        )
+        log(
+            "TIMING firstResponseMs=$firstResponseLatencyMillis totalResponseMs=$totalResponseDurationMillis " +
+                "timeoutMs=$timeoutMillis timedOut=$timedOut responseChars=$responseChars",
+        )
+    }
+
+    @OptIn(ExperimentalApi::class)
+    private fun probeMtpCapability(modelPath: String): LiteRtMtpCapabilityDiagnostic {
+        val runtimeExposesSpeculativeDecoding = runCatching {
+            ExperimentalFlags.enableSpeculativeDecoding
+            true
+        }.getOrDefault(false)
+        val runtimeFlagEnabled = runCatching {
+            ExperimentalFlags.enableSpeculativeDecoding
+        }.getOrNull()
+        val modelSupportsSpeculativeDecoding = runCatching {
+            val capabilities = Capabilities(modelPath)
+            try {
+                capabilities.hasSpeculativeDecodingSupport()
+            } finally {
+                capabilities.close()
+            }
+        }.getOrNull()
+
+        return LiteRtMtpCapabilityPolicy.evaluate(
+            modelSupportsSpeculativeDecoding = modelSupportsSpeculativeDecoding,
+            runtimeExposesSpeculativeDecoding = runtimeExposesSpeculativeDecoding,
+            runtimeFlagEnabled = runtimeFlagEnabled,
+        )
     }
 
     private fun log(message: String) {

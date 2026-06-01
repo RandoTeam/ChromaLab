@@ -412,6 +412,9 @@ class ModelManagerController(
                 activeChatMtpDraftTokens = effectiveMtpDraftTokens
                 activeChatContextSize = requestedContextSize
                 logModel("Chat engine loaded: ${model.info.displayName} (family=${model.info.family}, backend=${engine.getBackendName()})")
+                if (engine is LiteRTEngine) {
+                    logModel("LiteRT runtime diagnostics: ${engine.getRuntimeDiagnostics()}")
+                }
             }
 
             _state.update { it.copy(activatingModelId = null, activationError = null) }
@@ -796,6 +799,9 @@ class ModelManagerController(
                 VlmEngineHolder.executedModel = model.info.toActiveInferenceModel(engine.getBackendName())
                 onProgress?.invoke("AI модель готова")
                 logModel("Loaded chromatogram VLM: ${model.info.displayName} backend=${engine.getBackendName()} promptStyle=${VlmEngineHolder.activeConfig?.promptStyle}")
+                if (engine is LiteRTEngine) {
+                    logModel("LiteRT runtime diagnostics: ${engine.getRuntimeDiagnostics()}")
+                }
                 // Schedule auto-unload timer
                 scheduleAutoUnload()
                 true

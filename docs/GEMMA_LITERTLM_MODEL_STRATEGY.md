@@ -125,3 +125,21 @@ If no matching device-specific bundle is downloaded, the generic
 `gemma4-e2b` FAST baseline remains the fallback. Nonmatching device-specific
 bundles are rejected for automatic pipeline use and recorded in model discovery
 diagnostics.
+
+## Runtime Acceleration R3 MTP Capability Probe
+
+As of 2026-06-02, the local LiteRT-LM dependency is
+`com.google.ai.edge.litertlm:litertlm-android:0.12.0`. Its AAR exposes
+experimental speculative-decoding hooks through `ExperimentalFlags` and
+`Capabilities.hasSpeculativeDecodingSupport()`.
+
+ChromaLab records this as LiteRT MTP/speculative capability diagnostics only:
+
+- model support: yes / no / unknown;
+- runtime control exposure;
+- enabled state;
+- reason if unavailable or disabled;
+- load, first-response, total-response, and timeout timings.
+
+R3 does not enable speculative decoding and does not allow LiteRT/VLM output to
+change graph count, calibration, trace extraction, peak metrics, or report gates.
