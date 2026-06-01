@@ -18,6 +18,7 @@ import com.chromalab.feature.processing.peaks.PeakLabelEvidenceSource
 import com.chromalab.feature.processing.peaks.PeakLabelEvidenceStatus
 import com.chromalab.feature.processing.peaks.RuntimePeakRecoveryEvaluator
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
+import com.chromalab.feature.processing.debug.StructuredRuntimeDiagnostic
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -33,6 +34,7 @@ data class CalculationRunReportOptions(
     val executedModel: ModelExecutionInfo? = null,
     val executedRuntime: ExecutedRuntime = ExecutedRuntime.DETERMINISTIC,
     val modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    val structuredRuntimeDiagnostics: List<StructuredRuntimeDiagnostic> = emptyList(),
     val deviceName: String? = null,
     val processingMode: ProcessingMode = ProcessingMode.EXPORT_ONLY,
     val stageTimings: List<ReportStageTiming> = emptyList(),

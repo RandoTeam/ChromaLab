@@ -143,3 +143,15 @@ ChromaLab records this as LiteRT MTP/speculative capability diagnostics only:
 
 R3 does not enable speculative decoding and does not allow LiteRT/VLM output to
 change graph count, calibration, trace extraction, peak metrics, or report gates.
+
+## Runtime Acceleration R4 Structured Diagnostics Export
+
+As of 2026-06-02, LiteRT/runtime diagnostics are exportable through
+`RuntimeEvidencePackage.structuredRuntimeDiagnostics`. The technical evidence
+JSON records backend, load result, timings, timeout state, fallback reason, and
+MTP/speculative capability status when available.
+
+Private model paths are not exported as raw strings. The package stores only a
+model path class such as `APP_PRIVATE_MODEL` or
+`VALIDATION_PACKAGE_PRIVATE_MODEL`. Normal user report Markdown/HTML does not
+render structured runtime diagnostics.

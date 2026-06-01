@@ -44,7 +44,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class RuntimeEvidencePackage(
-    val schemaVersion: String = "runtime-evidence-1.2",
+    val schemaVersion: String = "runtime-evidence-1.3",
     val generatedAtEpochMillis: Long,
     val reportId: String,
     val sourceName: String? = null,
@@ -57,6 +57,7 @@ data class RuntimeEvidencePackage(
     val runtimeFailureClass: RuntimeFailureClass? = null,
     val gateEvidence: GateEvidence = GateEvidence(),
     val modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    val structuredRuntimeDiagnostics: List<StructuredRuntimeDiagnostic> = emptyList(),
     val modelRuntimeProfiles: List<ModelRuntimeProfile> = emptyList(),
     val knowledgePackVersion: String? = null,
     val knowledgeRetrievalContexts: List<KnowledgeRetrievalContext> = emptyList(),
@@ -269,6 +270,7 @@ object RuntimeEvidencePackageBuilder {
     fun build(
         report: ChromatogramReport,
         modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+        structuredRuntimeDiagnostics: List<StructuredRuntimeDiagnostic> = emptyList(),
         graphFailurePackages: List<RuntimeGraphFailurePackage> = emptyList(),
     ): RuntimeEvidencePackage {
         val gate = ReportReleaseGateEvaluator.evaluate(
@@ -280,6 +282,7 @@ object RuntimeEvidencePackageBuilder {
             metadata = report.metadata.copy(runtimeFailureClass = failureClass),
         )
         val graphBuilds = report.graphs.map(::buildGraphPackage)
+        val modelDiscoveryDiagnostics = StructuredRuntimeDiagnosticMapper.fromModelAvailability(modelAvailabilityDiagnostics)
         return RuntimeEvidencePackage(
             generatedAtEpochMillis = currentTimeMillis(),
             reportId = report.metadata.reportId,
@@ -293,6 +296,8 @@ object RuntimeEvidencePackageBuilder {
             runtimeFailureClass = failureClass,
             gateEvidence = gate.evidence,
             modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+            structuredRuntimeDiagnostics = (structuredRuntimeDiagnostics + modelDiscoveryDiagnostics)
+                .distinctBy { it.diagnosticId },
             modelRuntimeProfiles = graphBuilds
                 .flatMap { it.modelRuntimeProfiles }
                 .distinctBy { it.profileId },

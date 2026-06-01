@@ -27,6 +27,7 @@ import com.chromalab.feature.reports.PeakEvidence
 import com.chromalab.feature.reports.PeakEvidenceStatus
 import com.chromalab.feature.reports.PeakGateStatus
 import com.chromalab.feature.reports.PeakMetricEvidenceStatus
+import com.chromalab.feature.reports.ReportExportPrivacyClass
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.ReportGateStatus
 import com.chromalab.feature.reports.RuntimeFailureClass
@@ -125,6 +126,25 @@ data class RuntimeEvidenceModelAvailabilityRow(
 )
 
 @Serializable
+data class RuntimeEvidenceStructuredRuntimeRow(
+    val diagnosticId: String,
+    val source: String,
+    val modelId: String? = null,
+    val modelPathClass: String,
+    val backend: String? = null,
+    val loadAttempted: Boolean,
+    val loadResult: String? = null,
+    val loadTimeMillis: Long? = null,
+    val firstResponseLatencyMillis: Long? = null,
+    val totalResponseDurationMillis: Long? = null,
+    val timeoutMillis: Long? = null,
+    val timedOut: Boolean,
+    val fallbackReason: String? = null,
+    val mtpEnabled: String? = null,
+    val privacyClass: String,
+)
+
+@Serializable
 data class RuntimeEvidenceKnowledgeRow(
     val graphIndex: Int,
     val outputId: String,
@@ -188,6 +208,7 @@ data class RuntimeEvidenceValidationSummary(
     val blockingIssues: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val warnings: List<RuntimeEvidenceValidationIssue> = emptyList(),
     val modelAvailabilityRows: List<RuntimeEvidenceModelAvailabilityRow> = emptyList(),
+    val structuredRuntimeRows: List<RuntimeEvidenceStructuredRuntimeRow> = emptyList(),
     val graphFailureSummaries: List<RuntimeEvidenceGraphFailureValidationSummary> = emptyList(),
     val graphSummaries: List<RuntimeEvidenceGraphValidationSummary> = emptyList(),
 )
@@ -248,6 +269,7 @@ object RuntimeEvidencePackageValidator {
         val graphFailureSummaries = validateGraphFailurePackages(evidencePackage, fileExists, issues)
         validatePackageMetadata(evidencePackage, issues)
         val modelAvailabilityRows = validateModelAvailability(evidencePackage, issues)
+        val structuredRuntimeRows = validateStructuredRuntimeDiagnostics(evidencePackage, issues)
         validateKnowledgePackageMetadata(evidencePackage, issues)
         val blocking = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.BLOCKING }
         val warnings = issues.filter { it.severity == RuntimeEvidenceValidationIssueSeverity.WARNING }
@@ -265,6 +287,7 @@ object RuntimeEvidencePackageValidator {
             blockingIssues = blocking,
             warnings = warnings,
             modelAvailabilityRows = modelAvailabilityRows,
+            structuredRuntimeRows = structuredRuntimeRows,
             graphFailureSummaries = graphFailureSummaries,
             graphSummaries = graphSummaries,
         )
@@ -352,6 +375,23 @@ object RuntimeEvidencePackageValidator {
         }
         if (summary.modelAvailabilityRows.isEmpty()) {
             appendLine("| - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
+        appendLine("## Structured Runtime Diagnostics")
+        appendLine()
+        appendLine("| Diagnostic | Source | Model | Path class | Backend | Load | Load ms | First response ms | Total ms | Timeout | Fallback/MTP | Privacy |")
+        appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |")
+        summary.structuredRuntimeRows.forEach { row ->
+            appendLine(
+                "| `${row.diagnosticId}` | ${row.source} | ${row.modelId ?: "-"} | ${row.modelPathClass} | " +
+                    "${row.backend ?: "-"} | ${row.loadResult ?: row.loadAttempted.toString()} | " +
+                    "${row.loadTimeMillis ?: "-"} | ${row.firstResponseLatencyMillis ?: "-"} | " +
+                    "${row.totalResponseDurationMillis ?: "-"} | ${row.timeoutMillis ?: "-"} / ${row.timedOut} | " +
+                    "${row.fallbackReason ?: row.mtpEnabled ?: "-"} | ${row.privacyClass} |",
+            )
+        }
+        if (summary.structuredRuntimeRows.isEmpty()) {
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Graph Failure Packages")
@@ -576,6 +616,47 @@ object RuntimeEvidencePackageValidator {
             }
         }
 
+        return diagnostics.map { it.toValidationRow() }
+    }
+
+    private fun validateStructuredRuntimeDiagnostics(
+        evidencePackage: RuntimeEvidencePackage,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceStructuredRuntimeRow> {
+        val diagnostics = evidencePackage.structuredRuntimeDiagnostics
+        diagnostics.forEach { diagnostic ->
+            if (diagnostic.diagnosticId.isBlank()) {
+                issues.block("runtime_diagnostics.id_missing", "Structured runtime diagnostic id is missing.")
+            }
+            if (diagnostic.privacyClass == ReportExportPrivacyClass.USER_REPORT) {
+                issues.block(
+                    "runtime_diagnostics.user_report_privacy_class",
+                    "Structured runtime diagnostics must not be classified as USER_REPORT.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+            if (StructuredRuntimeDiagnosticMapper.containsPrivatePathLeak(diagnostic)) {
+                issues.block(
+                    "runtime_diagnostics.private_path_leak",
+                    "Structured runtime diagnostic contains a private absolute path in an exported string field.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+            if (diagnostic.modelPathClass == RuntimeModelPathClass.UNKNOWN && diagnostic.loadAttempted) {
+                issues.warn(
+                    "runtime_diagnostics.path_class_unknown",
+                    "Loaded runtime diagnostic should classify the model path without exporting the absolute path.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+            if (diagnostic.timedOut && diagnostic.timeoutMillis == null) {
+                issues.warn(
+                    "runtime_diagnostics.timeout_budget_missing",
+                    "Timed-out runtime diagnostic should include timeoutMillis.",
+                    candidateId = diagnostic.diagnosticId,
+                )
+            }
+        }
         return diagnostics.map { it.toValidationRow() }
     }
 
@@ -1447,6 +1528,25 @@ private fun ModelAvailabilityDiagnostic.toValidationRow(): RuntimeEvidenceModelA
         fallbackModelAttempted = fallbackModelAttempted,
         fallbackResult = fallbackResult,
         status = status.name,
+    )
+
+private fun StructuredRuntimeDiagnostic.toValidationRow(): RuntimeEvidenceStructuredRuntimeRow =
+    RuntimeEvidenceStructuredRuntimeRow(
+        diagnosticId = diagnosticId,
+        source = source.name,
+        modelId = modelId,
+        modelPathClass = modelPathClass.name,
+        backend = backend,
+        loadAttempted = loadAttempted,
+        loadResult = loadResult,
+        loadTimeMillis = loadTimeMillis,
+        firstResponseLatencyMillis = firstResponseLatencyMillis,
+        totalResponseDurationMillis = totalResponseDurationMillis,
+        timeoutMillis = timeoutMillis,
+        timedOut = timedOut,
+        fallbackReason = fallbackReason,
+        mtpEnabled = mtpEnabled,
+        privacyClass = privacyClass.name,
     )
 
 private fun RuntimeGraphFailureArtifactPaths.presentPaths(): List<String> = buildList {

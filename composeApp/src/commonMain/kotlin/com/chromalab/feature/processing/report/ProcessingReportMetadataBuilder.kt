@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.report
 import com.chromalab.core.data.model.SourceType
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryTrace
+import com.chromalab.feature.processing.debug.StructuredRuntimeDiagnostic
 import com.chromalab.feature.processing.model.ModelAssistedAnalysisContract
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.processing.ocr.AxisOcrResult
@@ -45,6 +46,7 @@ fun buildProcessingReportMetadataConfig(
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
     modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    structuredRuntimeDiagnostics: List<StructuredRuntimeDiagnostic> = emptyList(),
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
     graphWarnings: List<ReportWarning> = emptyList(),
@@ -75,6 +77,7 @@ fun buildProcessingReportMetadataConfig(
             executedModel = executedModel,
             executedRuntime = executedRuntime,
             modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+            structuredRuntimeDiagnostics = structuredRuntimeDiagnostics,
             deviceName = deviceName,
             stageTimings = stageTimings,
             graphWarnings = graphWarnings,
@@ -140,6 +143,7 @@ fun buildProcessingStoredReportMetadata(
     executedModel: ModelExecutionInfo? = null,
     executedRuntime: ExecutedRuntime = executedModel?.runtime ?: ExecutedRuntime.UNKNOWN,
     modelAvailabilityDiagnostics: List<ModelAvailabilityDiagnostic> = emptyList(),
+    structuredRuntimeDiagnostics: List<StructuredRuntimeDiagnostic> = emptyList(),
     deviceName: String? = null,
     stageTimings: List<ReportStageTiming> = emptyList(),
     graphWarnings: List<ReportWarning> = emptyList(),
@@ -184,6 +188,7 @@ fun buildProcessingStoredReportMetadata(
         executedModel = executedModel,
         executedRuntime = executedRuntime,
         modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+        structuredRuntimeDiagnostics = structuredRuntimeDiagnostics,
         deviceName = deviceName?.takeIf { it.isNotBlank() },
         processingMode = processingMode,
         stageTimings = modelStageTimings,

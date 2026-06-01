@@ -55,6 +55,7 @@ object CalculationRunReportExporter {
         val runtimePackage = com.chromalab.feature.processing.debug.RuntimeEvidencePackageBuilder.build(
             report,
             modelAvailabilityDiagnostics = options.modelAvailabilityDiagnostics,
+            structuredRuntimeDiagnostics = options.structuredRuntimeDiagnostics,
         )
         return json.encodeToString(runtimePackage.reportContract)
     }
@@ -84,6 +85,7 @@ object CalculationRunReportExporter {
         DebugPackageExporter.exportRuntimeEvidencePackage(
             report = buildReport(run, options),
             modelAvailabilityDiagnostics = options.modelAvailabilityDiagnostics,
+            structuredRuntimeDiagnostics = options.structuredRuntimeDiagnostics,
         )
 
     fun exportRuntimeEvidenceValidationJson(

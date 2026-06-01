@@ -32,6 +32,7 @@ fun buildCalculationReportOptions(
         executedModel = stored?.executedModel,
         executedRuntime = stored?.executedRuntime ?: ExecutedRuntime.DETERMINISTIC,
         modelAvailabilityDiagnostics = stored?.modelAvailabilityDiagnostics.orEmpty(),
+        structuredRuntimeDiagnostics = stored?.structuredRuntimeDiagnostics.orEmpty(),
         deviceName = stored?.deviceName,
         processingMode = stored?.processingMode ?: ProcessingMode.EXPORT_ONLY,
         stageTimings = stored?.stageTimings.orEmpty(),

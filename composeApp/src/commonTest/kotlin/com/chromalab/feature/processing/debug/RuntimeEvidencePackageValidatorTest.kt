@@ -61,6 +61,8 @@ import com.chromalab.feature.reports.ReportMetadata
 import com.chromalab.feature.reports.ReportPeak
 import com.chromalab.feature.reports.SignalAndBaselineReport
 import com.chromalab.feature.reports.ReportGateStatus
+import com.chromalab.feature.reports.ReportExportPrivacyClass
+import com.chromalab.feature.reports.ReportMarkdownRenderer
 import com.chromalab.feature.reports.ReportStageTiming
 import com.chromalab.feature.reports.RuntimeFailureClass
 import com.chromalab.feature.reports.RuntimeTerminalState
@@ -122,6 +124,95 @@ class RuntimeEvidencePackageValidatorTest {
         assertEquals(listOf("runtime:vlm:crop:1"), evidencePackage.modelRuntimeProfiles.map { it.profileId })
         assertTrue(graph.stageJudgeResults.any { it.modelRuntimeProfileId == "runtime:vlm:crop:1" })
         assertTrue(graph.ocrVlmCropResults.any { ForbiddenVlmNumericField.RT in it.rejectedForbiddenFields })
+    }
+
+    @Test
+    fun runtimeEvidenceExportsStructuredRuntimeDiagnosticsWithoutPrivatePath() {
+        val diagnostic = StructuredRuntimeDiagnosticMapper.fromLiteRt(
+            modelId = "gemma4-e2b",
+            diagnostics = com.chromalab.feature.processing.inference.LiteRtRuntimeDiagnostics(
+                backendName = "LiteRT GPU",
+                performance = com.chromalab.feature.processing.inference.LiteRtPerformanceDiagnostic(
+                    loadTimeMillis = 1200,
+                    firstResponseLatencyMillis = 300,
+                    totalResponseDurationMillis = 900,
+                    timeoutMillis = 6000,
+                    timedOut = false,
+                    responseChars = 42,
+                ),
+            ),
+            modelPath = "/data/user/0/com.chromalab.app.validation/files/models/gemma4-e2b/gemma.litertlm",
+        )
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = reportWithRecovery(runtimeEvidence()),
+            structuredRuntimeDiagnostics = listOf(diagnostic),
+        )
+        val encoded = json.encodeToString(evidencePackage)
+        val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.PASS, validation.verdict)
+        assertEquals("VALIDATION_PACKAGE_PRIVATE_MODEL", evidencePackage.structuredRuntimeDiagnostics.single().modelPathClass.name)
+        assertTrue(encoded.contains("\"modelPathClass\""))
+        assertTrue(!encoded.contains("/data/user/0/com.chromalab.app.validation/files/models"))
+        assertEquals("TECHNICAL_EVIDENCE", validation.structuredRuntimeRows.single().privacyClass)
+    }
+
+    @Test
+    fun runtimeEvidenceDerivesStructuredDiagnosticsFromModelAvailability() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = reportWithRecovery(runtimeEvidence()),
+            modelAvailabilityDiagnostics = listOf(missingModelDiagnostic()),
+        )
+
+        assertTrue(evidencePackage.structuredRuntimeDiagnostics.any { it.source == RuntimeDiagnosticSource.MODEL_DISCOVERY })
+        assertTrue(evidencePackage.structuredRuntimeDiagnostics.none { StructuredRuntimeDiagnosticMapper.containsPrivatePathLeak(it) })
+    }
+
+    @Test
+    fun validatorBlocksStructuredRuntimeDiagnosticsMarkedAsUserReport() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(
+            report = reportWithRecovery(runtimeEvidence()),
+            structuredRuntimeDiagnostics = listOf(
+                StructuredRuntimeDiagnostic(
+                    diagnosticId = "runtime:test:user_report",
+                    source = RuntimeDiagnosticSource.LITERT_LM,
+                    modelId = "gemma4-e2b",
+                    modelPathClass = RuntimeModelPathClass.APP_PRIVATE_MODEL,
+                    backend = "LiteRT GPU",
+                    loadAttempted = true,
+                    loadResult = "loaded",
+                    privacyClass = ReportExportPrivacyClass.USER_REPORT,
+                ),
+            ),
+        )
+        val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, validation.verdict)
+        assertTrue(validation.blockingIssues.any { it.code == "runtime_diagnostics.user_report_privacy_class" })
+    }
+
+    @Test
+    fun userReportMarkdownDoesNotRenderStructuredRuntimeDiagnostics() {
+        val report = reportWithRecovery(runtimeEvidence())
+        RuntimeEvidencePackageBuilder.build(
+            report = report,
+            structuredRuntimeDiagnostics = listOf(
+                StructuredRuntimeDiagnostic(
+                    diagnosticId = "runtime:test:private",
+                    source = RuntimeDiagnosticSource.LITERT_LM,
+                    modelId = "gemma4-e2b",
+                    modelPathClass = RuntimeModelPathClass.APP_PRIVATE_MODEL,
+                    backend = "LiteRT GPU",
+                    loadAttempted = true,
+                    loadResult = "loaded",
+                    safeUserReportSummary = "LiteRT runtime LiteRT GPU; MTP DISABLED.",
+                ),
+            ),
+        )
+
+        val markdown = ReportMarkdownRenderer.render(report)
+        assertTrue(!markdown.contains("Structured Runtime Diagnostics"))
+        assertTrue(!markdown.contains("LiteRT runtime LiteRT GPU; MTP DISABLED."))
     }
 
     @Test
