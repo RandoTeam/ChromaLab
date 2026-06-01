@@ -604,6 +604,18 @@ Implemented follow-up:
 - The safety policy rejects MTP for `mmproj` vision and strict chromatogram
   numeric analysis.
 
+2026-06-02 R6 follow-up:
+
+- `com.chromalab.app.DEBUG_VULKAN_MATRIX` now exports structured JSON/Markdown
+  under `/sdcard/Download/ChromaLab/runtime/vulkan-matrix/<run_id>/`.
+- The exported schema is `gguf-vulkan-runtime-matrix-1.0` and records Android
+  Vulkan preflight evidence plus CPU, explicit Vulkan, and AUTO profile timings.
+- Explicit Vulkan is skipped when native preflight does not expose an
+  accelerated llama.cpp backend. AUTO falls back to CPU and records the reason.
+- The matrix is text-only GGUF diagnostics. It does not change graph analysis,
+  chromatographic math, calibration, trace extraction, peak detection, or report
+  gates.
+
 ## Do Not Do
 
 - Do not weaken chromatogram prompts to make weak devices look successful.

@@ -17,6 +17,7 @@ import com.chromalab.feature.validation.AutonomousValidationFixtureRunner
 import com.chromalab.feature.validation.AutonomousValidationModelMode
 import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
+import com.chromalab.feature.processing.inference.GgufVulkanMatrixDiagnostics
 import com.chromalab.feature.processing.inference.MtpAbDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
         private const val TAG = "ChromaLabMain"
         private const val ACTION_DEBUG_GGUF_PARITY = "com.chromalab.app.DEBUG_GGUF_PARITY"
         private const val ACTION_DEBUG_MTP_AB = "com.chromalab.app.DEBUG_MTP_AB"
+        private const val ACTION_DEBUG_VULKAN_MATRIX = "com.chromalab.app.DEBUG_VULKAN_MATRIX"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
         private const val EXTRA_MODEL_MODE = "modelMode"
@@ -113,6 +115,10 @@ class MainActivity : ComponentActivity() {
             handleMtpAbDebugIntent(intent)
             return
         }
+        if (intent?.action == ACTION_DEBUG_VULKAN_MATRIX) {
+            handleVulkanMatrixDebugIntent(intent)
+            return
+        }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
         if (!isDebuggable()) {
             Log.w(TAG, "Ignoring GGUF parity diagnostics intent in non-debug build")
@@ -161,6 +167,33 @@ class MainActivity : ComponentActivity() {
                 requestedPrompt = prompt,
                 requestedBackend = backend,
                 requestedDraftTokens = draft,
+                requestedContextTokens = ctx,
+                requestedBatchTokens = batch,
+                requestedMaxTokens = maxTokens,
+            )
+        }
+    }
+
+    private fun handleVulkanMatrixDebugIntent(intent: Intent) {
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring Vulkan matrix diagnostics intent in non-debug build")
+            return
+        }
+
+        val modelId = intent.getStringExtra("modelId")
+        val prompt = intent.getStringExtra("prompt")
+        val ctx = intent.getIntExtra("ctx", -1).takeIf { it > 0 }
+        val batch = intent.getIntExtra("batch", -1).takeIf { it > 0 }
+        val maxTokens = intent.getIntExtra("maxTokens", -1).takeIf { it > 0 }
+        Log.i(
+            TAG,
+            "Starting Vulkan matrix diagnostics modelId=${modelId.orEmpty()} " +
+                "ctx=${ctx ?: 0} batch=${batch ?: 0} maxTokens=${maxTokens ?: 0}",
+        )
+        lifecycleScope.launch {
+            GgufVulkanMatrixDiagnostics(applicationContext).run(
+                requestedModelId = modelId,
+                requestedPrompt = prompt,
                 requestedContextTokens = ctx,
                 requestedBatchTokens = batch,
                 requestedMaxTokens = maxTokens,

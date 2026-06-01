@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.processing.inference.LiteRtRuntimeDiagnostics
 import com.chromalab.feature.processing.inference.GgufMtpBenchmarkMode
 import com.chromalab.feature.processing.inference.GgufMtpBenchmarkSummary
+import com.chromalab.feature.processing.inference.GgufVulkanMatrixSummary
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.reports.ReportExportPrivacyClass
 import kotlinx.serialization.Serializable
@@ -124,6 +125,52 @@ object StructuredRuntimeDiagnosticMapper {
                 privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
                 safeUserReportSummary = "GGUF text-only ${pass.label}: ${summary.gate.decision.name}.",
             )
+        }
+
+    fun fromGgufVulkanMatrix(summary: GgufVulkanMatrixSummary): List<StructuredRuntimeDiagnostic> =
+        buildList {
+            add(
+                StructuredRuntimeDiagnostic(
+                    diagnosticId = "runtime:vulkan_preflight:${summary.runId}",
+                    source = RuntimeDiagnosticSource.VULKAN_PREFLIGHT,
+                    modelId = summary.modelId,
+                    backend = summary.preflight.selectedBackendHint,
+                    loadAttempted = false,
+                    loadResult = if (summary.preflight.acceleratedBackendAvailable) {
+                        "accelerated_backend_available"
+                    } else {
+                        "cpu_only"
+                    },
+                    fallbackReason = summary.preflight.fallbackReason,
+                    privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                    safeUserReportSummary = "GGUF Vulkan preflight: ${summary.gate.decision.name}.",
+                ),
+            )
+            summary.passes.forEach { pass ->
+                add(
+                    StructuredRuntimeDiagnostic(
+                        diagnosticId = "runtime:vulkan_matrix:${summary.runId}:${pass.profile.name.lowercase()}",
+                        source = RuntimeDiagnosticSource.VULKAN_PREFLIGHT,
+                        modelId = pass.modelId,
+                        modelPathClass = runCatching { RuntimeModelPathClass.valueOf(pass.modelPathClass) }
+                            .getOrDefault(RuntimeModelPathClass.UNKNOWN),
+                        backend = pass.selectedBackend ?: pass.requestedBackend,
+                        loadAttempted = pass.loadAttempted,
+                        loadResult = pass.failureReason ?: if (pass.loadAttempted) "completed" else "skipped",
+                        loadTimeMillis = pass.loadTimeMillis,
+                        firstResponseLatencyMillis = pass.firstTokenLatencyMillis,
+                        totalResponseDurationMillis = pass.totalResponseDurationMillis,
+                        timeoutMillis = pass.timeoutMillis,
+                        timedOut = pass.timedOut,
+                        fallbackReason = pass.fallbackReason ?: summary.gate.verdict,
+                        modelSupportsMtp = null,
+                        runtimeExposesMtp = "TEXT_ONLY_VULKAN_MATRIX",
+                        mtpEnabled = "DISABLED",
+                        privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+                        safeUserReportSummary = "GGUF ${pass.profile.name.lowercase()} profile: ${summary.gate.decision.name}.",
+                    ),
+                )
+            }
         }
 
     fun classifyModelPath(path: String?): RuntimeModelPathClass {
