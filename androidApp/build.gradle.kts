@@ -19,8 +19,8 @@ android {
         applicationId = "com.chromalab.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.0.5-beta.5"
+        versionCode = 8
+        versionName = "0.0.5-beta.6"
 
         ndk {
             // Target only arm64 (modern phones)

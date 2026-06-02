@@ -77,7 +77,7 @@ The app needs three separate concepts:
 
 | Device class | Detection signals | Preferred path | Fallback path |
 | --- | --- | --- | --- |
-| Snapdragon 8 Elite / SM8750 | `sm8750`, `snapdragon 8 elite` | `gemma4-e2b-qualcomm-sm8750` on LiteRT `GPU` after smoke pass | generic `gemma4-e2b` on GPU, then CPU |
+| Snapdragon 8 Elite / SM8750 | `sm8750`, `snapdragon 8 elite` | `gemma4-e2b-qualcomm-sm8750` on LiteRT `NPU` after smoke pass | generic `gemma4-e2b` on GPU, then CPU |
 | Qualcomm QCS8275 / Dragonwing IQ8 | `qcs8275`, `dragonwing iq8` | `gemma4-e2b-qualcomm-qcs8275` on LiteRT `NPU` after smoke pass | generic `gemma4-e2b` on GPU, then CPU |
 | Snapdragon 8 Gen 3 / SM8650 | `sm8650`, `snapdragon 8 gen 3`, flagship Adreno signal | no current exact `.litertlm` bundle; use generic `gemma4-e2b` on GPU first | generic `gemma4-e2b` CPU; GGUF Vulkan path only if preflight passes |
 | Snapdragon 8 Elite Gen 5 / newer 8-series | exact future SoC signal when known | exact future package only if registered and smoke-passed | generic E2B GPU/CPU; do not reuse SM8750/QCS8275 package blindly |
@@ -140,8 +140,8 @@ New metadata should express:
 
 Example intent:
 
-- `gemma4-e2b-qualcomm-sm8750`: strict SM8750, backend order `GPU`, then `CPU`
-  fallback unless a future package is explicitly marked NPU-targeted.
+- `gemma4-e2b-qualcomm-sm8750`: strict SM8750, backend order `NPU`, then `CPU`
+  fallback; generic E2B remains the GPU-first fallback model.
 - `gemma4-e2b`: generic, backend order `GPU`, `CPU`.
 - `gemma4-e4b`: generic full-analysis, backend order `GPU`, `CPU`, memory gated.
 
@@ -198,7 +198,7 @@ Run each LiteRT package through the backend it was built for.
 
 Backend routing:
 
-- strict SM8750 / Snapdragon 8 Elite package: try `Backend.GPU()` first;
+- strict SM8750 / Snapdragon 8 Elite package: try `Backend.NPU(nativeLibraryDir)` first;
 - strict NPU-targeted Qualcomm packages: try `Backend.NPU(nativeLibraryDir)` first;
 - generic packages: try `Backend.GPU()` then `Backend.CPU()`;
 - conservative devices: CPU first unless GPU was smoke-passed;
@@ -322,7 +322,7 @@ Prove the routing on real devices before claiming R8/R9 readiness.
 Required runs:
 
 - SM8750 / Snapdragon 8 Elite:
-  - exact SM8750 package GPU smoke;
+  - exact SM8750 package NPU smoke;
   - generic E2B GPU/CPU fallback;
   - chat first-token;
   - validation fixture semantic/VLM assistance.

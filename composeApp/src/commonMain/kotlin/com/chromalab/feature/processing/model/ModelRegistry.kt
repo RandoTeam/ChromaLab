@@ -233,10 +233,10 @@ object ModelRegistry {
         fileName = "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
         sizeBytes = 3_016_294_400L,
         minRamMb = 6144,
-        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm SM8750 / Snapdragon 8 Elite-class devices. GPU-first; use only after device match.",
+        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm SM8750 / Snapdragon 8 Elite-class devices. NPU-first; use only after device match.",
         deploymentMode = ModelDeploymentMode.FAST,
         deviceTarget = ModelDeviceTarget.QUALCOMM_SM8750,
-        liteRtBackendOrder = listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU),
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.NPU, LiteRtBackendPreference.CPU),
     )
 
     private val gemma4E2BQualcommQcs8275 = gemma4LiteRtBundle(

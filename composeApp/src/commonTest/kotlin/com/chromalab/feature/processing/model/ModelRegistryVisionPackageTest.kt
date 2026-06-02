@@ -130,7 +130,7 @@ class ModelRegistryVisionPackageTest {
         assertEquals("gemma-4-E2B-it_qualcomm_sm8750.litertlm", sm8750.files.single().fileName)
         assertEquals(3_016_294_400L, sm8750.files.single().sizeBytes)
         assertTrue(sm8750.requiresDownloadSmokeCheck)
-        assertEquals(listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU), sm8750.liteRtBackendOrder)
+        assertEquals(listOf(LiteRtBackendPreference.NPU, LiteRtBackendPreference.CPU), sm8750.liteRtBackendOrder)
 
         assertEquals(ModelDeploymentMode.FAST, qcs8275.deploymentMode)
         assertEquals(ModelDeviceTarget.QUALCOMM_QCS8275, qcs8275.deviceTarget)

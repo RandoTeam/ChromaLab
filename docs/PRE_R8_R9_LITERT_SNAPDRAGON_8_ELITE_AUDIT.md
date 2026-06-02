@@ -147,10 +147,10 @@ Impact:
 The failing "two LiteRT versions" are best classified as:
 
 1. `gemma4-e2b-qualcomm-sm8750`: likely correct target for Snapdragon 8 Elite,
-   but it must not be hardwired to NPU without runtime evidence. For the current
-   ChromaLab routing slice, SM8750 is treated as GPU-first because the supported
-   Snapdragon 8 Elite production path is expected to favor GPU unless a package
-   is explicitly marked NPU-targeted.
+   and the current upstream discussion classifies Qualcomm-specific Gemma 4 E2B
+   LiteRT bundles as NPU/AOT conversions. ChromaLab should therefore route this
+   exact SM8750 bundle through NPU first, then fall back to generic E2B on GPU
+   when the exact bundle fails runtime smoke.
 2. `gemma4-e2b-qualcomm-qcs8275`: not a Snapdragon 8 Elite bundle; it should not
    be loadable for chat on SM8750 unless the user explicitly bypasses a
    diagnostic warning. It targets Dragonwing IQ8 / QCS8275.
@@ -177,9 +177,8 @@ Minimum precondition for using device-specific LiteRT bundles:
 2. Enforce device target for chat activation:
    - QCS8275 bundle must not load on SM8750 by default.
 3. Add backend-order handling for device-specific Qualcomm bundles:
-   - try `Backend.GPU()` first for the SM8750 / Snapdragon 8 Elite package;
-   - try `Backend.NPU(nativeLibraryDir = applicationInfo.nativeLibraryDir)` only
-     for packages explicitly marked NPU-targeted;
+   - try `Backend.NPU(nativeLibraryDir = applicationInfo.nativeLibraryDir)` first
+     for the SM8750 / Snapdragon 8 Elite package;
    - keep generic E2B on GPU/CPU.
 4. Add runtime fallback:
    - if device-specific E2B load fails, retry generic E2B if downloaded and

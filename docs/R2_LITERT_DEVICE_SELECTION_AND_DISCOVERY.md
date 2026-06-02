@@ -32,7 +32,7 @@ Automatic chromatogram VLM selection now follows:
 LiteRT backend routing now follows model metadata instead of a generic
 accelerated/not-accelerated flag:
 
-- `gemma4-e2b-qualcomm-sm8750` is GPU-first on Snapdragon 8 Elite / SM8750;
+- `gemma4-e2b-qualcomm-sm8750` is NPU-first on Snapdragon 8 Elite / SM8750;
 - `gemma4-e2b-qualcomm-qcs8275` remains NPU-first for QCS8275 / Dragonwing IQ8;
 - generic Gemma E2B remains GPU-first with CPU fallback.
 
