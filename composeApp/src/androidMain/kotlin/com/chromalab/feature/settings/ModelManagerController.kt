@@ -66,9 +66,21 @@ class ModelManagerController(
     private var activeChatContextSize: Int = 0
 
     init {
-        refresh()
+        safeStartup("refresh") { refresh() }
         observeForegroundDownloads()
-        ModelDownloadForegroundService.resumePendingDownloads(context)
+        safeStartup("resume_pending_downloads") {
+            ModelDownloadForegroundService.resumePendingDownloads(context)
+        }
+    }
+
+    private fun safeStartup(stage: String, block: () -> Unit) {
+        runCatching(block).onFailure { error ->
+            val message = "Model manager startup $stage failed: ${error.message ?: error::class.simpleName}"
+            logModelError(message, error)
+            _state.update {
+                it.copy(downloadError = message)
+            }
+        }
     }
 
     /** Refresh state from disk / prefs. */
