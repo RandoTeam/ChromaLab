@@ -25,6 +25,7 @@ Preserved base-pack skill links:
 - `SKILL_11_REGRESSION_BENCHMARK_GOLDEN`
 - `SKILL_12_REPORT_GATE_PROVENANCE`
 - `SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL`
+- `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY`
 
 ## Identity
 
@@ -103,10 +104,11 @@ Before any non-trivial task begins, apply `docs/agent-orchestration/protocols/AG
 
 1. Apply `docs/agent-orchestration/protocols/AGENT_SKILL_SELECTION_PROTOCOL.md`.
 2. Start with `current-web-research-deep` and `source-quality-triage` for all technical, scientific, UX, Android/KMP, OCR/VLM, report, security, or performance decisions because model knowledge may be outdated.
-3. Select domain skills from the base and expansion registries according to the files and behavior affected.
-4. Prefer official docs, maintained repositories, peer-reviewed sources, standards, and current API references over blogs, forum posts, marketing claims, or uncited examples.
-5. Treat weak blogs, uncited claims, and unmaintained snippets as background only. They must not drive implementation decisions.
-6. Record selected skills and required artifacts before implementation begins.
+3. Activate `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY` before broad method changes, autonomous-analysis accuracy claims, or any decision that may replace graph layout, axis/tick/calibration, trace, baseline, peak, OCR/VLM, or model-runtime strategy.
+4. Select domain skills from the base and expansion registries according to the files and behavior affected.
+5. Prefer official docs, maintained repositories, peer-reviewed sources, standards, and current API references over blogs, forum posts, marketing claims, or uncited examples.
+6. Treat weak blogs, uncited claims, and unmaintained snippets as background only. They must not drive implementation decisions.
+7. Record selected skills and required artifacts before implementation begins.
 
 ## Phase Gate Procedure
 
@@ -120,9 +122,10 @@ Before any non-trivial task begins, apply `docs/agent-orchestration/protocols/AG
 
 1. Treat model memory as outdated for technical methods, APIs, libraries, UX practices, VLM/OCR behavior, Android/KMP behavior, scientific reporting, and chromatographic claims.
 2. Require research notes under `docs/research/YYYY-MM-DD_<phase>_<topic>.md`.
-3. Require source-quality triage for every source that affects implementation or product claims.
-4. Reject implementation plans based on weak blogs, uncited claims, stale API examples, vendor marketing, or unverified model capability claims.
-5. Require source links, relevance, adoption/rejection rationale, risks, and validation implications in the research handoff.
+3. For method discovery, require `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY` and a source matrix covering maintained repositories, literature, official docs, and active technical communities when relevant.
+4. Require source-quality triage for every source that affects implementation or product claims.
+5. Reject implementation plans based on weak blogs, uncited claims, stale API examples, vendor marketing, or unverified model capability claims.
+6. Require source links, relevance, adoption/rejection rationale, risks, and validation implications in the research handoff.
 
 ## Evidence Package Enforcement Procedure
 

@@ -380,6 +380,36 @@
         "phase_7",
         "phase_8"
       ]
+    },
+    {
+      "id": "SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY",
+      "display_name": "Deep Research Method Discovery",
+      "file": "docs/agent-orchestration/skills/SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY.md",
+      "owner_group": "base_orchestration_skills",
+      "required_activation_conditions": [
+        "deep method discovery before core analysis changes",
+        "GitHub/literature/forum research requested",
+        "autonomous analysis accuracy claims",
+        "graph/axis/calibration/trace/peak strategy changes"
+      ],
+      "related_agents": [
+        "AGENT_00_ORCHESTRATOR",
+        "research_intelligence_agent",
+        "qa_regression_agent",
+        "product_acceptance_agent"
+      ],
+      "related_phases": [
+        "phase_0",
+        "phase_1",
+        "phase_2",
+        "phase_3",
+        "phase_4",
+        "phase_5",
+        "phase_6",
+        "phase_7",
+        "phase_8",
+        "phase_9"
+      ]
     }
   ]
 }

@@ -97,6 +97,12 @@ For every technical task:
 - `source-quality-triage`
 - `research-synthesis`
 
+For deep method discovery before core analysis changes:
+
+- `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY`
+- `method-comparison-matrix`
+- `regression-benchmark-golden`
+
 For UI / UX:
 
 - `mobile-ux-flow-design`

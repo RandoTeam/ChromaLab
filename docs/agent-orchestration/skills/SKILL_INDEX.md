@@ -41,6 +41,7 @@ expected use, related agents, and validation role. Expanded skills live under
 | `SKILL_13_PERFORMANCE_TIMEOUTS` | `SKILL_13_PERFORMANCE_TIMEOUTS.md` | VLM/CV timing, blocking, caching | Timeout, cache, and heartbeat policy |
 | `SKILL_14_SECURITY_PRIVACY_STORAGE` | `SKILL_14_SECURITY_PRIVACY_STORAGE.md` | File export and user data handling | Safe storage/export policy |
 | `SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL` | `SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md` | Multi-agent branches, merges, reviews | Merge plan and review checklist |
+| `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY` | `SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY.md` | Deep GitHub/literature/forum method discovery before core analysis changes | Source matrix, adoption/rejection decisions, and implementation handoff |
 
 ## Related Expanded Skills
 

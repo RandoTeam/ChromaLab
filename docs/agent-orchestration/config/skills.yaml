@@ -63,3 +63,7 @@ skills:
     display_name: "Git Branch / Review Protocol"
     file: docs/agent-orchestration/skills/SKILL_15_GIT_BRANCH_REVIEW_PROTOCOL.md
     owner_group: base_orchestration_skills
+  - id: SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY
+    display_name: "Deep Research Method Discovery"
+    file: docs/agent-orchestration/skills/SKILL_16_DEEP_RESEARCH_METHOD_DISCOVERY.md
+    owner_group: base_orchestration_skills
