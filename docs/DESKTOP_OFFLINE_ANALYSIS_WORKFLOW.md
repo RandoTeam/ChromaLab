@@ -22,6 +22,24 @@ Use absolute image and output paths when invoking through Gradle. The desktop ru
 task starts inside the `composeApp` project directory, so repository-relative paths
 can be interpreted differently.
 
+## Full Bench Suite
+
+Run all eight desktop bench fixtures from the repository root:
+
+```powershell
+.\tools\chromatogram-bench\run_pc_chromatogram_bench_suite.ps1
+```
+
+Optional output root:
+
+```powershell
+.\tools\chromatogram-bench\run_pc_chromatogram_bench_suite.ps1 -OutputRoot "build\phase-pc-algorithm-audit"
+```
+
+The suite writes one desktop analysis folder per fixture plus
+`pc_chromatogram_bench_summary.csv`. This is the preferred PC-first regression
+entrypoint before Android reruns or algorithm repair.
+
 ## Optional Local VLM Axis OCR
 
 Desktop axis OCR is disabled unless a local OpenAI-compatible vision endpoint is
