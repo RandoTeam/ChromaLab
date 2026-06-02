@@ -9,6 +9,10 @@ small executable phases. It does not start Phase 10 and does not change
 chromatographic math, `CalculationEngine`, graph detection, calibration, trace
 extraction, or peak detection.
 
+Pre-R8/R9 blocker note: Qualcomm device-specific LiteRT-LM E2B bundles for
+SM8750/QCS8275 are not yet runtime-proven in ChromaLab. See
+`docs/PRE_R8_R9_LITERT_SNAPDRAGON_8_ELITE_AUDIT.md` before starting R8 or R9.
+
 ## Operating Rules
 
 Only one phase may be active at a time.
