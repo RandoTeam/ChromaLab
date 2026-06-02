@@ -124,6 +124,11 @@ class LlamaEngine : InferenceEngine {
             repeatLastN: Int,
             callback: NativeTokenCallback,
         ): String
+        @JvmStatic private external fun nativeProbeMtmdDiagnostics(
+            handle: Long,
+            imagePath: String,
+            prompt: String,
+        ): String
     }
 
     /**
@@ -343,6 +348,21 @@ class LlamaEngine : InferenceEngine {
                 } finally {
                     unloadIfRequestedLocked()
                 }
+            }
+        }
+    }
+
+    suspend fun probeMtmdDiagnostics(
+        imagePath: String,
+        prompt: String,
+    ): String = withContext(Dispatchers.IO) {
+        nativeLock.withLock {
+            check(loaded && nativeLoaded) { "Model not loaded" }
+            check(hasVisionProjector) { "GGUF mtmd diagnostics require an mmproj vision projector" }
+            try {
+                nativeProbeMtmdDiagnostics(modelHandle, imagePath, prompt)
+            } finally {
+                unloadIfRequestedLocked()
             }
         }
     }

@@ -3,6 +3,7 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.processing.inference.LiteRtRuntimeDiagnostics
 import com.chromalab.feature.processing.inference.GgufMtpBenchmarkMode
 import com.chromalab.feature.processing.inference.GgufMtpBenchmarkSummary
+import com.chromalab.feature.processing.inference.GgufMtmdDiagnosticsSummary
 import com.chromalab.feature.processing.inference.GgufVulkanMatrixSummary
 import com.chromalab.feature.processing.model.ModelAvailabilityDiagnostic
 import com.chromalab.feature.reports.ReportExportPrivacyClass
@@ -172,6 +173,30 @@ object StructuredRuntimeDiagnosticMapper {
                 )
             }
         }
+
+    fun fromGgufMtmdDiagnostics(summary: GgufMtmdDiagnosticsSummary): StructuredRuntimeDiagnostic =
+        StructuredRuntimeDiagnostic(
+            diagnosticId = "runtime:mtmd:${summary.runId}",
+            source = RuntimeDiagnosticSource.MTMD_MMPROJ,
+            modelId = summary.modelId,
+            modelPathClass = runCatching {
+                RuntimeModelPathClass.valueOf(summary.baseModel?.pathClass ?: RuntimeModelPathClass.UNKNOWN.name)
+            }.getOrDefault(RuntimeModelPathClass.UNKNOWN),
+            backend = summary.backend,
+            loadAttempted = summary.loadAttempted,
+            loadResult = summary.loadResult ?: summary.gateDecision.name,
+            loadTimeMillis = summary.loadTimeMillis,
+            firstResponseLatencyMillis = summary.cropOcrProbe?.latencyMillis,
+            totalResponseDurationMillis = summary.cropOcrProbe?.latencyMillis,
+            timeoutMillis = null,
+            timedOut = summary.cropOcrProbe?.failureReason?.contains("timeout", ignoreCase = true) == true,
+            fallbackReason = summary.gateReasons.joinToString(";").ifBlank { null },
+            modelSupportsMtp = null,
+            runtimeExposesMtp = "MTMD_MMPROJ_DIAGNOSTIC",
+            mtpEnabled = "DISABLED_FOR_MULTIMODAL",
+            privacyClass = ReportExportPrivacyClass.TECHNICAL_EVIDENCE,
+            safeUserReportSummary = "mtmd diagnostics ${summary.gateDecision.name}; OCR output advisory only.",
+        )
 
     fun classifyModelPath(path: String?): RuntimeModelPathClass {
         val value = path?.trim()?.takeIf { it.isNotEmpty() } ?: return RuntimeModelPathClass.NOT_AVAILABLE

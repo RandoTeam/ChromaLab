@@ -18,6 +18,7 @@ import com.chromalab.feature.validation.AutonomousValidationModelMode
 import com.chromalab.feature.validation.WHITE_TIGER_ION71_FIXTURE_ID
 import com.chromalab.feature.processing.inference.GgufParityDiagnostics
 import com.chromalab.feature.processing.inference.GgufVulkanMatrixDiagnostics
+import com.chromalab.feature.processing.inference.GgufMtmdDiagnostics
 import com.chromalab.feature.processing.inference.MtpAbDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         private const val ACTION_DEBUG_GGUF_PARITY = "com.chromalab.app.DEBUG_GGUF_PARITY"
         private const val ACTION_DEBUG_MTP_AB = "com.chromalab.app.DEBUG_MTP_AB"
         private const val ACTION_DEBUG_VULKAN_MATRIX = "com.chromalab.app.DEBUG_VULKAN_MATRIX"
+        private const val ACTION_DEBUG_MTMD_DIAGNOSTICS = "com.chromalab.app.DEBUG_MTMD_DIAGNOSTICS"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
         private const val EXTRA_MODEL_MODE = "modelMode"
@@ -119,6 +121,10 @@ class MainActivity : ComponentActivity() {
             handleVulkanMatrixDebugIntent(intent)
             return
         }
+        if (intent?.action == ACTION_DEBUG_MTMD_DIAGNOSTICS) {
+            handleMtmdDiagnosticsDebugIntent(intent)
+            return
+        }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
         if (!isDebuggable()) {
             Log.w(TAG, "Ignoring GGUF parity diagnostics intent in non-debug build")
@@ -197,6 +203,31 @@ class MainActivity : ComponentActivity() {
                 requestedContextTokens = ctx,
                 requestedBatchTokens = batch,
                 requestedMaxTokens = maxTokens,
+            )
+        }
+    }
+
+    private fun handleMtmdDiagnosticsDebugIntent(intent: Intent) {
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring mtmd diagnostics intent in non-debug build")
+            return
+        }
+
+        val modelId = intent.getStringExtra("modelId")
+        val imagePath = intent.getStringExtra("imagePath")
+        val backend = intent.getStringExtra("backend")
+        val runOcr = intent.getBooleanExtra("ocr", false)
+        Log.i(
+            TAG,
+            "Starting mtmd diagnostics modelId=${modelId.orEmpty()} " +
+                "backend=${backend.orEmpty()} imagePath=${imagePath.orEmpty()} ocr=$runOcr",
+        )
+        lifecycleScope.launch {
+            GgufMtmdDiagnostics(applicationContext).run(
+                requestedModelId = modelId,
+                requestedImagePath = imagePath,
+                requestedBackend = backend,
+                requestedRunOcrProbe = runOcr,
             )
         }
     }

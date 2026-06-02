@@ -19,6 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <cctype>
+#include <sstream>
 #include <thread>
 #include <android/log.h>
 #include <vulkan/vulkan.h>
@@ -214,6 +215,32 @@ static std::string one_line_preview(const std::string &text, size_t max_chars = 
         if (out.size() >= max_chars) {
             out.append("...");
             break;
+        }
+    }
+    return out;
+}
+
+static std::string json_escape(const std::string &text) {
+    std::string out;
+    out.reserve(text.size() + 16);
+    for (char ch : text) {
+        switch (ch) {
+            case '\\': out += "\\\\"; break;
+            case '"':  out += "\\\""; break;
+            case '\b': out += "\\b"; break;
+            case '\f': out += "\\f"; break;
+            case '\n': out += "\\n"; break;
+            case '\r': out += "\\r"; break;
+            case '\t': out += "\\t"; break;
+            default:
+                if (static_cast<unsigned char>(ch) < 0x20) {
+                    char buf[7];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", (unsigned char)ch);
+                    out += buf;
+                } else {
+                    out.push_back(ch);
+                }
+                break;
         }
     }
     return out;
@@ -1619,6 +1646,162 @@ Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeGetLoadedBacke
         return env->NewStringUTF("");
     }
     return env->NewStringUTF(mc->backend_label.c_str());
+}
+
+// ===== nativeProbeMtmdDiagnostics =====
+
+JNIEXPORT jstring JNICALL
+Java_com_chromalab_feature_processing_inference_LlamaEngine_nativeProbeMtmdDiagnostics(
+    JNIEnv *env, jclass /* clazz */,
+    jlong handle, jstring imagePath, jstring prompt) {
+
+    auto *mc = reinterpret_cast<ModelContext *>(handle);
+    if (!mc || !mc->ctx || !mc->model || !mc->mtmd) {
+        return new_jstring_from_utf8_bytes(
+            env,
+            "{\"available\":false,\"error\":\"mtmd_context_not_loaded\"}"
+        );
+    }
+
+    const char *img_path = env->GetStringUTFChars(imagePath, nullptr);
+    const char *pmt      = env->GetStringUTFChars(prompt, nullptr);
+    const auto started = std::chrono::steady_clock::now();
+
+    const bool supports_vision = mtmd_support_vision(mc->mtmd);
+    const bool supports_audio = mtmd_support_audio(mc->mtmd);
+    const bool uses_mrope = mtmd_decode_use_mrope(mc->mtmd);
+
+    mtmd_bitmap *bitmap = nullptr;
+    const auto bitmap_started = std::chrono::steady_clock::now();
+    {
+        NativeStageWatchdog watchdog("mtmd_diagnostics_bitmap_load", 30000, 15000);
+        bitmap = mtmd_helper_bitmap_init_from_file(mc->mtmd, img_path);
+    }
+    const long long bitmap_ms = elapsed_ms_since(bitmap_started);
+    if (!bitmap) {
+        env->ReleaseStringUTFChars(imagePath, img_path);
+        env->ReleaseStringUTFChars(prompt, pmt);
+        std::ostringstream out;
+        out << "{\"available\":false"
+            << ",\"supportsVision\":" << (supports_vision ? "true" : "false")
+            << ",\"supportsAudio\":" << (supports_audio ? "true" : "false")
+            << ",\"usesMrope\":" << (uses_mrope ? "true" : "false")
+            << ",\"contextTokens\":" << mc->n_ctx
+            << ",\"batchTokens\":" << mc->n_batch
+            << ",\"bitmapLoadMillis\":" << bitmap_ms
+            << ",\"error\":\"bitmap_load_failed\"}";
+        return new_jstring_from_utf8_bytes(env, out.str());
+    }
+
+    const char *marker = mtmd_default_marker();
+    const std::string full_prompt = build_multimodal_prompt(pmt, marker);
+    mtmd_input_text input_text;
+    input_text.text = full_prompt.c_str();
+    input_text.add_special = true;
+    input_text.parse_special = true;
+    const mtmd_bitmap *bitmaps[] = { bitmap };
+    mtmd_input_chunks *chunks = mtmd_input_chunks_init();
+
+    const auto tokenize_started = std::chrono::steady_clock::now();
+    int32_t tok_result = 0;
+    {
+        NativeStageWatchdog watchdog("mtmd_diagnostics_tokenize", 30000, 15000);
+        tok_result = mtmd_tokenize(mc->mtmd, chunks, &input_text, bitmaps, 1);
+    }
+    const long long tokenize_ms = elapsed_ms_since(tokenize_started);
+    mtmd_bitmap_free(bitmap);
+
+    if (tok_result != 0) {
+        mtmd_input_chunks_free(chunks);
+        env->ReleaseStringUTFChars(imagePath, img_path);
+        env->ReleaseStringUTFChars(prompt, pmt);
+        std::ostringstream out;
+        out << "{\"available\":false"
+            << ",\"supportsVision\":" << (supports_vision ? "true" : "false")
+            << ",\"supportsAudio\":" << (supports_audio ? "true" : "false")
+            << ",\"usesMrope\":" << (uses_mrope ? "true" : "false")
+            << ",\"contextTokens\":" << mc->n_ctx
+            << ",\"batchTokens\":" << mc->n_batch
+            << ",\"bitmapLoadMillis\":" << bitmap_ms
+            << ",\"tokenizeMillis\":" << tokenize_ms
+            << ",\"error\":\"mtmd_tokenize_failed:" << tok_result << "\"}";
+        return new_jstring_from_utf8_bytes(env, out.str());
+    }
+
+    const size_t chunk_count = mtmd_input_chunks_size(chunks);
+    int image_chunk_count = 0;
+    int text_chunk_count = 0;
+    int audio_chunk_count = 0;
+    int image_token_count = 0;
+    int text_token_count = 0;
+    int audio_token_count = 0;
+    std::ostringstream chunks_json;
+    chunks_json << "[";
+    for (size_t i = 0; i < chunk_count; ++i) {
+        const mtmd_input_chunk *chunk = mtmd_input_chunks_get(chunks, i);
+        if (!chunk) continue;
+        const auto type = mtmd_input_chunk_get_type(chunk);
+        const int token_count = (int)mtmd_input_chunk_get_n_tokens(chunk);
+        const int position_count = (int)mtmd_input_chunk_get_n_pos(chunk);
+        const char *chunk_id = mtmd_input_chunk_get_id(chunk);
+        if (type == MTMD_INPUT_CHUNK_TYPE_IMAGE) {
+            image_chunk_count++;
+            image_token_count += token_count;
+        } else if (type == MTMD_INPUT_CHUNK_TYPE_TEXT) {
+            text_chunk_count++;
+            text_token_count += token_count;
+        } else if (type == MTMD_INPUT_CHUNK_TYPE_AUDIO) {
+            audio_chunk_count++;
+            audio_token_count += token_count;
+        }
+        if (i > 0) chunks_json << ",";
+        chunks_json << "{\"index\":" << i
+                    << ",\"type\":\"" << json_escape(chunk_type_name(type)) << "\""
+                    << ",\"tokenCount\":" << token_count
+                    << ",\"positionCount\":" << position_count
+                    << ",\"id\":\"" << json_escape(chunk_id ? chunk_id : "") << "\"}";
+    }
+    chunks_json << "]";
+
+    const int total_tokens = (int)mtmd_helper_get_n_tokens(chunks);
+    const int total_pos = (int)mtmd_helper_get_n_pos(chunks);
+    const char *fit_status = "UNKNOWN";
+    if (mc->n_ctx > 0 && total_pos > 0) {
+        fit_status = total_pos <= mc->n_ctx ? "FITS_CONTEXT" : "EXCEEDS_CONTEXT";
+    }
+    const std::string marker_text = marker ? std::string(marker) : std::string("<__media__>");
+
+    std::ostringstream out;
+    out << "{\"available\":true"
+        << ",\"supportsVision\":" << (supports_vision ? "true" : "false")
+        << ",\"supportsAudio\":" << (supports_audio ? "true" : "false")
+        << ",\"usesMrope\":" << (uses_mrope ? "true" : "false")
+        << ",\"promptChars\":" << full_prompt.size()
+        << ",\"mediaMarkerCount\":" << count_occurrences(full_prompt, marker_text)
+        << ",\"chunkCount\":" << chunk_count
+        << ",\"imageChunkCount\":" << image_chunk_count
+        << ",\"textChunkCount\":" << text_chunk_count
+        << ",\"audioChunkCount\":" << audio_chunk_count
+        << ",\"imageTokenCount\":" << image_token_count
+        << ",\"textTokenCount\":" << text_token_count
+        << ",\"audioTokenCount\":" << audio_token_count
+        << ",\"totalTokenCount\":" << total_tokens
+        << ",\"totalPositionCount\":" << total_pos
+        << ",\"contextTokens\":" << mc->n_ctx
+        << ",\"batchTokens\":" << mc->n_batch
+        << ",\"fitStatus\":\"" << fit_status << "\""
+        << ",\"bitmapLoadMillis\":" << bitmap_ms
+        << ",\"tokenizeMillis\":" << tokenize_ms
+        << ",\"chunks\":" << chunks_json.str()
+        << "}";
+
+    LOGI("MTMD diagnostics done: chunks=%zu imageTokens=%d totalPos=%d fit=%s elapsed=%lld ms",
+         chunk_count, image_token_count, total_pos, fit_status, elapsed_ms_since(started));
+
+    mtmd_input_chunks_free(chunks);
+    env->ReleaseStringUTFChars(imagePath, img_path);
+    env->ReleaseStringUTFChars(prompt, pmt);
+    return new_jstring_from_utf8_bytes(env, out.str());
 }
 
 // ===== nativeInferWithImage =====

@@ -289,6 +289,9 @@ Suggested commit message:
 
 ## Phase R7 - mtmd Multimodal Diagnostics And OCR Research Gate
 
+Status: implemented as debug diagnostics gate. See
+`docs/R7_MTMD_MULTIMODAL_DIAGNOSTICS_GATE.md`.
+
 Goal:
 
 Use current mtmd improvements for better diagnostics and OCR experiments without
