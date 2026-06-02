@@ -45,6 +45,9 @@ import com.chromalab.feature.processing.model.ModelRegistry
 fun ModelManagerScreen(
     downloadedModelIds: Set<String>,
     chromatogramModelId: String?,
+    chromatogramModelSelectionAttemptId: String? = null,
+    chromatogramModelSelectionError: String? = null,
+    chromatogramModelCompatibilityById: Map<String, String> = emptyMap(),
     downloadJobs: Map<String, ModelDownloadUiState>,
     deviceRamMb: Int,
     availableStorageGb: Float,
@@ -88,6 +91,54 @@ fun ModelManagerScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            chromatogramModelSelectionError?.let { error ->
+                item {
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.16f),
+                        ),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Ошибка выбора модели для хроматограмм",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    error,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                                chromatogramModelSelectionAttemptId?.let { attemptId ->
+                                    if (attemptId.isNotBlank()) {
+                                        Text(
+                                            "Попытка: $attemptId",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // ===== LiteRT-LM Section =====
             item {
                 SectionHeader(
@@ -106,6 +157,7 @@ fun ModelManagerScreen(
                     isDownloaded = model.id in downloadedModelIds,
                     isChromatogramModel = model.id == chromatogramModelId,
                     canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(model),
+                    chromatogramCompatibilityMessage = chromatogramModelCompatibilityById[model.id],
                     isDownloading = downloadJob.isRunning(),
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
@@ -153,6 +205,7 @@ fun ModelManagerScreen(
                         chromatogramModelId = chromatogramModelId,
                         downloadJobs = downloadJobs,
                         deviceRamMb = deviceRamMb,
+                        chromatogramModelCompatibilityById = chromatogramModelCompatibilityById,
                         onDownload = onDownload,
                         onDelete = { deleteConfirmId = it },
                         onUseForChromatograms = onUseForChromatograms,
@@ -171,6 +224,7 @@ fun ModelManagerScreen(
                     isDownloaded = model.id in downloadedModelIds,
                     isChromatogramModel = model.id == chromatogramModelId,
                     canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(model),
+                    chromatogramCompatibilityMessage = chromatogramModelCompatibilityById[model.id],
                     isDownloading = downloadJob.isRunning(),
                     downloadProgress = downloadJob?.progress ?: 0f,
                     downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
@@ -225,6 +279,8 @@ fun ModelManagerScreen(
                 CustomModelCard(
                     custom = custom,
                     isChromatogramModel = custom.id == chromatogramModelId,
+                    canUseForChromatograms = custom.supportsVision,
+                    chromatogramCompatibilityMessage = chromatogramModelCompatibilityById[custom.id],
                     onUseForChromatograms = { onUseForChromatograms(custom.id) },
                     onDelete = { deleteConfirmId = custom.id },
                     onExport = { onExport(custom.id) },
@@ -590,6 +646,7 @@ private fun ExpandableModelGroup(
     chromatogramModelId: String?,
     downloadJobs: Map<String, ModelDownloadUiState>,
     deviceRamMb: Int,
+    chromatogramModelCompatibilityById: Map<String, String> = emptyMap(),
     onDownload: (ModelInfo) -> Unit,
     onDelete: (String) -> Unit,
     onUseForChromatograms: (String) -> Unit,
@@ -702,6 +759,7 @@ private fun ExpandableModelGroup(
                             isDownloaded = variant.id in downloadedModelIds,
                             isChromatogramModel = variant.id == chromatogramModelId,
                             canUseForChromatograms = ModelRegistry.isChromatogramVisionModel(variant),
+                            chromatogramCompatibilityMessage = chromatogramModelCompatibilityById[variant.id],
                             isDownloading = downloadJob.isRunning(),
                             downloadProgress = downloadJob?.progress ?: 0f,
                             downloadSpeedMbps = downloadJob?.speedMbps ?: 0f,
@@ -728,6 +786,7 @@ private fun QuantVariantCard(
     isDownloaded: Boolean,
     isChromatogramModel: Boolean,
     canUseForChromatograms: Boolean,
+    chromatogramCompatibilityMessage: String?,
     isDownloading: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
@@ -815,10 +874,11 @@ private fun QuantVariantCard(
                 }
             }
 
-            if (isDownloaded && canUseForChromatograms && ramOk) {
+            if (isDownloaded && canUseForChromatograms) {
                 Spacer(Modifier.height(6.dp))
                 ChromatogramRoleRow(
                     isSelected = isChromatogramModel,
+                    compatibilityMessage = chromatogramCompatibilityMessage,
                     onSelect = onUseForChromatograms,
                 )
             }
@@ -884,6 +944,7 @@ private fun UseCaseChip(label: String, color: Color) {
 @Composable
 private fun ChromatogramRoleRow(
     isSelected: Boolean,
+    compatibilityMessage: String?,
     onSelect: () -> Unit,
 ) {
     Row(
@@ -905,6 +966,17 @@ private fun ChromatogramRoleRow(
             },
         )
     }
+
+    compatibilityMessage?.let { message ->
+        if (message.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                message,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }
 
 @Composable
@@ -913,6 +985,7 @@ private fun ModelCard(
     isDownloaded: Boolean,
     isChromatogramModel: Boolean,
     canUseForChromatograms: Boolean,
+    chromatogramCompatibilityMessage: String?,
     isDownloading: Boolean,
     downloadProgress: Float,
     downloadSpeedMbps: Float,
@@ -1123,9 +1196,10 @@ private fun ModelCard(
                 }
             }
 
-            if (isDownloaded && canUseForChromatograms && ramOk) {
+            if (isDownloaded && canUseForChromatograms) {
                 ChromatogramRoleRow(
                     isSelected = isChromatogramModel,
+                    compatibilityMessage = chromatogramCompatibilityMessage,
                     onSelect = onUseForChromatograms,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -1186,6 +1260,8 @@ private fun ModelCard(
 private fun CustomModelCard(
     custom: CustomModelEntry,
     isChromatogramModel: Boolean,
+    canUseForChromatograms: Boolean,
+    chromatogramCompatibilityMessage: String?,
     onUseForChromatograms: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
@@ -1233,10 +1309,11 @@ private fun CustomModelCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            if (custom.supportsVision) {
+            if (canUseForChromatograms) {
                 Spacer(Modifier.height(6.dp))
                 ChromatogramRoleRow(
                     isSelected = isChromatogramModel,
+                    compatibilityMessage = chromatogramCompatibilityMessage,
                     onSelect = onUseForChromatograms,
                 )
             }
