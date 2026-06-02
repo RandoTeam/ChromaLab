@@ -12,6 +12,9 @@ extraction, or peak detection.
 Pre-R8/R9 blocker note: Qualcomm device-specific LiteRT-LM E2B bundles for
 SM8750/QCS8275 are not yet runtime-proven in ChromaLab. See
 `docs/PRE_R8_R9_LITERT_SNAPDRAGON_8_ELITE_AUDIT.md` before starting R8 or R9.
+Device-aware accelerator routing must also be implemented in small steps before
+R8/R9 acceptance; see
+`docs/PRE_R8_R9_DEVICE_AWARE_RUNTIME_ROUTING_PLAN.md`.
 
 ## Operating Rules
 
