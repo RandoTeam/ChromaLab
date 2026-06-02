@@ -36,9 +36,25 @@ Optional output root:
 .\tools\chromatogram-bench\run_pc_chromatogram_bench_suite.ps1 -OutputRoot "build\phase-pc-algorithm-audit"
 ```
 
+Optional per-fixture VLM replay root:
+
+```powershell
+.\tools\chromatogram-bench\run_pc_chromatogram_bench_suite.ps1 `
+  -OutputRoot "build\phase-pc-axis-llm-audit" `
+  -ReplayRoot "docs\reference\chromatogram_bench"
+```
+
 The suite writes one desktop analysis folder per fixture plus
 `pc_chromatogram_bench_summary.csv`. This is the preferred PC-first regression
 entrypoint before Android reruns or algorithm repair.
+
+When `-ReplayRoot` is supplied, the suite looks for files named
+`axis_vlm_replay_<fixture_id>.json`. The current compatibility alias
+`axis_vlm_replay_bench_07.json` maps to `bench_07_rotated_page_photo`. If no replay
+file exists for a fixture, the runner preserves any live endpoint configuration or
+records the normal `desktop_axis_vlm.endpoint_not_configured` blocker. The summary
+CSV includes `axisReplayFile` so replay-backed runs cannot be confused with live
+model runs.
 
 ## Optional Local VLM Axis OCR
 
