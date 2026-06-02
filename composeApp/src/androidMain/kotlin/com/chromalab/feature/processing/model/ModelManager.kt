@@ -568,11 +568,64 @@ class ModelManager(private val context: Context) {
             val detected = ModelDeviceSelector.detectDeviceTarget(currentDeviceProfile())
             return "Model ${model.displayName} targets ${model.deviceTarget}, but this device is detected as $detected."
         }
-        return if (forVision) {
-            "Vision model cannot be loaded for ${model.displayName}: RAM ${total} MB, available ${available} MB."
-        } else {
+        return if (!forVision) {
             "Model is too heavy for this device: RAM ${total} MB, available ${available} MB."
+        } else {
+            val eligibility = ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(model)
+            val reasonText = eligibility.reasons.joinToString("; ")
+            if (eligibility.eligible) {
+                "Vision model cannot be loaded for ${model.displayName}: RAM ${total} MB, available ${available} MB."
+            } else {
+                "Vision model ${model.displayName} is not eligible for chromatogram analysis: $reasonText. RAM ${total} MB, available ${available} MB."
+            }
         }
+    }
+
+    fun chromatogramVisionCompatibilityMessage(model: ModelInfo): String {
+        val total = getDeviceRamMb()
+        val available = getAvailableRamMb()
+        val eligibility = ModelAssistedAnalysisContract.evaluateChromatogramVisionEligibility(model)
+        val mismatch = if (matchesCurrentDeviceTarget(model)) {
+            null
+        } else {
+            val detected = ModelDeviceSelector.detectDeviceTarget(currentDeviceProfile())
+            "Model targets ${model.deviceTarget}, but this device is detected as $detected"
+        }
+        val canLoadForVision = canLoadForVision(model)
+        if (eligibility.eligible && canLoadForVision) {
+            return "Model ${model.displayName} is compatible for chromatogram vision use (RAM ${total} MB, available ${available} MB)."
+        }
+
+        val blockers = buildList {
+            mismatch?.let(::add)
+            if (!canLoadForVision) {
+                if (model.runtime == ModelRuntime.LITERT_LM && total < 4000) {
+                    add("LiteRT requires more total RAM than available on this device")
+                }
+                if (model.runtime == ModelRuntime.LLAMA_CPP) {
+                    val visionSizeMb = visionPackageSizeMb(model)
+                    val requiredRam = maxOf(model.minRamMb, baseModelSizeMb(model) + 768)
+                    if (total < requiredRam) add("Not enough total RAM: required ${requiredRam} MB, available ${total} MB")
+                    if (available < maxOf(1800, visionSizeMb / 2)) {
+                        add("Not enough available RAM for GGUF vision load")
+                    }
+                }
+                if (model.runtime == ModelRuntime.LITERT_LM && total < model.minRamMb) {
+                    add("Not enough total RAM: required ${model.minRamMb} MB, available ${total} MB")
+                }
+                if (getAvailableRamMb() < if (model.runtime == ModelRuntime.LITERT_LM) 2600 else 1800) {
+                    add("Not enough free RAM for runtime load")
+                }
+            }
+            addAll(eligibility.reasons)
+        }
+
+        val blockerText = if (blockers.isEmpty()) {
+            "Model does not meet chromatogram vision requirements"
+        } else {
+            blockers.joinToString("; ")
+        }
+        return "Cannot use ${model.displayName} for chromatogram analysis: $blockerText. RAM ${total} MB, available ${available} MB."
     }
 
     /** Available storage in bytes. */

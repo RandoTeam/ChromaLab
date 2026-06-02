@@ -94,6 +94,10 @@ class ChatController(
         modelName: String,
         runtimeAccelerator: ChatRuntimeAccelerator,
     ) {
+        if (!isModelChatCapable(modelId)) {
+            publish(chatId, error = "Select a text-chat-capable model before sending.")
+            return
+        }
         scope.launch {
             val now = chatNowMillis()
             archive = archive.copy(
@@ -159,14 +163,18 @@ class ChatController(
             val selectedModelId = session?.modelId ?: state.value.activeModelId
             val selectedModelName = session?.modelName ?: state.value.activeModelName
             val selectedRuntimeAccelerator = session?.runtimeAccelerator ?: ChatRuntimeAccelerator.AUTO
-            if (selectedModelId == null) {
+            if (!isModelChatCapable(selectedModelId)) {
                 chatRuntimeLog("send.failed reason=no_model chatId=$chatId")
                 generationJob = null
-                publish(chatId, error = "Выберите модель чата перед отправкой сообщения.")
+                publish(
+                    chatId,
+                    error = "The selected chat model is not available or is not text-chat capable.",
+                )
                 return@launch
             }
+            val selectedChatModelId = selectedModelId ?: return@launch
             chatRuntimeLog(
-                "send.model chatId=$chatId modelId=$selectedModelId " +
+                "send.model chatId=$chatId modelId=$selectedChatModelId " +
                     "modelName=${selectedModelName ?: "<unknown>"} accelerator=$selectedRuntimeAccelerator",
             )
 
@@ -225,7 +233,7 @@ class ChatController(
                     generator.generate(
                         messages = contextMessages,
                         settings = settings,
-                        modelId = selectedModelId,
+                        modelId = selectedChatModelId,
                         modelName = selectedModelName,
                         runtimeAccelerator = selectedRuntimeAccelerator,
                         onPartial = { partial ->
@@ -269,7 +277,7 @@ class ChatController(
                         durationMs = durationMs,
                         tokensPerSecond = completionTokens * 1000.0 / durationMs,
                         modelName = selectedModelName,
-                        backendLabel = chatBackendLabelFor(selectedModelId),
+                        backendLabel = chatBackendLabelFor(selectedChatModelId),
                         acceleratorLabel = selectedRuntimeAccelerator.label,
                     )
 
@@ -386,6 +394,8 @@ class ChatController(
             ModelRuntime.LLAMA_CPP -> ChatRuntimeBackend.LLAMA_CPP.label
             null -> ChatRuntimeBackend.IMPORTED.label
         }
+
+    private fun isModelChatCapable(modelId: String?): Boolean = ModelRegistry.isChatModelId(modelId)
 
     private fun publish(
         selectedChatId: String?,

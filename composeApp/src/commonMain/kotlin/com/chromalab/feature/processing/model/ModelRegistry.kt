@@ -886,8 +886,7 @@ object ModelRegistry {
         builtinModels.filter(::isChatModel)
 
     fun isChatModelId(modelId: String?): Boolean {
-        if (modelId == null) return false
-        val model = findById(modelId) ?: return true
+        val model = modelId?.let(::findById) ?: return false
         return isChatModel(model)
     }
 

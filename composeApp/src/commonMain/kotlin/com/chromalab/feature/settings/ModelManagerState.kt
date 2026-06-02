@@ -15,6 +15,11 @@ data class ModelManagerState(
     /** Downloaded model selected for chromatogram photo analysis. */
     val chromatogramModelId: String? = null,
     val chromatogramModelName: String? = null,
+    /** Last chromatogram model selection attempt (model id) and reason on failure. */
+    val chromatogramModelSelectionAttemptId: String? = null,
+    val chromatogramModelSelectionError: String? = null,
+    /** Compatibility check results for downloaded models selected for chromatogram vision use. */
+    val chromatogramModelCompatibilityById: Map<String, String> = emptyMap(),
     val downloadJobs: Map<String, ModelDownloadUiState> = emptyMap(),
     val downloadingModelId: String? = null,
     val downloadProgress: Float = 0f,
@@ -70,6 +75,6 @@ data class CustomModelEntry(
     val displayName: String,
     val sizeBytes: Long,
     val description: String = "",
-    val supportsTextChat: Boolean = true,
+    val supportsTextChat: Boolean = false,
     val supportsVision: Boolean = false,
 )

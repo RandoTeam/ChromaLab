@@ -98,6 +98,16 @@ class ModelManagerController(
             ?.let { id -> downloaded.find { it.info.id == id } }
             ?.info
         val builtinIds = ModelRegistry.builtinModels.map { it.id }.toSet()
+        val chromatogramModelCompatibilityById = downloaded.associate { model ->
+            val canLoadForChromatogram = manager.canLoadForChromatogramVision(model.info)
+            val message = if (canLoadForChromatogram) {
+                null
+            } else {
+                manager.chromatogramVisionCompatibilityMessage(model.info)
+            }
+            model.info.id to message
+        }.mapNotNull { (id, message) -> message?.let { id to it } }
+            .toMap()
 
         // Build list of custom (non-builtin) models for UI
         val customs = downloaded
@@ -135,6 +145,7 @@ class ModelManagerController(
                 downloadParallelism = manager.downloadParallelism,
                 downloadSpeedLimitMbps = manager.downloadSpeedLimitMbps,
                 autoUnloadMinutes = manager.autoUnloadMinutes,
+                chromatogramModelCompatibilityById = chromatogramModelCompatibilityById,
                 customModels = customs,
             )
         }
@@ -505,18 +516,45 @@ class ModelManagerController(
 
     /** Select the downloaded model used by chromatogram photo analysis. */
     fun setChromatogramModel(modelId: String) {
-        val model = manager.getDownloadedModels().find { it.info.id == modelId } ?: return
-        if (!manager.canLoadForChromatogramVision(model.info)) {
-            logModel("Rejected chromatogram model selection: ${model.info.displayName}")
+        val model = manager.getDownloadedModels().find { it.info.id == modelId }
+        if (model == null) {
+            _state.update {
+                it.copy(
+                    chromatogramModelSelectionAttemptId = modelId,
+                    chromatogramModelSelectionError = "Модель $modelId не найдена среди загруженных",
+                )
+            }
+            logModel("Chromatogram model selection rejected: model not downloaded ($modelId)")
+            return
+        }
+        if (!model.info.supportsVision) {
+            _state.update {
+                it.copy(
+                    chromatogramModelSelectionAttemptId = model.info.id,
+                    chromatogramModelSelectionError =
+                        "Модель ${model.info.displayName} не поддерживает распознавание изображений.",
+                )
+            }
+            logModel("Chromatogram model selection rejected: no vision support (${model.info.displayName})")
             return
         }
         manager.setChromatogramModel(modelId)
+        val incompatibilityReason =
+            if (!manager.canLoadForChromatogramVision(model.info)) manager.chromatogramVisionCompatibilityMessage(model.info) else null
         _state.update {
             it.copy(
                 chromatogramModelId = model.info.id,
                 chromatogramModelName = model.info.displayName,
+                chromatogramModelSelectionAttemptId = model.info.id,
+                chromatogramModelSelectionError = incompatibilityReason,
             )
         }
+        if (incompatibilityReason != null) {
+            logModel("Chromatogram model selected but currently incompatible: $incompatibilityReason")
+        } else {
+            logModel("Chromatogram model selected: ${model.info.displayName}")
+        }
+        refresh()
     }
 
     /**
@@ -736,16 +774,15 @@ class ModelManagerController(
             return false
         }
 
-        if (selectedDownloadedModel != null && !manager.canLoadForChromatogramVision(selectedDownloadedModel.info)) {
-            logModel("Selected chromatogram model cannot load on this device: ${selectedDownloadedModel.info.displayName}")
-            onProgress?.invoke(manager.compatibilityMessage(selectedDownloadedModel.info, forVision = true))
-            return false
-        }
-
         val compatibleModels = if (selectedDownloadedModel != null) {
-            listOf(selectedDownloadedModel)
+            downloadedModels.filter { it.info.id == selectedDownloadedModel.info.id || manager.canLoadForChromatogramVision(it.info) }
         } else {
             downloadedModels.filter { manager.canLoadForChromatogramVision(it.info) }
+        }
+        val selectedId = selectedDownloadedModel?.info?.id
+        if (selectedDownloadedModel != null && selectedDownloadedModel.info.id !in compatibleModels.map { it.info.id }) {
+            logModel("Selected chromatogram model is not currently loadable on this device: ${selectedDownloadedModel.info.displayName}")
+            onProgress?.invoke(manager.chromatogramVisionCompatibilityMessage(selectedDownloadedModel.info))
         }
         val (model, selection) = manager.selectPreferredChromatogramModel(
             candidates = compatibleModels,

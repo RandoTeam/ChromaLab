@@ -271,10 +271,13 @@ fun App(
                     )
                 }
                 composable<Route.ModelManager> {
-                    ModelManagerScreen(
-                        downloadedModelIds = modelState.downloadedModelIds,
-                        chromatogramModelId = modelState.chromatogramModelId,
-                        downloadJobs = modelState.downloadJobs,
+                        ModelManagerScreen(
+                            downloadedModelIds = modelState.downloadedModelIds,
+                            chromatogramModelId = modelState.chromatogramModelId,
+                            chromatogramModelSelectionAttemptId = modelState.chromatogramModelSelectionAttemptId,
+                            chromatogramModelSelectionError = modelState.chromatogramModelSelectionError,
+                            chromatogramModelCompatibilityById = modelState.chromatogramModelCompatibilityById,
+                            downloadJobs = modelState.downloadJobs,
                         deviceRamMb = modelState.deviceRamMb,
                         availableStorageGb = modelState.availableStorageGb,
                         totalModelDiskUsageGb = modelState.totalModelDiskUsageGb,
