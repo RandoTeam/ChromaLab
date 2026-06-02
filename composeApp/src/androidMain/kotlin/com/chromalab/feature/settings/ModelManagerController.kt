@@ -390,13 +390,16 @@ class ModelManagerController(
                 }
                 ModelRuntime.LITERT_LM -> {
                     val liteRT = LiteRTEngine()
+                    val backendOrder = manager.liteRtBackendOrder(model.info, preferAccelerated)
                     withContext(Dispatchers.IO) {
                         liteRT.loadModel(
                             modelPath = model.primaryPath,
                             preferGpu = preferAccelerated,
+                            backendOrder = backendOrder,
                             enableVision = false,
                             maxNumTokens = manager.liteRtMaxTokens(model.info),
                             cacheDir = manager.liteRtCacheDir(),
+                            nativeLibraryDir = manager.liteRtNativeLibraryDir(),
                         )
                     }
                     liteRT
@@ -779,13 +782,17 @@ class ModelManagerController(
                 ModelRuntime.LITERT_LM -> {
                     onProgress?.invoke("Загрузка LiteRT модели...")
                     val liteRT = LiteRTEngine()
+                    val preferAccelerated = manager.liteRtPreferAccelerator(model.info)
+                    val backendOrder = manager.liteRtBackendOrder(model.info, preferAccelerated)
                     withContext(Dispatchers.IO) {
                         liteRT.loadModel(
                             modelPath = model.primaryPath,
-                            preferGpu = manager.liteRtPreferAccelerator(model.info),
+                            preferGpu = preferAccelerated,
+                            backendOrder = backendOrder,
                             enableVision = true,
                             maxNumTokens = manager.liteRtMaxTokens(model.info),
                             cacheDir = manager.liteRtCacheDir(),
+                            nativeLibraryDir = manager.liteRtNativeLibraryDir(),
                         )
                     }
                     liteRT

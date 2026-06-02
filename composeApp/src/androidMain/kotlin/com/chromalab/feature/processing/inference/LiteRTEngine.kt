@@ -37,20 +37,40 @@ class LiteRTEngine : InferenceEngine {
     suspend fun loadModel(
         modelPath: String,
         preferGpu: Boolean = true,
+        backendOrder: List<LiteRtBackendPreference>? = null,
         enableVision: Boolean = true,
         maxNumTokens: Int? = null,
         cacheDir: String? = null,
+        nativeLibraryDir: String? = null,
     ) = withContext(Dispatchers.IO) {
         unload()
 
-        log("LOAD model=$modelPath vision=$enableVision maxTokens=$maxNumTokens preferGpu=$preferGpu cacheDir=$cacheDir")
+        val requestedBackends = (backendOrder?.takeIf { it.isNotEmpty() }
+            ?: if (preferGpu) {
+                listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU)
+            } else {
+                listOf(LiteRtBackendPreference.CPU)
+            }).distinct()
+
+        log(
+            "LOAD model=$modelPath vision=$enableVision maxTokens=$maxNumTokens " +
+                "backendOrder=${requestedBackends.joinToString(">")} cacheDir=$cacheDir",
+        )
         val loadStarted = SystemClock.elapsedRealtime()
         val mtpCapability = probeMtpCapability(modelPath)
 
-        val backends = if (preferGpu) {
-            listOf("GPU" to Backend.GPU(), "CPU" to Backend.CPU())
-        } else {
-            listOf("CPU" to Backend.CPU())
+        val backends = requestedBackends.map { preference ->
+            when (preference) {
+                LiteRtBackendPreference.GPU -> "GPU" to Backend.GPU()
+                LiteRtBackendPreference.NPU -> {
+                    val backend = nativeLibraryDir
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { Backend.NPU(it) }
+                        ?: Backend.NPU()
+                    "NPU" to backend
+                }
+                LiteRtBackendPreference.CPU -> "CPU" to Backend.CPU()
+            }
         }
 
         var lastError: Exception? = null

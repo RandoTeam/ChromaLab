@@ -144,6 +144,12 @@ enum class ModelRuntime {
     LLAMA_CPP,
 }
 
+enum class LiteRtBackendPreference {
+    GPU,
+    NPU,
+    CPU,
+}
+
 data class ActiveInferenceModel(
     val modelId: String,
     val modelName: String? = null,

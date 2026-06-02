@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.model
 
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.inference.LiteRtBackendPreference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -122,24 +123,28 @@ class ModelRegistryVisionPackageTest {
         assertEquals(ModelDeviceTarget.GENERIC, generic.deviceTarget)
         assertEquals(2_588_147_712L, generic.files.single().sizeBytes)
         assertTrue(generic.requiresDownloadSmokeCheck)
+        assertEquals(listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU), generic.liteRtBackendOrder)
 
         assertEquals(ModelDeploymentMode.FAST, sm8750.deploymentMode)
         assertEquals(ModelDeviceTarget.QUALCOMM_SM8750, sm8750.deviceTarget)
         assertEquals("gemma-4-E2B-it_qualcomm_sm8750.litertlm", sm8750.files.single().fileName)
         assertEquals(3_016_294_400L, sm8750.files.single().sizeBytes)
         assertTrue(sm8750.requiresDownloadSmokeCheck)
+        assertEquals(listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU), sm8750.liteRtBackendOrder)
 
         assertEquals(ModelDeploymentMode.FAST, qcs8275.deploymentMode)
         assertEquals(ModelDeviceTarget.QUALCOMM_QCS8275, qcs8275.deviceTarget)
         assertEquals("gemma-4-E2B-it_qualcomm_qcs8275.litertlm", qcs8275.files.single().fileName)
         assertEquals(3_294_593_024L, qcs8275.files.single().sizeBytes)
         assertTrue(qcs8275.requiresDownloadSmokeCheck)
+        assertEquals(listOf(LiteRtBackendPreference.NPU, LiteRtBackendPreference.CPU), qcs8275.liteRtBackendOrder)
 
         assertEquals(ModelDeploymentMode.FAST, tensorG5.deploymentMode)
         assertEquals(ModelDeviceTarget.GOOGLE_TENSOR_G5, tensorG5.deviceTarget)
         assertEquals("gemma-4-E2B-it_Google_Tensor_G5.litertlm", tensorG5.files.single().fileName)
         assertEquals(3_953_110_901L, tensorG5.files.single().sizeBytes)
         assertTrue(tensorG5.requiresDownloadSmokeCheck)
+        assertEquals(listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU), tensorG5.liteRtBackendOrder)
 
         listOf(generic, sm8750, qcs8275, tensorG5).forEach { model ->
             assertEquals(ModelRuntime.LITERT_LM, model.runtime)

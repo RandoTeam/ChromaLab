@@ -1,6 +1,7 @@
 package com.chromalab.feature.processing.model
 
 import com.chromalab.feature.processing.inference.ModelRuntime
+import com.chromalab.feature.processing.inference.LiteRtBackendPreference
 
 /**
  * Type of file within a model package.
@@ -57,6 +58,7 @@ data class ModelInfo(
     val deploymentMode: ModelDeploymentMode = ModelDeploymentMode.GENERAL,
     val deviceTarget: ModelDeviceTarget = ModelDeviceTarget.GENERIC,
     val requiresDownloadSmokeCheck: Boolean = false,
+    val liteRtBackendOrder: List<LiteRtBackendPreference> = emptyList(),
 ) {
     val totalSizeBytes: Long get() = files.sumOf { it.sizeBytes }
     val primaryFileName: String get() = files.first().fileName
@@ -190,6 +192,7 @@ object ModelRegistry {
         description: String,
         deploymentMode: ModelDeploymentMode,
         deviceTarget: ModelDeviceTarget = ModelDeviceTarget.GENERIC,
+        liteRtBackendOrder: List<LiteRtBackendPreference> = emptyList(),
     ) = ModelInfo(
         id = id,
         displayName = displayName,
@@ -210,6 +213,7 @@ object ModelRegistry {
         deploymentMode = deploymentMode,
         deviceTarget = deviceTarget,
         requiresDownloadSmokeCheck = true,
+        liteRtBackendOrder = liteRtBackendOrder,
     )
 
     private val gemma4E2B = gemma4LiteRtBundle(
@@ -220,6 +224,7 @@ object ModelRegistry {
         minRamMb = 4096,
         description = "Fast LiteRT-LM baseline for FAST and weaker-device mode. Generic Android package.",
         deploymentMode = ModelDeploymentMode.FAST,
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU),
     )
 
     private val gemma4E2BQualcommSm8750 = gemma4LiteRtBundle(
@@ -228,9 +233,10 @@ object ModelRegistry {
         fileName = "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
         sizeBytes = 3_016_294_400L,
         minRamMb = 6144,
-        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm SM8750-class devices. Use only after device match.",
+        description = "Device-specific LiteRT-LM E2B bundle for Qualcomm SM8750 / Snapdragon 8 Elite-class devices. GPU-first; use only after device match.",
         deploymentMode = ModelDeploymentMode.FAST,
         deviceTarget = ModelDeviceTarget.QUALCOMM_SM8750,
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU),
     )
 
     private val gemma4E2BQualcommQcs8275 = gemma4LiteRtBundle(
@@ -242,6 +248,7 @@ object ModelRegistry {
         description = "Device-specific LiteRT-LM E2B bundle for Qualcomm QCS8275 / Dragonwing IQ8-class devices.",
         deploymentMode = ModelDeploymentMode.FAST,
         deviceTarget = ModelDeviceTarget.QUALCOMM_QCS8275,
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.NPU, LiteRtBackendPreference.CPU),
     )
 
     private val gemma4E2BGoogleTensorG5 = gemma4LiteRtBundle(
@@ -253,6 +260,7 @@ object ModelRegistry {
         description = "Device-specific LiteRT-LM E2B bundle for Google Tensor G5 devices. Falls back to generic E2B otherwise.",
         deploymentMode = ModelDeploymentMode.FAST,
         deviceTarget = ModelDeviceTarget.GOOGLE_TENSOR_G5,
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU),
     )
 
     private val gemma4E4B = ModelInfo(
@@ -274,6 +282,7 @@ object ModelRegistry {
         description = "High-accuracy LiteRT-LM VLM. GPU/CPU capable. ~3.66 GB download; 8+ GB RAM recommended.",
         deploymentMode = ModelDeploymentMode.FULL_ANALYSIS,
         requiresDownloadSmokeCheck = true,
+        liteRtBackendOrder = listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU),
     )
 
     private val fastVlm05B = ModelInfo(

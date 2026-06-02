@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import com.chromalab.feature.processing.inference.InferenceConfig
+import com.chromalab.feature.processing.inference.LiteRtBackendPreference
 import com.chromalab.feature.processing.inference.ModelRuntime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -373,6 +374,7 @@ class ModelManager(private val context: Context) {
 
     /** Whether a model can be loaded for text/chat use on this device. */
     fun canLoadForText(model: ModelInfo): Boolean {
+        if (!matchesCurrentDeviceTarget(model)) return false
         if (model.runtime == ModelRuntime.LLAMA_CPP && model.files.none { it.type == ModelFileType.GGUF_BASE }) {
             return false
         }
@@ -481,6 +483,20 @@ class ModelManager(private val context: Context) {
 
     fun liteRtPreferAccelerator(model: ModelInfo): Boolean =
         model.runtime == ModelRuntime.LITERT_LM && !isConservativeDevice()
+
+    fun liteRtBackendOrder(
+        model: ModelInfo,
+        preferAccelerated: Boolean = true,
+    ): List<LiteRtBackendPreference> {
+        if (model.runtime != ModelRuntime.LITERT_LM) return emptyList()
+        if (!preferAccelerated || isConservativeDevice()) return listOf(LiteRtBackendPreference.CPU)
+        return model.liteRtBackendOrder.ifEmpty {
+            listOf(LiteRtBackendPreference.GPU, LiteRtBackendPreference.CPU)
+        }
+    }
+
+    fun liteRtNativeLibraryDir(): String? =
+        context.applicationInfo.nativeLibraryDir?.takeIf { it.isNotBlank() }
 
     fun liteRtMaxTokens(model: ModelInfo): Int? =
         if (model.runtime == ModelRuntime.LITERT_LM) {
