@@ -61,6 +61,7 @@ object ModelDeviceSelector {
         models: List<ModelInfo>,
         profile: ModelDeviceProfile,
         explicitModelId: String? = null,
+        runtimeSmokePassedModelIds: Set<String> = emptySet(),
     ): ModelSelectionResult {
         val detectedTarget = detectDeviceTarget(profile)
         val rejected = models
@@ -97,7 +98,8 @@ object ModelDeviceSelector {
                 it.runtime == ModelRuntime.LITERT_LM &&
                     it.deploymentMode == ModelDeploymentMode.FAST &&
                     it.deviceTarget == detectedTarget &&
-                    it.deviceTarget != ModelDeviceTarget.GENERIC
+                    it.deviceTarget != ModelDeviceTarget.GENERIC &&
+                    (!it.requiresDownloadSmokeCheck || it.id in runtimeSmokePassedModelIds)
             }
             .minByOrNull { it.totalSizeBytes }
 
@@ -120,7 +122,11 @@ object ModelDeviceSelector {
                 detectedDeviceTarget = detectedTarget,
                 reason = ModelSelectionReason.GENERIC_E2B_FAST_FALLBACK,
                 fallbackModelAttempted = detectedTarget != ModelDeviceTarget.GENERIC,
-                fallbackResult = if (detectedTarget == ModelDeviceTarget.GENERIC) null else "device_specific_bundle_not_downloaded",
+                fallbackResult = if (detectedTarget == ModelDeviceTarget.GENERIC) {
+                    null
+                } else {
+                    "device_specific_bundle_missing_or_runtime_smoke_not_passed"
+                },
                 rejectedModelIds = rejected,
             )
         }

@@ -7,13 +7,14 @@ import kotlin.test.assertTrue
 
 class ModelDeviceSelectorTest {
     @Test
-    fun selectsDeviceSpecificE2BWhenDeviceMatchesAndBundleIsDownloaded() {
+    fun selectsDeviceSpecificE2BWhenDeviceMatchesAndRuntimeSmokePassed() {
         val generic = checkNotNull(ModelRegistry.findById("gemma4-e2b"))
         val sm8750 = checkNotNull(ModelRegistry.findById("gemma4-e2b-qualcomm-sm8750"))
 
         val result = ModelDeviceSelector.selectChromatogramModel(
             models = listOf(generic, sm8750),
             profile = ModelDeviceProfile(hardware = "qcom sm8750"),
+            runtimeSmokePassedModelIds = setOf(sm8750.id),
         )
 
         assertEquals("gemma4-e2b-qualcomm-sm8750", result.selectedModelId)
@@ -22,18 +23,19 @@ class ModelDeviceSelectorTest {
     }
 
     @Test
-    fun fallsBackToGenericE2BWhenDeviceSpecificBundleIsMissing() {
+    fun fallsBackToGenericE2BWhenDeviceSpecificBundleIsMissingOrRuntimeSmokeNotPassed() {
         val generic = checkNotNull(ModelRegistry.findById("gemma4-e2b"))
+        val sm8750 = checkNotNull(ModelRegistry.findById("gemma4-e2b-qualcomm-sm8750"))
 
         val result = ModelDeviceSelector.selectChromatogramModel(
-            models = listOf(generic),
+            models = listOf(generic, sm8750),
             profile = ModelDeviceProfile(hardware = "qcom sm8750"),
         )
 
         assertEquals("gemma4-e2b", result.selectedModelId)
         assertEquals(ModelSelectionReason.GENERIC_E2B_FAST_FALLBACK, result.reason)
         assertTrue(result.fallbackModelAttempted)
-        assertEquals("device_specific_bundle_not_downloaded", result.fallbackResult)
+        assertEquals("device_specific_bundle_missing_or_runtime_smoke_not_passed", result.fallbackResult)
     }
 
     @Test
