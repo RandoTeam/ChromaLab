@@ -453,6 +453,10 @@ private object DesktopOfflineAnalysisArtifactWriter {
 
             nodes.forEach { node ->
                 when (node.kind) {
+                    OfflineAxisElementNodeKind.X_LABEL_BAND,
+                    OfflineAxisElementNodeKind.Y_LABEL_BAND,
+                    OfflineAxisElementNodeKind.TITLE_BAND,
+                    -> graphics.drawAxisElementBand(node, expanded)
                     OfflineAxisElementNodeKind.X_AXIS_LINE,
                     OfflineAxisElementNodeKind.Y_AXIS_LINE,
                     -> graphics.drawAxisElementLine(node, expanded)
@@ -651,6 +655,23 @@ private fun java.awt.Graphics2D.fillRegion(region: GraphRegion, origin: GraphReg
         region.width.coerceAtLeast(1),
         region.height.coerceAtLeast(1),
     )
+}
+
+private fun java.awt.Graphics2D.drawAxisElementBand(node: OfflineAxisElementNodeAudit, origin: GraphRegion) {
+    val region = node.bounds ?: return
+    val bandColor = when (node.kind) {
+        OfflineAxisElementNodeKind.X_LABEL_BAND -> Color(0x4C, 0xAF, 0x50, 150)
+        OfflineAxisElementNodeKind.Y_LABEL_BAND -> Color(0x9C, 0x27, 0xB0, 150)
+        OfflineAxisElementNodeKind.TITLE_BAND -> Color(0x00, 0x96, 0x88, 120)
+        else -> Color(0x60, 0x7D, 0x8B, 100)
+    }
+    val previousComposite = composite
+    composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.18f)
+    color = bandColor
+    fillRegion(region, origin)
+    composite = previousComposite
+    color = Color(bandColor.red, bandColor.green, bandColor.blue, 230)
+    drawRegion(region, origin)
 }
 
 private fun java.awt.Graphics2D.drawAxisElementLine(node: OfflineAxisElementNodeAudit, origin: GraphRegion) {

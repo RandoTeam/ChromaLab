@@ -50,6 +50,7 @@ import com.chromalab.feature.processing.normalize.ImageNormalizer
 import com.chromalab.feature.processing.normalize.NormalizedImageResult
 import com.chromalab.feature.processing.ocr.AxisOcrReader
 import com.chromalab.feature.processing.ocr.AxisOcrResult
+import com.chromalab.feature.processing.ocr.OcrElementSourceKind
 import com.chromalab.feature.processing.ocr.OcrTextElement
 import com.chromalab.feature.processing.ocr.OcrStatus
 import com.chromalab.feature.processing.preprocess.ImagePreprocessor
@@ -288,11 +289,23 @@ data class OfflineAxisElementGraphAudit(
     val edgeCount: Int = 0,
     val scaleCandidatePairCount: Int = 0,
     val acceptedScaleCandidatePairCount: Int = 0,
+    val labelBandProjectionCount: Int = 0,
+    val acceptedLabelBandProjectionCount: Int = 0,
+    val reviewLabelBandProjectionCount: Int = 0,
+    val labelBands: OfflineAxisLabelBandAudit = OfflineAxisLabelBandAudit(),
     val nodes: List<OfflineAxisElementNodeAudit> = emptyList(),
     val edges: List<OfflineAxisElementEdgeAudit> = emptyList(),
     val scaleCandidatePairs: List<OfflineAxisElementScaleCandidatePairAudit> = emptyList(),
+    val labelProjections: List<OfflineAxisLabelProjectionAudit> = emptyList(),
     val blockers: List<String> = emptyList(),
     val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineAxisLabelBandAudit(
+    val xLabelBand: GraphRegion? = null,
+    val yLabelBand: GraphRegion? = null,
+    val titleBand: GraphRegion? = null,
 )
 
 @Serializable
@@ -315,6 +328,9 @@ data class OfflineAxisElementNodeAudit(
 enum class OfflineAxisElementNodeKind {
     GRAPH_PANEL,
     PLOT_AREA,
+    X_LABEL_BAND,
+    Y_LABEL_BAND,
+    TITLE_BAND,
     X_AXIS_LINE,
     Y_AXIS_LINE,
     AXIS_ORIGIN,
@@ -368,6 +384,36 @@ data class OfflineAxisElementScaleCandidatePairAudit(
 
 @Serializable
 enum class OfflineAxisElementScaleCandidateStatus {
+    ACCEPTED,
+    REVIEW,
+    REJECTED,
+}
+
+@Serializable
+data class OfflineAxisLabelProjectionAudit(
+    val ocrNodeId: String,
+    val axis: String? = null,
+    val rawText: String,
+    val numericValue: Float? = null,
+    val labelBounds: GraphRegion,
+    val labelCenterX: Float,
+    val labelCenterY: Float,
+    val sourceBand: String? = null,
+    val projectedPixel: Float? = null,
+    val projectedPixelRelativeToPlot: Float? = null,
+    val nearestTickPixel: Float? = null,
+    val nearestTickDistance: Float? = null,
+    val projectionMethod: String,
+    val status: OfflineAxisLabelProjectionStatus,
+    val rejectionReason: String? = null,
+    val confidence: Float = 0f,
+    val source: String,
+    val cropPath: String? = null,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineAxisLabelProjectionStatus {
     ACCEPTED,
     REVIEW,
     REJECTED,
@@ -1538,6 +1584,7 @@ private fun buildAxisElementGraphAudit(
 ): OfflineAxisElementGraphAudit {
     val nodes = mutableListOf<OfflineAxisElementNodeAudit>()
     val edges = mutableListOf<OfflineAxisElementEdgeAudit>()
+    val labelProjections = mutableListOf<OfflineAxisLabelProjectionAudit>()
     val warnings = mutableListOf<String>()
     val blockers = mutableListOf<String>()
 
@@ -1571,6 +1618,63 @@ private fun buildAxisElementGraphAudit(
         )
     } else {
         blockers += "axis_element_graph.plot_area_missing"
+    }
+
+    val labelBands = plotArea.region?.let { plotRegion ->
+        buildAxisElementLabelBands(panelRegion, plotRegion)
+    } ?: OfflineAxisLabelBandAudit()
+    labelBands.xLabelBand?.let { band ->
+        nodes += OfflineAxisElementNodeAudit(
+            id = "graph_${graphIndex}_x_label_band",
+            kind = OfflineAxisElementNodeKind.X_LABEL_BAND,
+            axis = "X",
+            bounds = band,
+            confidence = 0.75f,
+            source = "axis_label_band_projection",
+            status = OfflineAxisElementNodeStatus.CANDIDATE,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = graphNodeId,
+            toNodeId = "graph_${graphIndex}_x_label_band",
+            relationship = OfflineAxisElementEdgeKind.CONTAINS,
+            confidence = 0.75f,
+            source = "axis_label_band_projection",
+        )
+    }
+    labelBands.yLabelBand?.let { band ->
+        nodes += OfflineAxisElementNodeAudit(
+            id = "graph_${graphIndex}_y_label_band",
+            kind = OfflineAxisElementNodeKind.Y_LABEL_BAND,
+            axis = "Y",
+            bounds = band,
+            confidence = 0.75f,
+            source = "axis_label_band_projection",
+            status = OfflineAxisElementNodeStatus.CANDIDATE,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = graphNodeId,
+            toNodeId = "graph_${graphIndex}_y_label_band",
+            relationship = OfflineAxisElementEdgeKind.CONTAINS,
+            confidence = 0.75f,
+            source = "axis_label_band_projection",
+        )
+    }
+    labelBands.titleBand?.let { band ->
+        nodes += OfflineAxisElementNodeAudit(
+            id = "graph_${graphIndex}_title_band",
+            kind = OfflineAxisElementNodeKind.TITLE_BAND,
+            bounds = band,
+            confidence = 0.65f,
+            source = "axis_label_band_projection",
+            status = OfflineAxisElementNodeStatus.CANDIDATE,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = graphNodeId,
+            toNodeId = "graph_${graphIndex}_title_band",
+            relationship = OfflineAxisElementEdgeKind.CONTAINS,
+            confidence = 0.65f,
+            source = "axis_label_band_projection",
+        )
     }
 
     axesResult?.xAxis?.let { axis ->
@@ -1672,8 +1776,15 @@ private fun buildAxisElementGraphAudit(
 
     ocrResult?.rawElements.orEmpty().forEachIndexed { index, element ->
         val isNumeric = element.numericValue != null
-        val axis = element.sourceAxis?.uppercase()
         val nodeId = "graph_${graphIndex}_ocr_${index + 1}"
+        val projection = element.toAxisLabelProjectionAudit(
+            nodeId = nodeId,
+            labelBands = labelBands,
+            plotRegion = plotArea.region,
+            axisTickGeometry = axisTickGeometry,
+        )
+        val axis = projection.axis ?: element.sourceAxis?.uppercase()
+        labelProjections += projection
         nodes += OfflineAxisElementNodeAudit(
             id = nodeId,
             kind = if (isNumeric) OfflineAxisElementNodeKind.OCR_NUMERIC_LABEL else OfflineAxisElementNodeKind.OCR_TEXT_LABEL,
@@ -1692,18 +1803,30 @@ private fun buildAxisElementGraphAudit(
             status = if (isNumeric) OfflineAxisElementNodeStatus.CANDIDATE else OfflineAxisElementNodeStatus.REJECTED,
             warnings = if (isNumeric) emptyList() else listOf("axis_element_graph.semantic_text_not_scale_label"),
         )
-        if (axis == "X" || axis == "Y") {
+        if ((axis == "X" || axis == "Y") && projection.status != OfflineAxisLabelProjectionStatus.REJECTED) {
             edges += OfflineAxisElementEdgeAudit(
                 fromNodeId = nodeId,
                 toNodeId = "graph_${graphIndex}_${axis.lowercase()}_axis",
                 relationship = OfflineAxisElementEdgeKind.LABEL_PROJECTS_TO_AXIS,
                 confidence = element.confidence,
-                source = "axis_ocr",
+                source = projection.projectionMethod,
+            )
+        } else if (isNumeric) {
+            edges += OfflineAxisElementEdgeAudit(
+                fromNodeId = nodeId,
+                toNodeId = graphNodeId,
+                relationship = OfflineAxisElementEdgeKind.LABEL_PROJECTS_TO_AXIS,
+                confidence = element.confidence,
+                source = projection.projectionMethod,
+                rejectionReason = projection.rejectionReason,
             )
         }
     }
     if (ocrResult == null || ocrResult.rawElements.isEmpty()) {
         blockers += "axis_element_graph.ocr_labels_missing"
+    }
+    if (labelProjections.none { it.status != OfflineAxisLabelProjectionStatus.REJECTED }) {
+        blockers += "axis_element_graph.label_projection_missing"
     }
 
     val xAnchorNodes = mutableListOf<Pair<String, OfflineAxisCalibrationPointAudit>>()
@@ -1766,12 +1889,286 @@ private fun buildAxisElementGraphAudit(
         edgeCount = edges.size,
         scaleCandidatePairCount = scaleCandidates.size,
         acceptedScaleCandidatePairCount = scaleCandidates.count { it.status == OfflineAxisElementScaleCandidateStatus.ACCEPTED },
+        labelBandProjectionCount = labelProjections.size,
+        acceptedLabelBandProjectionCount = labelProjections.count { it.status == OfflineAxisLabelProjectionStatus.ACCEPTED },
+        reviewLabelBandProjectionCount = labelProjections.count { it.status == OfflineAxisLabelProjectionStatus.REVIEW },
+        labelBands = labelBands,
         nodes = nodes,
         edges = edges,
         scaleCandidatePairs = scaleCandidates,
+        labelProjections = labelProjections,
         blockers = blockers.distinct(),
         warnings = warnings.distinct(),
     )
+}
+
+private fun buildAxisElementLabelBands(
+    panelRegion: GraphRegion,
+    plotRegion: GraphRegion,
+): OfflineAxisLabelBandAudit {
+    val panelBottom = panelRegion.bottom
+    val panelRight = panelRegion.right
+    val plotBottom = plotRegion.bottom
+    val plotRight = plotRegion.right
+    val xTop = (plotBottom - (plotRegion.height * 0.04f).roundToInt().coerceAtLeast(6))
+        .coerceIn(panelRegion.y, panelBottom - 1)
+    val yRight = (plotRegion.x + (plotRegion.width * 0.25f).roundToInt().coerceAtLeast(8))
+        .coerceIn(panelRegion.x + 1, panelRight)
+    val titleBottom = (plotRegion.y + (plotRegion.height * 0.08f).roundToInt().coerceAtLeast(12))
+        .coerceIn(panelRegion.y + 1, panelBottom)
+    return OfflineAxisLabelBandAudit(
+        xLabelBand = GraphRegion(
+            x = plotRegion.x.coerceIn(panelRegion.x, panelRight - 1),
+            y = xTop,
+            width = (plotRight.coerceAtMost(panelRight) - plotRegion.x.coerceIn(panelRegion.x, panelRight - 1))
+                .coerceAtLeast(1),
+            height = (panelBottom - xTop).coerceAtLeast(1),
+            label = "X label projection band",
+        ),
+        yLabelBand = GraphRegion(
+            x = panelRegion.x,
+            y = plotRegion.y.coerceIn(panelRegion.y, panelBottom - 1),
+            width = (yRight - panelRegion.x).coerceAtLeast(1),
+            height = (plotBottom.coerceAtMost(panelBottom) - plotRegion.y.coerceIn(panelRegion.y, panelBottom - 1))
+                .coerceAtLeast(1),
+            label = "Y label projection band",
+        ),
+        titleBand = GraphRegion(
+            x = panelRegion.x,
+            y = panelRegion.y,
+            width = panelRegion.width,
+            height = (titleBottom - panelRegion.y).coerceAtLeast(1),
+            label = "Title and ion rejection band",
+        ),
+    )
+}
+
+private fun OcrTextElement.toAxisLabelProjectionAudit(
+    nodeId: String,
+    labelBands: OfflineAxisLabelBandAudit,
+    plotRegion: GraphRegion?,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
+): OfflineAxisLabelProjectionAudit {
+    val bounds = toOcrBounds()
+    val cx = x + width / 2f
+    val cy = y + height / 2f
+    val value = numericValue
+    val source = sourceKind.name
+    if (plotRegion == null) {
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = null,
+            reason = "axis_label_projection.plot_area_missing",
+            method = "no_projection",
+        )
+    }
+    if (value == null) {
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = labelBands.sourceBandFor(cx, cy),
+            reason = "axis_label_projection.non_numeric_text",
+            method = "semantic_text_rejected",
+        )
+    }
+    semanticScaleRejectionReason()?.let { reason ->
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = labelBands.sourceBandFor(cx, cy),
+            reason = reason,
+            method = "semantic_text_rejected",
+        )
+    }
+    if (sourceKind == OcrElementSourceKind.VLM_AXIS_EXTRACTION && sourceTickPixelPosition == null) {
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = labelBands.sourceBandFor(cx, cy),
+            reason = "axis_label_projection.vlm_position_rejected_for_geometry",
+            method = "vlm_text_only_rejected",
+        )
+    }
+
+    val sourceAxis = this.sourceAxis?.uppercase()?.takeIf { it == "X" || it == "Y" }
+    val inXBand = labelBands.xLabelBand?.containsCenter(cx, cy) == true
+    val inYBand = labelBands.yLabelBand?.containsCenter(cx, cy) == true
+    val inTitleBand = labelBands.titleBand?.containsCenter(cx, cy) == true
+    val axis = when {
+        sourceAxis == "X" && inXBand -> "X"
+        sourceAxis == "Y" && inYBand -> "Y"
+        inXBand && !inYBand -> "X"
+        inYBand && !inXBand -> "Y"
+        sourceAxis != null && !inTitleBand -> sourceAxis
+        else -> null
+    }
+    if (axis == null) {
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = labelBands.sourceBandFor(cx, cy),
+            reason = if (inTitleBand) {
+                "axis_label_projection.title_or_ion_band_rejected"
+            } else {
+                "axis_label_projection.numeric_label_box_outside_axis_bands"
+            },
+            method = "band_classification_rejected",
+        )
+    }
+
+    val labelPixel = if (axis == "X") cx else cy
+    val nearestTick = nearestTickPixel(axis, axisTickGeometry, labelPixel)
+    val tickTolerance = if (axis == "X") {
+        maxOf(10f, plotRegion.width * 0.035f)
+    } else {
+        maxOf(10f, plotRegion.height * 0.04f)
+    }
+    val nearestTickDistance = nearestTick?.let { abs(it - labelPixel) }
+    val projectedPixel = when {
+        sourceTickPixelPosition != null -> sourceTickPixelPosition
+        nearestTick != null && nearestTickDistance != null && nearestTickDistance <= tickTolerance -> nearestTick
+        else -> labelPixel
+    }
+    val relative = if (axis == "X") projectedPixel - plotRegion.x else projectedPixel - plotRegion.y
+    val axisLength = if (axis == "X") plotRegion.width.toFloat() else plotRegion.height.toFloat()
+    val projectionInsidePlot = relative >= -tickTolerance && relative <= axisLength + tickTolerance
+    if (!projectionInsidePlot) {
+        return rejectedAxisLabelProjection(
+            nodeId = nodeId,
+            bounds = bounds,
+            centerX = cx,
+            centerY = cy,
+            sourceBand = labelBands.sourceBandFor(cx, cy),
+            reason = "axis_label_projection.projected_pixel_outside_plot_span",
+            method = "projection_bounds_rejected",
+            axis = axis,
+            projectedPixel = projectedPixel,
+            relativePixel = relative,
+            nearestTick = nearestTick,
+            nearestTickDistance = nearestTickDistance,
+        )
+    }
+
+    val hasDeterministicTick = sourceTickPixelPosition != null ||
+        (nearestTick != null && nearestTickDistance != null && nearestTickDistance <= tickTolerance)
+    val status = if (hasDeterministicTick) {
+        OfflineAxisLabelProjectionStatus.ACCEPTED
+    } else {
+        OfflineAxisLabelProjectionStatus.REVIEW
+    }
+    return OfflineAxisLabelProjectionAudit(
+        ocrNodeId = nodeId,
+        axis = axis,
+        rawText = text,
+        numericValue = value,
+        labelBounds = bounds,
+        labelCenterX = cx,
+        labelCenterY = cy,
+        sourceBand = labelBands.sourceBandFor(cx, cy),
+        projectedPixel = projectedPixel,
+        projectedPixelRelativeToPlot = relative.coerceIn(0f, axisLength),
+        nearestTickPixel = nearestTick,
+        nearestTickDistance = nearestTickDistance,
+        projectionMethod = when {
+            sourceTickPixelPosition != null -> "deterministic_tick_crop_text"
+            status == OfflineAxisLabelProjectionStatus.ACCEPTED -> "nearest_deterministic_tick"
+            else -> "ocr_label_box_center_review"
+        },
+        status = status,
+        confidence = confidence,
+        source = source,
+        cropPath = sourceCropPath,
+        warnings = if (status == OfflineAxisLabelProjectionStatus.REVIEW) {
+            listOf("axis_label_projection.label_box_only_review")
+        } else {
+            emptyList()
+        },
+    )
+}
+
+private fun OcrTextElement.rejectedAxisLabelProjection(
+    nodeId: String,
+    bounds: GraphRegion,
+    centerX: Float,
+    centerY: Float,
+    sourceBand: String?,
+    reason: String,
+    method: String,
+    axis: String? = null,
+    projectedPixel: Float? = null,
+    relativePixel: Float? = null,
+    nearestTick: Float? = null,
+    nearestTickDistance: Float? = null,
+): OfflineAxisLabelProjectionAudit =
+    OfflineAxisLabelProjectionAudit(
+        ocrNodeId = nodeId,
+        axis = axis,
+        rawText = text,
+        numericValue = numericValue,
+        labelBounds = bounds,
+        labelCenterX = centerX,
+        labelCenterY = centerY,
+        sourceBand = sourceBand,
+        projectedPixel = projectedPixel,
+        projectedPixelRelativeToPlot = relativePixel,
+        nearestTickPixel = nearestTick,
+        nearestTickDistance = nearestTickDistance,
+        projectionMethod = method,
+        status = OfflineAxisLabelProjectionStatus.REJECTED,
+        rejectionReason = reason,
+        confidence = confidence,
+        source = sourceKind.name,
+        cropPath = sourceCropPath,
+    )
+
+private fun OcrTextElement.toOcrBounds(): GraphRegion =
+    GraphRegion(
+        x = x.roundToInt(),
+        y = y.roundToInt(),
+        width = width.roundToInt().coerceAtLeast(1),
+        height = height.roundToInt().coerceAtLeast(1),
+        label = "OCR $text",
+    )
+
+private fun OcrTextElement.semanticScaleRejectionReason(): String? {
+    val lower = text.lowercase()
+    return when {
+        "m/z" in lower || "ion" in lower || lower.startsWith("sim") || "scan" in lower ||
+            " tic" in lower || lower.startsWith("tic") || " to " in lower || "):" in lower ->
+            "axis_label_projection.title_ion_or_method_text_rejected"
+        else -> null
+    }
+}
+
+private fun OfflineAxisLabelBandAudit.sourceBandFor(x: Float, y: Float): String? =
+    when {
+        xLabelBand?.containsCenter(x, y) == true -> "X_LABEL_BAND"
+        yLabelBand?.containsCenter(x, y) == true -> "Y_LABEL_BAND"
+        titleBand?.containsCenter(x, y) == true -> "TITLE_BAND"
+        else -> null
+    }
+
+private fun GraphRegion.containsCenter(x: Float, y: Float): Boolean =
+    x >= this.x && x <= right && y >= this.y && y <= bottom
+
+private fun nearestTickPixel(
+    axis: String,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
+    labelPixel: Float,
+): Float? {
+    val ticks = if (axis == "X") axisTickGeometry.xTickPositions else axisTickGeometry.yTickPositions
+    return ticks.minByOrNull { abs(it - labelPixel) }
 }
 
 private fun OfflineAxisCalibrationPointAudit.toAxisElementNode(

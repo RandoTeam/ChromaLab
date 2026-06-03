@@ -215,12 +215,12 @@ object OfflineAnalysisAuditArtifacts {
 
         appendLine("## Axis Element Graph Prototype")
         appendLine()
-        appendLine("| Graph | Available | Nodes | Edges | Scale pairs | Accepted pairs | JSON | Overlay | Blockers | Warnings |")
-        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |")
+        appendLine("| Graph | Available | Nodes | Edges | Scale pairs | Accepted pairs | Label projections | Accepted projections | Review projections | JSON | Overlay | Blockers | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- |")
         audit.graphs.forEach { graph ->
             val elementGraph = graph.axisElementGraph
             appendLine(
-                "| ${graph.graphIndex} | ${elementGraph.available} | ${elementGraph.nodeCount} | ${elementGraph.edgeCount} | ${elementGraph.scaleCandidatePairCount} | ${elementGraph.acceptedScaleCandidatePairCount} | ${elementGraph.artifactJsonPath ?: "none"} | ${elementGraph.artifactOverlayPath ?: "none"} | ${elementGraph.blockers.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${elementGraph.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+                "| ${graph.graphIndex} | ${elementGraph.available} | ${elementGraph.nodeCount} | ${elementGraph.edgeCount} | ${elementGraph.scaleCandidatePairCount} | ${elementGraph.acceptedScaleCandidatePairCount} | ${elementGraph.labelBandProjectionCount} | ${elementGraph.acceptedLabelBandProjectionCount} | ${elementGraph.reviewLabelBandProjectionCount} | ${elementGraph.artifactJsonPath ?: "none"} | ${elementGraph.artifactOverlayPath ?: "none"} | ${elementGraph.blockers.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${elementGraph.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
