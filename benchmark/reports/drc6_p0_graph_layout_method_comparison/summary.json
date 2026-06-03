@@ -1,0 +1,548 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc6_p0_graph_layout_method_comparison.v1",
+  "truthSource": "benchmark/annotations/drc3_initial_graph_layout_annotations/summary.json",
+  "benchmarkRoot": "benchmark/examples/phase9j_truth_audit",
+  "fixtureCount": 4,
+  "overallVerdict": "PC_PROTOTYPE_IMPROVES_GRAPH_COUNT_NOT_READY_FOR_RUNTIME",
+  "methodSummaries": [
+    {
+      "methodId": "android_phase9j_current",
+      "caseCount": 8,
+      "graphCountPass": 0,
+      "layoutClassPass": 0,
+      "notes": "Current Android output still collapses P0 multi-panel fixtures to one graph."
+    },
+    {
+      "methodId": "full_width_axis_projection_v1",
+      "caseCount": 4,
+      "graphCountPass": 3,
+      "layoutClassPass": 1,
+      "notes": "Strong on PNG/export panels; weak on photographed pages with footer/page-frame lines."
+    },
+    {
+      "methodId": "label_band_assisted_axis_projection_v1",
+      "caseCount": 4,
+      "graphCountPass": 4,
+      "layoutClassPass": 2,
+      "notes": "Best PC prototype for P0 graph count; still lacks exact semantic layout classification."
+    }
+  ],
+  "currentBaselineScores": [
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "deterministic"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "model_enabled"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "deterministic"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "model_enabled"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "deterministic"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "model_enabled"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "deterministic"
+    },
+    {
+      "methodId": "android_phase9j_current",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "NOT_EXPOSED",
+      "layoutClassScore": "MISSING",
+      "selectedRows": [],
+      "confidence": "ANDROID_BASELINE",
+      "reason": "Current normalized Phase 9J benchmark output.",
+      "mode": "model_enabled"
+    }
+  ],
+  "prototypeScores": [
+    {
+      "methodId": "full_width_axis_projection_v1",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "graphCountScore": "FAIL",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "layoutClassScore": "FAIL",
+      "selectedRows": [
+        1224
+      ],
+      "confidence": "HIGH_FOR_EXPORTS_LOW_FOR_PHOTO_FOOTERS",
+      "reason": "Counts long horizontal frame/axis rows; strong on PNG exports, vulnerable to page/footer lines.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_01_mz71_screenshot_page_full_width_axis_projection_v1.png"
+    },
+    {
+      "methodId": "label_band_assisted_axis_projection_v1",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "selectedRows": [
+        715,
+        1112
+      ],
+      "confidence": "PROTOTYPE_GRAPH_COUNT_ONLY",
+      "reason": "Fell back to medium axis rows with darker label-band evidence below the row.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_01_mz71_screenshot_page_label_band_assisted_axis_projection_v1.png"
+    },
+    {
+      "methodId": "full_width_axis_projection_v1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "selectedRows": [
+        226,
+        496,
+        779,
+        1058
+      ],
+      "confidence": "HIGH_FOR_EXPORTS_LOW_FOR_PHOTO_FOOTERS",
+      "reason": "Counts long horizontal frame/axis rows; strong on PNG exports, vulnerable to page/footer lines.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_04_stacked_xic_resolution_full_width_axis_projection_v1.png"
+    },
+    {
+      "methodId": "label_band_assisted_axis_projection_v1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "selectedRows": [
+        226,
+        496,
+        779,
+        1058
+      ],
+      "confidence": "PROTOTYPE_GRAPH_COUNT_ONLY",
+      "reason": "Used high-confidence full-width row clusters.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_04_stacked_xic_resolution_label_band_assisted_axis_projection_v1.png"
+    },
+    {
+      "methodId": "full_width_axis_projection_v1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "selectedRows": [
+        362,
+        506,
+        644,
+        783
+      ],
+      "confidence": "HIGH_FOR_EXPORTS_LOW_FOR_PHOTO_FOOTERS",
+      "reason": "Counts long horizontal frame/axis rows; strong on PNG exports, vulnerable to page/footer lines.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_05_tic_plus_ions_full_width_axis_projection_v1.png"
+    },
+    {
+      "methodId": "label_band_assisted_axis_projection_v1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "selectedRows": [
+        362,
+        506,
+        644,
+        783
+      ],
+      "confidence": "PROTOTYPE_GRAPH_COUNT_ONLY",
+      "reason": "Used high-confidence full-width row clusters.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_05_tic_plus_ions_label_band_assisted_axis_projection_v1.png"
+    },
+    {
+      "methodId": "full_width_axis_projection_v1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "selectedRows": [
+        622,
+        1237
+      ],
+      "confidence": "HIGH_FOR_EXPORTS_LOW_FOR_PHOTO_FOOTERS",
+      "reason": "Counts long horizontal frame/axis rows; strong on PNG exports, vulnerable to page/footer lines.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_06_photo_two_graphs_page_full_width_axis_projection_v1.png"
+    },
+    {
+      "methodId": "label_band_assisted_axis_projection_v1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "selectedRows": [
+        622,
+        1237
+      ],
+      "confidence": "PROTOTYPE_GRAPH_COUNT_ONLY",
+      "reason": "Used high-confidence full-width row clusters.",
+      "overlayPath": "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_06_photo_two_graphs_page_label_band_assisted_axis_projection_v1.png"
+    }
+  ],
+  "imageFeatures": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+      "contentCrop": [
+        12,
+        0,
+        964,
+        1258
+      ],
+      "rowCandidates": [
+        {
+          "row": 688,
+          "score": 0.4777,
+          "darkRun": 289,
+          "clusterHeight": 2,
+          "belowDarkFraction": 0.2021,
+          "aboveDarkFraction": 0.0509
+        },
+        {
+          "row": 715,
+          "score": 0.5706,
+          "darkRun": 407,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.159,
+          "aboveDarkFraction": 0.1212
+        },
+        {
+          "row": 890,
+          "score": 0.4966,
+          "darkRun": 313,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.1822,
+          "aboveDarkFraction": 0.2145
+        },
+        {
+          "row": 1112,
+          "score": 0.4911,
+          "darkRun": 306,
+          "clusterHeight": 2,
+          "belowDarkFraction": 0.318,
+          "aboveDarkFraction": 0.1051
+        },
+        {
+          "row": 1137,
+          "score": 0.4824,
+          "darkRun": 295,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.3962,
+          "aboveDarkFraction": 0.2056
+        },
+        {
+          "row": 1224,
+          "score": 1.0,
+          "darkRun": 952,
+          "clusterHeight": 93,
+          "belowDarkFraction": 0.992,
+          "aboveDarkFraction": 0.5434
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+      "contentCrop": [
+        0,
+        0,
+        534,
+        1110
+      ],
+      "rowCandidates": [
+        {
+          "row": 226,
+          "score": 0.9789,
+          "darkRun": 519,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.0897,
+          "aboveDarkFraction": 0.1323
+        },
+        {
+          "row": 254,
+          "score": 0.4846,
+          "darkRun": 167,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.0441,
+          "aboveDarkFraction": 0.1772
+        },
+        {
+          "row": 496,
+          "score": 0.9775,
+          "darkRun": 518,
+          "clusterHeight": 6,
+          "belowDarkFraction": 0.0906,
+          "aboveDarkFraction": 0.1177
+        },
+        {
+          "row": 532,
+          "score": 0.4916,
+          "darkRun": 175,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.0308,
+          "aboveDarkFraction": 0.2024
+        },
+        {
+          "row": 779,
+          "score": 0.9775,
+          "darkRun": 518,
+          "clusterHeight": 4,
+          "belowDarkFraction": 0.0966,
+          "aboveDarkFraction": 0.024
+        },
+        {
+          "row": 809,
+          "score": 0.5098,
+          "darkRun": 185,
+          "clusterHeight": 14,
+          "belowDarkFraction": 0.034,
+          "aboveDarkFraction": 0.1249
+        },
+        {
+          "row": 1058,
+          "score": 0.9775,
+          "darkRun": 518,
+          "clusterHeight": 4,
+          "belowDarkFraction": 0.1191,
+          "aboveDarkFraction": 0.0181
+        },
+        {
+          "row": 1094,
+          "score": 0.5183,
+          "darkRun": 191,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.0722,
+          "aboveDarkFraction": 0.1324
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png",
+      "contentCrop": [
+        0,
+        0,
+        683,
+        807
+      ],
+      "rowCandidates": [
+        {
+          "row": 362,
+          "score": 0.9231,
+          "darkRun": 613,
+          "clusterHeight": 9,
+          "belowDarkFraction": 0.054,
+          "aboveDarkFraction": 0.102
+        },
+        {
+          "row": 419,
+          "score": 0.5673,
+          "darkRun": 289,
+          "clusterHeight": 7,
+          "belowDarkFraction": 0.0229,
+          "aboveDarkFraction": 0.0697
+        },
+        {
+          "row": 506,
+          "score": 0.9253,
+          "darkRun": 615,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.0784,
+          "aboveDarkFraction": 0.0122
+        },
+        {
+          "row": 556,
+          "score": 0.5663,
+          "darkRun": 288,
+          "clusterHeight": 8,
+          "belowDarkFraction": 0.0264,
+          "aboveDarkFraction": 0.0995
+        },
+        {
+          "row": 644,
+          "score": 0.9253,
+          "darkRun": 615,
+          "clusterHeight": 12,
+          "belowDarkFraction": 0.0734,
+          "aboveDarkFraction": 0.014
+        },
+        {
+          "row": 694,
+          "score": 0.5663,
+          "darkRun": 288,
+          "clusterHeight": 8,
+          "belowDarkFraction": 0.0212,
+          "aboveDarkFraction": 0.0939
+        },
+        {
+          "row": 783,
+          "score": 0.9242,
+          "darkRun": 614,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.1544,
+          "aboveDarkFraction": 0.008
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+      "contentCrop": [
+        69,
+        28,
+        964,
+        1247
+      ],
+      "rowCandidates": [
+        {
+          "row": 184,
+          "score": 0.4696,
+          "darkRun": 262,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.2579,
+          "aboveDarkFraction": 0.2728
+        },
+        {
+          "row": 243,
+          "score": 0.6128,
+          "darkRun": 433,
+          "clusterHeight": 9,
+          "belowDarkFraction": 0.1709,
+          "aboveDarkFraction": 0.2445
+        },
+        {
+          "row": 586,
+          "score": 0.4788,
+          "darkRun": 273,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.3355,
+          "aboveDarkFraction": 0.2572
+        },
+        {
+          "row": 622,
+          "score": 0.8106,
+          "darkRun": 669,
+          "clusterHeight": 61,
+          "belowDarkFraction": 0.2971,
+          "aboveDarkFraction": 0.295
+        },
+        {
+          "row": 1237,
+          "score": 1.0,
+          "darkRun": 895,
+          "clusterHeight": 140,
+          "belowDarkFraction": 1.0,
+          "aboveDarkFraction": 0.5331
+        }
+      ]
+    }
+  ],
+  "productionImpact": "NONE_RESEARCH_ONLY"
+}

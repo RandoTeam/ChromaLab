@@ -102,12 +102,13 @@ the deterministic result in these P0 cases.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-C6: P0 Graph Layout Method Comparison Prototype`
 
-Goal:
+Result:
 
-- compare current graph/layout output with a PC-side candidate method;
-- use P0 graph-count truth as the primary score;
-- avoid Android changes until PC scoring improves the P0 graph-count baseline.
+- documented in `docs/DRC6_P0_GRAPH_LAYOUT_METHOD_COMPARISON.md`;
+- current Android baseline remains 0/8 graph-count pass on P0 cases;
+- best PC prototype reaches 4/4 graph-count pass on P0 fixture images;
+- semantic layout class still needs a dedicated classifier before runtime work.

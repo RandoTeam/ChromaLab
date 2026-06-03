@@ -108,3 +108,14 @@ python tools/benchmark/score_drc5_p0_graph_layout.py
 The P0 graph/layout score report is written to:
 
 `benchmark/reports/drc5_p0_graph_layout_score/`
+
+Compare PC-side P0 graph-layout prototype methods with the current Android
+baseline:
+
+```powershell
+python tools/benchmark/prototype_drc6_p0_graph_layout_methods.py
+```
+
+The DR-C6 method comparison report and overlays are written to:
+
+`benchmark/reports/drc6_p0_graph_layout_method_comparison/`
