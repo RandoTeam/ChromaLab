@@ -195,3 +195,13 @@ python tools/benchmark/run_drd6_axis_owned_ocr_preprocessing_grid.py
 The DR-D6 preprocessing grid report is written to:
 
 `benchmark/reports/drd6_axis_owned_ocr_preprocessing_grid/`
+
+Build axis scale candidates from safe owned OCR evidence:
+
+```powershell
+python tools/benchmark/run_dre1_axis_scale_candidate_builder.py
+```
+
+The DR-E1 scale candidate report is written to:
+
+`benchmark/reports/dre1_axis_scale_candidate_builder/`

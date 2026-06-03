@@ -168,6 +168,9 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
+Current status: `DR_E1_COMPLETE_AXIS_SCALE_CANDIDATES_PARTIAL_SAFE_EVIDENCE_NOT_ACCEPTANCE_READY`
+in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md`.
+
 Methods to compare:
 
 - legacy tick localization;
@@ -287,7 +290,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-E1: Axis Scale Candidate Builder From Safe Owned OCR**.
+Start: **DR-E2: Robust Axis Scale Fit And Outlier Rejection Benchmark**.
 
 Reason:
 
@@ -301,9 +304,10 @@ Reason:
   failures, but tick recall is still too low;
 - DR-D6 improves tick recall from `0.7104` to `0.7322` while preserving zero
   false tick labels;
-- OCR remains safe but incomplete, so the next work should build scale and
-  calibration candidates from incomplete owned labels with explicit missing
-  evidence reasons;
+- DR-E1 converts safe owned OCR labels into axis scale candidates and finds 13
+  valid axes, 2 review axes, and 9 invalid axes;
+- the next calibration work should compare robust/outlier-rejected fits and
+  review fallbacks for high-residual and non-monotonic cases;
 - another Android runtime attempt would be premature until DR-E proves
   calibration candidate behavior on this benchmark corpus.
 

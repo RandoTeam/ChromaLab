@@ -95,13 +95,14 @@ geometry, calibration coefficients, or chromatographic metrics.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-E1: Axis Scale Candidate Builder From Safe Owned OCR`
 
-Goal:
+Result:
 
-- use only safe owned OCR labels and deterministic geometry;
-- build scale candidates with explicit missing-label reasons;
-- score calibration candidates from incomplete but safe evidence;
-- prepare a calibration benchmark before any Android runtime integration.
+- documented in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md`;
+- safe owned OCR labels were converted into X/Y scale candidates;
+- results are partial: 13 valid axes, 2 review axes, 9 invalid axes;
+- failure reasons are explicit: insufficient anchors, high residuals, and
+  non-monotonic label sequences.
