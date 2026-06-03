@@ -133,11 +133,12 @@ Acceptance:
 
 Goal: make OCR automatic and measurable without making OCR/VLM numeric authority.
 
-Current status: `DR_D4_COMPLETE_SECOND_OCR_INSTALLED_TEXT_BOX_DETECTION_NOT_ACCEPTANCE_READY`
+Current status: `DR_D5_COMPLETE_AXIS_OWNED_OCR_CROP_PLANNER_IMPROVES_SCOPE_NOT_ACCEPTANCE_READY`
 in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md` and
 `docs/DRD2_REAL_OCR_ENGINE_CROP_BENCHMARK.md`;
 `docs/DRD3_OCR_PREPROCESSING_GRID_AND_SAFETY_GATE.md`;
-`docs/DRD4_SECOND_OCR_ENGINE_TEXT_BOX_BENCHMARK.md`.
+`docs/DRD4_SECOND_OCR_ENGINE_TEXT_BOX_BENCHMARK.md`;
+`docs/DRD5_AXIS_OWNED_OCR_CROP_PLANNER.md`.
 
 Methods to compare:
 
@@ -285,7 +286,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-D5: Axis-Owned OCR Crop Planner Prototype**.
+Start: **DR-D6: Axis-Owned OCR Crop Preprocessing Grid**.
 
 Reason:
 
@@ -295,9 +296,11 @@ Reason:
   truth-owned crops;
 - DR-D4 installs EasyOCR and proves full-image OCR text-box detection is still
   not acceptance-ready;
-- the next OCR work must create deterministic graph/axis/label-band crop
-  ownership before OCR text can participate in calibration evidence;
-- otherwise global OCR numeric boxes can still be mistaken for tick evidence.
+- DR-D5 proves graph-owned OCR crops are safer and remove false tick-label
+  failures, but tick recall is still too low;
+- the next OCR work must improve crop-level scale, padding, contrast, threshold,
+  and crop subdivision while preserving zero false tick labels;
+- otherwise OCR will remain safe but too incomplete for calibration.
 
 Phase 10 remains blocked until the research and benchmark waves prove enough
 autonomous evidence for product acceptance.

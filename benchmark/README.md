@@ -175,3 +175,13 @@ python tools/benchmark/run_drd4_second_ocr_text_box_benchmark.py
 The DR-D4 OCR text-box detection report is written to:
 
 `benchmark/reports/drd4_second_ocr_text_box_benchmark/`
+
+Run the axis-owned OCR crop planner prototype:
+
+```powershell
+python tools/benchmark/run_drd5_axis_owned_ocr_crop_planner.py
+```
+
+The DR-D5 axis-owned OCR report and crop-plan overlays are written to:
+
+`benchmark/reports/drd5_axis_owned_ocr_crop_planner/`

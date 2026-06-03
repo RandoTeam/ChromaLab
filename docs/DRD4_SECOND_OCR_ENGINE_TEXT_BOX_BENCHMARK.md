@@ -114,14 +114,15 @@ labels or anchors by themselves.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D5: Axis-Owned OCR Crop Planner Prototype`
 
-Goal:
+Result:
 
-- generate OCR crops from detected graph panels, plot areas, and axis label
-  bands;
-- compare RapidOCR and EasyOCR inside those constrained crops;
-- preserve the context safety gate;
-- reject unmatched numeric boxes before calibration.
+- documented in `docs/DRD5_AXIS_OWNED_OCR_CROP_PLANNER.md`;
+- axis-owned crops were generated from graphPanel, plotArea, and label-band
+  geometry;
+- RapidOCR and EasyOCR were compared inside those constrained crops;
+- false tick labels dropped to `0`, but tick recall remains too low for
+  acceptance-ready calibration.
