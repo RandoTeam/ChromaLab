@@ -78,3 +78,13 @@ python tools/benchmark/build_drc2_annotation_workflow.py --clean
 The workflow records are written to:
 
 `benchmark/annotations/drc2_graph_layout_annotation_workflow/`
+
+Render initial P0 graph layout annotation overlays with:
+
+```powershell
+python tools/benchmark/render_drc3_annotations.py
+```
+
+The initial annotation records and overlays are written to:
+
+`benchmark/annotations/drc3_initial_graph_layout_annotations/`

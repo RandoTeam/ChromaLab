@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc3_initial_annotation_summary.v1",
+  "recordCount": 4,
+  "graphCountMatches": 4,
+  "overlayCount": 4,
+  "status": "PARTIAL_INITIAL_REVIEW",
+  "records": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+      "overlayPath": "benchmark/annotations/drc3_initial_graph_layout_annotations/overlays/bench_01_mz71_screenshot_page_overlay.png",
+      "expectedPhysicalGraphCount": 2,
+      "annotatedGraphCount": 2,
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+      "overlayPath": "benchmark/annotations/drc3_initial_graph_layout_annotations/overlays/bench_04_stacked_xic_resolution_overlay.png",
+      "expectedPhysicalGraphCount": 4,
+      "annotatedGraphCount": 4,
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png",
+      "overlayPath": "benchmark/annotations/drc3_initial_graph_layout_annotations/overlays/bench_05_tic_plus_ions_overlay.png",
+      "expectedPhysicalGraphCount": 4,
+      "annotatedGraphCount": 4,
+      "layoutClass": "TIC_PLUS_ION_PANELS",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+      "overlayPath": "benchmark/annotations/drc3_initial_graph_layout_annotations/overlays/bench_06_photo_two_graphs_page_overlay.png",
+      "expectedPhysicalGraphCount": 2,
+      "annotatedGraphCount": 2,
+      "layoutClass": "TWO_GRAPH_PAGE",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    }
+  ]
+}

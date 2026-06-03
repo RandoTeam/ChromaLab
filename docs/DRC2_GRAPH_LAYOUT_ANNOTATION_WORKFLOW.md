@@ -126,6 +126,9 @@ Recommended next slice:
 
 `DR-C3: Create Initial Graph Layout Annotation Records`
 
+Status: complete as partial initial review in
+`docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`.
+
 Goal:
 
 - annotate P0 fixtures first;

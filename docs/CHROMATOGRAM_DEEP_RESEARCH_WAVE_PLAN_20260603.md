@@ -94,9 +94,10 @@ Acceptance:
 
 Goal: prove automatic graph and axis element detection.
 
-Current status: `DR_C2_COMPLETE` in
+Current status: `DR_C3_COMPLETE_PARTIAL_INITIAL_REVIEW` in
 `docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md` and
-`docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`.
+`docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`; initial P0 graph layout
+annotations are documented in `docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`.
 
 Methods to compare:
 
@@ -271,14 +272,15 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-C3: Create Initial Graph Layout Annotation Records**.
+Start: **DR-C4: Detailed Tick/Grid And Text Role Annotation For P0 Fixtures**.
 
 Reason:
 
 - DR-C1 defines required graph/layout/axis annotation inputs;
 - DR-C2 creates hash-backed workflow records for all 8 fixtures;
-- P0 fixtures now need actual graph/layout annotation records before method
-  comparison;
+- DR-C3 adds initial graphPanel/plotArea/axis annotations for P0 fixtures;
+- P0 fixtures still need individual tick/grid positions, numeric label boxes,
+  and text-role labels before method comparison;
 - otherwise graph/layout methods would again be judged visually instead of by
   benchmark truth.
 

@@ -1,0 +1,632 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc3_initial_graph_layout_annotations.v1",
+  "annotationStatus": "PARTIAL_INITIAL_REVIEW",
+  "coordinateSpace": "ORIGINAL_IMAGE",
+  "sourceWorkflow": "benchmark/annotations/drc2_graph_layout_annotation_workflow/workflow-summary.json",
+  "records": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+      "image": {
+        "width": 964,
+        "height": 1280,
+        "sha256": "8eb64774d29f93c1ccb3d4f9035c96f9075121551600b2814ba7966021ecfd01"
+      },
+      "expectedPhysicalGraphCount": 2,
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutInterpretation": "Photo of a printed page with two separate ion chromatogram panels. Each panel has its own y axis and x axis; they must be scored as two physical graphs.",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "graphs": [
+        {
+          "graphId": "bench_01_graph_1",
+          "panelGroup": "ion_217_panel",
+          "graphPanel": {
+            "x": 103,
+            "y": 302,
+            "width": 793,
+            "height": 415
+          },
+          "plotArea": {
+            "x": 202,
+            "y": 330,
+            "width": 680,
+            "height": 363
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 202,
+                "y": 693
+              },
+              "end": {
+                "x": 882,
+                "y": 686
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 202,
+                "y": 693
+              },
+              "end": {
+                "x": 200,
+                "y": 330
+              }
+            }
+          },
+          "labelBands": {
+            "xTickLabels": {
+              "x": 190,
+              "y": 685,
+              "width": 700,
+              "height": 42
+            },
+            "yTickLabels": {
+              "x": 150,
+              "y": 335,
+              "width": 52,
+              "height": 358
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_01_graph_2",
+          "panelGroup": "ion_218_panel",
+          "graphPanel": {
+            "x": 116,
+            "y": 715,
+            "width": 784,
+            "height": 423
+          },
+          "plotArea": {
+            "x": 220,
+            "y": 727,
+            "width": 670,
+            "height": 363
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 220,
+                "y": 1090
+              },
+              "end": {
+                "x": 890,
+                "y": 1120
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 220,
+                "y": 1090
+              },
+              "end": {
+                "x": 218,
+                "y": 727
+              }
+            }
+          },
+          "labelBands": {
+            "xTickLabels": {
+              "x": 210,
+              "y": 1085,
+              "width": 685,
+              "height": 48
+            },
+            "yTickLabels": {
+              "x": 166,
+              "y": 735,
+              "width": 54,
+              "height": 355
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        }
+      ],
+      "rejectedNonGraphRegions": [
+        {
+          "regionId": "page_header",
+          "bbox": {
+            "x": 95,
+            "y": 145,
+            "width": 780,
+            "height": 145
+          },
+          "reason": "File/operator/sample text is page metadata, not a graph panel."
+        }
+      ],
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+      "image": {
+        "width": 534,
+        "height": 1110,
+        "sha256": "d63d4d0624023ec383fbd21da5819882ec7d7f9ec4e1c928b3005d91e950c703"
+      },
+      "expectedPhysicalGraphCount": 4,
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutInterpretation": "Four vertically stacked XIC panels. They use related time ranges but have separate y axes and separate plot areas.",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "graphs": [
+        {
+          "graphId": "bench_04_graph_1",
+          "panelGroup": "xic_198_0315_pm_0_2",
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 534,
+            "height": 265
+          },
+          "plotArea": {
+            "x": 36,
+            "y": 0,
+            "width": 490,
+            "height": 224
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 36,
+                "y": 224
+              },
+              "end": {
+                "x": 526,
+                "y": 224
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 36,
+                "y": 224
+              },
+              "end": {
+                "x": 36,
+                "y": 0
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_04_graph_2",
+          "panelGroup": "xic_198_0315_pm_0_02",
+          "graphPanel": {
+            "x": 0,
+            "y": 267,
+            "width": 534,
+            "height": 262
+          },
+          "plotArea": {
+            "x": 36,
+            "y": 274,
+            "width": 490,
+            "height": 224
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 36,
+                "y": 498
+              },
+              "end": {
+                "x": 526,
+                "y": 498
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 36,
+                "y": 498
+              },
+              "end": {
+                "x": 36,
+                "y": 274
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_04_graph_3",
+          "panelGroup": "xic_198_0315_pm_0_002",
+          "graphPanel": {
+            "x": 0,
+            "y": 533,
+            "width": 534,
+            "height": 256
+          },
+          "plotArea": {
+            "x": 36,
+            "y": 553,
+            "width": 490,
+            "height": 227
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 36,
+                "y": 780
+              },
+              "end": {
+                "x": 526,
+                "y": 780
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 36,
+                "y": 780
+              },
+              "end": {
+                "x": 36,
+                "y": 553
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_04_graph_4",
+          "panelGroup": "xic_198_0315_pm_0_0002",
+          "graphPanel": {
+            "x": 0,
+            "y": 790,
+            "width": 534,
+            "height": 320
+          },
+          "plotArea": {
+            "x": 36,
+            "y": 825,
+            "width": 490,
+            "height": 235
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 36,
+                "y": 1060
+              },
+              "end": {
+                "x": 526,
+                "y": 1060
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 36,
+                "y": 1060
+              },
+              "end": {
+                "x": 36,
+                "y": 825
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        }
+      ],
+      "rejectedNonGraphRegions": [],
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png",
+      "image": {
+        "width": 683,
+        "height": 807,
+        "sha256": "eacbf1c8d37591ebdf2166c13accb1d47346f8ef1fbd4b815ced2999fd20aad2"
+      },
+      "expectedPhysicalGraphCount": 4,
+      "layoutClass": "TIC_PLUS_ION_PANELS",
+      "layoutInterpretation": "One TIC panel followed by three ion channel panels. The panels are separate graph outputs with different y scales.",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "graphs": [
+        {
+          "graphId": "bench_05_graph_1",
+          "panelGroup": "tic",
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 683,
+            "height": 398
+          },
+          "plotArea": {
+            "x": 98,
+            "y": 42,
+            "width": 575,
+            "height": 320
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 98,
+                "y": 362
+              },
+              "end": {
+                "x": 673,
+                "y": 362
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 98,
+                "y": 362
+              },
+              "end": {
+                "x": 98,
+                "y": 42
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_05_graph_2",
+          "panelGroup": "ion_326",
+          "graphPanel": {
+            "x": 0,
+            "y": 399,
+            "width": 683,
+            "height": 133
+          },
+          "plotArea": {
+            "x": 98,
+            "y": 443,
+            "width": 575,
+            "height": 64
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 98,
+                "y": 507
+              },
+              "end": {
+                "x": 673,
+                "y": 507
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 98,
+                "y": 507
+              },
+              "end": {
+                "x": 98,
+                "y": 443
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_05_graph_3",
+          "panelGroup": "ion_360",
+          "graphPanel": {
+            "x": 0,
+            "y": 533,
+            "width": 683,
+            "height": 119
+          },
+          "plotArea": {
+            "x": 98,
+            "y": 582,
+            "width": 575,
+            "height": 63
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 98,
+                "y": 645
+              },
+              "end": {
+                "x": 673,
+                "y": 645
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 98,
+                "y": 645
+              },
+              "end": {
+                "x": 98,
+                "y": 582
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_05_graph_4",
+          "panelGroup": "ion_394",
+          "graphPanel": {
+            "x": 0,
+            "y": 653,
+            "width": 683,
+            "height": 154
+          },
+          "plotArea": {
+            "x": 98,
+            "y": 724,
+            "width": 575,
+            "height": 58
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 98,
+                "y": 782
+              },
+              "end": {
+                "x": 673,
+                "y": 782
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 98,
+                "y": 782
+              },
+              "end": {
+                "x": 98,
+                "y": 724
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        }
+      ],
+      "rejectedNonGraphRegions": [],
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+      "image": {
+        "width": 964,
+        "height": 1280,
+        "sha256": "914f7220e8d9ff57e7505081c3165195fdf1d3b92fa7078942f138cdb932cd3e"
+      },
+      "expectedPhysicalGraphCount": 2,
+      "layoutClass": "TWO_GRAPH_PAGE",
+      "layoutInterpretation": "Photo of a printed page with two separate ion chromatogram panels. The lower panel is weak but has its own frame, axes, and title.",
+      "annotationConfidence": "INITIAL_REVIEW",
+      "graphs": [
+        {
+          "graphId": "bench_06_graph_1",
+          "panelGroup": "ion_83_panel",
+          "graphPanel": {
+            "x": 146,
+            "y": 225,
+            "width": 720,
+            "height": 455
+          },
+          "plotArea": {
+            "x": 188,
+            "y": 280,
+            "width": 674,
+            "height": 388
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 188,
+                "y": 668
+              },
+              "end": {
+                "x": 862,
+                "y": 668
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 188,
+                "y": 668
+              },
+              "end": {
+                "x": 188,
+                "y": 280
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        },
+        {
+          "graphId": "bench_06_graph_2",
+          "panelGroup": "ion_92_panel",
+          "graphPanel": {
+            "x": 144,
+            "y": 680,
+            "width": 742,
+            "height": 480
+          },
+          "plotArea": {
+            "x": 188,
+            "y": 720,
+            "width": 695,
+            "height": 430
+          },
+          "axisLines": {
+            "xAxis": {
+              "start": {
+                "x": 188,
+                "y": 1150
+              },
+              "end": {
+                "x": 883,
+                "y": 1150
+              }
+            },
+            "yAxis": {
+              "start": {
+                "x": 188,
+                "y": 1150
+              },
+              "end": {
+                "x": 188,
+                "y": 720
+              }
+            }
+          },
+          "tickOrGridStatus": "NEEDS_DETAILED_ANNOTATION",
+          "numericLabelBoxStatus": "NEEDS_DETAILED_ANNOTATION"
+        }
+      ],
+      "rejectedNonGraphRegions": [
+        {
+          "regionId": "page_header",
+          "bbox": {
+            "x": 145,
+            "y": 120,
+            "width": 710,
+            "height": 105
+          },
+          "reason": "File/operator/sample text is page metadata, not a graph panel."
+        },
+        {
+          "regionId": "hand_and_background",
+          "bbox": {
+            "x": 0,
+            "y": 620,
+            "width": 140,
+            "height": 340
+          },
+          "reason": "Hand/background region must not be considered a graph panel."
+        }
+      ],
+      "remainingGaps": [
+        "individual_tick_or_grid_positions",
+        "individual_numeric_label_boxes",
+        "text_role_labels"
+      ]
+    }
+  ]
+}
