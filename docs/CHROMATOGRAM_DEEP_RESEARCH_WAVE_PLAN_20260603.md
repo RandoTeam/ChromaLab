@@ -168,8 +168,9 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
-Current status: `DR_E1_COMPLETE_AXIS_SCALE_CANDIDATES_PARTIAL_SAFE_EVIDENCE_NOT_ACCEPTANCE_READY`
-in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md`.
+Current status: `DR_E2_COMPLETE_ROBUST_AXIS_SCALE_FIT_IMPROVES_OUTLIERS_NOT_ACCEPTANCE_READY`
+in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md` and
+`docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`.
 
 Methods to compare:
 
@@ -290,7 +291,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-E2: Robust Axis Scale Fit And Outlier Rejection Benchmark**.
+Start: **DR-E3: Missing Anchor Recovery And Label-Band Coverage Benchmark**.
 
 Reason:
 
@@ -306,8 +307,10 @@ Reason:
   false tick labels;
 - DR-E1 converts safe owned OCR labels into axis scale candidates and finds 13
   valid axes, 2 review axes, and 9 invalid axes;
-- the next calibration work should compare robust/outlier-rejected fits and
-  review fallbacks for high-residual and non-monotonic cases;
+- DR-E2 robust fitting improves usable axes from 15 to 18 and valid graphs from
+  5 to 7, but missing X anchors still block stacked/TIC+ion panels;
+- the next calibration work should target missing-anchor recovery and label-band
+  coverage before adding more fit strategies;
 - another Android runtime attempt would be premature until DR-E proves
   calibration candidate behavior on this benchmark corpus.
 

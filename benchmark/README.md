@@ -205,3 +205,13 @@ python tools/benchmark/run_dre1_axis_scale_candidate_builder.py
 The DR-E1 scale candidate report is written to:
 
 `benchmark/reports/dre1_axis_scale_candidate_builder/`
+
+Run the robust axis-scale fit and outlier rejection benchmark:
+
+```powershell
+python tools/benchmark/run_dre2_robust_axis_scale_fit_benchmark.py
+```
+
+The DR-E2 robust fit report is written to:
+
+`benchmark/reports/dre2_robust_axis_scale_fit/`

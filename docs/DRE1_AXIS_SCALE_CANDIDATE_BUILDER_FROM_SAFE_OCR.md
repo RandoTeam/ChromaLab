@@ -115,13 +115,15 @@ monotonicity/residual checks.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-E2: Robust Axis Scale Fit And Outlier Rejection Benchmark`
 
-Goal:
+Result:
 
-- compare all-anchor fit, outlier-rejected fit, and two-anchor review fallback;
-- classify high-residual and non-monotonic cases;
-- decide when incomplete safe OCR evidence can produce REVIEW calibration;
-- keep missing or unsafe labels explicit.
+- documented in `docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`;
+- compared all-anchor, residual-trimmed, monotonic-subsequence, and two-anchor
+  fallback strategies;
+- usable axes improved from `15` to `18`;
+- valid graphs improved from `5` to `7`, but missing X anchors still block
+  stacked/TIC+ion panels.
