@@ -133,12 +133,13 @@ Acceptance:
 
 Goal: make OCR automatic and measurable without making OCR/VLM numeric authority.
 
-Current status: `DR_D5_COMPLETE_AXIS_OWNED_OCR_CROP_PLANNER_IMPROVES_SCOPE_NOT_ACCEPTANCE_READY`
+Current status: `DR_D6_COMPLETE_AXIS_OWNED_OCR_PREPROCESSING_IMPROVES_RECALL_NOT_ACCEPTANCE_READY`
 in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md` and
 `docs/DRD2_REAL_OCR_ENGINE_CROP_BENCHMARK.md`;
 `docs/DRD3_OCR_PREPROCESSING_GRID_AND_SAFETY_GATE.md`;
 `docs/DRD4_SECOND_OCR_ENGINE_TEXT_BOX_BENCHMARK.md`;
-`docs/DRD5_AXIS_OWNED_OCR_CROP_PLANNER.md`.
+`docs/DRD5_AXIS_OWNED_OCR_CROP_PLANNER.md`;
+`docs/DRD6_AXIS_OWNED_OCR_PREPROCESSING_GRID.md`.
 
 Methods to compare:
 
@@ -286,7 +287,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-D6: Axis-Owned OCR Crop Preprocessing Grid**.
+Start: **DR-E1: Axis Scale Candidate Builder From Safe Owned OCR**.
 
 Reason:
 
@@ -298,9 +299,13 @@ Reason:
   not acceptance-ready;
 - DR-D5 proves graph-owned OCR crops are safer and remove false tick-label
   failures, but tick recall is still too low;
-- the next OCR work must improve crop-level scale, padding, contrast, threshold,
-  and crop subdivision while preserving zero false tick labels;
-- otherwise OCR will remain safe but too incomplete for calibration.
+- DR-D6 improves tick recall from `0.7104` to `0.7322` while preserving zero
+  false tick labels;
+- OCR remains safe but incomplete, so the next work should build scale and
+  calibration candidates from incomplete owned labels with explicit missing
+  evidence reasons;
+- another Android runtime attempt would be premature until DR-E proves
+  calibration candidate behavior on this benchmark corpus.
 
 Phase 10 remains blocked until the research and benchmark waves prove enough
 autonomous evidence for product acceptance.

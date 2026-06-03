@@ -185,3 +185,13 @@ python tools/benchmark/run_drd5_axis_owned_ocr_crop_planner.py
 The DR-D5 axis-owned OCR report and crop-plan overlays are written to:
 
 `benchmark/reports/drd5_axis_owned_ocr_crop_planner/`
+
+Run the axis-owned OCR preprocessing grid:
+
+```powershell
+python tools/benchmark/run_drd6_axis_owned_ocr_preprocessing_grid.py
+```
+
+The DR-D6 preprocessing grid report is written to:
+
+`benchmark/reports/drd6_axis_owned_ocr_preprocessing_grid/`

@@ -103,13 +103,15 @@ deterministic geometry owns the graph, axis, label band, and pixel position.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D6: Axis-Owned OCR Crop Preprocessing Grid`
 
-Goal:
+Result:
 
-- compare scale/padding/contrast/threshold variants inside axis-owned crops;
-- improve tick recall on `bench_05_tic_plus_ions`;
-- keep zero false tick labels;
-- prepare the OCR output needed by DR-E axis scale and calibration benchmarks.
+- documented in `docs/DRD6_AXIS_OWNED_OCR_PREPROCESSING_GRID.md`;
+- scale/padding/contrast/threshold variants were compared inside axis-owned
+  crops;
+- best tick recall improved from `0.7104` to `0.7322`;
+- false tick labels stayed at `0`, but recall remains below production
+  calibration needs.
