@@ -67,3 +67,14 @@ python tools/benchmark/score_phase9j_benchmarks.py
 The score report is written to:
 
 `benchmark/reports/phase9j_truth_audit_score/`
+
+Create graph/layout annotation workflow records with:
+
+```powershell
+python tools/benchmark/plan_drc1_annotations.py
+python tools/benchmark/build_drc2_annotation_workflow.py --clean
+```
+
+The workflow records are written to:
+
+`benchmark/annotations/drc2_graph_layout_annotation_workflow/`

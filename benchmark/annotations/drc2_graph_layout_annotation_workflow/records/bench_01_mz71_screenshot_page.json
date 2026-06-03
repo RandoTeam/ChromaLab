@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc2_annotation_workflow.v1",
+  "fixtureId": "bench_01_mz71_screenshot_page",
+  "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+  "annotationStatus": "NOT_STARTED",
+  "coordinateSpace": "NORMALIZED_IMAGE",
+  "sourceImages": [
+    {
+      "path": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+      "exists": true,
+      "sha256": "8eb64774d29f93c1ccb3d4f9035c96f9075121551600b2814ba7966021ecfd01",
+      "bytes": 128010
+    }
+  ],
+  "blockingReasons": [
+    "TICK_LOCALIZATION_FAILURE"
+  ],
+  "modes": [
+    {
+      "mode": "deterministic",
+      "caseId": "phase9j_bench_01_mz71_screenshot_page_deterministic",
+      "decision": "BLOCKED",
+      "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+      "priority": "P0"
+    },
+    {
+      "mode": "model_enabled",
+      "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+      "decision": "BLOCKED",
+      "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+      "priority": "P0"
+    }
+  ],
+  "fields": [
+    {
+      "field": "expected_physical_graph_count",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Chromatography SME + QA",
+      "instruction": "Count physical graph outputs from visual evidence; distinguish stacked traces from separate panels.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "layout_class",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry + Chromatography SME",
+      "instruction": "Classify the graph layout taxonomy before graph count scoring.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "panel_groups",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry",
+      "instruction": "Group panels that share axes and separate panels with distinct axes.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "graph_panel_bounds",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry",
+      "instruction": "Annotate complete graphPanel boxes including titles, axes, labels, ticks, and plot frame context.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "plot_area_bounds",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry",
+      "instruction": "Annotate data-only plotArea boxes inside graphPanel boxes.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "axis_endpoints",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry",
+      "instruction": "Annotate X/Y axis endpoints or record a diagnostic-only missing reason.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "plot_frame_edges",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry",
+      "instruction": "Annotate visible plot frame edges that can support axis scale recovery.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "tick_or_grid_positions",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "Geometry + OCR",
+      "instruction": "Annotate visible tick marks or grid positions; do not invent hidden ticks.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "numeric_label_boxes",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "OCR / Text Semantics",
+      "instruction": "Annotate numeric OCR label boxes in axis bands with parsed values when legible.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "text_role_labels",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "OCR / Text Semantics + Scientific Reporting",
+      "instruction": "Role-label all relevant text, including tick labels, axis titles, legends, ion/mz metadata, and rejected text.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    },
+    {
+      "field": "rejected_non_graph_regions",
+      "status": "NEEDS_ANNOTATION",
+      "owner": "QA + Geometry",
+      "instruction": "Mark title, table, legend, UI, and non-plot regions that must not become graph panels.",
+      "value": null,
+      "missingReason": "Not annotated in DR-C2 workflow setup.",
+      "evidencePath": null
+    }
+  ],
+  "acceptanceChecks": [
+    "Every required field is ANNOTATED or has an explicit DIAGNOSTIC_ONLY missing reason.",
+    "Graph count signoff is separate from candidate selection.",
+    "PlotArea is inside graphPanel.",
+    "Text roles reject ion/mz/title/legend numbers as tick labels.",
+    "No VLM/E2B pixel geometry or numeric calibration truth is accepted."
+  ]
+}

@@ -138,3 +138,5 @@ Start DR-C2 only when each selected fixture has one of these:
 The next implementation slice should not repair graph detection yet. It should
 turn this annotation plan into checked annotation records or an annotation UI
 workflow.
+
+Status: complete in `docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`.

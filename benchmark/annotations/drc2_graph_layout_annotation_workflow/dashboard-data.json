@@ -1,0 +1,92 @@
+{
+  "rows": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "TICK_LOCALIZATION_FAILURE",
+      "modeDecisions": "deterministic=BLOCKED, model_enabled=BLOCKED",
+      "runtimeFailures": "TICK_LOCALIZATION_FAILURE"
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "CALIBRATION_FAILURE",
+      "modeDecisions": "deterministic=BLOCKED, model_enabled=BLOCKED",
+      "runtimeFailures": "CALIBRATION_FAILURE"
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE"
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "GRAPH_PANEL_FAILURE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "GRAPH_PANEL_FAILURE"
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "PEAK_EVIDENCE_FAILURE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "PEAK_EVIDENCE_FAILURE"
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "UNKNOWN_FAILURE, VLM_SEMANTIC_LAYER_UNAVAILABLE"
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "annotationStatus": "NOT_STARTED",
+      "requiredFieldCount": 11,
+      "sourceImageCount": 1,
+      "allImagesExist": true,
+      "blockingReasons": "PEAK_EVIDENCE_FAILURE",
+      "modeDecisions": "deterministic=REVIEW, model_enabled=REVIEW",
+      "runtimeFailures": "PEAK_EVIDENCE_FAILURE"
+    }
+  ]
+}
