@@ -1,0 +1,11 @@
+[workspace]
+resolver = "3"
+members = [
+    "chromalab-cv-core",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.96"
+license = "Proprietary"
+repository = "https://github.com/chromalab/chromalab"

@@ -41,6 +41,9 @@ output.json
 # OpenCV
 /opencv-sdk/
 
+# Rust
+/rust/target/
+
 # Secrets
 *.keystore
 *.jks
