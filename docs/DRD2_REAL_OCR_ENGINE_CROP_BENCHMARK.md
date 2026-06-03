@@ -89,14 +89,14 @@ labels.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D3: OCR Crop Preprocessing Grid And Safety Gate`
 
-Goal:
+Result:
 
-- improve crop preprocessing before comparing more engines;
-- score role accuracy and false tick-label rate;
-- add a strict safety gate that rejects pure numeric OCR from known non-tick
-  context until geometry pairing proves it is a tick label;
-- keep work PC-side until OCR passes benchmark safety.
+- documented in `docs/DRD3_OCR_PREPROCESSING_GRID_AND_SAFETY_GATE.md`;
+- best RapidOCR preprocessing reached 0.5348 role accuracy;
+- context safety gate reduced false tick labels to zero;
+- OCR remains not acceptance-ready, so the next slice should compare a second
+  OCR engine and text-box detection.

@@ -155,3 +155,13 @@ python tools/benchmark/run_drd2_rapidocr_crop_benchmark.py
 The DR-D2 RapidOCR crop benchmark report is written to:
 
 `benchmark/reports/drd2_rapidocr_crop_benchmark/`
+
+Run the RapidOCR preprocessing grid and safety-gate benchmark:
+
+```powershell
+python tools/benchmark/run_drd3_ocr_preprocessing_grid.py
+```
+
+The DR-D3 OCR preprocessing grid report is written to:
+
+`benchmark/reports/drd3_ocr_preprocessing_grid/`
