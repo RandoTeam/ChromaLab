@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromalab.local/schemas/benchmark/report-claims.schema.json",
+  "title": "ChromaLab Benchmark Report Claims",
+  "description": "Evidence-gated report claim validation contract.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "caseId",
+    "runId",
+    "reportGate",
+    "claims"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "chromalab.benchmark.report_claims.v1"
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reportGate": {
+      "enum": [
+        "RELEASE_READY",
+        "REVIEW_ONLY",
+        "DIAGNOSTIC_ONLY",
+        "BLOCKED"
+      ]
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/claim"
+      },
+      "minItems": 1
+    },
+    "blockedClaimReasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "claimType",
+        "status",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimType": {
+          "enum": [
+            "graph_count",
+            "calibration",
+            "trace_present",
+            "peak_count",
+            "peak_rt",
+            "peak_height",
+            "peak_area",
+            "peak_fwhm",
+            "signal_to_noise",
+            "baseline",
+            "kovats_or_retention_index",
+            "compound_identity",
+            "semantic_explanation"
+          ]
+        },
+        "status": {
+          "enum": [
+            "SUPPORTED",
+            "REVIEW",
+            "REJECTED",
+            "MISSING_EVIDENCE"
+          ]
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbiddenSourceAccepted": {
+          "type": "boolean",
+          "default": false
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

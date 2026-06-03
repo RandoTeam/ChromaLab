@@ -60,6 +60,9 @@ Every wave follows:
 
 Goal: create the automatic scoring system before more algorithmic repair.
 
+Current status: `DR_B_CONTRACT_BASELINE` in
+`docs/DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md`.
+
 Why first:
 
 - current output is mostly `REVIEW_ONLY` or `BLOCKED`;

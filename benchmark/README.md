@@ -1,0 +1,32 @@
+# ChromaLab Benchmark Contracts
+
+Status: `DR_B_CONTRACT_BASELINE`
+
+Purpose: provide machine-readable contracts for automatic stage-by-stage
+chromatogram analysis scoring.
+
+These files are contracts only. They do not change production analysis,
+`CalculationEngine`, chromatographic math, validators, Android runtime, or
+report rendering.
+
+## Schemas
+
+| Schema | Purpose |
+| --- | --- |
+| `schemas/truth.schema.json` | Ground-truth annotations for synthetic, real paired, and real diagnostic fixtures. |
+| `schemas/prediction.schema.json` | Normalized pipeline output used for benchmark scoring. |
+| `schemas/metrics.schema.json` | Stage-by-stage benchmark scores and product decisions. |
+| `schemas/evidence-package.schema.json` | Required evidence artifact manifest for benchmark runs. |
+| `schemas/report-claims.schema.json` | Release/review/diagnostic claim validation contract. |
+
+## Corpus Classes
+
+- `synthetic`: generated chromatogram image with complete numeric truth.
+- `real_paired`: real screenshot/photo with reference signal or vendor/raw export.
+- `real_unpaired_diagnostic`: real image without numeric ground truth; useful for
+  diagnostic behavior and evidence completeness, not release-quality accuracy.
+
+## Rule
+
+No method is accepted because it looks visually better. It must improve the
+relevant schema-backed metric without violating report gates.

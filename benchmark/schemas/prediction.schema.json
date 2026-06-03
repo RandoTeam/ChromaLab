@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromalab.local/schemas/benchmark/prediction.schema.json",
+  "title": "ChromaLab Benchmark Prediction",
+  "description": "Normalized prediction output used by benchmark metrics.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "caseId",
+    "runId",
+    "mode",
+    "pipelineVersion",
+    "reportGate",
+    "graphs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "chromalab.benchmark.prediction.v1"
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mode": {
+      "enum": [
+        "deterministic",
+        "e2b_baseline",
+        "e4b_full",
+        "pc_prototype",
+        "android_validation"
+      ]
+    },
+    "pipelineVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reportGate": {
+      "enum": [
+        "RELEASE_READY",
+        "REVIEW_ONLY",
+        "DIAGNOSTIC_ONLY",
+        "BLOCKED"
+      ]
+    },
+    "validatorVerdict": {
+      "enum": [
+        "PASS",
+        "REVIEW",
+        "FAIL",
+        "MISSING"
+      ]
+    },
+    "runtimeFailureClass": {
+      "type": "string"
+    },
+    "firstFailingStage": {
+      "type": "string"
+    },
+    "graphs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/graphPrediction"
+      }
+    },
+    "artifacts": {
+      "$ref": "#/$defs/artifactSet"
+    },
+    "timingsMs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+      }
+    }
+  },
+  "$defs": {
+    "bbox": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "coordinateSpace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "coordinateSpace": {
+          "enum": [
+            "ORIGINAL_IMAGE",
+            "NORMALIZED_IMAGE",
+            "GRAPH_PANEL",
+            "PLOT_AREA"
+          ]
+        }
+      }
+    },
+    "stageStatus": {
+      "enum": [
+        "VALID",
+        "REVIEW",
+        "INVALID",
+        "MISSING",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "calibrationSummary": {
+      "type": "object",
+      "required": [
+        "xStatus",
+        "yStatus"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "xStatus": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "yStatus": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "xRmse": {
+          "type": "number",
+          "minimum": 0
+        },
+        "yRmse": {
+          "type": "number",
+          "minimum": 0
+        },
+        "xAnchorCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "yAnchorCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectedXStrategy": {
+          "type": "string"
+        },
+        "selectedYStrategy": {
+          "type": "string"
+        }
+      }
+    },
+    "traceSummary": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "pointCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "xCoverageRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "maxGapColumns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "peakSummary": {
+      "type": "object",
+      "required": [
+        "status",
+        "peakCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "peakCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reportablePeakCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reviewPeakCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejectedPeakCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "graphPrediction": {
+      "type": "object",
+      "required": [
+        "graphId",
+        "graphPanelStatus",
+        "plotAreaStatus",
+        "calibration",
+        "trace",
+        "peaks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "graphId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "layoutClass": {
+          "type": "string"
+        },
+        "graphPanelStatus": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "plotAreaStatus": {
+          "$ref": "#/$defs/stageStatus"
+        },
+        "graphPanel": {
+          "$ref": "#/$defs/bbox"
+        },
+        "plotArea": {
+          "$ref": "#/$defs/bbox"
+        },
+        "calibration": {
+          "$ref": "#/$defs/calibrationSummary"
+        },
+        "trace": {
+          "$ref": "#/$defs/traceSummary"
+        },
+        "peaks": {
+          "$ref": "#/$defs/peakSummary"
+        },
+        "failureSubreasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    },
+    "artifactSet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "runtimeEvidencePackage": {
+          "type": "string"
+        },
+        "validatorJson": {
+          "type": "string"
+        },
+        "validatorMarkdown": {
+          "type": "string"
+        },
+        "finalReportJson": {
+          "type": "string"
+        },
+        "htmlReport": {
+          "type": "string"
+        },
+        "markdownReport": {
+          "type": "string"
+        },
+        "overlayPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromalab.local/schemas/benchmark/metrics.schema.json",
+  "title": "ChromaLab Benchmark Metrics",
+  "description": "Stage-by-stage benchmark metrics for chromatogram analysis.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "caseId",
+    "runId",
+    "overallDecision",
+    "stageScores"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "chromalab.benchmark.metrics.v1"
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "overallDecision": {
+      "enum": [
+        "PASS",
+        "REVIEW",
+        "DIAGNOSTIC",
+        "BLOCKED"
+      ]
+    },
+    "stageScores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stageScore"
+      },
+      "minItems": 1
+    },
+    "zeroToleranceFailures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "stageScore": {
+      "type": "object",
+      "required": [
+        "stage",
+        "status",
+        "metrics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "enum": [
+            "input_provenance",
+            "graph_panel",
+            "plot_area",
+            "axis_lines",
+            "tick_grid_label",
+            "ocr_text_roles",
+            "calibration",
+            "trace",
+            "baseline",
+            "peaks",
+            "report_claims",
+            "evidence_package"
+          ]
+        },
+        "status": {
+          "enum": [
+            "PASS",
+            "REVIEW",
+            "FAIL",
+            "NOT_SCORED"
+          ]
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "thresholds": {
+          "type": "object",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        },
+        "failureReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

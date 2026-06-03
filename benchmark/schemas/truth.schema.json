@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromalab.local/schemas/benchmark/truth.schema.json",
+  "title": "ChromaLab Benchmark Truth",
+  "description": "Ground-truth annotations for automatic chromatogram analysis benchmarks.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "caseId",
+    "caseType",
+    "truthStatus",
+    "source",
+    "image",
+    "graphs"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "chromalab.benchmark.truth.v1"
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "caseType": {
+      "enum": [
+        "synthetic",
+        "real_paired",
+        "real_unpaired_diagnostic"
+      ]
+    },
+    "truthStatus": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "DIAGNOSTIC_ONLY",
+        "MISSING"
+      ]
+    },
+    "missingTruthReasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "default": []
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "imagePath",
+        "sourceKind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "imagePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceKind": {
+          "enum": [
+            "rendered_synthetic",
+            "desktop_fixture",
+            "android_fixture",
+            "user_supplied_reference",
+            "vendor_export_pair"
+          ]
+        },
+        "referenceSignalPath": {
+          "type": "string"
+        },
+        "referenceDataKind": {
+          "enum": [
+            "none",
+            "csv_trace",
+            "mzml",
+            "vendor_export",
+            "manual_annotation",
+            "synthetic_generator"
+          ]
+        },
+        "licenseNote": {
+          "type": "string"
+        }
+      }
+    },
+    "image": {
+      "$ref": "#/$defs/imageInfo"
+    },
+    "graphs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/graphTruth"
+      }
+    },
+    "expectedReportGate": {
+      "enum": [
+        "RELEASE_READY",
+        "REVIEW_ONLY",
+        "DIAGNOSTIC_ONLY",
+        "BLOCKED"
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "imageInfo": {
+      "type": "object",
+      "required": [
+        "width",
+        "height",
+        "coordinateSpace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "coordinateSpace": {
+          "enum": [
+            "ORIGINAL_IMAGE",
+            "NORMALIZED_IMAGE"
+          ]
+        },
+        "sha256": {
+          "type": "string"
+        }
+      }
+    },
+    "bbox": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height",
+        "coordinateSpace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "coordinateSpace": {
+          "enum": [
+            "ORIGINAL_IMAGE",
+            "NORMALIZED_IMAGE",
+            "GRAPH_PANEL",
+            "PLOT_AREA"
+          ]
+        }
+      }
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      }
+    },
+    "axisLine": {
+      "type": "object",
+      "required": [
+        "axis",
+        "start",
+        "end"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "X",
+            "Y"
+          ]
+        },
+        "start": {
+          "$ref": "#/$defs/point"
+        },
+        "end": {
+          "$ref": "#/$defs/point"
+        }
+      }
+    },
+    "axisLabel": {
+      "type": "object",
+      "required": [
+        "axis",
+        "text",
+        "role",
+        "bbox"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "X",
+            "Y",
+            "NONE"
+          ]
+        },
+        "text": {
+          "type": "string"
+        },
+        "numericValue": {
+          "type": "number"
+        },
+        "role": {
+          "enum": [
+            "tick_label",
+            "axis_title",
+            "chart_title",
+            "legend",
+            "ion_or_mz_metadata",
+            "peak_annotation",
+            "other"
+          ]
+        },
+        "bbox": {
+          "$ref": "#/$defs/bbox"
+        }
+      }
+    },
+    "calibrationAnchor": {
+      "type": "object",
+      "required": [
+        "axis",
+        "pixel",
+        "value",
+        "evidenceType"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "X",
+            "Y"
+          ]
+        },
+        "pixel": {
+          "$ref": "#/$defs/point"
+        },
+        "value": {
+          "type": "number"
+        },
+        "evidenceType": {
+          "enum": [
+            "explicit_tick_mark",
+            "grid_line",
+            "ocr_label_box",
+            "label_projection",
+            "frame_endpoint",
+            "synthetic_truth",
+            "reference_data"
+          ]
+        }
+      }
+    },
+    "traceTruth": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "polylinePath": {
+          "type": "string"
+        },
+        "maskPath": {
+          "type": "string"
+        },
+        "sourceSignalPath": {
+          "type": "string"
+        },
+        "pointCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "peakTruth": {
+      "type": "object",
+      "required": [
+        "peakId",
+        "apexRt",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "peakId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "apexRt": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "area": {
+          "type": "number"
+        },
+        "fwhm": {
+          "type": "number"
+        },
+        "signalToNoise": {
+          "type": "number"
+        },
+        "startRt": {
+          "type": "number"
+        },
+        "endRt": {
+          "type": "number"
+        },
+        "status": {
+          "enum": [
+            "reportable",
+            "review",
+            "artifact",
+            "not_applicable"
+          ]
+        }
+      }
+    },
+    "graphTruth": {
+      "type": "object",
+      "required": [
+        "graphId",
+        "layoutClass",
+        "graphPanel",
+        "plotArea"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "graphId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "layoutClass": {
+          "enum": [
+            "SINGLE_TRACE_SINGLE_AXIS",
+            "DENSE_PEAK_SINGLE_AXIS",
+            "STACKED_TRACES_SHARED_AXIS",
+            "MULTI_PANEL_SEPARATE_AXES",
+            "TIC_PLUS_ION_PANELS",
+            "TWO_GRAPH_PAGE",
+            "EMBEDDED_SCREENSHOT_GRAPH",
+            "ROTATED_PAGE_GRAPH",
+            "LOW_RES_EXPORT_GRAPH",
+            "UNKNOWN_REVIEW"
+          ]
+        },
+        "graphPanel": {
+          "$ref": "#/$defs/bbox"
+        },
+        "plotArea": {
+          "$ref": "#/$defs/bbox"
+        },
+        "axisLines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/axisLine"
+          },
+          "default": []
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/axisLabel"
+          },
+          "default": []
+        },
+        "calibrationAnchors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/calibrationAnchor"
+          },
+          "default": []
+        },
+        "trace": {
+          "$ref": "#/$defs/traceTruth"
+        },
+        "peaks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/peakTruth"
+          },
+          "default": []
+        }
+      }
+    }
+  }
+}

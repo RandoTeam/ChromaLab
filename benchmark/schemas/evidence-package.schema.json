@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chromalab.local/schemas/benchmark/evidence-package.schema.json",
+  "title": "ChromaLab Benchmark Evidence Package",
+  "description": "Minimum artifact manifest for benchmark terminal states.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "caseId",
+    "runId",
+    "terminalState",
+    "artifacts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "chromalab.benchmark.evidence_package.v1"
+    },
+    "caseId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "terminalState": {
+      "enum": [
+        "PASS",
+        "REVIEW",
+        "FAIL",
+        "DIAGNOSTIC_ONLY",
+        "BLOCKED"
+      ]
+    },
+    "runtimeFailureClass": {
+      "type": "string"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      },
+      "minItems": 1
+    },
+    "missingArtifactReasons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/missingArtifactReason"
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": [
+        "artifactType",
+        "path",
+        "privacyClass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifactType": {
+          "enum": [
+            "original_image",
+            "normalized_image",
+            "runtime_evidence_package",
+            "validator_json",
+            "validator_markdown",
+            "final_report_json",
+            "html_report",
+            "markdown_report",
+            "graph_panel_overlay",
+            "plot_area_overlay",
+            "axis_tick_overlay",
+            "calibration_overlay",
+            "trace_overlay",
+            "peak_overlay",
+            "ocr_crop",
+            "stage_timings",
+            "log_summary",
+            "manifest"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "privacyClass": {
+          "enum": [
+            "USER_REPORT_SAFE",
+            "DIAGNOSTIC_ONLY",
+            "NEVER_SHARED_BY_DEFAULT"
+          ]
+        }
+      }
+    },
+    "missingArtifactReason": {
+      "type": "object",
+      "required": [
+        "artifactType",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifactType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
