@@ -4,7 +4,16 @@
 //! planning contracts that Kotlin/Android can later call through FFI, without
 //! changing chromatographic calculations or production report gates.
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+mod axis_element_bridge;
+
+pub use axis_element_bridge::{
+    AxisElementBridgeError, AxisElementGraphCropBridgeReport,
+    plan_crops_from_axis_element_graph_json,
+};
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ImageGeometry {
     pub width: u32,
     pub height: u32,
@@ -22,7 +31,7 @@ impl ImageGeometry {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Rect {
     pub x: i32,
     pub y: i32,
@@ -102,13 +111,13 @@ impl Rect {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Axis {
     X,
     Y,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LabelBandKind {
     XTickLabels,
     YTickLabels,
@@ -126,7 +135,7 @@ impl LabelBandKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LabelBand {
     pub kind: LabelBandKind,
     pub rect: Rect,
@@ -139,7 +148,7 @@ impl LabelBand {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CropVariantKind {
     Original,
     Grayscale,
@@ -150,7 +159,7 @@ pub enum CropVariantKind {
     Scale4OtsuThresholdInverted,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CropPlan {
     pub band_kind: LabelBandKind,
     pub source_rect: Rect,
@@ -158,21 +167,21 @@ pub struct CropPlan {
     pub variants: Vec<CropVariantKind>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RejectedCropBand {
     pub band_kind: LabelBandKind,
     pub source_rect: Rect,
     pub reason: CropBandRejectionReason,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CropBandRejectionReason {
     EmptyImage,
     EmptyBand,
     OutsideImage,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AxisLabelCropPlan {
     pub accepted: Vec<CropPlan>,
     pub rejected: Vec<RejectedCropBand>,

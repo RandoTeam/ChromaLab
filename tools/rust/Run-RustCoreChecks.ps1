@@ -40,7 +40,7 @@ try {
         }
     }
 
-    & $cargo check --workspace --tests
+    & $cargo check --workspace --all-targets
     if ($LASTEXITCODE -ne 0) {
         throw "cargo check failed with exit code $LASTEXITCODE"
     }
