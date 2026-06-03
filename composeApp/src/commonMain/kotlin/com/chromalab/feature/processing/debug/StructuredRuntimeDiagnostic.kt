@@ -17,6 +17,7 @@ enum class RuntimeDiagnosticSource {
     MTMD_MMPROJ,
     GGUF_MTP_TEXT_ONLY,
     VULKAN_PREFLIGHT,
+    RUST_CV_BRIDGE,
     UNKNOWN,
 }
 

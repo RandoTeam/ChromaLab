@@ -4,6 +4,7 @@
 //! planning contracts that Kotlin/Android can later call through FFI, without
 //! changing chromatographic calculations or production report gates.
 
+pub mod android_bridge;
 mod axis_element_bridge;
 
 pub use axis_element_bridge::{

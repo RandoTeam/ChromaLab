@@ -296,7 +296,11 @@ object RuntimeEvidencePackageBuilder {
             runtimeFailureClass = failureClass,
             gateEvidence = gate.evidence,
             modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
-            structuredRuntimeDiagnostics = (structuredRuntimeDiagnostics + modelDiscoveryDiagnostics)
+            structuredRuntimeDiagnostics = (
+                structuredRuntimeDiagnostics +
+                    modelDiscoveryDiagnostics +
+                    RustCvBridgeRuntimeProbe.diagnostic()
+                )
                 .distinctBy { it.diagnosticId },
             modelRuntimeProfiles = graphBuilds
                 .flatMap { it.modelRuntimeProfiles }

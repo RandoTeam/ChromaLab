@@ -11,6 +11,27 @@ val localProps = Properties().apply {
     if (localFile.exists()) load(localFile.inputStream())
 }
 
+val rustGeneratedJniLibsDir = layout.buildDirectory.asFile.get().resolve("generated/rustJniLibs")
+val buildRustAndroidBridge by tasks.registering(Exec::class) {
+    val outputDir = rustGeneratedJniLibsDir
+    inputs.file(rootProject.file("rust/Cargo.toml"))
+    inputs.file(rootProject.file("rust/Cargo.lock"))
+    inputs.dir(rootProject.file("rust/chromalab-cv-core/src"))
+    inputs.file(rootProject.file("tools/rust/Build-RustAndroidBridge.ps1"))
+    outputs.file(outputDir.resolve("arm64-v8a/libchromalab_cv_core.so"))
+
+    commandLine(
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        rootProject.file("tools/rust/Build-RustAndroidBridge.ps1").absolutePath,
+        "-OutputJniLibs",
+        outputDir.absolutePath,
+    )
+}
+
 android {
     namespace = "com.chromalab.app"
     compileSdk = 35
@@ -61,7 +82,9 @@ android {
     }
 
     sourceSets {
+        getByName("main").jniLibs.srcDir(rustGeneratedJniLibsDir)
         maybeCreate("validation").assets.srcDir(rootProject.file("composeApp/src/androidMain/assets"))
+        maybeCreate("validation").jniLibs.srcDir(rustGeneratedJniLibsDir)
     }
 
     compileOptions {
@@ -78,6 +101,12 @@ android {
     }
 
     ndkVersion = "27.3.13750724"
+}
+
+tasks.matching { task ->
+    task.name.startsWith("merge") && task.name.endsWith("JniLibFolders")
+}.configureEach {
+    dependsOn(buildRustAndroidBridge)
 }
 
 kotlin {
