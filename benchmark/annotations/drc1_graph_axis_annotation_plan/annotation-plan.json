@@ -1,0 +1,457 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc1_annotation_plan.v1",
+  "sourceTruthGaps": "benchmark/reports/phase9j_truth_audit_score/truth-gaps.json",
+  "benchmarkRoot": "benchmark/examples/phase9j_truth_audit",
+  "taskCount": 8,
+  "coordinateSpace": "NORMALIZED_IMAGE",
+  "requiredFields": [
+    "expected_physical_graph_count",
+    "layout_class",
+    "panel_groups",
+    "graph_panel_bounds",
+    "plot_area_bounds",
+    "axis_endpoints",
+    "plot_frame_edges",
+    "tick_or_grid_positions",
+    "numeric_label_boxes",
+    "text_role_labels",
+    "rejected_non_graph_regions"
+  ],
+  "tasks": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg"
+      ],
+      "blockingReasons": [
+        "TICK_LOCALIZATION_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_01_mz71_screenshot_page_deterministic",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+          "priority": "P0"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_04_stacked_xic_resolution_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_04_stacked_xic_resolution_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P0"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png"
+      ],
+      "blockingReasons": [
+        "CALIBRATION_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_05_tic_plus_ions_deterministic",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "CALIBRATION_FAILURE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "CALIBRATION_FAILURE",
+          "priority": "P0"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "priority": "P0_GRAPH_LAYOUT_BLOCKER",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_06_photo_two_graphs_page_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_06_photo_two_graphs_page_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P0"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_02_mz92_belyi_tigr.jpg"
+      ],
+      "blockingReasons": [
+        "GRAPH_PANEL_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_02_mz92_belyi_tigr_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_02_mz92_belyi_tigr_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+          "priority": "P1"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg"
+      ],
+      "blockingReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_03_small_tic_export_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_03_small_tic_export_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_07_rotated_page_photo_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P2"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_07_rotated_page_photo_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P1"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "priority": "P1_REVIEW_TRUTH_GAP",
+      "sourceImages": [
+        "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg"
+      ],
+      "blockingReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_white_tiger_ion71_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_white_tiger_ion71_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        }
+      ],
+      "requiredFields": [
+        "expected_physical_graph_count",
+        "layout_class",
+        "panel_groups",
+        "graph_panel_bounds",
+        "plot_area_bounds",
+        "axis_endpoints",
+        "plot_frame_edges",
+        "tick_or_grid_positions",
+        "numeric_label_boxes",
+        "text_role_labels",
+        "rejected_non_graph_regions"
+      ],
+      "coordinateSpace": "NORMALIZED_IMAGE",
+      "annotationStatus": "NEEDS_ANNOTATION",
+      "drCReadyWhen": [
+        "graph_panel_bounds are present for every physical graph",
+        "plot_area_bounds are present and inside graph_panel_bounds",
+        "expected_physical_graph_count is signed off for stacked or multi-panel layouts",
+        "axis_endpoints are present or an explicit diagnostic-only reason is recorded",
+        "numeric_label_boxes are classified by text role",
+        "tick_or_grid_positions are annotated when visible"
+      ],
+      "doNotUseAs": [
+        "fixture-specific candidate-selection coordinates",
+        "release-ready numeric accuracy proof",
+        "VLM numeric authority"
+      ]
+    }
+  ]
+}

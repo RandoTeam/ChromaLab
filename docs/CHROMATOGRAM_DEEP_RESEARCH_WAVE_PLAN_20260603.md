@@ -94,6 +94,9 @@ Acceptance:
 
 Goal: prove automatic graph and axis element detection.
 
+Current status: `DR_C1_COMPLETE` in
+`docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md`.
+
 Methods to compare:
 
 - current ChromaLab graph/layout stack;
@@ -267,13 +270,15 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-B: Ground Truth Corpus And Automatic Metrics**.
+Start: **DR-C2: Graph Layout Annotation Records Or Annotation Workflow**.
 
 Reason:
 
-- all later automatic methods need objective scoring;
-- otherwise we cannot tell whether a new graph/axis/trace method improved
-  science or only improved a screenshot.
+- DR-C1 now defines required graph/layout/axis annotation inputs;
+- P0/P1 fixtures need actual annotation records or a workflow before method
+  comparison;
+- otherwise graph/layout methods would again be judged visually instead of by
+  benchmark truth.
 
 Phase 10 remains blocked until the research and benchmark waves prove enough
 autonomous evidence for product acceptance.

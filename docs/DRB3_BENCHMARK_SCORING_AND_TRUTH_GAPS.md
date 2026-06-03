@@ -115,6 +115,8 @@ Recommended next slice:
 
 `DR-C1: Graph Layout / PlotArea / Axis Element Method Research Inputs`
 
+Status: complete in `docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md`.
+
 Goal:
 
 - use the P0/P1 fixture priorities from DR-B3;
