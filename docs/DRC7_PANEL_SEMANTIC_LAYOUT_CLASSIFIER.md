@@ -85,15 +85,14 @@ Before Android runtime work, the PC benchmark needs automatic versions of:
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D1: OCR Text-Role Feature Extraction Benchmark`
 
-Goal:
+Result:
 
-- evaluate OCR/text-role extraction candidates on the DR-C4 annotated P0 set;
-- score whether automatic text roles can reproduce the upper-bound features used
-  in DR-C7;
-- keep VLM/E2B advisory and reject numeric metric authority;
-- do not port the semantic classifier to Android until automatic text roles are
-  measurable.
+- documented in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md`;
+- current local OCR availability is zero for Tesseract/RapidOCR/PaddleOCR/EasyOCR;
+- regex role classification on perfect text reaches 217/230 text-role labels
+  with zero false tick labels;
+- real OCR text and box extraction remains the next blocker.

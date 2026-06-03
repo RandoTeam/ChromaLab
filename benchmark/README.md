@@ -129,3 +129,13 @@ python tools/benchmark/prototype_drc7_panel_semantic_classifier.py
 The DR-C7 semantic classifier report is written to:
 
 `benchmark/reports/drc7_panel_semantic_classifier/`
+
+Build OCR/text-role feature benchmark targets:
+
+```powershell
+python tools/benchmark/prototype_drd1_ocr_text_role_features.py
+```
+
+The DR-D1 OCR/text-role benchmark report is written to:
+
+`benchmark/reports/drd1_ocr_text_role_feature_benchmark/`

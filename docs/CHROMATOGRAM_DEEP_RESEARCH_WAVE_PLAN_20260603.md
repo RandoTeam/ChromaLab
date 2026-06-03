@@ -133,6 +133,9 @@ Acceptance:
 
 Goal: make OCR automatic and measurable without making OCR/VLM numeric authority.
 
+Current status: `DR_D1_COMPLETE_TEXT_ROLE_RULES_WORK_WITH_PERFECT_TEXT_REAL_OCR_NOT_AVAILABLE`
+in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md`.
+
 Methods to compare:
 
 - ML Kit crop OCR;
