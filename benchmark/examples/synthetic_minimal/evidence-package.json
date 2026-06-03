@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "chromalab.benchmark.evidence_package.v1",
+  "caseId": "synthetic_minimal_single_peak",
+  "runId": "synthetic_minimal_run_001",
+  "terminalState": "PASS",
+  "artifacts": [
+    {
+      "artifactType": "original_image",
+      "path": "benchmark/examples/synthetic_minimal/image.png",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "runtime_evidence_package",
+      "path": "benchmark/examples/synthetic_minimal/runtime_evidence.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_json",
+      "path": "benchmark/examples/synthetic_minimal/validator.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "final_report_json",
+      "path": "benchmark/examples/synthetic_minimal/final_report.json",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "calibration_overlay",
+      "path": "benchmark/examples/synthetic_minimal/calibration_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "peak_overlay",
+      "path": "benchmark/examples/synthetic_minimal/peak_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    }
+  ]
+}

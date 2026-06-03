@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "chromalab.benchmark.truth.v1",
+  "caseId": "synthetic_minimal_single_peak",
+  "caseType": "synthetic",
+  "truthStatus": "COMPLETE",
+  "source": {
+    "imagePath": "benchmark/examples/synthetic_minimal/image.png",
+    "sourceKind": "rendered_synthetic",
+    "referenceSignalPath": "benchmark/examples/synthetic_minimal/source_signal.csv",
+    "referenceDataKind": "synthetic_generator",
+    "licenseNote": "Generated benchmark example; no user data."
+  },
+  "image": {
+    "width": 640,
+    "height": 480,
+    "coordinateSpace": "NORMALIZED_IMAGE"
+  },
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "graphPanel": {
+        "x": 40,
+        "y": 40,
+        "width": 560,
+        "height": 400,
+        "coordinateSpace": "NORMALIZED_IMAGE"
+      },
+      "plotArea": {
+        "x": 80,
+        "y": 80,
+        "width": 480,
+        "height": 300,
+        "coordinateSpace": "NORMALIZED_IMAGE"
+      },
+      "axisLines": [
+        {
+          "axis": "X",
+          "start": {
+            "x": 80,
+            "y": 380
+          },
+          "end": {
+            "x": 560,
+            "y": 380
+          }
+        },
+        {
+          "axis": "Y",
+          "start": {
+            "x": 80,
+            "y": 380
+          },
+          "end": {
+            "x": 80,
+            "y": 80
+          }
+        }
+      ],
+      "labels": [
+        {
+          "axis": "X",
+          "text": "0",
+          "numericValue": 0,
+          "role": "tick_label",
+          "bbox": {
+            "x": 76,
+            "y": 392,
+            "width": 10,
+            "height": 14,
+            "coordinateSpace": "NORMALIZED_IMAGE"
+          }
+        },
+        {
+          "axis": "X",
+          "text": "10",
+          "numericValue": 10,
+          "role": "tick_label",
+          "bbox": {
+            "x": 552,
+            "y": 392,
+            "width": 18,
+            "height": 14,
+            "coordinateSpace": "NORMALIZED_IMAGE"
+          }
+        },
+        {
+          "axis": "Y",
+          "text": "0",
+          "numericValue": 0,
+          "role": "tick_label",
+          "bbox": {
+            "x": 55,
+            "y": 372,
+            "width": 10,
+            "height": 14,
+            "coordinateSpace": "NORMALIZED_IMAGE"
+          }
+        },
+        {
+          "axis": "Y",
+          "text": "1000",
+          "numericValue": 1000,
+          "role": "tick_label",
+          "bbox": {
+            "x": 42,
+            "y": 74,
+            "width": 32,
+            "height": 14,
+            "coordinateSpace": "NORMALIZED_IMAGE"
+          }
+        }
+      ],
+      "calibrationAnchors": [
+        {
+          "axis": "X",
+          "pixel": {
+            "x": 80,
+            "y": 380
+          },
+          "value": 0,
+          "evidenceType": "synthetic_truth"
+        },
+        {
+          "axis": "X",
+          "pixel": {
+            "x": 560,
+            "y": 380
+          },
+          "value": 10,
+          "evidenceType": "synthetic_truth"
+        },
+        {
+          "axis": "Y",
+          "pixel": {
+            "x": 80,
+            "y": 380
+          },
+          "value": 0,
+          "evidenceType": "synthetic_truth"
+        },
+        {
+          "axis": "Y",
+          "pixel": {
+            "x": 80,
+            "y": 80
+          },
+          "value": 1000,
+          "evidenceType": "synthetic_truth"
+        }
+      ],
+      "trace": {
+        "polylinePath": "benchmark/examples/synthetic_minimal/trace_polyline.json",
+        "maskPath": "benchmark/examples/synthetic_minimal/trace_mask.png",
+        "sourceSignalPath": "benchmark/examples/synthetic_minimal/source_signal.csv",
+        "pointCount": 101
+      },
+      "peaks": [
+        {
+          "peakId": "peak_1",
+          "apexRt": 5,
+          "height": 1000,
+          "area": 2500,
+          "fwhm": 0.8,
+          "signalToNoise": 100,
+          "startRt": 4.2,
+          "endRt": 5.8,
+          "status": "reportable"
+        }
+      ]
+    }
+  ],
+  "expectedReportGate": "RELEASE_READY",
+  "notes": [
+    "Minimal complete example for schema validation only."
+  ]
+}

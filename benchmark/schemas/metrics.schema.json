@@ -91,7 +91,7 @@
         "metrics": {
           "type": "object",
           "additionalProperties": {
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "number"
               },
@@ -110,7 +110,7 @@
         "thresholds": {
           "type": "object",
           "additionalProperties": {
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "number"
               },

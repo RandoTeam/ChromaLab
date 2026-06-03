@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_white_tiger_ion71_review",
+  "runId": "white_tiger_ion71_20260526_184317",
+  "mode": "deterministic",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "REVIEW_ONLY",
+  "validatorVerdict": "REVIEW",
+  "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "REVIEW",
+        "yStatus": "REVIEW",
+        "xAnchorCount": 2,
+        "yAnchorCount": 2,
+        "selectedXStrategy": "inferred_phase9j",
+        "selectedYStrategy": "inferred_phase9j"
+      },
+      "trace": {
+        "status": "REVIEW",
+        "pointCount": 0,
+        "xCoverageRatio": 0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "REVIEW",
+        "peakCount": 12,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 12,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "peak evidence remains review-grade"
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_package_run_1779810235097.json",
+    "validatorJson": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.md",
+    "finalReportJson": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/final_report_contract_run_1779810235097.json",
+    "htmlReport": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/report_run_1779810235097.html",
+    "markdownReport": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/report_run_1779810235097.md",
+    "overlayPaths": [
+      "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/graph_1_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/graph_1_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/graph_1_peak_overlay.png"
+    ]
+  },
+  "timingsMs": {
+    "total": 0
+  }
+}

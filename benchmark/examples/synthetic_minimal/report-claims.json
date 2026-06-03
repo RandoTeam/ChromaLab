@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "synthetic_minimal_single_peak",
+  "runId": "synthetic_minimal_run_001",
+  "reportGate": "RELEASE_READY",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "SUPPORTED",
+      "evidenceRefs": [
+        "truth.graphs[0].graphPanel",
+        "prediction.graphs[0].graphPanel"
+      ],
+      "forbiddenSourceAccepted": false
+    },
+    {
+      "claimId": "claim_peak_rt",
+      "claimType": "peak_rt",
+      "status": "SUPPORTED",
+      "evidenceRefs": [
+        "truth.graphs[0].peaks[0].apexRt",
+        "prediction.graphs[0].calibration"
+      ],
+      "forbiddenSourceAccepted": false
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "SUPPORTED",
+      "evidenceRefs": [
+        "truth.graphs[0].peaks[0].area",
+        "prediction.graphs[0].peaks"
+      ],
+      "forbiddenSourceAccepted": false
+    }
+  ]
+}

@@ -98,20 +98,20 @@ compound identity.
 
 ## Current Slice Result
 
-DR-B now has baseline schemas and a research handoff. It is not yet a runnable
-benchmark harness. The next slice should create example records and a schema
-validation runner before any new graph/axis algorithm is attempted.
+DR-B has baseline schemas, a research handoff, and DR-B1 now adds schema example
+records plus a validation runner.
+
+DR-B1 detail: `docs/DRB1_BENCHMARK_SCHEMA_EXAMPLES_AND_VALIDATOR.md`.
 
 ## Next Slice
 
 Recommended next slice:
 
-`DR-B1: Benchmark Schema Examples And Validation Runner`
+`DR-B2: Convert Phase 9J Truth Audit To Benchmark Records`
 
 Deliverables:
 
-- one minimal synthetic truth example;
-- one Phase 9J prediction example;
-- schema validation command;
-- first metrics JSON skeleton;
-- docs updated with validation output.
+- prediction/metrics/report-claims records for all eight Phase 9J fixtures and
+  deterministic/E2B modes;
+- first benchmark summary table;
+- no report-gate upgrades from existing Phase 9J evidence.

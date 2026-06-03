@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "chromalab.benchmark.evidence_package.v1",
+  "caseId": "phase9j_white_tiger_ion71_review",
+  "runId": "white_tiger_ion71_20260526_184317",
+  "terminalState": "REVIEW",
+  "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+  "artifacts": [
+    {
+      "artifactType": "runtime_evidence_package",
+      "path": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_package_run_1779810235097.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_json",
+      "path": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_markdown",
+      "path": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.md",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "final_report_json",
+      "path": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/final_report_contract_run_1779810235097.json",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "peak_overlay",
+      "path": "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/graph_1_peak_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    }
+  ],
+  "missingArtifactReasons": [
+    {
+      "artifactType": "final_screen",
+      "reason": "Phase 9J audit recorded final screen as missing for this run."
+    }
+  ]
+}

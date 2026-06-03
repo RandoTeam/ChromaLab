@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_white_tiger_ion71_review",
+  "runId": "white_tiger_ion71_20260526_184317",
+  "overallDecision": "REVIEW",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "PASS",
+      "metrics": {
+        "detectedGraphCount": 1,
+        "expectedGraphCount": 1,
+        "fixtureTruthSource": "PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT"
+      }
+    },
+    {
+      "stage": "calibration",
+      "status": "REVIEW",
+      "metrics": {
+        "xStatus": "INFERRED",
+        "yStatus": "INFERRED",
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "calibration is review-grade in Phase 9J truth audit"
+      ]
+    },
+    {
+      "stage": "peaks",
+      "status": "REVIEW",
+      "metrics": {
+        "peakCount": 12,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 12
+      },
+      "failureReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "REVIEW",
+      "metrics": {
+        "reportGate": "REVIEW_ONLY",
+        "releaseGateCorrect": true
+      }
+    }
+  ]
+}

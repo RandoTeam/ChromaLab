@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "phase9j_white_tiger_ion71_review",
+  "runId": "white_tiger_ion71_20260526_184317",
+  "reportGate": "REVIEW_ONLY",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "SUPPORTED",
+      "evidenceRefs": [
+        "PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT.white_tiger_ion71.detectedGraphCount"
+      ],
+      "forbiddenSourceAccepted": false
+    },
+    {
+      "claimId": "claim_peak_count",
+      "claimType": "peak_count",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT.white_tiger_ion71.peakCount"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Peak evidence remains review-grade and report gate is REVIEW_ONLY."
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT.white_tiger_ion71.first10Peaks"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Area values are shown with review-grade peak evidence, not release-ready claim."
+    }
+  ],
+  "blockedClaimReasons": [
+    "PEAK_EVIDENCE_FAILURE prevents release-ready claims."
+  ]
+}

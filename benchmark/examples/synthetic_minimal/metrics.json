@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "synthetic_minimal_single_peak",
+  "runId": "synthetic_minimal_run_001",
+  "overallDecision": "PASS",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "PASS",
+      "metrics": {
+        "iou": 1,
+        "detectedGraphCount": 1,
+        "expectedGraphCount": 1
+      },
+      "thresholds": {
+        "minIou": 0.98
+      }
+    },
+    {
+      "stage": "calibration",
+      "status": "PASS",
+      "metrics": {
+        "xRmse": 0,
+        "yRmse": 0,
+        "xAnchorCount": 2,
+        "yAnchorCount": 2,
+        "monotonic": true
+      },
+      "thresholds": {
+        "maxRmse": 0.01,
+        "minAnchorsPerAxis": 2
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "PASS",
+      "metrics": {
+        "peakCountF1": 1,
+        "apexRtMae": 0,
+        "areaRelativeError": 0
+      },
+      "thresholds": {
+        "minPeakCountF1": 0.99,
+        "maxApexRtMae": 0.01
+      }
+    },
+    {
+      "stage": "report_claims",
+      "status": "PASS",
+      "metrics": {
+        "unsupportedClaimCount": 0,
+        "releaseGateCorrect": true
+      }
+    }
+  ]
+}

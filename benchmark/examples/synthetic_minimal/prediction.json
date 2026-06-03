@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "synthetic_minimal_single_peak",
+  "runId": "synthetic_minimal_run_001",
+  "mode": "pc_prototype",
+  "pipelineVersion": "dr-b1-example",
+  "reportGate": "RELEASE_READY",
+  "validatorVerdict": "PASS",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "graphPanel": {
+        "x": 40,
+        "y": 40,
+        "width": 560,
+        "height": 400,
+        "coordinateSpace": "NORMALIZED_IMAGE"
+      },
+      "plotArea": {
+        "x": 80,
+        "y": 80,
+        "width": 480,
+        "height": 300,
+        "coordinateSpace": "NORMALIZED_IMAGE"
+      },
+      "calibration": {
+        "xStatus": "VALID",
+        "yStatus": "VALID",
+        "xRmse": 0,
+        "yRmse": 0,
+        "xAnchorCount": 2,
+        "yAnchorCount": 2,
+        "selectedXStrategy": "synthetic_truth",
+        "selectedYStrategy": "synthetic_truth"
+      },
+      "trace": {
+        "status": "VALID",
+        "pointCount": 101,
+        "xCoverageRatio": 1,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "VALID",
+        "peakCount": 1,
+        "reportablePeakCount": 1,
+        "reviewPeakCount": 0,
+        "rejectedPeakCount": 0
+      }
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "benchmark/examples/synthetic_minimal/runtime_evidence.json",
+    "validatorJson": "benchmark/examples/synthetic_minimal/validator.json",
+    "validatorMarkdown": "benchmark/examples/synthetic_minimal/validator.md",
+    "finalReportJson": "benchmark/examples/synthetic_minimal/final_report.json",
+    "overlayPaths": [
+      "benchmark/examples/synthetic_minimal/graph_panel_overlay.png",
+      "benchmark/examples/synthetic_minimal/calibration_overlay.png"
+    ]
+  },
+  "timingsMs": {
+    "total": 12,
+    "graph_panel": 2,
+    "calibration": 1,
+    "trace": 4,
+    "peaks": 2
+  }
+}

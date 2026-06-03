@@ -30,3 +30,23 @@ report rendering.
 
 No method is accepted because it looks visually better. It must improve the
 relevant schema-backed metric without violating report gates.
+
+## Validate
+
+Install the local benchmark validation dependency:
+
+```powershell
+python -m pip install -r tools/benchmark/requirements.txt
+```
+
+Run schema and example validation:
+
+```powershell
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+Expected result:
+
+```text
+Benchmark schema validation passed: 5 schemas, 9 example documents.
+```
