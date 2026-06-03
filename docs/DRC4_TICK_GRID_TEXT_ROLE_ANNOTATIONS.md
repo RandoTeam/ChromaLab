@@ -101,6 +101,8 @@ Recommended next slice:
 
 `DR-C5: Score Current Graph Layout Output Against P0 Annotation Truth`
 
+Status: complete in `docs/DRC5_P0_GRAPH_LAYOUT_SCORE.md`.
+
 Goal:
 
 - compare Phase 9J graph count and graphPanel behavior against DR-C3/DR-C4 P0

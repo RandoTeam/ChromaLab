@@ -98,3 +98,13 @@ python tools/benchmark/build_drc4_tick_text_annotations.py --clean
 The tick/text-role annotations and overlays are written to:
 
 `benchmark/annotations/drc4_tick_text_role_annotations/`
+
+Score current Phase 9J P0 graph/layout output against annotation truth with:
+
+```powershell
+python tools/benchmark/score_drc5_p0_graph_layout.py
+```
+
+The P0 graph/layout score report is written to:
+
+`benchmark/reports/drc5_p0_graph_layout_score/`

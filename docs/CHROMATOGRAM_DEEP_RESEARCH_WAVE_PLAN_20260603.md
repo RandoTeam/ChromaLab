@@ -94,12 +94,13 @@ Acceptance:
 
 Goal: prove automatic graph and axis element detection.
 
-Current status: `DR_C4_COMPLETE_PARTIAL_DETAILED_REVIEW` in
+Current status: `DR_C5_COMPLETE_CURRENT_OUTPUT_FAILS_P0_GRAPH_LAYOUT_TRUTH` in
 `docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md` and
 `docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`; initial P0 graph layout
 annotations are documented in `docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`;
 initial P0 tick/text-role annotations are documented in
-`docs/DRC4_TICK_GRID_TEXT_ROLE_ANNOTATIONS.md`.
+`docs/DRC4_TICK_GRID_TEXT_ROLE_ANNOTATIONS.md`; current P0 graph/layout score is
+documented in `docs/DRC5_P0_GRAPH_LAYOUT_SCORE.md`.
 
 Methods to compare:
 
@@ -274,7 +275,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-C5: Score Current Graph Layout Output Against P0 Annotation Truth**.
+Start: **DR-C6: P0 Graph Layout Method Comparison Prototype**.
 
 Reason:
 
@@ -283,8 +284,10 @@ Reason:
 - DR-C3 adds initial graphPanel/plotArea/axis annotations for P0 fixtures;
 - DR-C4 adds review-grade major tick, numeric label, anchor, and text-role
   annotations for P0 fixtures;
-- current Phase 9J output can now be scored against P0 graph/layout truth before
-  any new detection method is added;
+- DR-C5 proves current Phase 9J graph/layout output fails all 8 P0
+  deterministic/E2B graph-count truth cases;
+- the next work should compare candidate PC graph-layout methods against this
+  baseline before Android changes;
 - otherwise graph/layout methods would again be judged visually instead of by
   benchmark truth.
 
