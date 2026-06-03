@@ -127,7 +127,7 @@ PC benchmarks should find most logic errors first. Android should verify:
 
 ## Next Recommended Phase
 
-Name: `DR-A Ground Truth Corpus And Metrics`
+Name: `DR-B Ground Truth Corpus And Metrics`
 
 Goal: create the measurement system before the next algorithm rewrite.
 
@@ -138,3 +138,14 @@ Acceptance:
 - every pipeline stage has a metric;
 - current ChromaLab output is scored against those metrics;
 - the next algorithmic phase is chosen from measured failures, not from intuition.
+
+## Follow-Up Deep Research
+
+Follow-up research on automatic 2025-2026 methods is recorded in:
+
+- `docs/research/2026-06-03_automatic_chromatogram_methods_deep_research.md`
+- `docs/CHROMATOGRAM_DEEP_RESEARCH_WAVE_PLAN_20260603.md`
+
+That follow-up keeps this document's conclusion but expands it into multiple
+research waves. The first recommended wave is now named `DR-B: Ground Truth
+Corpus And Automatic Metrics`.
