@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "chromalab.benchmark.phase9j_truth_gaps.v1",
+  "fixtureCount": 8,
+  "fixtures": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "highestPriority": "P0",
+      "truthGaps": [
+        "axis_endpoints",
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "TICK_LOCALIZATION_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_01_mz71_screenshot_page_deterministic",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+          "priority": "P0"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "highestPriority": "P0",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_04_stacked_xic_resolution_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_04_stacked_xic_resolution_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P0"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "highestPriority": "P0",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "CALIBRATION_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_05_tic_plus_ions_deterministic",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "CALIBRATION_FAILURE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+          "decision": "BLOCKED",
+          "runtimeFailureClass": "CALIBRATION_FAILURE",
+          "priority": "P0"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "highestPriority": "P0",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_06_photo_two_graphs_page_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P0"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_06_photo_two_graphs_page_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P0"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "highestPriority": "P1",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "GRAPH_PANEL_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_02_mz92_belyi_tigr_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_02_mz92_belyi_tigr_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+          "priority": "P1"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "highestPriority": "P1",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_03_small_tic_export_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_03_small_tic_export_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        }
+      ]
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "highestPriority": "P1",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "UNKNOWN_FAILURE",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_bench_07_rotated_page_photo_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+          "priority": "P2"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_bench_07_rotated_page_photo_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "UNKNOWN_FAILURE",
+          "priority": "P1"
+        }
+      ]
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "highestPriority": "P1",
+      "truthGaps": [
+        "calibration_anchors",
+        "input_image_hash",
+        "numeric_label_boxes",
+        "peak_reference_metrics",
+        "report_claim_expectations",
+        "tick_or_grid_positions",
+        "trace_reference"
+      ],
+      "blockingReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "modes": [
+        {
+          "mode": "deterministic",
+          "caseId": "phase9j_white_tiger_ion71_deterministic",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        },
+        {
+          "mode": "model_enabled",
+          "caseId": "phase9j_white_tiger_ion71_model_enabled",
+          "decision": "REVIEW",
+          "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+          "priority": "P1"
+        }
+      ]
+    }
+  ]
+}

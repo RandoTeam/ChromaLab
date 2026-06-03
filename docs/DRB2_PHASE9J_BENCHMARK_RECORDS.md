@@ -111,6 +111,8 @@ Recommended next slice:
 
 `DR-B3: Benchmark Summary Scoring And Fixture Truth Gaps`
 
+Status: complete in `docs/DRB3_BENCHMARK_SCORING_AND_TRUTH_GAPS.md`.
+
 Goal:
 
 - compute a compact score table from all benchmark records;

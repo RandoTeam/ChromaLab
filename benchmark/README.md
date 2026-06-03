@@ -57,3 +57,13 @@ DR-B2 adds generated records under
 ```powershell
 python tools/benchmark/generate_phase9j_records.py --clean
 ```
+
+Score the generated Phase 9J benchmark records with:
+
+```powershell
+python tools/benchmark/score_phase9j_benchmarks.py
+```
+
+The score report is written to:
+
+`benchmark/reports/phase9j_truth_audit_score/`

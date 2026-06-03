@@ -1,6 +1,6 @@
 # DR-B Ground Truth Corpus And Automatic Metrics
 
-Status: `DR_B2_COMPLETE`
+Status: `DR_B3_COMPLETE`
 
 Date: 2026-06-03
 
@@ -99,12 +99,14 @@ compound identity.
 ## Current Slice Result
 
 DR-B has baseline schemas, a research handoff, schema example records, a
-validation runner, and DR-B2 now converts the full Phase 9J truth audit into
-benchmark records.
+validation runner, DR-B2 Phase 9J benchmark records, and DR-B3 score reports
+that expose fixture truth gaps.
 
 DR-B1 detail: `docs/DRB1_BENCHMARK_SCHEMA_EXAMPLES_AND_VALIDATOR.md`.
 
 DR-B2 detail: `docs/DRB2_PHASE9J_BENCHMARK_RECORDS.md`.
+
+DR-B3 detail: `docs/DRB3_BENCHMARK_SCORING_AND_TRUTH_GAPS.md`.
 
 Current generated benchmark coverage:
 
@@ -116,14 +118,28 @@ Current generated benchmark coverage:
 - 4 BLOCKED decisions;
 - 0 RELEASE_READY decisions.
 
+Current DR-B3 score result:
+
+- 16 scored benchmark cases;
+- 8 fixtures;
+- 8 P0 fixture/mode records;
+- 7 P1 fixture/mode records;
+- 1 P2 fixture/mode record;
+- evidence package PASS for all 16;
+- calibration FAIL for 2;
+- trace FAIL for 4;
+- peaks FAIL for 4.
+
 ## Next Slice
 
 Recommended next slice:
 
-`DR-B3: Benchmark Summary Scoring And Fixture Truth Gaps`
+`DR-C1: Graph Layout / PlotArea / Axis Element Method Research Inputs`
 
 Deliverables:
 
-- compact score table from all benchmark records;
-- missing-truth field report per fixture;
-- fixture annotation priorities before DR-C graph/layout method comparisons.
+- graph/layout annotation requirements for P0/P1 fixtures;
+- method comparison inputs for graphPanel, plotArea, axis endpoints, ticks/grid,
+  and numeric label boxes;
+- no algorithmic graph repair until truth fields or diagnostic-only limits are
+  explicit.

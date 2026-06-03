@@ -60,10 +60,11 @@ Every wave follows:
 
 Goal: create the automatic scoring system before more algorithmic repair.
 
-Current status: `DR_B2_COMPLETE` in
+Current status: `DR_B3_COMPLETE` in
 `docs/DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md`; `DR_B1_COMPLETE` in
 `docs/DRB1_BENCHMARK_SCHEMA_EXAMPLES_AND_VALIDATOR.md`; `DR_B2_COMPLETE` in
-`docs/DRB2_PHASE9J_BENCHMARK_RECORDS.md`.
+`docs/DRB2_PHASE9J_BENCHMARK_RECORDS.md`; `DR_B3_COMPLETE` in
+`docs/DRB3_BENCHMARK_SCORING_AND_TRUTH_GAPS.md`.
 
 Why first:
 
