@@ -1,0 +1,7 @@
+[target.aarch64-linux-android]
+linker = "aarch64-linux-android26-clang.cmd"
+ar = "llvm-ar.exe"
+
+[target.x86_64-linux-android]
+linker = "x86_64-linux-android26-clang.cmd"
+ar = "llvm-ar.exe"
