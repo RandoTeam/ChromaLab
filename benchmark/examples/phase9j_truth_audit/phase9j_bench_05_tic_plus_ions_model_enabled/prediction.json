@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+  "runId": "bench_05_tic_plus_ions_20260526_185451",
+  "mode": "e2b_baseline",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "BLOCKED",
+  "validatorVerdict": "REVIEW",
+  "runtimeFailureClass": "CALIBRATION_FAILURE",
+  "firstFailingStage": "Y_CALIBRATION",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "UNKNOWN_REVIEW",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "VALID",
+        "yStatus": "REVIEW",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "trace": {
+        "status": "MISSING",
+        "pointCount": 0,
+        "xCoverageRatio": 0.0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "MISSING",
+        "peakCount": 0,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 0,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "CALIBRATION_FAILURE",
+        "HIGH_RESIDUALS",
+        "LABEL_SEQUENCE_NON_MONOTONIC",
+        "NON_MONOTONIC_TICK_VALUES",
+        "OCR_NO_NUMERIC_TEXT",
+        "SCALE_FIT_HIGH_RESIDUAL",
+        "TIC+ions layout not propagated and Y calibration direction is inconsistent.",
+        "TITLE_ION_TEXT_REJECTED_AS_SCALE_LABEL"
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_package_bench_05_tic_plus_ions_20260526_185451.json",
+    "validatorJson": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.md",
+    "finalReportJson": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/final_report_contract_bench_05_tic_plus_ions_20260526_185451.json",
+    "htmlReport": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.html",
+    "markdownReport": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.md",
+    "overlayPaths": []
+  },
+  "timingsMs": {
+    "total": 0.0
+  }
+}

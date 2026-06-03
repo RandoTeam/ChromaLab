@@ -1,6 +1,6 @@
 # DR-B Ground Truth Corpus And Automatic Metrics
 
-Status: `DR_B_CONTRACT_BASELINE`
+Status: `DR_B2_COMPLETE`
 
 Date: 2026-06-03
 
@@ -98,20 +98,32 @@ compound identity.
 
 ## Current Slice Result
 
-DR-B has baseline schemas, a research handoff, and DR-B1 now adds schema example
-records plus a validation runner.
+DR-B has baseline schemas, a research handoff, schema example records, a
+validation runner, and DR-B2 now converts the full Phase 9J truth audit into
+benchmark records.
 
 DR-B1 detail: `docs/DRB1_BENCHMARK_SCHEMA_EXAMPLES_AND_VALIDATOR.md`.
+
+DR-B2 detail: `docs/DRB2_PHASE9J_BENCHMARK_RECORDS.md`.
+
+Current generated benchmark coverage:
+
+- 16 Phase 9J benchmark cases;
+- 8 fixtures;
+- deterministic and E2B baseline modes;
+- 64 generated schema-backed JSON records;
+- 12 REVIEW decisions;
+- 4 BLOCKED decisions;
+- 0 RELEASE_READY decisions.
 
 ## Next Slice
 
 Recommended next slice:
 
-`DR-B2: Convert Phase 9J Truth Audit To Benchmark Records`
+`DR-B3: Benchmark Summary Scoring And Fixture Truth Gaps`
 
 Deliverables:
 
-- prediction/metrics/report-claims records for all eight Phase 9J fixtures and
-  deterministic/E2B modes;
-- first benchmark summary table;
-- no report-gate upgrades from existing Phase 9J evidence.
+- compact score table from all benchmark records;
+- missing-truth field report per fixture;
+- fixture annotation priorities before DR-C graph/layout method comparisons.

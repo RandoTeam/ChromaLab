@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "phase9j_bench_04_stacked_xic_resolution_model_enabled",
+  "runId": "bench_04_stacked_xic_resolution_20260526_185209",
+  "reportGate": "REVIEW_ONLY",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_04_stacked_xic_resolution.model_enabled.graph_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_calibration",
+      "claimType": "calibration",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_04_stacked_xic_resolution.model_enabled.calibration"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_trace_present",
+      "claimType": "trace_present",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_04_stacked_xic_resolution.model_enabled.trace_present"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_peak_count",
+      "claimType": "peak_count",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_04_stacked_xic_resolution.model_enabled.peak_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_04_stacked_xic_resolution.model_enabled.peak_area"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    }
+  ],
+  "blockedClaimReasons": [
+    "UNKNOWN_FAILURE"
+  ]
+}

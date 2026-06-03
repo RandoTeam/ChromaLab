@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "phase9j_bench_05_tic_plus_ions_deterministic",
+  "runId": "bench_05_tic_plus_ions_20260526_185353",
+  "reportGate": "BLOCKED",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_05_tic_plus_ions.deterministic.graph_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+    },
+    {
+      "claimId": "claim_calibration",
+      "claimType": "calibration",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_05_tic_plus_ions.deterministic.calibration"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+    },
+    {
+      "claimId": "claim_trace_present",
+      "claimType": "trace_present",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_05_tic_plus_ions.deterministic.trace_present"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+    },
+    {
+      "claimId": "claim_peak_count",
+      "claimType": "peak_count",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_05_tic_plus_ions.deterministic.peak_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_05_tic_plus_ions.deterministic.peak_area"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+    }
+  ],
+  "blockedClaimReasons": [
+    "CALIBRATION_FAILURE"
+  ]
+}

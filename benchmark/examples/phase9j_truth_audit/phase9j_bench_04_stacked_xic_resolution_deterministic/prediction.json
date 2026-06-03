@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_bench_04_stacked_xic_resolution_deterministic",
+  "runId": "bench_04_stacked_xic_resolution_20260526_185040",
+  "mode": "deterministic",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "REVIEW_ONLY",
+  "validatorVerdict": "REVIEW",
+  "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+  "firstFailingStage": "",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "REVIEW",
+        "yStatus": "REVIEW",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "trace": {
+        "status": "REVIEW",
+        "pointCount": 0,
+        "xCoverageRatio": 0.0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "REVIEW",
+        "peakCount": 1,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 1,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "Produces report/peaks but evidence gate remains review-grade; not release-ready.",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_package_run_1779810722868.json",
+    "validatorJson": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.md",
+    "finalReportJson": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/final_report_contract_run_1779810722868.json",
+    "htmlReport": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.html",
+    "markdownReport": "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.md",
+    "overlayPaths": [
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_axis_tick_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_trace_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_peak_overlay.png"
+    ]
+  },
+  "timingsMs": {
+    "total": 0.0
+  }
+}

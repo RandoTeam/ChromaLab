@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_white_tiger_ion71_model_enabled",
+  "runId": "white_tiger_ion71_20260526_184400",
+  "mode": "e2b_baseline",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "REVIEW_ONLY",
+  "validatorVerdict": "PASS",
+  "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+  "firstFailingStage": "",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "REVIEW",
+        "yStatus": "REVIEW",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "trace": {
+        "status": "REVIEW",
+        "pointCount": 0,
+        "xCoverageRatio": 0.0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "REVIEW",
+        "peakCount": 12,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 12,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "PEAK_EVIDENCE_FAILURE",
+        "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_package_run_1779810291646.json",
+    "validatorJson": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.md",
+    "finalReportJson": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/final_report_contract_run_1779810291646.json",
+    "htmlReport": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.html",
+    "markdownReport": "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.md",
+    "overlayPaths": [
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_axis_tick_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_trace_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_peak_overlay.png"
+    ]
+  },
+  "timingsMs": {
+    "total": 0.0
+  }
+}

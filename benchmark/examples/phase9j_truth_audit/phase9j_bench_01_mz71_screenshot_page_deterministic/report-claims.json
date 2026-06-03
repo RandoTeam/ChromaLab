@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "phase9j_bench_01_mz71_screenshot_page_deterministic",
+  "runId": "bench_01_mz71_screenshot_page_20260526_184458",
+  "reportGate": "BLOCKED",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_01_mz71_screenshot_page.deterministic.graph_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+    },
+    {
+      "claimId": "claim_calibration",
+      "claimType": "calibration",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_01_mz71_screenshot_page.deterministic.calibration"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+    },
+    {
+      "claimId": "claim_trace_present",
+      "claimType": "trace_present",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_01_mz71_screenshot_page.deterministic.trace_present"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+    },
+    {
+      "claimId": "claim_peak_count",
+      "claimType": "peak_count",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_01_mz71_screenshot_page.deterministic.peak_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "MISSING_EVIDENCE",
+      "evidenceRefs": [
+        "phase9j_summary.bench_01_mz71_screenshot_page.deterministic.peak_area"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+    }
+  ],
+  "blockedClaimReasons": [
+    "TICK_LOCALIZATION_FAILURE"
+  ]
+}

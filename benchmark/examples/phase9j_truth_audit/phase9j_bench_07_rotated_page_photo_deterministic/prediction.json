@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_bench_07_rotated_page_photo_deterministic",
+  "runId": "bench_07_rotated_page_photo_20260526_190009",
+  "mode": "deterministic",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "REVIEW_ONLY",
+  "validatorVerdict": "REVIEW",
+  "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+  "firstFailingStage": "",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "ROTATED_PAGE_GRAPH",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "REVIEW",
+        "yStatus": "REVIEW",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "trace": {
+        "status": "REVIEW",
+        "pointCount": 0,
+        "xCoverageRatio": 0.0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "REVIEW",
+        "peakCount": 1,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 1,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "Produces report/peaks but evidence gate remains review-grade; not release-ready.",
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_package_run_1779811255328.json",
+    "validatorJson": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_validation_run_1779811255328.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_validation_run_1779811255328.md",
+    "finalReportJson": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/final_report_contract_run_1779811255328.json",
+    "htmlReport": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/report_run_1779811255328.html",
+    "markdownReport": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/report_run_1779811255328.md",
+    "overlayPaths": [
+      "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/graph_1_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/graph_1_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/graph_1_axis_tick_overlay.png",
+      "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/graph_1_trace_overlay.png",
+      "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/graph_1_peak_overlay.png"
+    ]
+  },
+  "timingsMs": {
+    "total": 0.0
+  }
+}

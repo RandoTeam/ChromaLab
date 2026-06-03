@@ -45,8 +45,15 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result:
+Expected result after DR-B2 Phase 9J benchmark conversion:
 
 ```text
-Benchmark schema validation passed: 5 schemas, 9 example documents.
+Benchmark schema validation passed: 5 schemas, 73 example documents.
+```
+
+DR-B2 adds generated records under
+`benchmark/examples/phase9j_truth_audit/`. Regenerate them with:
+
+```powershell
+python tools/benchmark/generate_phase9j_records.py --clean
 ```

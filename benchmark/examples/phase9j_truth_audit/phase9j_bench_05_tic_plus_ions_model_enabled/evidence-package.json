@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "chromalab.benchmark.evidence_package.v1",
+  "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+  "runId": "bench_05_tic_plus_ions_20260526_185451",
+  "terminalState": "BLOCKED",
+  "runtimeFailureClass": "CALIBRATION_FAILURE",
+  "artifacts": [
+    {
+      "artifactType": "original_image",
+      "path": "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "runtime_evidence_package",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_package_bench_05_tic_plus_ions_20260526_185451.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_json",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_markdown",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.md",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "final_report_json",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/final_report_contract_bench_05_tic_plus_ions_20260526_185451.json",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "html_report",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.html",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "markdown_report",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.md",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "manifest",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/artifact_manifest_bench_05_tic_plus_ions_20260526_185451.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "manifest",
+      "path": "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/graph_failure_package_bench_05_tic_plus_ions_20260526_185451.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    }
+  ],
+  "missingArtifactReasons": [
+    {
+      "artifactType": "graph_panel_overlay",
+      "reason": "Phase 9J summary did not record graph_panel_overlay."
+    },
+    {
+      "artifactType": "plot_area_overlay",
+      "reason": "Phase 9J summary did not record plot_area_overlay."
+    },
+    {
+      "artifactType": "axis_tick_overlay",
+      "reason": "Phase 9J summary did not record axis_tick_overlay."
+    },
+    {
+      "artifactType": "trace_overlay",
+      "reason": "Phase 9J summary did not record trace_overlay."
+    },
+    {
+      "artifactType": "peak_overlay",
+      "reason": "Phase 9J summary did not record peak_overlay."
+    }
+  ]
+}

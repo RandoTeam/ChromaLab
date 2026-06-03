@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_bench_02_mz92_belyi_tigr_deterministic",
+  "runId": "bench_02_mz92_belyi_tigr_20260526_184704",
+  "overallDecision": "REVIEW",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "PASS",
+      "metrics": {
+        "expectedGraphCount": 1,
+        "detectedGraphCount": 1,
+        "graphCountMatches": true,
+        "graphPanelStatus": "PRESENT",
+        "plotAreaStatus": "PRESENT"
+      },
+      "failureReasons": []
+    },
+    {
+      "stage": "calibration",
+      "status": "REVIEW",
+      "metrics": {
+        "xCalibration": "INFERRED",
+        "yCalibration": "INFERRED",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "failureReasons": []
+    },
+    {
+      "stage": "trace",
+      "status": "REVIEW",
+      "metrics": {
+        "traceStatus": "AVAILABLE",
+        "releaseReady": false
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "REVIEW",
+      "metrics": {
+        "peakEvidenceStatus": "AVAILABLE",
+        "peakCount": 1,
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "GRAPH_PANEL_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "REVIEW",
+      "metrics": {
+        "reportGate": "REVIEW_ONLY",
+        "validatorVerdict": "REVIEW",
+        "releaseGateCorrect": true
+      }
+    },
+    {
+      "stage": "evidence_package",
+      "status": "PASS",
+      "metrics": {
+        "runtimeEvidencePackageAvailable": true,
+        "validatorJsonAvailable": true,
+        "validatorMarkdownAvailable": true,
+        "finalReportJsonAvailable": true
+      }
+    }
+  ],
+  "zeroToleranceFailures": [],
+  "notes": [
+    "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+  ]
+}

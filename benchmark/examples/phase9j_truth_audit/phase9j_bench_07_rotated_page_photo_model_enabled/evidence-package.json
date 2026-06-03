@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "chromalab.benchmark.evidence_package.v1",
+  "caseId": "phase9j_bench_07_rotated_page_photo_model_enabled",
+  "runId": "bench_07_rotated_page_photo_20260526_190102",
+  "terminalState": "REVIEW",
+  "runtimeFailureClass": "UNKNOWN_FAILURE",
+  "artifacts": [
+    {
+      "artifactType": "original_image",
+      "path": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "runtime_evidence_package",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_package_run_1779811320242.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_json",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_validation_run_1779811320242.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "validator_markdown",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_validation_run_1779811320242.md",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "final_report_json",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/final_report_contract_run_1779811320242.json",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "html_report",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/report_run_1779811320242.html",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "markdown_report",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/report_run_1779811320242.md",
+      "privacyClass": "USER_REPORT_SAFE"
+    },
+    {
+      "artifactType": "manifest",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/artifact_manifest_run_1779811320242.json",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "graph_panel_overlay",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/graph_1_graph_panel_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "plot_area_overlay",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/graph_1_plot_area_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "axis_tick_overlay",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/graph_1_axis_tick_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "trace_overlay",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/graph_1_trace_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    },
+    {
+      "artifactType": "peak_overlay",
+      "path": "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/graph_1_peak_overlay.png",
+      "privacyClass": "DIAGNOSTIC_ONLY"
+    }
+  ],
+  "missingArtifactReasons": []
+}

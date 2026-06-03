@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_white_tiger_ion71_model_enabled",
+  "runId": "white_tiger_ion71_20260526_184400",
+  "overallDecision": "REVIEW",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "PASS",
+      "metrics": {
+        "expectedGraphCount": 1,
+        "detectedGraphCount": 1,
+        "graphCountMatches": true,
+        "graphPanelStatus": "PRESENT",
+        "plotAreaStatus": "PRESENT"
+      },
+      "failureReasons": []
+    },
+    {
+      "stage": "calibration",
+      "status": "REVIEW",
+      "metrics": {
+        "xCalibration": "INFERRED",
+        "yCalibration": "INFERRED",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "failureReasons": []
+    },
+    {
+      "stage": "trace",
+      "status": "REVIEW",
+      "metrics": {
+        "traceStatus": "AVAILABLE",
+        "releaseReady": false
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "REVIEW",
+      "metrics": {
+        "peakEvidenceStatus": "AVAILABLE",
+        "peakCount": 12,
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "REVIEW",
+      "metrics": {
+        "reportGate": "REVIEW_ONLY",
+        "validatorVerdict": "PASS",
+        "releaseGateCorrect": true
+      }
+    },
+    {
+      "stage": "evidence_package",
+      "status": "PASS",
+      "metrics": {
+        "runtimeEvidencePackageAvailable": true,
+        "validatorJsonAvailable": true,
+        "validatorMarkdownAvailable": true,
+        "finalReportJsonAvailable": true
+      }
+    }
+  ],
+  "zeroToleranceFailures": [],
+  "notes": [
+    "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+  ]
+}

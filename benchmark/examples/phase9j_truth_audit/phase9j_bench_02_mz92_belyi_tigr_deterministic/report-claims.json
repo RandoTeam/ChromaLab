@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "chromalab.benchmark.report_claims.v1",
+  "caseId": "phase9j_bench_02_mz92_belyi_tigr_deterministic",
+  "runId": "bench_02_mz92_belyi_tigr_20260526_184704",
+  "reportGate": "REVIEW_ONLY",
+  "claims": [
+    {
+      "claimId": "claim_graph_count",
+      "claimType": "graph_count",
+      "status": "SUPPORTED",
+      "evidenceRefs": [
+        "phase9j_summary.bench_02_mz92_belyi_tigr.deterministic.graph_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_calibration",
+      "claimType": "calibration",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_02_mz92_belyi_tigr.deterministic.calibration"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_trace_present",
+      "claimType": "trace_present",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_02_mz92_belyi_tigr.deterministic.trace_present"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_peak_count",
+      "claimType": "peak_count",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_02_mz92_belyi_tigr.deterministic.peak_count"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    },
+    {
+      "claimId": "claim_peak_area",
+      "claimType": "peak_area",
+      "status": "REVIEW",
+      "evidenceRefs": [
+        "phase9j_summary.bench_02_mz92_belyi_tigr.deterministic.peak_area"
+      ],
+      "forbiddenSourceAccepted": false,
+      "reason": "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+    }
+  ],
+  "blockedClaimReasons": [
+    "GRAPH_PANEL_FAILURE"
+  ]
+}

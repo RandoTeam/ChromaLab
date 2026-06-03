@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_bench_04_stacked_xic_resolution_model_enabled",
+  "runId": "bench_04_stacked_xic_resolution_20260526_185209",
+  "overallDecision": "REVIEW",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "REVIEW",
+      "metrics": {
+        "expectedGraphCount": 4,
+        "detectedGraphCount": 1,
+        "graphCountMatches": false,
+        "graphPanelStatus": "PRESENT",
+        "plotAreaStatus": "PRESENT"
+      },
+      "failureReasons": [
+        "graph count differs from Phase 9J expected graph count"
+      ]
+    },
+    {
+      "stage": "calibration",
+      "status": "REVIEW",
+      "metrics": {
+        "xCalibration": "INFERRED",
+        "yCalibration": "INFERRED",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "failureReasons": []
+    },
+    {
+      "stage": "trace",
+      "status": "REVIEW",
+      "metrics": {
+        "traceStatus": "AVAILABLE",
+        "releaseReady": false
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "REVIEW",
+      "metrics": {
+        "peakEvidenceStatus": "AVAILABLE",
+        "peakCount": 1,
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "UNKNOWN_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "REVIEW",
+      "metrics": {
+        "reportGate": "REVIEW_ONLY",
+        "validatorVerdict": "PASS",
+        "releaseGateCorrect": true
+      }
+    },
+    {
+      "stage": "evidence_package",
+      "status": "PASS",
+      "metrics": {
+        "runtimeEvidencePackageAvailable": true,
+        "validatorJsonAvailable": true,
+        "validatorMarkdownAvailable": true,
+        "finalReportJsonAvailable": true
+      }
+    }
+  ],
+  "zeroToleranceFailures": [],
+  "notes": [
+    "Produces report/peaks but evidence gate remains review-grade; not release-ready."
+  ]
+}

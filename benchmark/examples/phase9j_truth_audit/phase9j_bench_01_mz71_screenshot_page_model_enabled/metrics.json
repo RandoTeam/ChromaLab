@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+  "runId": "bench_01_mz71_screenshot_page_20260526_184601",
+  "overallDecision": "BLOCKED",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "REVIEW",
+      "metrics": {
+        "expectedGraphCount": 2,
+        "detectedGraphCount": 1,
+        "graphCountMatches": false,
+        "graphPanelStatus": "PRESENT",
+        "plotAreaStatus": "PRESENT"
+      },
+      "failureReasons": [
+        "graph count differs from Phase 9J expected graph count"
+      ]
+    },
+    {
+      "stage": "calibration",
+      "status": "FAIL",
+      "metrics": {
+        "xCalibration": "VALID",
+        "yCalibration": "INVALID",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "failureReasons": [
+        "TICK_LOCALIZATION_FAILURE",
+        "Y_CALIBRATION",
+        "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+      ]
+    },
+    {
+      "stage": "trace",
+      "status": "FAIL",
+      "metrics": {
+        "traceStatus": "MISSING",
+        "releaseReady": false
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "FAIL",
+      "metrics": {
+        "peakEvidenceStatus": "MISSING",
+        "peakCount": 0,
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "TICK_LOCALIZATION_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "FAIL",
+      "metrics": {
+        "reportGate": "BLOCKED",
+        "validatorVerdict": "REVIEW",
+        "releaseGateCorrect": true
+      }
+    },
+    {
+      "stage": "evidence_package",
+      "status": "PASS",
+      "metrics": {
+        "runtimeEvidencePackageAvailable": true,
+        "validatorJsonAvailable": true,
+        "validatorMarkdownAvailable": true,
+        "finalReportJsonAvailable": true
+      }
+    }
+  ],
+  "zeroToleranceFailures": [],
+  "notes": [
+    "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+  ]
+}

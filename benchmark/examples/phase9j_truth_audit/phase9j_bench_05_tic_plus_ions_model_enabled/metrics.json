@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "chromalab.benchmark.metrics.v1",
+  "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+  "runId": "bench_05_tic_plus_ions_20260526_185451",
+  "overallDecision": "BLOCKED",
+  "stageScores": [
+    {
+      "stage": "graph_panel",
+      "status": "REVIEW",
+      "metrics": {
+        "expectedGraphCount": 4,
+        "detectedGraphCount": 1,
+        "graphCountMatches": false,
+        "graphPanelStatus": "PRESENT",
+        "plotAreaStatus": "PRESENT"
+      },
+      "failureReasons": [
+        "graph count differs from Phase 9J expected graph count"
+      ]
+    },
+    {
+      "stage": "calibration",
+      "status": "REVIEW",
+      "metrics": {
+        "xCalibration": "VALID",
+        "yCalibration": "REVIEW",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "failureReasons": [
+        "CALIBRATION_FAILURE",
+        "Y_CALIBRATION",
+        "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+      ]
+    },
+    {
+      "stage": "trace",
+      "status": "FAIL",
+      "metrics": {
+        "traceStatus": "MISSING",
+        "releaseReady": false
+      }
+    },
+    {
+      "stage": "peaks",
+      "status": "FAIL",
+      "metrics": {
+        "peakEvidenceStatus": "MISSING",
+        "peakCount": 0,
+        "releaseReady": false
+      },
+      "failureReasons": [
+        "CALIBRATION_FAILURE"
+      ]
+    },
+    {
+      "stage": "report_claims",
+      "status": "FAIL",
+      "metrics": {
+        "reportGate": "BLOCKED",
+        "validatorVerdict": "REVIEW",
+        "releaseGateCorrect": true
+      }
+    },
+    {
+      "stage": "evidence_package",
+      "status": "PASS",
+      "metrics": {
+        "runtimeEvidencePackageAvailable": true,
+        "validatorJsonAvailable": true,
+        "validatorMarkdownAvailable": true,
+        "finalReportJsonAvailable": true
+      }
+    }
+  ],
+  "zeroToleranceFailures": [],
+  "notes": [
+    "TIC+ions layout not propagated and Y calibration direction is inconsistent."
+  ]
+}

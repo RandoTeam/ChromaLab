@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "chromalab.benchmark.prediction.v1",
+  "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+  "runId": "bench_01_mz71_screenshot_page_20260526_184601",
+  "mode": "e2b_baseline",
+  "pipelineVersion": "phase9j-truth-audit",
+  "reportGate": "BLOCKED",
+  "validatorVerdict": "REVIEW",
+  "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+  "firstFailingStage": "Y_CALIBRATION",
+  "graphs": [
+    {
+      "graphId": "graph_1",
+      "layoutClass": "UNKNOWN_REVIEW",
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID",
+      "calibration": {
+        "xStatus": "VALID",
+        "yStatus": "INVALID",
+        "xAnchorCount": 0,
+        "yAnchorCount": 0
+      },
+      "trace": {
+        "status": "MISSING",
+        "pointCount": 0,
+        "xCoverageRatio": 0.0,
+        "maxGapColumns": 0
+      },
+      "peaks": {
+        "status": "MISSING",
+        "peakCount": 0,
+        "reportablePeakCount": 0,
+        "reviewPeakCount": 0,
+        "rejectedPeakCount": 0
+      },
+      "failureSubreasons": [
+        "HIGH_RESIDUALS",
+        "INSUFFICIENT_SCALE_ANCHORS",
+        "INSUFFICIENT_Y_ANCHORS",
+        "LABEL_SEQUENCE_NON_MONOTONIC",
+        "OCR_NO_NUMERIC_TEXT",
+        "TICK_LOCALIZATION_FAILURE",
+        "TITLE_ION_TEXT_REJECTED_AS_SCALE_LABEL",
+        "Y calibration blocked by insufficient usable anchors after OCR/tick pairing."
+      ]
+    }
+  ],
+  "artifacts": {
+    "runtimeEvidencePackage": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_package_bench_01_mz71_screenshot_page_20260526_184601.json",
+    "validatorJson": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184601.json",
+    "validatorMarkdown": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184601.md",
+    "finalReportJson": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/final_report_contract_bench_01_mz71_screenshot_page_20260526_184601.json",
+    "htmlReport": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/report_bench_01_mz71_screenshot_page_20260526_184601.html",
+    "markdownReport": "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/report_bench_01_mz71_screenshot_page_20260526_184601.md",
+    "overlayPaths": []
+  },
+  "timingsMs": {
+    "total": 0.0
+  }
+}
