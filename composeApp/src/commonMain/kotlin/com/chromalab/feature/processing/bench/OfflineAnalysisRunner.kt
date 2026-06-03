@@ -260,6 +260,7 @@ data class OfflineGraphAudit(
     val originDetected: Boolean,
     val axisConfidence: Float,
     val axisTickGeometry: OfflineAxisTickGeometryAudit = OfflineAxisTickGeometryAudit(),
+    val axisElementGraph: OfflineAxisElementGraphAudit = OfflineAxisElementGraphAudit(),
     val axisCalibration: OfflineAxisCalibrationAudit,
     val curveMaskAvailable: Boolean,
     val curveMaskRawPixelCount: Int,
@@ -276,6 +277,101 @@ data class OfflineGraphAudit(
     val peakSanity: OfflinePeakSanityAudit,
     val warnings: List<String>,
 )
+
+@Serializable
+data class OfflineAxisElementGraphAudit(
+    val available: Boolean = false,
+    val graphIndex: Int = 0,
+    val artifactJsonPath: String? = null,
+    val artifactOverlayPath: String? = null,
+    val nodeCount: Int = 0,
+    val edgeCount: Int = 0,
+    val scaleCandidatePairCount: Int = 0,
+    val acceptedScaleCandidatePairCount: Int = 0,
+    val nodes: List<OfflineAxisElementNodeAudit> = emptyList(),
+    val edges: List<OfflineAxisElementEdgeAudit> = emptyList(),
+    val scaleCandidatePairs: List<OfflineAxisElementScaleCandidatePairAudit> = emptyList(),
+    val blockers: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+data class OfflineAxisElementNodeAudit(
+    val id: String,
+    val kind: OfflineAxisElementNodeKind,
+    val axis: String? = null,
+    val bounds: GraphRegion? = null,
+    val line: AxisLine? = null,
+    val pixel: Float? = null,
+    val value: Float? = null,
+    val text: String? = null,
+    val confidence: Float = 0f,
+    val source: String,
+    val status: OfflineAxisElementNodeStatus = OfflineAxisElementNodeStatus.CANDIDATE,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineAxisElementNodeKind {
+    GRAPH_PANEL,
+    PLOT_AREA,
+    X_AXIS_LINE,
+    Y_AXIS_LINE,
+    AXIS_ORIGIN,
+    X_TICK_POSITION,
+    Y_TICK_POSITION,
+    OCR_NUMERIC_LABEL,
+    OCR_TEXT_LABEL,
+    CALIBRATION_ANCHOR,
+}
+
+@Serializable
+enum class OfflineAxisElementNodeStatus {
+    SELECTED,
+    CANDIDATE,
+    REJECTED,
+}
+
+@Serializable
+data class OfflineAxisElementEdgeAudit(
+    val fromNodeId: String,
+    val toNodeId: String,
+    val relationship: OfflineAxisElementEdgeKind,
+    val confidence: Float,
+    val source: String,
+    val rejectionReason: String? = null,
+)
+
+@Serializable
+enum class OfflineAxisElementEdgeKind {
+    CONTAINS,
+    DEFINES_AXIS,
+    HAS_TICK,
+    LABEL_PROJECTS_TO_AXIS,
+    LABEL_MATCHES_TICK,
+    LABEL_BECOMES_ANCHOR,
+    ANCHOR_USED_BY_FIT,
+}
+
+@Serializable
+data class OfflineAxisElementScaleCandidatePairAudit(
+    val axis: String,
+    val nodeIds: List<String>,
+    val pixelSpan: Float,
+    val valueSpan: Float,
+    val residual: Float,
+    val residualRatio: Float,
+    val status: OfflineAxisElementScaleCandidateStatus,
+    val source: String,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+enum class OfflineAxisElementScaleCandidateStatus {
+    ACCEPTED,
+    REVIEW,
+    REJECTED,
+}
 
 @Serializable
 data class OfflineSignalAudit(
@@ -1126,6 +1222,17 @@ class OfflineAnalysisRunner(
             )
         } ?: missingAxisCalibration()
         graphWarnings += axisCalibration.warnings
+        val axisElementGraph = buildAxisElementGraphAudit(
+            graphIndex = graphIndex,
+            outputDir = outputDir,
+            panelRegion = region,
+            plotArea = plotAreaAudit,
+            axesResult = axesResult,
+            axisTickGeometry = axisTickGeometryAudit,
+            ocrResult = ocrResult,
+            axisCalibration = axisCalibration,
+        )
+        graphWarnings += axisElementGraph.warnings
 
         val maskResult = runStage(
             stage = "curve_mask",
@@ -1344,6 +1451,7 @@ class OfflineAnalysisRunner(
             originDetected = axesResult?.hasOrigin == true,
             axisConfidence = axesResult?.confidence ?: 0f,
             axisTickGeometry = axisTickGeometryAudit,
+            axisElementGraph = axisElementGraph,
             axisCalibration = axisCalibration,
             curveMaskAvailable = maskAvailable,
             curveMaskRawPixelCount = maskResult?.rawPixelCount ?: 0,
@@ -1416,6 +1524,313 @@ private fun missingAxisTickGeometry(
 private enum class CalibrationAxis {
     X,
     Y,
+}
+
+private fun buildAxisElementGraphAudit(
+    graphIndex: Int,
+    outputDir: String,
+    panelRegion: GraphRegion,
+    plotArea: OfflineGraphPlotAreaAudit,
+    axesResult: AxesResult?,
+    axisTickGeometry: OfflineAxisTickGeometryAudit,
+    ocrResult: AxisOcrResult?,
+    axisCalibration: OfflineAxisCalibrationAudit,
+): OfflineAxisElementGraphAudit {
+    val nodes = mutableListOf<OfflineAxisElementNodeAudit>()
+    val edges = mutableListOf<OfflineAxisElementEdgeAudit>()
+    val warnings = mutableListOf<String>()
+    val blockers = mutableListOf<String>()
+
+    val graphNodeId = "graph_${graphIndex}_panel"
+    nodes += OfflineAxisElementNodeAudit(
+        id = graphNodeId,
+        kind = OfflineAxisElementNodeKind.GRAPH_PANEL,
+        bounds = panelRegion,
+        confidence = 1f,
+        source = "graph_region",
+        status = OfflineAxisElementNodeStatus.SELECTED,
+    )
+
+    val plotNodeId = "graph_${graphIndex}_plot_area"
+    if (plotArea.region != null) {
+        nodes += OfflineAxisElementNodeAudit(
+            id = plotNodeId,
+            kind = OfflineAxisElementNodeKind.PLOT_AREA,
+            bounds = plotArea.region,
+            confidence = if (plotArea.detected) 1f else 0.3f,
+            source = "plot_area",
+            status = if (plotArea.detected) OfflineAxisElementNodeStatus.SELECTED else OfflineAxisElementNodeStatus.CANDIDATE,
+            warnings = plotArea.warnings,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = graphNodeId,
+            toNodeId = plotNodeId,
+            relationship = OfflineAxisElementEdgeKind.CONTAINS,
+            confidence = if (plotArea.detected) 1f else 0.3f,
+            source = "plot_area",
+        )
+    } else {
+        blockers += "axis_element_graph.plot_area_missing"
+    }
+
+    axesResult?.xAxis?.let { axis ->
+        val nodeId = "graph_${graphIndex}_x_axis"
+        nodes += OfflineAxisElementNodeAudit(
+            id = nodeId,
+            kind = OfflineAxisElementNodeKind.X_AXIS_LINE,
+            axis = "X",
+            line = axis,
+            confidence = axesResult.confidence,
+            source = axesResult.detectionMethod.name,
+            status = OfflineAxisElementNodeStatus.SELECTED,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = plotNodeId,
+            toNodeId = nodeId,
+            relationship = OfflineAxisElementEdgeKind.DEFINES_AXIS,
+            confidence = axesResult.confidence,
+            source = "axis_detect",
+        )
+    } ?: run {
+        blockers += "axis_element_graph.x_axis_missing"
+    }
+
+    axesResult?.yAxis?.let { axis ->
+        val nodeId = "graph_${graphIndex}_y_axis"
+        nodes += OfflineAxisElementNodeAudit(
+            id = nodeId,
+            kind = OfflineAxisElementNodeKind.Y_AXIS_LINE,
+            axis = "Y",
+            line = axis,
+            confidence = axesResult.confidence,
+            source = axesResult.detectionMethod.name,
+            status = OfflineAxisElementNodeStatus.SELECTED,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = plotNodeId,
+            toNodeId = nodeId,
+            relationship = OfflineAxisElementEdgeKind.DEFINES_AXIS,
+            confidence = axesResult.confidence,
+            source = "axis_detect",
+        )
+    } ?: run {
+        blockers += "axis_element_graph.y_axis_missing"
+    }
+
+    axesResult?.origin?.let { origin ->
+        nodes += OfflineAxisElementNodeAudit(
+            id = "graph_${graphIndex}_origin",
+            kind = OfflineAxisElementNodeKind.AXIS_ORIGIN,
+            bounds = GraphRegion(origin.x.roundToInt(), origin.y.roundToInt(), 1, 1, "axis origin"),
+            confidence = axesResult.confidence,
+            source = "axis_detect",
+            status = OfflineAxisElementNodeStatus.SELECTED,
+        )
+    }
+
+    axisTickGeometry.xTickPositions.forEachIndexed { index, pixel ->
+        val nodeId = "graph_${graphIndex}_x_tick_${index + 1}"
+        nodes += OfflineAxisElementNodeAudit(
+            id = nodeId,
+            kind = OfflineAxisElementNodeKind.X_TICK_POSITION,
+            axis = "X",
+            pixel = pixel,
+            confidence = if (axisTickGeometry.readyForOcrValueMatching) 0.85f else 0.55f,
+            source = axisTickGeometry.source,
+            status = OfflineAxisElementNodeStatus.CANDIDATE,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = "graph_${graphIndex}_x_axis",
+            toNodeId = nodeId,
+            relationship = OfflineAxisElementEdgeKind.HAS_TICK,
+            confidence = 0.7f,
+            source = "axis_tick_geometry",
+            rejectionReason = if (axesResult?.xAxis == null) "x_axis_missing" else null,
+        )
+    }
+
+    axisTickGeometry.yTickPositions.forEachIndexed { index, pixel ->
+        val nodeId = "graph_${graphIndex}_y_tick_${index + 1}"
+        nodes += OfflineAxisElementNodeAudit(
+            id = nodeId,
+            kind = OfflineAxisElementNodeKind.Y_TICK_POSITION,
+            axis = "Y",
+            pixel = pixel,
+            confidence = if (axisTickGeometry.readyForOcrValueMatching) 0.85f else 0.55f,
+            source = axisTickGeometry.source,
+            status = OfflineAxisElementNodeStatus.CANDIDATE,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = "graph_${graphIndex}_y_axis",
+            toNodeId = nodeId,
+            relationship = OfflineAxisElementEdgeKind.HAS_TICK,
+            confidence = 0.7f,
+            source = "axis_tick_geometry",
+            rejectionReason = if (axesResult?.yAxis == null) "y_axis_missing" else null,
+        )
+    }
+
+    ocrResult?.rawElements.orEmpty().forEachIndexed { index, element ->
+        val isNumeric = element.numericValue != null
+        val axis = element.sourceAxis?.uppercase()
+        val nodeId = "graph_${graphIndex}_ocr_${index + 1}"
+        nodes += OfflineAxisElementNodeAudit(
+            id = nodeId,
+            kind = if (isNumeric) OfflineAxisElementNodeKind.OCR_NUMERIC_LABEL else OfflineAxisElementNodeKind.OCR_TEXT_LABEL,
+            axis = axis,
+            bounds = GraphRegion(
+                x = element.x.roundToInt(),
+                y = element.y.roundToInt(),
+                width = element.width.roundToInt().coerceAtLeast(1),
+                height = element.height.roundToInt().coerceAtLeast(1),
+                label = "OCR ${element.text}",
+            ),
+            value = element.numericValue,
+            text = element.text,
+            confidence = element.confidence,
+            source = element.sourceKind.name,
+            status = if (isNumeric) OfflineAxisElementNodeStatus.CANDIDATE else OfflineAxisElementNodeStatus.REJECTED,
+            warnings = if (isNumeric) emptyList() else listOf("axis_element_graph.semantic_text_not_scale_label"),
+        )
+        if (axis == "X" || axis == "Y") {
+            edges += OfflineAxisElementEdgeAudit(
+                fromNodeId = nodeId,
+                toNodeId = "graph_${graphIndex}_${axis.lowercase()}_axis",
+                relationship = OfflineAxisElementEdgeKind.LABEL_PROJECTS_TO_AXIS,
+                confidence = element.confidence,
+                source = "axis_ocr",
+            )
+        }
+    }
+    if (ocrResult == null || ocrResult.rawElements.isEmpty()) {
+        blockers += "axis_element_graph.ocr_labels_missing"
+    }
+
+    val xAnchorNodes = mutableListOf<Pair<String, OfflineAxisCalibrationPointAudit>>()
+    val yAnchorNodes = mutableListOf<Pair<String, OfflineAxisCalibrationPointAudit>>()
+
+    axisCalibration.xCandidates.forEachIndexed { index, anchor ->
+        val nodeId = "graph_${graphIndex}_x_anchor_${index + 1}"
+        xAnchorNodes += nodeId to anchor
+        nodes += anchor.toAxisElementNode(
+            nodeId = nodeId,
+            axis = "X",
+            ready = axisCalibration.xReady,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = nodeId,
+            toNodeId = "graph_${graphIndex}_x_axis",
+            relationship = OfflineAxisElementEdgeKind.ANCHOR_USED_BY_FIT,
+            confidence = anchor.confidence,
+            source = "axis_calibration",
+        )
+    }
+    axisCalibration.yCandidates.forEachIndexed { index, anchor ->
+        val nodeId = "graph_${graphIndex}_y_anchor_${index + 1}"
+        yAnchorNodes += nodeId to anchor
+        nodes += anchor.toAxisElementNode(
+            nodeId = nodeId,
+            axis = "Y",
+            ready = axisCalibration.yReady,
+        )
+        edges += OfflineAxisElementEdgeAudit(
+            fromNodeId = nodeId,
+            toNodeId = "graph_${graphIndex}_y_axis",
+            relationship = OfflineAxisElementEdgeKind.ANCHOR_USED_BY_FIT,
+            confidence = anchor.confidence,
+            source = "axis_calibration",
+        )
+    }
+
+    if (axisCalibration.xCandidates.size < 2) blockers += "axis_element_graph.x_scale_candidates_insufficient"
+    if (axisCalibration.yCandidates.size < 2) blockers += "axis_element_graph.y_scale_candidates_insufficient"
+    if (!axisCalibration.residualFitReady) blockers += "axis_element_graph.residual_fit_not_ready"
+    if (!axisTickGeometry.available) warnings += "axis_element_graph.tick_geometry_missing"
+    if (!axisTickGeometry.readyForOcrValueMatching) warnings += "axis_element_graph.tick_geometry_not_match_ready"
+
+    val scaleCandidates = buildList {
+        xAnchorNodes.maxPixelSpanPair()?.let { pair ->
+            add(axisCalibration.toScaleCandidatePair("X", pair.first, pair.second))
+        }
+        yAnchorNodes.maxPixelSpanPair()?.let { pair ->
+            add(axisCalibration.toScaleCandidatePair("Y", pair.first, pair.second))
+        }
+    }
+
+    return OfflineAxisElementGraphAudit(
+        available = true,
+        graphIndex = graphIndex,
+        artifactJsonPath = "$outputDir/axis_element_graph.json",
+        artifactOverlayPath = "$outputDir/axis_element_graph_overlay.png",
+        nodeCount = nodes.size,
+        edgeCount = edges.size,
+        scaleCandidatePairCount = scaleCandidates.size,
+        acceptedScaleCandidatePairCount = scaleCandidates.count { it.status == OfflineAxisElementScaleCandidateStatus.ACCEPTED },
+        nodes = nodes,
+        edges = edges,
+        scaleCandidatePairs = scaleCandidates,
+        blockers = blockers.distinct(),
+        warnings = warnings.distinct(),
+    )
+}
+
+private fun OfflineAxisCalibrationPointAudit.toAxisElementNode(
+    nodeId: String,
+    axis: String,
+    ready: Boolean,
+): OfflineAxisElementNodeAudit =
+    OfflineAxisElementNodeAudit(
+        id = nodeId,
+        kind = OfflineAxisElementNodeKind.CALIBRATION_ANCHOR,
+        axis = axis,
+        pixel = pixel,
+        value = value,
+        text = text,
+        confidence = confidence,
+        source = "axis_calibration",
+        status = if (ready) OfflineAxisElementNodeStatus.SELECTED else OfflineAxisElementNodeStatus.CANDIDATE,
+        warnings = if (confidence <= 0f) listOf("axis_element_graph.anchor_confidence_missing") else emptyList(),
+    )
+
+private fun OfflineAxisCalibrationAudit.toScaleCandidatePair(
+    axis: String,
+    first: Pair<String, OfflineAxisCalibrationPointAudit>,
+    second: Pair<String, OfflineAxisCalibrationPointAudit>,
+): OfflineAxisElementScaleCandidatePairAudit {
+    val firstAnchor = first.second
+    val secondAnchor = second.second
+    val pixelSpan = abs(secondAnchor.pixel - firstAnchor.pixel)
+    val valueSpan = abs(secondAnchor.value - firstAnchor.value)
+    val residual = if (axis == "X") xFitResidual else yFitResidual
+    val residualRatio = if (axis == "X") xFitResidualRatio else yFitResidualRatio
+    val axisReady = if (axis == "X") xReady else yReady
+    return OfflineAxisElementScaleCandidatePairAudit(
+        axis = axis,
+        nodeIds = listOf(first.first, second.first),
+        pixelSpan = pixelSpan,
+        valueSpan = valueSpan,
+        residual = residual,
+        residualRatio = residualRatio,
+        status = when {
+            ready && axisReady -> OfflineAxisElementScaleCandidateStatus.ACCEPTED
+            axisReady -> OfflineAxisElementScaleCandidateStatus.REVIEW
+            else -> OfflineAxisElementScaleCandidateStatus.REJECTED
+        },
+        source = source.name,
+        warnings = buildList {
+            if (pixelSpan <= 0f) add("axis_element_graph.pixel_span_invalid")
+            if (valueSpan <= 0f) add("axis_element_graph.value_span_invalid")
+            if (!axisReady) add("axis_element_graph.${axis.lowercase()}_axis_not_ready")
+            if (!residualFitReady) add("axis_element_graph.residual_fit_not_ready")
+        },
+    )
+}
+
+private fun List<Pair<String, OfflineAxisCalibrationPointAudit>>.maxPixelSpanPair():
+    Pair<Pair<String, OfflineAxisCalibrationPointAudit>, Pair<String, OfflineAxisCalibrationPointAudit>>? {
+    if (size < 2) return null
+    val sorted = sortedBy { it.second.pixel }
+    return sorted.first() to sorted.last()
 }
 
 private fun buildAxisCalibrationAudit(

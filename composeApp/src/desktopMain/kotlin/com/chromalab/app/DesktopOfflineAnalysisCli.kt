@@ -5,6 +5,9 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
+import com.chromalab.feature.processing.bench.OfflineAxisElementNodeAudit
+import com.chromalab.feature.processing.bench.OfflineAxisElementNodeKind
+import com.chromalab.feature.processing.bench.OfflineAxisElementNodeStatus
 import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
 import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
@@ -142,6 +145,7 @@ private object DesktopOfflineAnalysisArtifactWriter {
         writeSelectedPreprocessingCrops(audit, outputDir)
         writeGraphFocusArtifacts(audit, overlayImagePath, outputDir)
         writeAxisCalibrationDiagnostics(audit, overlayImagePath, outputDir)
+        writeAxisElementGraphArtifacts(audit, overlayImagePath)
         writeCvGeometryArtifacts(audit, overlayImagePath, outputDir)
         writePeakOverlayArtifacts(audit, outputDir)
     }
@@ -333,6 +337,32 @@ private object DesktopOfflineAnalysisArtifactWriter {
         )
     }
 
+    private fun writeAxisElementGraphArtifacts(
+        audit: OfflineAnalysisAudit,
+        imagePath: Path,
+    ) {
+        val source = ImageIO.read(imagePath.toFile()) ?: return
+        try {
+            audit.graphs.forEach { graph ->
+                val elementGraph = graph.axisElementGraph
+                val jsonPath = elementGraph.artifactJsonPath?.let { Path.of(it) } ?: return@forEach
+                val overlayPath = elementGraph.artifactOverlayPath?.let { Path.of(it) } ?: return@forEach
+                Files.createDirectories(jsonPath.parent)
+                Files.createDirectories(overlayPath.parent)
+                Files.writeString(jsonPath, OfflineAnalysisAuditArtifacts.toAxisElementGraphJson(elementGraph))
+                writeAxisElementGraphOverlay(
+                    source = source,
+                    outputPath = overlayPath,
+                    panel = graph.region.clampedTo(source.width, source.height),
+                    plot = graph.plotArea.region?.clampedTo(source.width, source.height),
+                    nodes = elementGraph.nodes,
+                )
+            }
+        } finally {
+            source.flush()
+        }
+    }
+
     private fun writeAxisDiagnosticOverlay(
         source: BufferedImage,
         outputPath: Path,
@@ -385,6 +415,66 @@ private object DesktopOfflineAnalysisArtifactWriter {
         }
         ImageIO.write(focus, "png", outputPath.toFile())
         focus.flush()
+    }
+
+    private fun writeAxisElementGraphOverlay(
+        source: BufferedImage,
+        outputPath: Path,
+        panel: GraphRegion,
+        plot: GraphRegion?,
+        nodes: List<OfflineAxisElementNodeAudit>,
+    ) {
+        val expanded = panel.expandForAxisContext(source.width, source.height)
+        val overlay = BufferedImage(expanded.width, expanded.height, BufferedImage.TYPE_INT_ARGB)
+        val graphics = overlay.createGraphics()
+        try {
+            graphics.drawImage(
+                source,
+                0,
+                0,
+                expanded.width,
+                expanded.height,
+                expanded.x,
+                expanded.y,
+                expanded.x + expanded.width,
+                expanded.y + expanded.height,
+                null,
+            )
+            graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            graphics.stroke = BasicStroke((expanded.width.coerceAtLeast(expanded.height) / 210f).coerceAtLeast(2f))
+            graphics.font = Font(Font.SANS_SERIF, Font.BOLD, (expanded.width / 48).coerceIn(10, 16))
+
+            graphics.color = Color(0x15, 0x65, 0xC0, 230)
+            graphics.drawRegion(panel, expanded)
+            plot?.let {
+                graphics.color = Color(0xFF, 0x8F, 0x00, 230)
+                graphics.drawRegion(it, expanded)
+            }
+
+            nodes.forEach { node ->
+                when (node.kind) {
+                    OfflineAxisElementNodeKind.X_AXIS_LINE,
+                    OfflineAxisElementNodeKind.Y_AXIS_LINE,
+                    -> graphics.drawAxisElementLine(node, expanded)
+                    OfflineAxisElementNodeKind.X_TICK_POSITION,
+                    OfflineAxisElementNodeKind.Y_TICK_POSITION,
+                    -> graphics.drawAxisElementTick(node, expanded, plot ?: panel)
+                    OfflineAxisElementNodeKind.OCR_NUMERIC_LABEL,
+                    OfflineAxisElementNodeKind.OCR_TEXT_LABEL,
+                    -> graphics.drawAxisElementOcr(node, expanded)
+                    OfflineAxisElementNodeKind.CALIBRATION_ANCHOR -> graphics.drawAxisElementAnchor(node, expanded, plot ?: panel)
+                    OfflineAxisElementNodeKind.AXIS_ORIGIN -> graphics.drawAxisElementOrigin(node, expanded)
+                    else -> Unit
+                }
+            }
+
+            graphics.color = Color(0x21, 0x21, 0x21, 230)
+            graphics.drawString("Axis Element Graph: panel/plot, axes, ticks, OCR labels, anchors", 8, 18)
+        } finally {
+            graphics.dispose()
+        }
+        ImageIO.write(overlay, "png", outputPath.toFile())
+        overlay.flush()
     }
 
     private fun writeRegionCrop(
@@ -561,6 +651,78 @@ private fun java.awt.Graphics2D.fillRegion(region: GraphRegion, origin: GraphReg
         region.width.coerceAtLeast(1),
         region.height.coerceAtLeast(1),
     )
+}
+
+private fun java.awt.Graphics2D.drawAxisElementLine(node: OfflineAxisElementNodeAudit, origin: GraphRegion) {
+    val line = node.line ?: return
+    color = when (node.kind) {
+        OfflineAxisElementNodeKind.X_AXIS_LINE -> Color(0x2E, 0x7D, 0x32, 230)
+        OfflineAxisElementNodeKind.Y_AXIS_LINE -> Color(0x15, 0x65, 0xC0, 230)
+        else -> Color(0x45, 0x5A, 0x64, 230)
+    }
+    drawLine(
+        (line.x1 - origin.x).roundToInt(),
+        (line.y1 - origin.y).roundToInt(),
+        (line.x2 - origin.x).roundToInt(),
+        (line.y2 - origin.y).roundToInt(),
+    )
+}
+
+private fun java.awt.Graphics2D.drawAxisElementTick(
+    node: OfflineAxisElementNodeAudit,
+    origin: GraphRegion,
+    plot: GraphRegion,
+) {
+    val pixel = node.pixel?.roundToInt() ?: return
+    color = Color(0x43, 0xA0, 0x47, 210)
+    if (node.kind == OfflineAxisElementNodeKind.X_TICK_POSITION) {
+        val x = pixel - origin.x
+        drawLine(x, plot.y - origin.y, x, plot.y + plot.height - origin.y)
+    } else {
+        val y = pixel - origin.y
+        drawLine(plot.x - origin.x, y, plot.x + plot.width - origin.x, y)
+    }
+}
+
+private fun java.awt.Graphics2D.drawAxisElementOcr(node: OfflineAxisElementNodeAudit, origin: GraphRegion) {
+    val bounds = node.bounds ?: return
+    color = if (node.kind == OfflineAxisElementNodeKind.OCR_NUMERIC_LABEL) {
+        Color(0x8E, 0x24, 0xAA, 230)
+    } else {
+        Color(0x75, 0x75, 0x75, 190)
+    }
+    drawRegion(bounds, origin)
+    node.text?.take(16)?.let { label ->
+        drawString(label, bounds.x - origin.x, (bounds.y - origin.y - 3).coerceAtLeast(12))
+    }
+}
+
+private fun java.awt.Graphics2D.drawAxisElementAnchor(
+    node: OfflineAxisElementNodeAudit,
+    origin: GraphRegion,
+    plot: GraphRegion,
+) {
+    val pixel = node.pixel?.roundToInt() ?: return
+    color = when (node.status) {
+        OfflineAxisElementNodeStatus.SELECTED -> Color(0xD3, 0x2F, 0x2F, 230)
+        OfflineAxisElementNodeStatus.CANDIDATE -> Color(0xF9, 0xA8, 0x25, 230)
+        OfflineAxisElementNodeStatus.REJECTED -> Color(0x75, 0x75, 0x75, 180)
+    }
+    val x = if (node.axis == "Y") plot.x - origin.x else pixel - origin.x
+    val y = if (node.axis == "Y") pixel - origin.y else plot.y + plot.height - origin.y
+    fillOval(x - 4, y - 4, 8, 8)
+    node.value?.let { value ->
+        drawString(value.toString(), x + 5, (y - 5).coerceAtLeast(12))
+    }
+}
+
+private fun java.awt.Graphics2D.drawAxisElementOrigin(node: OfflineAxisElementNodeAudit, origin: GraphRegion) {
+    val bounds = node.bounds ?: return
+    color = Color(0xD8, 0x1B, 0x60, 230)
+    val x = bounds.x - origin.x
+    val y = bounds.y - origin.y
+    drawLine(x - 6, y, x + 6, y)
+    drawLine(x, y - 6, x, y + 6)
 }
 
 private fun List<OfflineAxisCalibrationPointAudit>.maxPixelSpanPair():

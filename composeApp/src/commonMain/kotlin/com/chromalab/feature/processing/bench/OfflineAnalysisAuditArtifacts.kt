@@ -15,6 +15,9 @@ object OfflineAnalysisAuditArtifacts {
     fun toCalibratedReportUiContractJson(audit: OfflineAnalysisAudit): String =
         json.encodeToString(OfflineCalibratedReportUiContractBuilder.build(audit))
 
+    fun toAxisElementGraphJson(audit: OfflineAxisElementGraphAudit): String =
+        json.encodeToString(audit)
+
     fun toCalibratedReportMarkdown(audit: OfflineAnalysisAudit): String = buildString {
         appendLine("# ChromaLab Calibrated Chromatogram Report")
         appendLine()
@@ -206,6 +209,18 @@ object OfflineAnalysisAuditArtifacts {
             val geometry = graph.axisTickGeometry
             appendLine(
                 "| ${graph.graphIndex} | ${geometry.available} | ${geometry.source.escapeTable()} | ${geometry.plotRegion?.renderRegion() ?: "not detected"} | ${geometry.lineSegmentCount} | ${geometry.horizontalLineCount} | ${geometry.verticalLineCount} | ${geometry.xTickCount} | ${geometry.yTickCount} | ${geometry.readyForOcrValueMatching} | ${geometry.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
+            )
+        }
+        appendLine()
+
+        appendLine("## Axis Element Graph Prototype")
+        appendLine()
+        appendLine("| Graph | Available | Nodes | Edges | Scale pairs | Accepted pairs | JSON | Overlay | Blockers | Warnings |")
+        appendLine("| ---: | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- |")
+        audit.graphs.forEach { graph ->
+            val elementGraph = graph.axisElementGraph
+            appendLine(
+                "| ${graph.graphIndex} | ${elementGraph.available} | ${elementGraph.nodeCount} | ${elementGraph.edgeCount} | ${elementGraph.scaleCandidatePairCount} | ${elementGraph.acceptedScaleCandidatePairCount} | ${elementGraph.artifactJsonPath ?: "none"} | ${elementGraph.artifactOverlayPath ?: "none"} | ${elementGraph.blockers.joinToString("; ").ifBlank { "none" }.escapeTable()} | ${elementGraph.warnings.joinToString("; ").ifBlank { "none" }.escapeTable()} |",
             )
         }
         appendLine()
