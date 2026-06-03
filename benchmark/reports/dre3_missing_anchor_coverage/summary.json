@@ -1,0 +1,1279 @@
+{
+  "schemaVersion": "chromalab.benchmark.dre3_missing_anchor_coverage.v1",
+  "overallVerdict": "MISSING_ANCHOR_RECOVERY_BLOCKED_BY_CROP_COVERAGE",
+  "productionImpact": "NONE_RESEARCH_ONLY",
+  "truthSource": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+  "cropPlanSource": "benchmark/reports/drd5_axis_owned_ocr_crop_planner/summary.json",
+  "ocrEvidenceSource": "benchmark/reports/drd6_axis_owned_ocr_preprocessing_grid/summary.json",
+  "dre1Source": "benchmark/reports/dre1_axis_scale_candidate_builder/summary.json",
+  "dre2Source": "benchmark/reports/dre2_robust_axis_scale_fit/summary.json",
+  "ocrVariantId": "rapidocr_rgb_x3_p2_v1",
+  "targetAxisCount": 8,
+  "targetTruthLabelCount": 57,
+  "missingAnchorCount": 52,
+  "rootCauseCounts": {
+    "CROP_COVERAGE_MISSING": 18,
+    "OCR_DETECTION_EMPTY_FOR_CROP": 33,
+    "OCR_ROLE_OR_SAFETY_REJECTED": 1
+  },
+  "axisSummaries": [
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthTickLabelCount": 7,
+      "safeAnchorCount": 0,
+      "missingAnchorCount": 7,
+      "coverageMissingCount": 7,
+      "ocrDetectionMissingCount": 0,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "CROP_COVERAGE_MISSING": 7
+      },
+      "primaryRootCause": "CROP_COVERAGE_MISSING",
+      "recommendedFix": "repair axis label-band crop coverage"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthTickLabelCount": 11,
+      "safeAnchorCount": 0,
+      "missingAnchorCount": 11,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 11,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "OCR_DETECTION_EMPTY_FOR_CROP": 11
+      },
+      "primaryRootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "recommendedFix": "split or enhance dense label-band OCR crops"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "Y",
+      "truthTickLabelCount": 2,
+      "safeAnchorCount": 2,
+      "missingAnchorCount": 0,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 0,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {},
+      "primaryRootCause": "NO_MISSING_ANCHORS",
+      "recommendedFix": "none"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthTickLabelCount": 11,
+      "safeAnchorCount": 0,
+      "missingAnchorCount": 11,
+      "coverageMissingCount": 11,
+      "ocrDetectionMissingCount": 0,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "CROP_COVERAGE_MISSING": 11
+      },
+      "primaryRootCause": "CROP_COVERAGE_MISSING",
+      "recommendedFix": "repair axis label-band crop coverage"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "Y",
+      "truthTickLabelCount": 2,
+      "safeAnchorCount": 1,
+      "missingAnchorCount": 1,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 0,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "OCR_ROLE_OR_SAFETY_REJECTED": 1
+      },
+      "primaryRootCause": "OCR_ROLE_OR_SAFETY_REJECTED",
+      "recommendedFix": "repair text role/safety classifier for owned labels"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthTickLabelCount": 11,
+      "safeAnchorCount": 0,
+      "missingAnchorCount": 11,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 11,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "OCR_DETECTION_EMPTY_FOR_CROP": 11
+      },
+      "primaryRootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "recommendedFix": "split or enhance dense label-band OCR crops"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "Y",
+      "truthTickLabelCount": 2,
+      "safeAnchorCount": 2,
+      "missingAnchorCount": 0,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 0,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {},
+      "primaryRootCause": "NO_MISSING_ANCHORS",
+      "recommendedFix": "none"
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthTickLabelCount": 11,
+      "safeAnchorCount": 0,
+      "missingAnchorCount": 11,
+      "coverageMissingCount": 0,
+      "ocrDetectionMissingCount": 11,
+      "nearbyUnmatchedDetectionCount": 0,
+      "rootCauseCounts": {
+        "OCR_DETECTION_EMPTY_FOR_CROP": 11
+      },
+      "primaryRootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "recommendedFix": "split or enhance dense label-band OCR crops"
+    }
+  ],
+  "missingAnchorDetails": [
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1300",
+      "labelBbox": {
+        "x0": 82.22,
+        "y0": 785.0,
+        "x1": 122.22,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_2",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1320",
+      "labelBbox": {
+        "x0": 148.43,
+        "y0": 785.0,
+        "x1": 188.43,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_3",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1340",
+      "labelBbox": {
+        "x0": 214.65,
+        "y0": 785.0,
+        "x1": 254.65,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_4",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1360",
+      "labelBbox": {
+        "x0": 280.86,
+        "y0": 785.0,
+        "x1": 320.86,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_5",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1380",
+      "labelBbox": {
+        "x0": 347.08,
+        "y0": 785.0,
+        "x1": 387.08,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_6",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1400",
+      "labelBbox": {
+        "x0": 413.3,
+        "y0": 785.0,
+        "x1": 453.3,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 1,
+      "nearbyDetections": [
+        {
+          "detectionId": "bench_04_stacked_xic_resolution_bench_04_graph_3_x_tick_label_band_11_rapidocr_rgb_x3_p2_v1_1",
+          "ocrText": "D",
+          "safePredictedRole": "other",
+          "confidence": 0.5528,
+          "nearbyIou": 0.0,
+          "nearbyCenterDistance": 22.49
+        }
+      ],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_04_stacked_xic_resolution::bench_04_graph_3::bench_04_graph_3_xlabel_7",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "graphId": "bench_04_graph_3",
+      "axis": "X",
+      "truthText": "1420",
+      "labelBbox": {
+        "x0": 479.51,
+        "y0": 785.0,
+        "x1": 519.51,
+        "y1": 803.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 1,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "24,00",
+      "labelBbox": {
+        "x0": 121.92,
+        "y0": 512.0,
+        "x1": 169.92,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_2",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "24,50",
+      "labelBbox": {
+        "x0": 169.83,
+        "y0": 512.0,
+        "x1": 217.83,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_3",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "25,00",
+      "labelBbox": {
+        "x0": 217.75,
+        "y0": 512.0,
+        "x1": 265.75,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_4",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "25,50",
+      "labelBbox": {
+        "x0": 265.67,
+        "y0": 512.0,
+        "x1": 313.67,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_5",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "26,00",
+      "labelBbox": {
+        "x0": 313.58,
+        "y0": 512.0,
+        "x1": 361.58,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_6",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "26,50",
+      "labelBbox": {
+        "x0": 361.5,
+        "y0": 512.0,
+        "x1": 409.5,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_7",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "27,00",
+      "labelBbox": {
+        "x0": 409.42,
+        "y0": 512.0,
+        "x1": 457.42,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_8",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "27,50",
+      "labelBbox": {
+        "x0": 457.33,
+        "y0": 512.0,
+        "x1": 505.33,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_9",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "28,00",
+      "labelBbox": {
+        "x0": 505.25,
+        "y0": 512.0,
+        "x1": 553.25,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_10",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "28,50",
+      "labelBbox": {
+        "x0": 553.17,
+        "y0": 512.0,
+        "x1": 601.17,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_2::bench_05_graph_2_xlabel_11",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_2",
+      "axis": "X",
+      "truthText": "29,00",
+      "labelBbox": {
+        "x0": 601.08,
+        "y0": 512.0,
+        "x1": 649.08,
+        "y1": 530.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_2_x_tick_label_band_20"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "24,00",
+      "labelBbox": {
+        "x0": 121.92,
+        "y0": 650.0,
+        "x1": 169.92,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_2",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "24,50",
+      "labelBbox": {
+        "x0": 169.83,
+        "y0": 650.0,
+        "x1": 217.83,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_3",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "25,00",
+      "labelBbox": {
+        "x0": 217.75,
+        "y0": 650.0,
+        "x1": 265.75,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_4",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "25,50",
+      "labelBbox": {
+        "x0": 265.67,
+        "y0": 650.0,
+        "x1": 313.67,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_5",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "26,00",
+      "labelBbox": {
+        "x0": 313.58,
+        "y0": 650.0,
+        "x1": 361.58,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_6",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "26,50",
+      "labelBbox": {
+        "x0": 361.5,
+        "y0": 650.0,
+        "x1": 409.5,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_7",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "27,00",
+      "labelBbox": {
+        "x0": 409.42,
+        "y0": 650.0,
+        "x1": 457.42,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_8",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "27,50",
+      "labelBbox": {
+        "x0": 457.33,
+        "y0": 650.0,
+        "x1": 505.33,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_9",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "28,00",
+      "labelBbox": {
+        "x0": 505.25,
+        "y0": 650.0,
+        "x1": 553.25,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_10",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "28,50",
+      "labelBbox": {
+        "x0": 553.17,
+        "y0": 650.0,
+        "x1": 601.17,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_xlabel_11",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "X",
+      "truthText": "29,00",
+      "labelBbox": {
+        "x0": 601.08,
+        "y0": 650.0,
+        "x1": 649.08,
+        "y1": 668.0
+      },
+      "coverageStatus": "MISSING",
+      "coveringCropIds": [],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "CROP_COVERAGE_MISSING",
+      "nextFix": "expand or correct deterministic axis label-band crop coverage"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_3::bench_05_graph_3_ylabel_2",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_3",
+      "axis": "Y",
+      "truthText": "10 000",
+      "labelBbox": {
+        "x0": 34.0,
+        "y0": 573.0,
+        "x1": 90.0,
+        "y1": 591.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_3_y_tick_label_band_24"
+      ],
+      "sameCropDetectionCount": 2,
+      "nearbyDetectionCount": 1,
+      "nearbyDetections": [
+        {
+          "detectionId": "bench_05_tic_plus_ions_bench_05_graph_3_y_tick_label_band_24_rapidocr_rgb_x3_p2_v1_1",
+          "ocrText": "10 000",
+          "safePredictedRole": "other",
+          "confidence": 0.9169,
+          "nearbyIou": 0.0,
+          "nearbyCenterDistance": 29.38
+        }
+      ],
+      "rootCause": "OCR_ROLE_OR_SAFETY_REJECTED",
+      "nextFix": "improve OCR text role classification or context ownership"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "24,00",
+      "labelBbox": {
+        "x0": 121.92,
+        "y0": 787.0,
+        "x1": 169.92,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_2",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "24,50",
+      "labelBbox": {
+        "x0": 169.83,
+        "y0": 787.0,
+        "x1": 217.83,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_3",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "25,00",
+      "labelBbox": {
+        "x0": 217.75,
+        "y0": 787.0,
+        "x1": 265.75,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_4",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "25,50",
+      "labelBbox": {
+        "x0": 265.67,
+        "y0": 787.0,
+        "x1": 313.67,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_5",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "26,00",
+      "labelBbox": {
+        "x0": 313.58,
+        "y0": 787.0,
+        "x1": 361.58,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_6",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "26,50",
+      "labelBbox": {
+        "x0": 361.5,
+        "y0": 787.0,
+        "x1": 409.5,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_7",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "27,00",
+      "labelBbox": {
+        "x0": 409.42,
+        "y0": 787.0,
+        "x1": 457.42,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_8",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "27,50",
+      "labelBbox": {
+        "x0": 457.33,
+        "y0": 787.0,
+        "x1": 505.33,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_9",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "28,00",
+      "labelBbox": {
+        "x0": 505.25,
+        "y0": 787.0,
+        "x1": 553.25,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_10",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "28,50",
+      "labelBbox": {
+        "x0": 553.17,
+        "y0": 787.0,
+        "x1": 601.17,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_05_tic_plus_ions::bench_05_graph_4::bench_05_graph_4_xlabel_11",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "graphId": "bench_05_graph_4",
+      "axis": "X",
+      "truthText": "29,00",
+      "labelBbox": {
+        "x0": 601.08,
+        "y0": 787.0,
+        "x1": 649.08,
+        "y1": 805.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_05_tic_plus_ions_bench_05_graph_4_x_tick_label_band_26"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "5.00",
+      "labelBbox": {
+        "x0": 168.0,
+        "y0": 1155.0,
+        "x1": 208.0,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_2",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "10.00",
+      "labelBbox": {
+        "x0": 227.18,
+        "y0": 1155.0,
+        "x1": 275.18,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_3",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "15.00",
+      "labelBbox": {
+        "x0": 290.36,
+        "y0": 1155.0,
+        "x1": 338.36,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_4",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "20.00",
+      "labelBbox": {
+        "x0": 353.55,
+        "y0": 1155.0,
+        "x1": 401.55,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_5",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "25.00",
+      "labelBbox": {
+        "x0": 416.73,
+        "y0": 1155.0,
+        "x1": 464.73,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_6",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "30.00",
+      "labelBbox": {
+        "x0": 479.91,
+        "y0": 1155.0,
+        "x1": 527.91,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_7",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "35.00",
+      "labelBbox": {
+        "x0": 543.09,
+        "y0": 1155.0,
+        "x1": 591.09,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_8",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "40.00",
+      "labelBbox": {
+        "x0": 606.27,
+        "y0": 1155.0,
+        "x1": 654.27,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_9",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "45.00",
+      "labelBbox": {
+        "x0": 669.45,
+        "y0": 1155.0,
+        "x1": 717.45,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_10",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "50.00",
+      "labelBbox": {
+        "x0": 732.64,
+        "y0": 1155.0,
+        "x1": 780.64,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    },
+    {
+      "truthLabelKey": "bench_06_photo_two_graphs_page::bench_06_graph_2::bench_06_graph_2_xlabel_11",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "graphId": "bench_06_graph_2",
+      "axis": "X",
+      "truthText": "55.00",
+      "labelBbox": {
+        "x0": 795.82,
+        "y0": 1155.0,
+        "x1": 843.82,
+        "y1": 1173.0
+      },
+      "coverageStatus": "COVERED",
+      "coveringCropIds": [
+        "bench_06_photo_two_graphs_page_bench_06_graph_2_x_tick_label_band_32"
+      ],
+      "sameCropDetectionCount": 0,
+      "nearbyDetectionCount": 0,
+      "nearbyDetections": [],
+      "rootCause": "OCR_DETECTION_EMPTY_FOR_CROP",
+      "nextFix": "improve crop subdivision, scale, contrast, or OCR detector choice"
+    }
+  ],
+  "nextRequiredCapabilities": [
+    "crop_local_dense_tick_label_splitting",
+    "OCR_box_to_label_sequence_matching",
+    "axis_label_band_coverage_validation",
+    "safe_anchor_recovery_without_fabricating_labels"
+  ]
+}

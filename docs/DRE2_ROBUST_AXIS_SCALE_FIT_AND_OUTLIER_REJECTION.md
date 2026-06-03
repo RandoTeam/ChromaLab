@@ -110,13 +110,14 @@ must never become release-ready without stronger geometry evidence.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-E3: Missing Anchor Recovery And Label-Band Coverage Benchmark`
 
-Goal:
+Result:
 
-- target the remaining X-anchor gaps in stacked/TIC+ion panels;
-- determine whether the blocker is crop coverage, OCR detection, or label
-  geometry;
-- keep robust fit evidence from DR-E2 as the calibration selector baseline.
+- documented in `docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`;
+- remaining missing anchors were classified by crop coverage and OCR evidence;
+- 18 anchors are blocked by crop coverage, 33 by empty OCR detections in owned
+  crops, and 1 by role/safety rejection;
+- the next work should repair label-band coverage and dense crop subdivision.

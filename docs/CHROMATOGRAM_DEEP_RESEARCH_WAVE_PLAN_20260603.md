@@ -168,9 +168,10 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
-Current status: `DR_E2_COMPLETE_ROBUST_AXIS_SCALE_FIT_IMPROVES_OUTLIERS_NOT_ACCEPTANCE_READY`
+Current status: `DR_E3_COMPLETE_MISSING_ANCHOR_RECOVERY_BLOCKED_BY_CROP_COVERAGE`
 in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md` and
-`docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`.
+`docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`;
+`docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`.
 
 Methods to compare:
 
@@ -291,7 +292,7 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-E3: Missing Anchor Recovery And Label-Band Coverage Benchmark**.
+Start: **DR-E4: Label-Band Crop Coverage Repair Prototype**.
 
 Reason:
 
@@ -309,8 +310,10 @@ Reason:
   valid axes, 2 review axes, and 9 invalid axes;
 - DR-E2 robust fitting improves usable axes from 15 to 18 and valid graphs from
   5 to 7, but missing X anchors still block stacked/TIC+ion panels;
-- the next calibration work should target missing-anchor recovery and label-band
-  coverage before adding more fit strategies;
+- DR-E3 classifies remaining missing anchors: 18 crop coverage gaps, 33 empty
+  OCR detections in owned crops, and 1 role/safety rejection;
+- the next calibration work should repair inferred label-band coverage and dense
+  X-label crop subdivision before adding more fit strategies;
 - another Android runtime attempt would be premature until DR-E proves
   calibration candidate behavior on this benchmark corpus.
 

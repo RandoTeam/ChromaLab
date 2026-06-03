@@ -215,3 +215,13 @@ python tools/benchmark/run_dre2_robust_axis_scale_fit_benchmark.py
 The DR-E2 robust fit report is written to:
 
 `benchmark/reports/dre2_robust_axis_scale_fit/`
+
+Classify remaining missing anchors by crop coverage and OCR evidence:
+
+```powershell
+python tools/benchmark/run_dre3_missing_anchor_coverage_benchmark.py
+```
+
+The DR-E3 missing-anchor coverage report is written to:
+
+`benchmark/reports/dre3_missing_anchor_coverage/`
