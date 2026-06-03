@@ -124,6 +124,9 @@ Recommended next slice:
 
 `DR-C4: Detailed Tick/Grid And Text Role Annotation For P0 Fixtures`
 
+Status: complete as partial detailed review in
+`docs/DRC4_TICK_GRID_TEXT_ROLE_ANNOTATIONS.md`.
+
 Goal:
 
 - annotate individual tick/grid positions;

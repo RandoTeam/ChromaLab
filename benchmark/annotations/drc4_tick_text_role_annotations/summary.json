@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc4_tick_text_role_summary.v1",
+  "annotationStatus": "PARTIAL_DETAILED_REVIEW",
+  "recordCount": 4,
+  "graphCount": 12,
+  "majorTickCount": 194,
+  "numericLabelBoxCount": 194,
+  "reviewAnchorCount": 194,
+  "rejectedTextRoleCount": 36,
+  "records": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "graphCount": 2,
+      "majorTickCount": 30,
+      "numericLabelBoxCount": 30,
+      "reviewAnchorCount": 30,
+      "rejectedTextRoleCount": 6,
+      "overlayPath": "benchmark/annotations/drc4_tick_text_role_annotations/overlays/bench_01_mz71_screenshot_page_tick_text_overlay.png",
+      "remainingGaps": [
+        "minor_tick_positions",
+        "pixel_perfect_numeric_label_boxes",
+        "full_ocr_text_transcription_review"
+      ],
+      "annotationStatus": "PARTIAL_DETAILED_REVIEW"
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "layoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "graphCount": 4,
+      "majorTickCount": 56,
+      "numericLabelBoxCount": 56,
+      "reviewAnchorCount": 56,
+      "rejectedTextRoleCount": 12,
+      "overlayPath": "benchmark/annotations/drc4_tick_text_role_annotations/overlays/bench_04_stacked_xic_resolution_tick_text_overlay.png",
+      "remainingGaps": [
+        "minor_tick_positions",
+        "pixel_perfect_numeric_label_boxes",
+        "full_ocr_text_transcription_review"
+      ],
+      "annotationStatus": "PARTIAL_DETAILED_REVIEW"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "layoutClass": "TIC_PLUS_ION_PANELS",
+      "graphCount": 4,
+      "majorTickCount": 56,
+      "numericLabelBoxCount": 56,
+      "reviewAnchorCount": 56,
+      "rejectedTextRoleCount": 12,
+      "overlayPath": "benchmark/annotations/drc4_tick_text_role_annotations/overlays/bench_05_tic_plus_ions_tick_text_overlay.png",
+      "remainingGaps": [
+        "minor_tick_positions",
+        "pixel_perfect_numeric_label_boxes",
+        "full_ocr_text_transcription_review"
+      ],
+      "annotationStatus": "PARTIAL_DETAILED_REVIEW"
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "layoutClass": "TWO_GRAPH_PAGE",
+      "graphCount": 2,
+      "majorTickCount": 52,
+      "numericLabelBoxCount": 52,
+      "reviewAnchorCount": 52,
+      "rejectedTextRoleCount": 6,
+      "overlayPath": "benchmark/annotations/drc4_tick_text_role_annotations/overlays/bench_06_photo_two_graphs_page_tick_text_overlay.png",
+      "remainingGaps": [
+        "minor_tick_positions",
+        "pixel_perfect_numeric_label_boxes",
+        "full_ocr_text_transcription_review"
+      ],
+      "annotationStatus": "PARTIAL_DETAILED_REVIEW"
+    }
+  ]
+}

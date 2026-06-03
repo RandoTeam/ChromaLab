@@ -88,3 +88,13 @@ python tools/benchmark/render_drc3_annotations.py
 The initial annotation records and overlays are written to:
 
 `benchmark/annotations/drc3_initial_graph_layout_annotations/`
+
+Build initial P0 tick/text-role annotations with:
+
+```powershell
+python tools/benchmark/build_drc4_tick_text_annotations.py --clean
+```
+
+The tick/text-role annotations and overlays are written to:
+
+`benchmark/annotations/drc4_tick_text_role_annotations/`

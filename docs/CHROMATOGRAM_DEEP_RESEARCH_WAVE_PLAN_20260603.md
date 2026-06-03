@@ -94,10 +94,12 @@ Acceptance:
 
 Goal: prove automatic graph and axis element detection.
 
-Current status: `DR_C3_COMPLETE_PARTIAL_INITIAL_REVIEW` in
+Current status: `DR_C4_COMPLETE_PARTIAL_DETAILED_REVIEW` in
 `docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md` and
 `docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`; initial P0 graph layout
-annotations are documented in `docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`.
+annotations are documented in `docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`;
+initial P0 tick/text-role annotations are documented in
+`docs/DRC4_TICK_GRID_TEXT_ROLE_ANNOTATIONS.md`.
 
 Methods to compare:
 
@@ -272,15 +274,17 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-C4: Detailed Tick/Grid And Text Role Annotation For P0 Fixtures**.
+Start: **DR-C5: Score Current Graph Layout Output Against P0 Annotation Truth**.
 
 Reason:
 
 - DR-C1 defines required graph/layout/axis annotation inputs;
 - DR-C2 creates hash-backed workflow records for all 8 fixtures;
 - DR-C3 adds initial graphPanel/plotArea/axis annotations for P0 fixtures;
-- P0 fixtures still need individual tick/grid positions, numeric label boxes,
-  and text-role labels before method comparison;
+- DR-C4 adds review-grade major tick, numeric label, anchor, and text-role
+  annotations for P0 fixtures;
+- current Phase 9J output can now be scored against P0 graph/layout truth before
+  any new detection method is added;
 - otherwise graph/layout methods would again be judged visually instead of by
   benchmark truth.
 
