@@ -1,6 +1,6 @@
 # DR-2B Rust Axis Element Bridge Prototype
 
-Status: `DR2B_BRIDGE_COMPILE_READY`
+Status: `DR2B_BRIDGE_RUNTIME_READY_AFTER_SETUP1`
 
 Scope: Rust bridge prototype only. This phase does not change `CalculationEngine`, chromatographic math, Kotlin production analysis, Android runtime behavior, report gates, validators, or calibration selection.
 
@@ -62,7 +62,7 @@ Rust CLI target:
 chromalab_cv_bridge <axis_element_graph.json> <image_width> <image_height>
 ```
 
-The CLI is compile-checked but not executable-tested on this PC because the current Windows environment lacks a native linker.
+The CLI is now executable after SETUP-1 added a manual MSVC environment script. Earlier `vcvars64.bat` / `LaunchDevCmd.bat` calls failed in this shell, but direct MSVC/Windows SDK environment setup works.
 
 ## Toolchain Reality
 
@@ -75,18 +75,16 @@ Installed:
 - `rustc 1.96.0`
 - `cargo 1.96.0`
 
-MSVC/GCC linker is not on PATH. A GNULLVM Rust toolchain was also installed locally, but executable test linking still failed because `x86_64-w64-mingw32-clang` was not available.
+MSVC/GCC linker is not on the default PATH. SETUP-1 found the installed MSVC/Windows SDK paths and added PowerShell environment scripts to run Rust tests and builds through MSVC.
 
-Therefore DR-2B validation is:
+DR-2B/SETUP-1 validation is:
 
 - `cargo fmt --all -- --check`
 - `cargo check --workspace --all-targets`
+- `cargo test --workspace`
 - Kotlin desktop compile sanity
 
-Not yet:
-
-- `cargo test`
-- CLI runtime execution
+The Rust bridge CLI was also run over all 18 DR-1R `axis_element_graph.json` packages.
 
 ## Validation Result
 
@@ -96,11 +94,11 @@ Command:
 .\tools\rust\Run-RustCoreChecks.ps1
 ```
 
-Result:
-
 - Rust fmt check passed.
 - Rust workspace all-targets check passed.
-- Library, test modules, and CLI target compile-checked.
+- `cargo test --workspace` passed: 6 tests.
+- Library, test modules, and CLI target compile.
+- `chromalab_cv_bridge` processed all 18 DR-1R graph packages.
 
 Additional command:
 
@@ -131,12 +129,11 @@ DR-2B does not prove:
 
 ## Next Step
 
-Recommended next phase: DR-2C Rust executable/linker enablement and bridge corpus validation.
+Recommended next phase: DR-2C Android NDK + Rust Android target setup.
 
 Goal:
 
-1. Install/configure a Windows linker path or Android/NDK link path.
-2. Run `cargo test`.
-3. Execute `chromalab_cv_bridge` over all 18 DR-1R `axis_element_graph.json` files.
-4. Compare Rust accepted/rejected crop plans against Kotlin DR-1R crop sweep records.
-5. Only then move to Rust image crop rendering or deeper CV.
+1. Verify/install Android NDK.
+2. Add Rust Android targets.
+3. Build Rust library for Android ABIs.
+4. Do not wire into production app until PC bridge parity is documented.
