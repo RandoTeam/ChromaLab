@@ -92,13 +92,14 @@ The next slice needs an actual OCR candidate and crop pipeline that can produce:
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D2: Real OCR Engine Installation And Crop OCR Benchmark`
 
-Goal:
+Result:
 
-- install or integrate one real PC OCR candidate;
-- run it on DR-C4 label/text crops;
-- score OCR text, box, and role accuracy against the same DR-D1 targets;
-- keep E2B/VLM advisory only.
+- documented in `docs/DRD2_REAL_OCR_ENGINE_CROP_BENCHMARK.md`;
+- RapidOCR 3.8.1 and ONNX Runtime 1.26.0 were installed;
+- model download/loading and full crop OCR run were verified;
+- best current variant reaches 120/230 role accuracy with 4 false tick-label
+  safety failures, so it is not acceptance-ready.

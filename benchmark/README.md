@@ -139,3 +139,19 @@ python tools/benchmark/prototype_drd1_ocr_text_role_features.py
 The DR-D1 OCR/text-role benchmark report is written to:
 
 `benchmark/reports/drd1_ocr_text_role_feature_benchmark/`
+
+Install PC OCR benchmark dependencies:
+
+```powershell
+python -m pip install -r tools/benchmark/ocr-requirements.txt
+```
+
+Run the RapidOCR crop OCR benchmark:
+
+```powershell
+python tools/benchmark/run_drd2_rapidocr_crop_benchmark.py
+```
+
+The DR-D2 RapidOCR crop benchmark report is written to:
+
+`benchmark/reports/drd2_rapidocr_crop_benchmark/`

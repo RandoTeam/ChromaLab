@@ -133,8 +133,9 @@ Acceptance:
 
 Goal: make OCR automatic and measurable without making OCR/VLM numeric authority.
 
-Current status: `DR_D1_COMPLETE_TEXT_ROLE_RULES_WORK_WITH_PERFECT_TEXT_REAL_OCR_NOT_AVAILABLE`
-in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md`.
+Current status: `DR_D2_COMPLETE_RAPIDOCR_INSTALLED_CROP_OCR_WORKS_BUT_NOT_ACCEPTANCE_READY`
+in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md` and
+`docs/DRD2_REAL_OCR_ENGINE_CROP_BENCHMARK.md`.
 
 Methods to compare:
 
