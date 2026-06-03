@@ -1,0 +1,14 @@
+{
+  "fixtureId": "white_tiger_ion71",
+  "source": "build/dr1r-axis-label-crop-sweep/white_tiger_ion71_fixture/graph_1/axis_element_graph.json",
+  "assetGraphPath": "validation/rust_axis_element/white_tiger_ion71_axis_element_graph.json",
+  "imageWidth": 576,
+  "imageHeight": 1280,
+  "expectedGraphIndex": 1,
+  "expectedSourceLabelBandCount": 3,
+  "notes": [
+    "Diagnostic asset for DR-2F Rust Android JNI crop-planning transfer.",
+    "This is an existing DR-1R axis element graph package, not a fabricated graph result.",
+    "Rust is allowed to plan OCR crop variants only; it is not calibration, peak, or CalculationEngine authority."
+  ]
+}

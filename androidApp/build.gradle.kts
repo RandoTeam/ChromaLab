@@ -12,13 +12,14 @@ val localProps = Properties().apply {
 }
 
 val rustGeneratedJniLibsDir = layout.buildDirectory.asFile.get().resolve("generated/rustJniLibs")
+val rustBridgeLibrary = rustGeneratedJniLibsDir.resolve("arm64-v8a/libchromalab_cv_core.so")
 val buildRustAndroidBridge by tasks.registering(Exec::class) {
     val outputDir = rustGeneratedJniLibsDir
     inputs.file(rootProject.file("rust/Cargo.toml"))
     inputs.file(rootProject.file("rust/Cargo.lock"))
     inputs.dir(rootProject.file("rust/chromalab-cv-core/src"))
     inputs.file(rootProject.file("tools/rust/Build-RustAndroidBridge.ps1"))
-    outputs.file(outputDir.resolve("arm64-v8a/libchromalab_cv_core.so"))
+    outputs.file(rustBridgeLibrary)
 
     commandLine(
         "powershell",
@@ -104,9 +105,11 @@ android {
 }
 
 tasks.matching { task ->
-    task.name.startsWith("merge") && task.name.endsWith("JniLibFolders")
+    task.name.startsWith("merge") &&
+        (task.name.endsWith("JniLibFolders") || task.name.endsWith("NativeLibs"))
 }.configureEach {
     dependsOn(buildRustAndroidBridge)
+    inputs.file(rustBridgeLibrary)
 }
 
 kotlin {

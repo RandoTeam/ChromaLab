@@ -149,12 +149,17 @@ class RuntimeEvidencePackageValidatorTest {
         )
         val encoded = json.encodeToString(evidencePackage)
         val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+        val exportedDiagnostic = evidencePackage.structuredRuntimeDiagnostics
+            .single { it.diagnosticId == diagnostic.diagnosticId }
+        val validationRow = validation.structuredRuntimeRows
+            .single { it.diagnosticId == diagnostic.diagnosticId }
 
         assertEquals(RuntimeEvidenceValidationVerdict.PASS, validation.verdict)
-        assertEquals("VALIDATION_PACKAGE_PRIVATE_MODEL", evidencePackage.structuredRuntimeDiagnostics.single().modelPathClass.name)
+        assertEquals("VALIDATION_PACKAGE_PRIVATE_MODEL", exportedDiagnostic.modelPathClass.name)
         assertTrue(encoded.contains("\"modelPathClass\""))
         assertTrue(!encoded.contains("/data/user/0/com.chromalab.app.validation/files/models"))
-        assertEquals("TECHNICAL_EVIDENCE", validation.structuredRuntimeRows.single().privacyClass)
+        assertTrue(evidencePackage.structuredRuntimeDiagnostics.none { StructuredRuntimeDiagnosticMapper.containsPrivatePathLeak(it) })
+        assertEquals("TECHNICAL_EVIDENCE", validationRow.privacyClass)
     }
 
     @Test

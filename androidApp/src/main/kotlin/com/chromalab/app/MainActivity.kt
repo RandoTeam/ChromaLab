@@ -20,6 +20,7 @@ import com.chromalab.feature.processing.inference.GgufParityDiagnostics
 import com.chromalab.feature.processing.inference.GgufVulkanMatrixDiagnostics
 import com.chromalab.feature.processing.inference.GgufMtmdDiagnostics
 import com.chromalab.feature.processing.inference.MtpAbDiagnostics
+import com.chromalab.feature.processing.debug.RustAxisElementCropSmokeDiagnostics
 import com.chromalab.feature.processing.debug.RustCvBridgeSmokeDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
@@ -33,6 +34,8 @@ class MainActivity : ComponentActivity() {
         private const val ACTION_DEBUG_VULKAN_MATRIX = "com.chromalab.app.DEBUG_VULKAN_MATRIX"
         private const val ACTION_DEBUG_MTMD_DIAGNOSTICS = "com.chromalab.app.DEBUG_MTMD_DIAGNOSTICS"
         private const val ACTION_DEBUG_RUST_CV_BRIDGE = "com.chromalab.app.DEBUG_RUST_CV_BRIDGE"
+        private const val ACTION_DEBUG_RUST_AXIS_ELEMENT_CROPS =
+            "com.chromalab.app.DEBUG_RUST_AXIS_ELEMENT_CROPS"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
         private const val EXTRA_MODEL_MODE = "modelMode"
@@ -129,6 +132,10 @@ class MainActivity : ComponentActivity() {
         }
         if (intent?.action == ACTION_DEBUG_RUST_CV_BRIDGE) {
             handleRustCvBridgeDebugIntent()
+            return
+        }
+        if (intent?.action == ACTION_DEBUG_RUST_AXIS_ELEMENT_CROPS) {
+            handleRustAxisElementCropsDebugIntent()
             return
         }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
@@ -250,6 +257,24 @@ class MainActivity : ComponentActivity() {
                 TAG,
                 "Rust CV bridge smoke result runId=${summary.runId} decision=${summary.decision} " +
                     "loadResult=${summary.diagnostic.loadResult} artifacts=${summary.artifactDirectory}",
+            )
+        }
+    }
+
+    private fun handleRustAxisElementCropsDebugIntent() {
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring Rust axis element crop diagnostics intent in non-debug build")
+            return
+        }
+
+        lifecycleScope.launch {
+            val summary = RustAxisElementCropSmokeDiagnostics(applicationContext).run()
+            Log.i(
+                TAG,
+                "Rust axis element crop smoke result runId=${summary.runId} " +
+                    "decision=${summary.decision} rustStatus=${summary.rustStatus} " +
+                    "accepted=${summary.acceptedCropCount} rejected=${summary.rejectedCropCount} " +
+                    "artifacts=${summary.artifactDirectory}",
             )
         }
     }

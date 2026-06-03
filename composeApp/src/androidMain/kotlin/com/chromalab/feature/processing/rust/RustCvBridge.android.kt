@@ -10,7 +10,26 @@ object RustCvBridge {
         return nativeProbeJson()
     }
 
+    fun planAxisElementCropsJson(
+        imageWidth: Int,
+        imageHeight: Int,
+        axisElementGraphJson: String,
+    ): String {
+        loadResult.getOrThrow()
+        return nativePlanAxisElementCropsJson(
+            imageWidth,
+            imageHeight,
+            axisElementGraphJson,
+        )
+    }
+
     fun loadError(): Throwable? = loadResult.exceptionOrNull()
 
     private external fun nativeProbeJson(): String
+
+    private external fun nativePlanAxisElementCropsJson(
+        imageWidth: Int,
+        imageHeight: Int,
+        axisElementGraphJson: String,
+    ): String
 }
