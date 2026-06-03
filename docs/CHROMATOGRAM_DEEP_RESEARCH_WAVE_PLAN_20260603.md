@@ -94,7 +94,7 @@ Acceptance:
 
 Goal: prove automatic graph and axis element detection.
 
-Current status: `DR_C6_COMPLETE_PC_PROTOTYPE_IMPROVES_GRAPH_COUNT_NOT_READY_FOR_RUNTIME` in
+Current status: `DR_C7_COMPLETE_ANNOTATION_SEMANTIC_UPPER_BOUND_SOLVES_P0_LAYOUT_CLASS_NOT_RUNTIME_READY` in
 `docs/DRC1_GRAPH_LAYOUT_AXIS_RESEARCH_INPUTS.md` and
 `docs/DRC2_GRAPH_LAYOUT_ANNOTATION_WORKFLOW.md`; initial P0 graph layout
 annotations are documented in `docs/DRC3_INITIAL_GRAPH_LAYOUT_ANNOTATIONS.md`;
@@ -102,7 +102,9 @@ initial P0 tick/text-role annotations are documented in
 `docs/DRC4_TICK_GRID_TEXT_ROLE_ANNOTATIONS.md`; current P0 graph/layout score is
 documented in `docs/DRC5_P0_GRAPH_LAYOUT_SCORE.md`; the first PC-side P0 graph
 layout method comparison is documented in
-`docs/DRC6_P0_GRAPH_LAYOUT_METHOD_COMPARISON.md`.
+`docs/DRC6_P0_GRAPH_LAYOUT_METHOD_COMPARISON.md`; the panel semantic layout
+classifier upper-bound test is documented in
+`docs/DRC7_PANEL_SEMANTIC_LAYOUT_CLASSIFIER.md`.
 
 Methods to compare:
 

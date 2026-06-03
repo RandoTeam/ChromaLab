@@ -119,3 +119,13 @@ python tools/benchmark/prototype_drc6_p0_graph_layout_methods.py
 The DR-C6 method comparison report and overlays are written to:
 
 `benchmark/reports/drc6_p0_graph_layout_method_comparison/`
+
+Compare P0 panel semantic layout classifiers:
+
+```powershell
+python tools/benchmark/prototype_drc7_panel_semantic_classifier.py
+```
+
+The DR-C7 semantic classifier report is written to:
+
+`benchmark/reports/drc7_panel_semantic_classifier/`

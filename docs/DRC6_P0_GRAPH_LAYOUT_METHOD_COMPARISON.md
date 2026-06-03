@@ -85,14 +85,15 @@ are still unresolved.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-C7: Panel Semantic Layout Classifier Prototype`
 
-Goal:
+Result:
 
-- use graph-row candidates from DR-C6 as inputs;
-- classify `MULTI_PANEL_SEPARATE_AXES`, `TIC_PLUS_ION_PANELS`, and
-  `TWO_GRAPH_PAGE`;
-- use DR-C4 text-role annotations for scoring, not runtime coordinates;
-- keep the work PC-side until graph count and semantic layout both pass.
+- documented in `docs/DRC7_PANEL_SEMANTIC_LAYOUT_CLASSIFIER.md`;
+- geometry-only classification passes 2/4 P0 layout classes;
+- annotation text-role family features pass 3/4;
+- annotation text-role plus page-context upper bound passes 4/4;
+- runtime porting still requires automatic OCR/text-role and page-context
+  extraction.

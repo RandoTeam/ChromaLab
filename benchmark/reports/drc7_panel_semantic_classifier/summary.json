@@ -1,0 +1,310 @@
+{
+  "schemaVersion": "chromalab.benchmark.drc7_panel_semantic_classifier.v1",
+  "overallVerdict": "ANNOTATION_SEMANTIC_UPPER_BOUND_SOLVES_P0_LAYOUT_CLASS_NOT_RUNTIME_READY",
+  "fixtureCount": 4,
+  "graphCountSource": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+  "layoutTruthSource": "benchmark/annotations/drc3_initial_graph_layout_annotations/manual-p0-annotations.json",
+  "textRoleSource": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+  "productionImpact": "NONE_RESEARCH_ONLY",
+  "methodSummaries": [
+    {
+      "methodId": "geometry_only_panel_count_v1",
+      "caseCount": 4,
+      "layoutClassPass": 2,
+      "layoutClassFailOrMissing": 2,
+      "featureSource": "drc6_graph_rows_only",
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "notes": "Control method; cannot distinguish TIC+ion or two-graph page semantics."
+    },
+    {
+      "methodId": "annotation_text_role_panel_family_v1",
+      "caseCount": 4,
+      "layoutClassPass": 3,
+      "layoutClassFailOrMissing": 1,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_role_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "notes": "Shows that OCR/text-role families can resolve TIC+ion panels."
+    },
+    {
+      "methodId": "annotation_text_role_page_context_upper_bound_v1",
+      "caseCount": 4,
+      "layoutClassPass": 4,
+      "layoutClassFailOrMissing": 0,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_roles_plus_drc3_page_context_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "notes": "Shows that page/background context is needed to separate two-graph pages from generic ion panels."
+    }
+  ],
+  "caseScores": [
+    {
+      "methodId": "geometry_only_panel_count_v1",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_only",
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "reason": "Geometry detected multiple graph rows but no semantic panel type."
+    },
+    {
+      "methodId": "annotation_text_role_panel_family_v1",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_role_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles show multiple panels but no TIC+ion mix."
+    },
+    {
+      "methodId": "annotation_text_role_page_context_upper_bound_v1",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_roles_plus_drc3_page_context_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles show multiple panels but no TIC+ion mix."
+    },
+    {
+      "methodId": "geometry_only_panel_count_v1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_only",
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "reason": "Geometry detected multiple graph rows but no semantic panel type."
+    },
+    {
+      "methodId": "annotation_text_role_panel_family_v1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_role_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles show multiple panels but no TIC+ion mix."
+    },
+    {
+      "methodId": "annotation_text_role_page_context_upper_bound_v1",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_roles_plus_drc3_page_context_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles show multiple panels but no TIC+ion mix."
+    },
+    {
+      "methodId": "geometry_only_panel_count_v1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_only",
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "reason": "Geometry detected multiple graph rows but no semantic panel type."
+    },
+    {
+      "methodId": "annotation_text_role_panel_family_v1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_role_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles expose a TIC panel plus ion/mz panels."
+    },
+    {
+      "methodId": "annotation_text_role_page_context_upper_bound_v1",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 4,
+      "expectedGraphCount": 4,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_roles_plus_drc3_page_context_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles expose a TIC panel plus ion/mz panels."
+    },
+    {
+      "methodId": "geometry_only_panel_count_v1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_only",
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "reason": "Geometry detected multiple graph rows but no semantic panel type."
+    },
+    {
+      "methodId": "annotation_text_role_panel_family_v1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "FAIL",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_role_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "reason": "Text roles show multiple panels but no TIC+ion mix."
+    },
+    {
+      "methodId": "annotation_text_role_page_context_upper_bound_v1",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "TWO_GRAPH_PAGE",
+      "layoutClassScore": "PASS",
+      "detectedGraphCount": 2,
+      "expectedGraphCount": 2,
+      "featureSource": "drc6_graph_rows_plus_drc4_text_roles_plus_drc3_page_context_annotations",
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "reason": "Page-context features show a photographed two-graph page with hand/background rejection."
+    }
+  ],
+  "semanticFeatures": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "detectedGraphCount": 2,
+      "panelGroups": [
+        "ion_217_panel",
+        "ion_218_panel"
+      ],
+      "panelFamilies": {
+        "ion": 2
+      },
+      "textFamilies": {
+        "ion": 2,
+        "ion_text": 2
+      },
+      "roleCounts": {
+        "ion_or_mz_metadata": 2,
+        "axis_title": 4,
+        "tick_label": 30
+      },
+      "rejectedRegionFamilies": {
+        "page_header": 1
+      },
+      "source": {
+        "graphCount": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+        "textRoles": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+        "pageContext": "benchmark/annotations/drc3_initial_graph_layout_annotations/manual-p0-annotations.json"
+      }
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "detectedGraphCount": 4,
+      "panelGroups": [
+        "xic_198_0315_pm_0_2",
+        "xic_198_0315_pm_0_02",
+        "xic_198_0315_pm_0_002",
+        "xic_198_0315_pm_0_0002"
+      ],
+      "panelFamilies": {
+        "xic": 4
+      },
+      "textFamilies": {
+        "xic": 4,
+        "legend_text": 4
+      },
+      "roleCounts": {
+        "legend": 4,
+        "other": 4,
+        "axis_title": 4,
+        "tick_label": 56
+      },
+      "rejectedRegionFamilies": {},
+      "source": {
+        "graphCount": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+        "textRoles": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+        "pageContext": "benchmark/annotations/drc3_initial_graph_layout_annotations/manual-p0-annotations.json"
+      }
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "detectedGraphCount": 4,
+      "panelGroups": [
+        "tic",
+        "ion_326",
+        "ion_360",
+        "ion_394"
+      ],
+      "panelFamilies": {
+        "tic": 1,
+        "ion": 3
+      },
+      "textFamilies": {
+        "tic": 1,
+        "tic_text": 1,
+        "ion": 3,
+        "ion_text": 3
+      },
+      "roleCounts": {
+        "chart_title": 1,
+        "axis_title": 8,
+        "tick_label": 56,
+        "ion_or_mz_metadata": 3
+      },
+      "rejectedRegionFamilies": {},
+      "source": {
+        "graphCount": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+        "textRoles": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+        "pageContext": "benchmark/annotations/drc3_initial_graph_layout_annotations/manual-p0-annotations.json"
+      }
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "detectedGraphCount": 2,
+      "panelGroups": [
+        "ion_83_panel",
+        "ion_92_panel"
+      ],
+      "panelFamilies": {
+        "ion": 2
+      },
+      "textFamilies": {
+        "ion": 2,
+        "ion_text": 2
+      },
+      "roleCounts": {
+        "ion_or_mz_metadata": 2,
+        "axis_title": 4,
+        "tick_label": 52
+      },
+      "rejectedRegionFamilies": {
+        "page_header": 1,
+        "hand_or_background": 1
+      },
+      "source": {
+        "graphCount": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+        "textRoles": "benchmark/annotations/drc4_tick_text_role_annotations/manual-p0-tick-text-annotations.json",
+        "pageContext": "benchmark/annotations/drc3_initial_graph_layout_annotations/manual-p0-annotations.json"
+      }
+    }
+  ],
+  "nextRequiredRuntimeCapabilities": [
+    "automatic_ocr_text_role_extraction",
+    "automatic_panel_title_family_classification",
+    "automatic_page_context_region_rejection",
+    "axis_ownership_per_panel"
+  ]
+}
