@@ -1,0 +1,872 @@
+{
+    "available": true,
+    "graphIndex": 1,
+    "artifactJsonPath": "C:\\VietnAi\\Hromotograth\\build\\dr1r-axis-label-crop-sweep\\bench_02_mz92_belyi_tigr/graph_1/axis_element_graph.json",
+    "artifactOverlayPath": "C:\\VietnAi\\Hromotograth\\build\\dr1r-axis-label-crop-sweep\\bench_02_mz92_belyi_tigr/graph_1/axis_element_graph_overlay.png",
+    "nodeCount": 36,
+    "edgeCount": 34,
+    "scaleCandidatePairCount": 0,
+    "acceptedScaleCandidatePairCount": 0,
+    "labelBandProjectionCount": 0,
+    "acceptedLabelBandProjectionCount": 0,
+    "reviewLabelBandProjectionCount": 0,
+    "labelBands": {
+        "xLabelBand": {
+            "x": 90,
+            "y": 823,
+            "width": 437,
+            "height": 21,
+            "label": "X label projection band"
+        },
+        "yLabelBand": {
+            "x": 10,
+            "y": 480,
+            "width": 189,
+            "height": 357,
+            "label": "Y label projection band"
+        },
+        "titleBand": {
+            "x": 10,
+            "y": 480,
+            "width": 558,
+            "height": 29,
+            "label": "Title and ion rejection band"
+        }
+    },
+    "nodes": [
+        {
+            "id": "graph_1_panel",
+            "kind": "GRAPH_PANEL",
+            "axis": null,
+            "bounds": {
+                "x": 10,
+                "y": 480,
+                "width": 558,
+                "height": 364,
+                "label": "Bright panel"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 1.0,
+            "source": "graph_region",
+            "status": "SELECTED",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_plot_area",
+            "kind": "PLOT_AREA",
+            "axis": null,
+            "bounds": {
+                "x": 90,
+                "y": 480,
+                "width": 437,
+                "height": 357,
+                "label": "Bright panel"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 1.0,
+            "source": "plot_area",
+            "status": "SELECTED",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_label_band",
+            "kind": "X_LABEL_BAND",
+            "axis": "X",
+            "bounds": {
+                "x": 90,
+                "y": 823,
+                "width": 437,
+                "height": 21,
+                "label": "X label projection band"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.75,
+            "source": "axis_label_band_projection",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_y_label_band",
+            "kind": "Y_LABEL_BAND",
+            "axis": "Y",
+            "bounds": {
+                "x": 10,
+                "y": 480,
+                "width": 189,
+                "height": 357,
+                "label": "Y label projection band"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.75,
+            "source": "axis_label_band_projection",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_title_band",
+            "kind": "TITLE_BAND",
+            "axis": null,
+            "bounds": {
+                "x": 10,
+                "y": 480,
+                "width": 558,
+                "height": 29,
+                "label": "Title and ion rejection band"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.65,
+            "source": "axis_label_band_projection",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_axis",
+            "kind": "X_AXIS_LINE",
+            "axis": "X",
+            "bounds": null,
+            "line": {
+                "x1": 91.0,
+                "y1": 834.0,
+                "x2": 525.0,
+                "y2": 834.0
+            },
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.98,
+            "source": "AUTO",
+            "status": "SELECTED",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_y_axis",
+            "kind": "Y_AXIS_LINE",
+            "axis": "Y",
+            "bounds": null,
+            "line": {
+                "x1": 91.0,
+                "y1": 480.0,
+                "x2": 91.0,
+                "y2": 834.0
+            },
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.98,
+            "source": "AUTO",
+            "status": "SELECTED",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_origin",
+            "kind": "AXIS_ORIGIN",
+            "axis": null,
+            "bounds": {
+                "x": 91,
+                "y": 834,
+                "width": 1,
+                "height": 1,
+                "label": "axis origin"
+            },
+            "line": null,
+            "pixel": null,
+            "value": null,
+            "text": null,
+            "confidence": 0.98,
+            "source": "axis_detect",
+            "status": "SELECTED",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_1",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 92.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_2",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 111.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_3",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 148.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_4",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 164.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_5",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 176.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_6",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 184.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_7",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 194.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_8",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 202.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_9",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 228.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_10",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 251.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_11",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 263.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_12",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 277.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_13",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 300.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_14",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 322.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_15",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 343.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_16",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 363.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_17",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 382.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_18",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 400.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_19",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 417.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_20",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 434.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_21",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 451.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_22",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 466.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_23",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 481.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_24",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 496.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_25",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 510.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_x_tick_26",
+            "kind": "X_TICK_POSITION",
+            "axis": "X",
+            "bounds": null,
+            "line": null,
+            "pixel": 524.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_y_tick_1",
+            "kind": "Y_TICK_POSITION",
+            "axis": "Y",
+            "bounds": null,
+            "line": null,
+            "pixel": 508.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        },
+        {
+            "id": "graph_1_y_tick_2",
+            "kind": "Y_TICK_POSITION",
+            "axis": "Y",
+            "bounds": null,
+            "line": null,
+            "pixel": 689.0,
+            "value": null,
+            "text": null,
+            "confidence": 0.85,
+            "source": "opencv_hough_projection_axis_tick_geometry",
+            "status": "CANDIDATE",
+            "warnings": []
+        }
+    ],
+    "edges": [
+        {
+            "fromNodeId": "graph_1_panel",
+            "toNodeId": "graph_1_plot_area",
+            "relationship": "CONTAINS",
+            "confidence": 1.0,
+            "source": "plot_area",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_panel",
+            "toNodeId": "graph_1_x_label_band",
+            "relationship": "CONTAINS",
+            "confidence": 0.75,
+            "source": "axis_label_band_projection",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_panel",
+            "toNodeId": "graph_1_y_label_band",
+            "relationship": "CONTAINS",
+            "confidence": 0.75,
+            "source": "axis_label_band_projection",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_panel",
+            "toNodeId": "graph_1_title_band",
+            "relationship": "CONTAINS",
+            "confidence": 0.65,
+            "source": "axis_label_band_projection",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_plot_area",
+            "toNodeId": "graph_1_x_axis",
+            "relationship": "DEFINES_AXIS",
+            "confidence": 0.98,
+            "source": "axis_detect",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_plot_area",
+            "toNodeId": "graph_1_y_axis",
+            "relationship": "DEFINES_AXIS",
+            "confidence": 0.98,
+            "source": "axis_detect",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_1",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_2",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_3",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_4",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_5",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_6",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_7",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_8",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_9",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_10",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_11",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_12",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_13",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_14",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_15",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_16",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_17",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_18",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_19",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_20",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_21",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_22",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_23",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_24",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_25",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_x_axis",
+            "toNodeId": "graph_1_x_tick_26",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_y_axis",
+            "toNodeId": "graph_1_y_tick_1",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        },
+        {
+            "fromNodeId": "graph_1_y_axis",
+            "toNodeId": "graph_1_y_tick_2",
+            "relationship": "HAS_TICK",
+            "confidence": 0.7,
+            "source": "axis_tick_geometry",
+            "rejectionReason": null
+        }
+    ],
+    "scaleCandidatePairs": [],
+    "labelProjections": [],
+    "blockers": [
+        "axis_element_graph.ocr_labels_missing",
+        "axis_element_graph.label_projection_missing",
+        "axis_element_graph.x_scale_candidates_insufficient",
+        "axis_element_graph.y_scale_candidates_insufficient",
+        "axis_element_graph.residual_fit_not_ready"
+    ],
+    "warnings": []
+}

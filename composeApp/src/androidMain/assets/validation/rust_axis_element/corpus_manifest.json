@@ -1,0 +1,209 @@
+{
+    "suiteId":  "dr2g_axis_element_corpus",
+    "sourceRoot":  "build/dr1r-axis-label-crop-sweep",
+    "itemCount":  18,
+    "items":  [
+                  {
+                      "fixtureId":  "belyi_tigr_ion92_extra",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/belyi_tigr_ion92_extra/graph_1/axis_element_graph.json",
+                      "imageWidth":  576,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/belyi_tigr_ion92_extra/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_01_mz71_screenshot_page",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_01_mz71_screenshot_page/graph_1/axis_element_graph.json",
+                      "imageWidth":  964,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_01_mz71_screenshot_page/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_01_mz71_screenshot_page",
+                      "graphId":  "graph_2",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_01_mz71_screenshot_page/graph_2/axis_element_graph.json",
+                      "imageWidth":  964,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  2,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_01_mz71_screenshot_page/graph_2/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_02_mz92_belyi_tigr",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_02_mz92_belyi_tigr/graph_1/axis_element_graph.json",
+                      "imageWidth":  576,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_02_mz92_belyi_tigr/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_03_small_tic_export",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_03_small_tic_export/graph_1/axis_element_graph.json",
+                      "imageWidth":  381,
+                      "imageHeight":  132,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_03_small_tic_export/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_04_stacked_xic_resolution",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_04_stacked_xic_resolution/graph_1/axis_element_graph.json",
+                      "imageWidth":  534,
+                      "imageHeight":  1110,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_04_stacked_xic_resolution/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_04_stacked_xic_resolution",
+                      "graphId":  "graph_2",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_04_stacked_xic_resolution/graph_2/axis_element_graph.json",
+                      "imageWidth":  534,
+                      "imageHeight":  1110,
+                      "expectedGraphIndex":  2,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_04_stacked_xic_resolution/graph_2/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_04_stacked_xic_resolution",
+                      "graphId":  "graph_3",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_04_stacked_xic_resolution/graph_3/axis_element_graph.json",
+                      "imageWidth":  534,
+                      "imageHeight":  1110,
+                      "expectedGraphIndex":  3,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_04_stacked_xic_resolution/graph_3/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_04_stacked_xic_resolution",
+                      "graphId":  "graph_4",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_04_stacked_xic_resolution/graph_4/axis_element_graph.json",
+                      "imageWidth":  534,
+                      "imageHeight":  1110,
+                      "expectedGraphIndex":  4,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_04_stacked_xic_resolution/graph_4/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_05_tic_plus_ions",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_05_tic_plus_ions/graph_1/axis_element_graph.json",
+                      "imageWidth":  683,
+                      "imageHeight":  807,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_05_tic_plus_ions/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_05_tic_plus_ions",
+                      "graphId":  "graph_2",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_05_tic_plus_ions/graph_2/axis_element_graph.json",
+                      "imageWidth":  683,
+                      "imageHeight":  807,
+                      "expectedGraphIndex":  2,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_05_tic_plus_ions/graph_2/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_05_tic_plus_ions",
+                      "graphId":  "graph_3",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_05_tic_plus_ions/graph_3/axis_element_graph.json",
+                      "imageWidth":  683,
+                      "imageHeight":  807,
+                      "expectedGraphIndex":  3,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_05_tic_plus_ions/graph_3/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_05_tic_plus_ions",
+                      "graphId":  "graph_4",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_05_tic_plus_ions/graph_4/axis_element_graph.json",
+                      "imageWidth":  683,
+                      "imageHeight":  807,
+                      "expectedGraphIndex":  4,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_05_tic_plus_ions/graph_4/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_06_photo_two_graphs_page",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_06_photo_two_graphs_page/graph_1/axis_element_graph.json",
+                      "imageWidth":  964,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_06_photo_two_graphs_page/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_06_photo_two_graphs_page",
+                      "graphId":  "graph_2",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_06_photo_two_graphs_page/graph_2/axis_element_graph.json",
+                      "imageWidth":  964,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  2,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_06_photo_two_graphs_page/graph_2/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_07_rotated_page_photo",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_07_rotated_page_photo/graph_1/axis_element_graph.json",
+                      "imageWidth":  964,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_07_rotated_page_photo/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "bench_08_mz71_duplicate_candidate",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/bench_08_mz71_duplicate_candidate/graph_1/axis_element_graph.json",
+                      "imageWidth":  576,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/bench_08_mz71_duplicate_candidate/graph_1/axis_element_graph.json"
+                  },
+                  {
+                      "fixtureId":  "white_tiger_ion71_fixture",
+                      "graphId":  "graph_1",
+                      "assetGraphPath":  "validation/rust_axis_element/corpus/white_tiger_ion71_fixture/graph_1/axis_element_graph.json",
+                      "imageWidth":  576,
+                      "imageHeight":  1280,
+                      "expectedGraphIndex":  1,
+                      "expectedSourceLabelBandCount":  3,
+                      "expectedAcceptedCropCount":  3,
+                      "source":  "build/dr1r-axis-label-crop-sweep/white_tiger_ion71_fixture/graph_1/axis_element_graph.json"
+                  }
+              ],
+    "notes":  [
+                  "Real DR-1R axis element graph packages used for Android Rust JNI corpus parity.",
+                  "Rust is crop-planning-only and has no calibration, peak, report, or CalculationEngine authority."
+              ]
+}
