@@ -1,0 +1,56 @@
+[
+  {
+    "id": "plot2spec_example_spectroscopy_graphs",
+    "source": "https://github.com/MaterialEyes/Plot2Spec",
+    "sourceType": "repository_examples",
+    "licenseStatus": "GPL-3.0 repository; verify image attribution before committing copied files",
+    "candidateClasses": [
+      "spectroscopy_line_graph",
+      "dense_or_overlapping_traces",
+      "low_quality_literature_plot",
+      "axis_tick_text"
+    ],
+    "recommendedUse": "Method review and opt-in external fixture import after license attribution is documented.",
+    "addedToValidationAssets": false
+  },
+  {
+    "id": "plotqa_scientific_plots",
+    "source": "https://github.com/NiteshMethani/PlotQA",
+    "sourceType": "dataset",
+    "licenseStatus": "Dataset CC-BY-4.0, code MIT per repository README",
+    "candidateClasses": [
+      "line_plot",
+      "real_valued_axis_labels",
+      "varied_labels",
+      "complex_reasoning_plot"
+    ],
+    "recommendedUse": "Select a small attributed subset for chart OCR/layout stress testing; not chromatogram-specific.",
+    "addedToValidationAssets": false
+  },
+  {
+    "id": "figureqa_generated_line_plots",
+    "source": "https://github.com/Maluuba/FigureQA",
+    "sourceType": "dataset_generator",
+    "licenseStatus": "Repository license requires review before image fixture import",
+    "candidateClasses": [
+      "synthetic_line_plot",
+      "bounding_box_annotations",
+      "axis_label_layout"
+    ],
+    "recommendedUse": "Generate controlled non-chromatogram graph layout tests if license permits.",
+    "addedToValidationAssets": false
+  },
+  {
+    "id": "scatteract_chart_digitization_cases",
+    "source": "https://arxiv.org/abs/1704.06687",
+    "sourceType": "paper_method_reference",
+    "licenseStatus": "Paper only in current catalog; dataset/source image license not verified",
+    "candidateClasses": [
+      "scatter_plot",
+      "ocr_plus_robust_regression",
+      "pixel_to_coordinate_mapping"
+    ],
+    "recommendedUse": "Method reference for OCR plus robust regression; add images only after source dataset license is found.",
+    "addedToValidationAssets": false
+  }
+]

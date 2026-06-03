@@ -4,6 +4,7 @@ import com.chromalab.feature.processing.bench.OfflineAnalysisAudit
 import com.chromalab.feature.processing.bench.OfflineAnalysisAuditArtifacts
 import com.chromalab.feature.processing.bench.OfflineAnalysisInput
 import com.chromalab.feature.processing.bench.OfflineAnalysisRunner
+import com.chromalab.feature.processing.bench.OfflineAxisLabelBandAudit
 import com.chromalab.feature.processing.bench.OfflineAxisCalibrationPointAudit
 import com.chromalab.feature.processing.bench.OfflineAxisElementNodeAudit
 import com.chromalab.feature.processing.bench.OfflineAxisElementNodeKind
@@ -11,6 +12,7 @@ import com.chromalab.feature.processing.bench.OfflineAxisElementNodeStatus
 import com.chromalab.feature.processing.geometry.CvGeometryAuditWriter
 import com.chromalab.feature.processing.geometry.CvGeometryInputGraph
 import com.chromalab.feature.processing.graph.GraphRegion
+import com.chromalab.feature.processing.ocr.OcrStatus
 import java.awt.AlphaComposite
 import java.awt.BasicStroke
 import java.awt.Color
@@ -22,10 +24,19 @@ import java.nio.file.Files
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlin.math.abs
+import kotlin.math.round
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlin.system.exitProcess
 
 private const val OfflineAnalysisCommand = "--offline-analysis"
+private val CropSweepJson = Json {
+    prettyPrint = true
+}
 
 fun runDesktopOfflineAnalysisCli(args: Array<String>): Boolean {
     if (args.none { it == OfflineAnalysisCommand || it == "offline-analysis" }) return false
@@ -146,6 +157,7 @@ private object DesktopOfflineAnalysisArtifactWriter {
         writeGraphFocusArtifacts(audit, overlayImagePath, outputDir)
         writeAxisCalibrationDiagnostics(audit, overlayImagePath, outputDir)
         writeAxisElementGraphArtifacts(audit, overlayImagePath)
+        writeAxisLabelCropSweepArtifacts(audit, overlayImagePath)
         writeCvGeometryArtifacts(audit, overlayImagePath, outputDir)
         writePeakOverlayArtifacts(audit, outputDir)
     }
@@ -356,6 +368,84 @@ private object DesktopOfflineAnalysisArtifactWriter {
                     panel = graph.region.clampedTo(source.width, source.height),
                     plot = graph.plotArea.region?.clampedTo(source.width, source.height),
                     nodes = elementGraph.nodes,
+                )
+            }
+        } finally {
+            source.flush()
+        }
+    }
+
+    private fun writeAxisLabelCropSweepArtifacts(
+        audit: OfflineAnalysisAudit,
+        imagePath: Path,
+    ) {
+        val source = ImageIO.read(imagePath.toFile()) ?: return
+        try {
+            audit.graphs.forEach { graph ->
+                val outputDir = graph.axisElementGraph.artifactJsonPath
+                    ?.let { Path.of(it).parent }
+                    ?: return@forEach
+                val sweepDir = outputDir.resolve("axis_label_crop_sweep")
+                Files.createDirectories(sweepDir)
+                val renderedVariants = mutableListOf<AxisLabelCropSweepRenderedVariant>()
+                val warnings = mutableListOf<String>()
+                val bands = graph.axisElementGraph.labelBands
+                val bandEntries = bands.toCropSweepBands()
+                if (bandEntries.isEmpty()) warnings += "axis_label_crop_sweep.no_label_bands"
+
+                bandEntries.forEach { band ->
+                    val crop = cropRegion(source, band.region.clampedTo(source.width, source.height))
+                    try {
+                        renderedVariants += renderCropSweepVariants(
+                            crop = crop,
+                            bandId = band.id,
+                            graphIndex = graph.graphIndex,
+                            outputDir = sweepDir,
+                        )
+                    } finally {
+                        crop.flush()
+                    }
+                }
+
+                val contactSheetPath = sweepDir.resolve("axis_label_crop_sweep_contact_sheet_graph_${graph.graphIndex}.png")
+                if (renderedVariants.isNotEmpty()) {
+                    writeCropSweepContactSheet(renderedVariants, contactSheetPath)
+                } else {
+                    warnings += "axis_label_crop_sweep.no_variants_rendered"
+                }
+                val report = AxisLabelCropSweepReport(
+                    graphIndex = graph.graphIndex,
+                    sourceImagePath = imagePath.toString(),
+                    outputDir = sweepDir.toString(),
+                    contactSheetPath = contactSheetPath.toString(),
+                    ocrBackends = listOf(
+                        AxisLabelCropSweepOcrBackendReport(
+                            backend = "desktop_mlkit",
+                            available = false,
+                            reason = "ML Kit OCR is Android-only in this repository.",
+                        ),
+                        AxisLabelCropSweepOcrBackendReport(
+                            backend = "desktop_tesseract",
+                            available = false,
+                            reason = "No bundled desktop Tesseract backend is configured.",
+                        ),
+                        AxisLabelCropSweepOcrBackendReport(
+                            backend = "desktop_paddleocr",
+                            available = false,
+                            reason = "No bundled desktop PaddleOCR backend is configured.",
+                        ),
+                        AxisLabelCropSweepOcrBackendReport(
+                            backend = "desktop_vlm_axis_ocr",
+                            available = graph.ocrStatus != OcrStatus.NOT_AVAILABLE,
+                            reason = "Optional replay/VLM axis OCR status recorded in graph audit.",
+                        ),
+                    ),
+                    variants = renderedVariants.map { it.report },
+                    warnings = warnings,
+                )
+                Files.writeString(
+                    sweepDir.resolve("axis_label_crop_sweep_graph_${graph.graphIndex}.json"),
+                    CropSweepJson.encodeToString(report),
                 )
             }
         } finally {
@@ -639,6 +729,399 @@ private data class AxisDiagnosticBands(
     }
 }
 
+private data class AxisLabelCropSweepBand(
+    val id: String,
+    val region: GraphRegion,
+)
+
+private data class AxisLabelCropSweepRenderedVariant(
+    val report: AxisLabelCropSweepVariantReport,
+    val image: BufferedImage,
+)
+
+@Serializable
+private data class AxisLabelCropSweepReport(
+    val graphIndex: Int,
+    val sourceImagePath: String,
+    val outputDir: String,
+    val contactSheetPath: String,
+    val ocrBackends: List<AxisLabelCropSweepOcrBackendReport>,
+    val variants: List<AxisLabelCropSweepVariantReport>,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
+private data class AxisLabelCropSweepOcrBackendReport(
+    val backend: String,
+    val available: Boolean,
+    val reason: String,
+)
+
+@Serializable
+private data class AxisLabelCropSweepVariantReport(
+    val graphIndex: Int,
+    val bandId: String,
+    val variantId: String,
+    val path: String,
+    val width: Int,
+    val height: Int,
+    val scale: Int,
+    val meanLuma: Double,
+    val lumaStdDev: Double,
+    val darkPixelRatio: Double,
+    val foregroundPixelRatio: Double,
+    val edgeDensity: Double,
+    val connectedComponentCount: Int,
+    val textLikeComponentCount: Int,
+    val warnings: List<String> = emptyList(),
+)
+
+private fun OfflineAxisLabelBandAudit.toCropSweepBands(): List<AxisLabelCropSweepBand> =
+    listOfNotNull(
+        xLabelBand?.let { AxisLabelCropSweepBand("x_label_band", it) },
+        yLabelBand?.let { AxisLabelCropSweepBand("y_label_band", it) },
+        titleBand?.let { AxisLabelCropSweepBand("title_band", it) },
+    )
+
+private fun cropRegion(source: BufferedImage, region: GraphRegion): BufferedImage {
+    val crop = BufferedImage(region.width, region.height, BufferedImage.TYPE_INT_ARGB)
+    val graphics = crop.createGraphics()
+    try {
+        graphics.drawImage(
+            source,
+            0,
+            0,
+            region.width,
+            region.height,
+            region.x,
+            region.y,
+            region.x + region.width,
+            region.y + region.height,
+            null,
+        )
+    } finally {
+        graphics.dispose()
+    }
+    return crop
+}
+
+private fun renderCropSweepVariants(
+    crop: BufferedImage,
+    bandId: String,
+    graphIndex: Int,
+    outputDir: Path,
+): List<AxisLabelCropSweepRenderedVariant> {
+    val variants = listOf(
+        AxisLabelCropSweepImageVariant("original", 1, crop.copyArgb()),
+        AxisLabelCropSweepImageVariant("grayscale", 1, crop.toGrayscale()),
+        AxisLabelCropSweepImageVariant("scale2_grayscale", 2, crop.toGrayscale().scaledBy(2)),
+        AxisLabelCropSweepImageVariant("scale4_grayscale", 4, crop.toGrayscale().scaledBy(4)),
+        AxisLabelCropSweepImageVariant("scale4_contrast", 4, crop.toGrayscale().scaledBy(4).withContrast(1.65f)),
+        AxisLabelCropSweepImageVariant("scale4_otsu_threshold", 4, crop.toGrayscale().scaledBy(4).toOtsuThreshold(invert = false)),
+        AxisLabelCropSweepImageVariant("scale4_otsu_threshold_inverted", 4, crop.toGrayscale().scaledBy(4).toOtsuThreshold(invert = true)),
+    )
+    return variants.map { variant ->
+        val path = outputDir.resolve("${bandId}_${variant.id}.png")
+        ImageIO.write(variant.image, "png", path.toFile())
+        AxisLabelCropSweepRenderedVariant(
+            report = variant.image.toCropSweepVariantReport(
+                graphIndex = graphIndex,
+                bandId = bandId,
+                variantId = variant.id,
+                path = path,
+                scale = variant.scale,
+            ),
+            image = variant.image,
+        )
+    }
+}
+
+private data class AxisLabelCropSweepImageVariant(
+    val id: String,
+    val scale: Int,
+    val image: BufferedImage,
+)
+
+private fun BufferedImage.copyArgb(): BufferedImage {
+    val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val graphics = out.createGraphics()
+    try {
+        graphics.drawImage(this, 0, 0, null)
+    } finally {
+        graphics.dispose()
+    }
+    return out
+}
+
+private fun BufferedImage.toGrayscale(): BufferedImage {
+    val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val luma = getLuma(getRGB(x, y)).roundToInt().coerceIn(0, 255)
+            out.setRGB(x, y, Color(luma, luma, luma).rgb)
+        }
+    }
+    return out
+}
+
+private fun BufferedImage.scaledBy(scale: Int): BufferedImage {
+    if (scale <= 1) return copyArgb()
+    val out = BufferedImage(width * scale, height * scale, BufferedImage.TYPE_INT_ARGB)
+    val graphics = out.createGraphics()
+    try {
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC)
+        graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+        graphics.drawImage(this, 0, 0, out.width, out.height, null)
+    } finally {
+        graphics.dispose()
+    }
+    return out
+}
+
+private fun BufferedImage.withContrast(factor: Float): BufferedImage {
+    val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val luma = getLuma(getRGB(x, y))
+            val adjusted = ((luma - 128f) * factor + 128f).roundToInt().coerceIn(0, 255)
+            out.setRGB(x, y, Color(adjusted, adjusted, adjusted).rgb)
+        }
+    }
+    return out
+}
+
+private fun BufferedImage.toOtsuThreshold(invert: Boolean): BufferedImage {
+    val threshold = otsuThreshold()
+    val out = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val dark = getLuma(getRGB(x, y)) < threshold
+            val foreground = if (invert) !dark else dark
+            val value = if (foreground) 0 else 255
+            out.setRGB(x, y, Color(value, value, value).rgb)
+        }
+    }
+    return out
+}
+
+private fun BufferedImage.otsuThreshold(): Int {
+    val histogram = IntArray(256)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            histogram[getLuma(getRGB(x, y)).roundToInt().coerceIn(0, 255)]++
+        }
+    }
+    val total = width * height
+    var sum = 0.0
+    for (i in histogram.indices) sum += i * histogram[i]
+    var sumBackground = 0.0
+    var weightBackground = 0
+    var maxVariance = -1.0
+    var threshold = 128
+    for (i in histogram.indices) {
+        weightBackground += histogram[i]
+        if (weightBackground == 0) continue
+        val weightForeground = total - weightBackground
+        if (weightForeground == 0) break
+        sumBackground += i * histogram[i]
+        val meanBackground = sumBackground / weightBackground
+        val meanForeground = (sum - sumBackground) / weightForeground
+        val variance = weightBackground.toDouble() * weightForeground.toDouble() *
+            (meanBackground - meanForeground) * (meanBackground - meanForeground)
+        if (variance > maxVariance) {
+            maxVariance = variance
+            threshold = i
+        }
+    }
+    return threshold
+}
+
+private fun BufferedImage.toCropSweepVariantReport(
+    graphIndex: Int,
+    bandId: String,
+    variantId: String,
+    path: Path,
+    scale: Int,
+): AxisLabelCropSweepVariantReport {
+    val metrics = computeCropMetrics()
+    return AxisLabelCropSweepVariantReport(
+        graphIndex = graphIndex,
+        bandId = bandId,
+        variantId = variantId,
+        path = path.toString(),
+        width = width,
+        height = height,
+        scale = scale,
+        meanLuma = metrics.meanLuma.roundMetric(),
+        lumaStdDev = metrics.lumaStdDev.roundMetric(),
+        darkPixelRatio = metrics.darkPixelRatio.roundMetric(),
+        foregroundPixelRatio = metrics.foregroundPixelRatio.roundMetric(),
+        edgeDensity = metrics.edgeDensity.roundMetric(),
+        connectedComponentCount = metrics.connectedComponentCount,
+        textLikeComponentCount = metrics.textLikeComponentCount,
+        warnings = buildList {
+            if (height < 22) add("axis_label_crop_sweep.crop_height_too_small_for_ocr")
+            if (metrics.lumaStdDev < 18.0) add("axis_label_crop_sweep.low_contrast")
+            if (metrics.foregroundPixelRatio < 0.003) add("axis_label_crop_sweep.sparse_foreground")
+            if (metrics.foregroundPixelRatio > 0.55) add("axis_label_crop_sweep.excess_foreground")
+            if (metrics.textLikeComponentCount == 0) add("axis_label_crop_sweep.no_text_like_components")
+        },
+    )
+}
+
+private data class AxisLabelCropMetrics(
+    val meanLuma: Double,
+    val lumaStdDev: Double,
+    val darkPixelRatio: Double,
+    val foregroundPixelRatio: Double,
+    val edgeDensity: Double,
+    val connectedComponentCount: Int,
+    val textLikeComponentCount: Int,
+)
+
+private fun BufferedImage.computeCropMetrics(): AxisLabelCropMetrics {
+    val threshold = otsuThreshold()
+    val total = (width * height).coerceAtLeast(1)
+    var sum = 0.0
+    var sumSquares = 0.0
+    var dark = 0
+    var foreground = 0
+    var edge = 0
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val luma = getLuma(getRGB(x, y))
+            sum += luma
+            sumSquares += luma * luma
+            if (luma < 100.0) dark++
+            if (luma < threshold) foreground++
+            if (x > 0 && y > 0) {
+                val dx = abs(luma - getLuma(getRGB(x - 1, y)))
+                val dy = abs(luma - getLuma(getRGB(x, y - 1)))
+                if (dx + dy > 55.0) edge++
+            }
+        }
+    }
+    val mean = sum / total
+    val variance = (sumSquares / total) - mean * mean
+    val components = countForegroundComponents(threshold)
+    return AxisLabelCropMetrics(
+        meanLuma = mean,
+        lumaStdDev = sqrt(variance.coerceAtLeast(0.0)),
+        darkPixelRatio = dark.toDouble() / total,
+        foregroundPixelRatio = foreground.toDouble() / total,
+        edgeDensity = edge.toDouble() / total,
+        connectedComponentCount = components.first,
+        textLikeComponentCount = components.second,
+    )
+}
+
+private fun BufferedImage.countForegroundComponents(threshold: Int): Pair<Int, Int> {
+    val visited = BooleanArray(width * height)
+    var componentCount = 0
+    var textLikeCount = 0
+    val queue = IntArray(width * height)
+    for (startY in 0 until height) {
+        for (startX in 0 until width) {
+            val startIndex = startY * width + startX
+            if (visited[startIndex] || getLuma(getRGB(startX, startY)) >= threshold) continue
+            var head = 0
+            var tail = 0
+            queue[tail++] = startIndex
+            visited[startIndex] = true
+            var area = 0
+            var minX = startX
+            var maxX = startX
+            var minY = startY
+            var maxY = startY
+            while (head < tail) {
+                val index = queue[head++]
+                val x = index % width
+                val y = index / width
+                area++
+                minX = minOf(minX, x)
+                maxX = maxOf(maxX, x)
+                minY = minOf(minY, y)
+                maxY = maxOf(maxY, y)
+                for (ny in (y - 1)..(y + 1)) {
+                    if (ny !in 0 until height) continue
+                    for (nx in (x - 1)..(x + 1)) {
+                        if (nx !in 0 until width) continue
+                        val nextIndex = ny * width + nx
+                        if (visited[nextIndex] || getLuma(getRGB(nx, ny)) >= threshold) continue
+                        visited[nextIndex] = true
+                        queue[tail++] = nextIndex
+                    }
+                }
+            }
+            componentCount++
+            val boxWidth = (maxX - minX + 1).coerceAtLeast(1)
+            val boxHeight = (maxY - minY + 1).coerceAtLeast(1)
+            val aspect = boxWidth.toDouble() / boxHeight.toDouble()
+            if (area in 4..5000 && boxHeight >= 4 && aspect in 0.08..25.0) {
+                textLikeCount++
+            }
+        }
+    }
+    return componentCount to textLikeCount
+}
+
+private fun writeCropSweepContactSheet(
+    variants: List<AxisLabelCropSweepRenderedVariant>,
+    outputPath: Path,
+) {
+    val cellWidth = 260
+    val cellHeight = 140
+    val columns = 3
+    val rows = ((variants.size + columns - 1) / columns).coerceAtLeast(1)
+    val sheet = BufferedImage(cellWidth * columns, cellHeight * rows, BufferedImage.TYPE_INT_ARGB)
+    val graphics = sheet.createGraphics()
+    try {
+        graphics.color = Color.WHITE
+        graphics.fillRect(0, 0, sheet.width, sheet.height)
+        graphics.font = Font(Font.SANS_SERIF, Font.PLAIN, 11)
+        graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        variants.forEachIndexed { index, variant ->
+            val column = index % columns
+            val row = index / columns
+            val x = column * cellWidth
+            val y = row * cellHeight
+            graphics.color = Color(0xF5, 0xF5, 0xF5)
+            graphics.fillRect(x, y, cellWidth, cellHeight)
+            graphics.color = Color(0xCC, 0xCC, 0xCC)
+            graphics.drawRect(x, y, cellWidth - 1, cellHeight - 1)
+            val image = variant.image
+            val maxImageWidth = cellWidth - 12
+            val maxImageHeight = cellHeight - 34
+            val scale = minOf(
+                maxImageWidth.toDouble() / image.width.coerceAtLeast(1).toDouble(),
+                maxImageHeight.toDouble() / image.height.coerceAtLeast(1).toDouble(),
+            ).coerceAtMost(1.0)
+            val drawWidth = (image.width * scale).roundToInt().coerceAtLeast(1)
+            val drawHeight = (image.height * scale).roundToInt().coerceAtLeast(1)
+            graphics.drawImage(image, x + 6, y + 24, drawWidth, drawHeight, null)
+            graphics.color = Color(0x21, 0x21, 0x21)
+            graphics.drawString("${variant.report.bandId} / ${variant.report.variantId}", x + 6, y + 15)
+            graphics.drawString(
+                "fg=${variant.report.foregroundPixelRatio} edge=${variant.report.edgeDensity} comp=${variant.report.textLikeComponentCount}",
+                x + 6,
+                y + cellHeight - 8,
+            )
+        }
+    } finally {
+        graphics.dispose()
+        variants.forEach { it.image.flush() }
+    }
+    ImageIO.write(sheet, "png", outputPath.toFile())
+    sheet.flush()
+}
+
+private fun getLuma(rgb: Int): Double {
+    val color = Color(rgb, true)
+    return color.red * 0.299 + color.green * 0.587 + color.blue * 0.114
+}
+
+private fun Double.roundMetric(): Double = round(this * 10000.0) / 10000.0
+
 private fun java.awt.Graphics2D.drawRegion(region: GraphRegion, origin: GraphRegion) {
     drawRect(
         region.x - origin.x,
@@ -778,13 +1261,15 @@ private fun printDesktopOfflineAnalysisUsage() {
           axis_x_label_band_graph_N.png
           axis_y_label_band_graph_N.png
           axis_title_band_graph_N.png
-  graph_focus_graph_N.png
-  selected_preprocessing_graph_N.png
-  graph_N/centerline_parity_overlay.png
-  graph_N/centerline_branch_pruned_overlay.png
-  graph_N/centerline_trunk_path_overlay.png
-  graph_N/centerline_fragment_reconstruction_overlay.png
-  peak_overlay_graph_N.png when calculation reaches peak metrics
+          graph_focus_graph_N.png
+          selected_preprocessing_graph_N.png
+          graph_N/axis_label_crop_sweep/axis_label_crop_sweep_graph_N.json
+          graph_N/axis_label_crop_sweep/axis_label_crop_sweep_contact_sheet_graph_N.png
+          graph_N/centerline_parity_overlay.png
+          graph_N/centerline_branch_pruned_overlay.png
+          graph_N/centerline_trunk_path_overlay.png
+          graph_N/centerline_fragment_reconstruction_overlay.png
+          peak_overlay_graph_N.png when calculation reaches peak metrics
         """.trimIndent(),
     )
 }
