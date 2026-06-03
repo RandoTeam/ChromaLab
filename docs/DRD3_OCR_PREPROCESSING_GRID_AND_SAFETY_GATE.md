@@ -71,13 +71,15 @@ upper-bound safety test. Runtime still needs automatic graph/axis/tick context.
 
 ## Next Slice
 
-Recommended next slice:
+Next slice completed:
 
 `DR-D4: Second OCR Engine And Text-Box Detection Benchmark`
 
-Goal:
+Result:
 
-- compare another OCR candidate against RapidOCR;
-- test full text-box detection, not only truth-box recognition;
-- keep the context safety gate;
-- require zero false tick labels before any Android runtime integration.
+- documented in `docs/DRD4_SECOND_OCR_ENGINE_TEXT_BOX_BENCHMARK.md`;
+- EasyOCR 1.7.2 was installed and verified as a second OCR benchmark engine;
+- full-image text-box detection was compared against RapidOCR;
+- result remains not acceptance-ready, so OCR must be constrained by
+  deterministic graph/axis/label-band crop ownership before Android runtime
+  integration.

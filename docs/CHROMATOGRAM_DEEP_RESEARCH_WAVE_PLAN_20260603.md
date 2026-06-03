@@ -133,10 +133,11 @@ Acceptance:
 
 Goal: make OCR automatic and measurable without making OCR/VLM numeric authority.
 
-Current status: `DR_D3_COMPLETE_SAFETY_GATE_REMOVES_FALSE_TICK_LABELS_OCR_NOT_ACCEPTANCE_READY`
+Current status: `DR_D4_COMPLETE_SECOND_OCR_INSTALLED_TEXT_BOX_DETECTION_NOT_ACCEPTANCE_READY`
 in `docs/DRD1_OCR_TEXT_ROLE_FEATURE_BENCHMARK.md` and
 `docs/DRD2_REAL_OCR_ENGINE_CROP_BENCHMARK.md`;
-`docs/DRD3_OCR_PREPROCESSING_GRID_AND_SAFETY_GATE.md`.
+`docs/DRD3_OCR_PREPROCESSING_GRID_AND_SAFETY_GATE.md`;
+`docs/DRD4_SECOND_OCR_ENGINE_TEXT_BOX_BENCHMARK.md`.
 
 Methods to compare:
 
@@ -284,21 +285,19 @@ Do not port a weak heuristic just because Rust is faster.
 
 ## Next Phase To Start
 
-Start: **DR-C6: P0 Graph Layout Method Comparison Prototype**.
+Start: **DR-D5: Axis-Owned OCR Crop Planner Prototype**.
 
 Reason:
 
-- DR-C1 defines required graph/layout/axis annotation inputs;
-- DR-C2 creates hash-backed workflow records for all 8 fixtures;
-- DR-C3 adds initial graphPanel/plotArea/axis annotations for P0 fixtures;
-- DR-C4 adds review-grade major tick, numeric label, anchor, and text-role
-  annotations for P0 fixtures;
-- DR-C5 proves current Phase 9J graph/layout output fails all 8 P0
-  deterministic/E2B graph-count truth cases;
-- the next work should compare candidate PC graph-layout methods against this
-  baseline before Android changes;
-- otherwise graph/layout methods would again be judged visually instead of by
-  benchmark truth.
+- DR-D1 proves text-role rules are safe when text is correct;
+- DR-D2 installs RapidOCR and proves crop OCR is measurable but weak;
+- DR-D3 proves context safety gate removes false tick-label failures on
+  truth-owned crops;
+- DR-D4 installs EasyOCR and proves full-image OCR text-box detection is still
+  not acceptance-ready;
+- the next OCR work must create deterministic graph/axis/label-band crop
+  ownership before OCR text can participate in calibration evidence;
+- otherwise global OCR numeric boxes can still be mistaken for tick evidence.
 
 Phase 10 remains blocked until the research and benchmark waves prove enough
 autonomous evidence for product acceptance.

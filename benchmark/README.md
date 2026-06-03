@@ -165,3 +165,13 @@ python tools/benchmark/run_drd3_ocr_preprocessing_grid.py
 The DR-D3 OCR preprocessing grid report is written to:
 
 `benchmark/reports/drd3_ocr_preprocessing_grid/`
+
+Run the second OCR engine and full-image text-box detection benchmark:
+
+```powershell
+python tools/benchmark/run_drd4_second_ocr_text_box_benchmark.py
+```
+
+The DR-D4 OCR text-box detection report is written to:
+
+`benchmark/reports/drd4_second_ocr_text_box_benchmark/`
