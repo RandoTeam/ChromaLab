@@ -112,6 +112,7 @@ materials are not a replacement for the public README.
 | [Visual Identity](CHROMALAB_VISUAL_IDENTITY.md) | Logo, color, and identity direction. |
 | [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md) | Repository-safe wording and claims. |
 | [OpenAI Subsidy Repository Presentation Plan](OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md) | Public presentation phase plan. |
+| [OpenAI Subsidy Summary](OPENAI_SUBSIDY_SUMMARY.md) | Concise reviewer-ready subsidy, API credit, and Codex Security summary. |
 | [OpenAI Subsidy Application Narrative](OPENAI_SUBSIDY_APPLICATION_NARRATIVE.md) | Grant/application source text, not general README copy. |
 
 ## Internal Phase Archive
@@ -139,7 +140,6 @@ Recommended archive paths:
 
 The public repository presentation still needs:
 
-- a concise OpenAI subsidy summary page;
 - root `CONTRIBUTING.md`, if contributors are invited;
 - root `SECURITY.md`, if security reporting is opened publicly;
 - root `PRIVACY.md`, because user images, reports, evidence packages, logs, and

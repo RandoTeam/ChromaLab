@@ -394,7 +394,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, RP-7, and RP-8 are complete. The next phase should be RP-9: OpenAI Subsidy Summary Pack.
+RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, RP-7, RP-8, and RP-9 are complete. The next phase should be RP-10: Final Public Repository QA.
 
 Reason:
 
@@ -406,9 +406,10 @@ Reason:
 - The local AI runtime story now explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
 - The report experience concept now shows what a professional ChromaLab report should contain without adding fake screenshots or fake metrics.
 - The public documentation index now helps reviewers find the main product, science, validation, runtime, report, and development docs quickly.
-- The next missing layer is a concise OpenAI subsidy summary that separates application material from general README messaging.
+- The OpenAI subsidy summary now separates application material from general README messaging.
+- The next missing layer is a final public repository QA pass that checks links, readability, public claims, and accidental exposure risks.
 
-RP-9 should create `docs/OPENAI_SUBSIDY_SUMMARY.md` as a short reviewer-ready summary built from the application narrative, without copying grant-specific language into the general README.
+RP-10 should create a final public repository readiness note and verify that the main public documents render cleanly, link correctly, and avoid unsupported claims.
 
 ## Public README Target Structure
 
