@@ -20,11 +20,27 @@
 
 ---
 
-ChromaLab is a scientific mobile and desktop project for turning chromatogram photos, screenshots, and future digital imports into auditable analysis results. The product goal is simple for the user: take a photo or select an image, then let the app detect the graph, calibrate the axes, extract the trace, detect peaks, validate the evidence, and generate a professional report.
+ChromaLab is an open-source Android/Kotlin Multiplatform research-alpha project for autonomous chromatogram image analysis. It is designed to help students, educators, and researchers work with chromatogram screenshots or photos by automatically detecting graph regions, axes, calibration evidence, signal traces, peaks, and evidence-gated scientific reports.
 
-The engineering principle is stricter: chromatographic numbers must come from deterministic, inspectable algorithms. Local AI can help with OCR, graph understanding, semantic warnings, explanations, and report language, but it must not invent retention times, peak areas, calibration coefficients, compound identities, or other scientific measurements.
+The project combines deterministic computer vision, reproducible calibration and peak-analysis logic, local OCR/VLM assistance, and offline-first evidence tracking. Local AI models such as Gemma LiteRT-LM are used only as semantic, OCR, and review assistants; they do not create numeric chromatographic measurements. Retention time, intensity, area, FWHM, S/N, calibration, and peak metrics must come from deterministic evidence-backed processing.
 
-> ChromaLab is an analytical research and education tool under active validation. It is not a certified medical, forensic, regulatory, or industrial decision system. Scientific or legally significant use requires expert review and independent validation.
+ChromaLab is currently under active validation. It is not presented as a certified regulatory, forensic, medical, or industrial decision system. Current work focuses on real Android screenshots/photos, multi-graph chromatogram layouts, axis-scale recovery, trace extraction, peak evidence, export privacy, and professional report generation.
+
+Why it matters:
+
+- Students can learn how chromatogram images become calibrated signals and peak tables.
+- Educators can demonstrate evidence-based chromatographic analysis without expensive commercial tooling.
+- Researchers can inspect reproducible image-derived analysis with explicit uncertainty, provenance, and validation gates.
+- Sensitive scientific images and reports can follow a local/offline-first workflow by default.
+
+Current status:
+
+- The deterministic calculation/reporting core and evidence-export infrastructure are active.
+- Android validation fixtures test graph detection, calibration, trace extraction, peak evidence, and report generation.
+- Some fixture classes are still `REVIEW_ONLY` or `BLOCKED` while graph layout and axis-scale recovery are being improved.
+- ChromaLab intentionally shows `RELEASE_READY`, `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, or `BLOCKED` states rather than hiding uncertainty behind a polished report.
+
+> ChromaLab is an analytical research and education tool under active validation. Scientific or legally significant use requires expert review and independent validation.
 
 ## Why ChromaLab Exists
 

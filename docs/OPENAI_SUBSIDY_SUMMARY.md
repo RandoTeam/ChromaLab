@@ -16,12 +16,13 @@ License note: this repository now declares the Apache License 2.0 at the root.
 
 ## One-Page Pitch
 
-ChromaLab is a public Android/Kotlin Multiplatform project for offline-first
-chromatogram image analysis. It is being built so that a student, educator, or
-researcher can take a chromatogram photo or select a screenshot, then receive an
-auditable analysis path: graph detection, axis calibration, trace extraction,
-peak calculation, evidence validation, and a scientific report that clearly
-separates verified measurements from review-only or blocked evidence.
+ChromaLab is an Apache-2.0 open-source Android/Kotlin Multiplatform
+research-alpha project for offline-first autonomous chromatogram image
+analysis. It is being built so that a student, educator, or researcher can take
+a chromatogram photo or select a screenshot, then receive an auditable analysis
+path: graph detection, axis calibration, trace extraction, peak calculation,
+evidence validation, and a scientific report that clearly separates verified
+measurements from review-only or blocked evidence.
 
 The project is especially relevant to GC/MS learning workflows, petroleum
 geochemistry education, analytical chemistry teaching, and research contexts

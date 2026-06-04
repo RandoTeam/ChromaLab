@@ -8,10 +8,11 @@ repository.
 
 ## What ChromaLab Is
 
-ChromaLab is an Apache-2.0 Android/Kotlin Multiplatform research project for
-offline-first chromatogram image analysis. The product goal is to let a user
-take a chromatogram photo or select a screenshot, then have the app analyze the
-visual graph and produce an auditable report.
+ChromaLab is an Apache-2.0 open-source Android/Kotlin Multiplatform
+research-alpha project for offline-first autonomous chromatogram image
+analysis. The product goal is to let a user take a chromatogram photo or select
+a screenshot, then have the app analyze the visual graph and produce an
+auditable report.
 
 The intended analysis pipeline is:
 
