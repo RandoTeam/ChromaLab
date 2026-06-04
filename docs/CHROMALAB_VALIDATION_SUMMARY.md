@@ -266,7 +266,7 @@ Highest-priority blockers:
 3. Multi-panel graph semantics need stronger truth and report propagation.
 4. Axis scale and label evidence need ground truth for method comparisons.
 5. Trace and peak evidence need reference metrics before release-quality accuracy can be claimed.
-6. Public documentation still needs validation screenshots and a documentation index.
+6. Public documentation still needs a documentation index and later real screenshots only when they show current app output honestly.
 7. Security/privacy/export review remains a public roadmap item.
 
 ## Reviewer Takeaway

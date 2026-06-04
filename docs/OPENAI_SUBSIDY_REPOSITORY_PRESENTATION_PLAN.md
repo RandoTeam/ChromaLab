@@ -24,7 +24,8 @@ Observed public-facing issues:
 
 - `README.md` is currently corrupted with mojibake text and must be replaced with clean English.
 - The public narrative is scattered across many phase documents and is hard for a reviewer to follow.
-- The repository does not yet have a polished icon, visual identity, social preview, or clean reviewer-facing screenshots.
+- The repository does not yet have a polished social preview, public documentation index, or complete contribution/security/privacy entry points.
+- Real app screenshots should wait until the app can show current output honestly. Until then, public presentation should use report experience concepts and real validation evidence rather than fake screenshots.
 - The scientific story is not presented clearly enough: deterministic calculation, AI assistance, evidence gates, and limitations must be separated.
 - Validation evidence exists, but it needs a single human-readable summary that shows what works, what is blocked, and what remains experimental.
 - The technology stack is strong, but it is not mapped clearly for a reviewer.
@@ -245,31 +246,39 @@ Suggested commit message:
 Document local AI runtime strategy
 ```
 
-### RP-7: User Experience And Screenshots
+### RP-7: Report Experience Concept
 
-Objective: Show what the app actually looks like and how a user moves through it.
+Objective: Describe the intended professional report experience without pretending the current Android app already renders a finished production UI.
 
 Deliverables:
 
-- Screenshot set for README and docs.
-- Capture/gallery screen.
-- Analysis progress screen.
-- Evidence overlay screen.
-- Report screen.
-- Model manager screen.
-- Local chat screen.
-- Optional contact sheet under `artifacts/public-presentation/`.
+- `docs/CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md`.
+- Clear statement that this is a target design, not current production UI proof.
+- Report information architecture:
+  - gate summary;
+  - source preview;
+  - graph sections;
+  - evidence gate matrix;
+  - calibration evidence;
+  - trace evidence;
+  - peak table and peak detail cards;
+  - scientific caveats;
+  - model contribution boundaries;
+  - technical appendix and exports.
+- Design direction for a serious mobile scientific report.
+- Rules for when real screenshots may be added later.
 
 Acceptance gate:
 
-- Screenshots are current.
-- Screenshots do not hide failed or diagnostic states.
-- The user flow is understandable without reading internal phase documents.
+- No fake screenshots or fake report metrics.
+- The report target is understandable without reading internal phase documents.
+- The concept keeps blocked/review/diagnostic states visible.
+- The concept does not weaken evidence gates or imply production readiness.
 
 Suggested commit message:
 
 ```text
-Add public app screenshots and user flow
+Document report experience concept
 ```
 
 ### RP-8: Documentation Cleanup And Public Index
@@ -385,7 +394,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, RP-4, RP-5, and RP-6 are complete. The next phase should be RP-7: User Experience And Screenshots.
+RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, and RP-7 are complete. The next phase should be RP-8: Documentation Cleanup And Public Index.
 
 Reason:
 
@@ -395,9 +404,10 @@ Reason:
 - The architecture overview now explains how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
 - The validation evidence summary now converts Phase 9J, DR-B benchmark scoring, and Rust parity work into a public reviewer-facing evidence story.
 - The local AI runtime story now explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
-- The next missing layer is a real user-facing screenshot and flow package that shows what the app and validation outputs look like.
+- The report experience concept now shows what a professional ChromaLab report should contain without adding fake screenshots or fake metrics.
+- The next missing layer is a public documentation index that helps reviewers find the main product, science, validation, runtime, and development docs quickly.
 
-RP-7 should add a screenshot/contact-sheet plan and current visual evidence paths for capture, analysis, overlays, report output, model manager, and local chat without hiding review/blocked states.
+RP-8 should create `docs/README.md`, group public docs by purpose, and reduce reviewer friction without hiding internal phase history or validation blockers.
 
 ## Public README Target Structure
 
@@ -412,7 +422,7 @@ The rewritten README should use this structure:
 7. Local AI and privacy model.
 8. Technology stack.
 9. Validation and known limitations.
-10. Screenshots or visual placeholders.
+10. Report experience concept and later real screenshots when current output is honest enough.
 11. Developer quick start.
 12. Documentation links.
 13. Responsible-use statement.
@@ -447,7 +457,7 @@ The public repository presentation is complete when:
 - The repository has a recognizable icon or visual identity.
 - The main docs explain product purpose, scientific workflow, architecture, model runtime, validation, and limitations.
 - Validation evidence is summarized honestly.
-- Screenshots or contact sheets show real app output.
+- Report experience is documented honestly, and real screenshots are added only when they show current app output without masking blocked/review states.
 - OpenAI subsidy summary exists and is reviewer-ready.
 - Public links render correctly.
 - No primary public document contains corrupted text.

@@ -259,6 +259,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Validation Evidence Summary](docs/CHROMALAB_VALIDATION_SUMMARY.md)
 - [Autonomous Production Architecture](docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md)
 - [Local AI Runtime](docs/CHROMALAB_LOCAL_AI_RUNTIME.md)
+- [Report Experience Concept](docs/CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md)
 - [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
 - [Visual Identity](docs/CHROMALAB_VISUAL_IDENTITY.md)
 - [Public Messaging Guide](docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md)
@@ -272,7 +273,7 @@ Near-term priorities:
 2. keep improving real Android fixture validation and truth-audit clarity;
 3. strengthen graph layout and axis calibration robustness;
 4. move Rust CV work from prototype parity toward production integration;
-5. improve report language, screenshots, and reviewer-facing documentation;
+5. improve report language, report experience design, and reviewer-facing documentation;
 6. keep E2B FAST mode safe as a supported weaker-device baseline;
 7. prepare a cleaner contribution, privacy, and release policy once the public repository structure is stable.
 
