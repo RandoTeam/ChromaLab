@@ -394,7 +394,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, and RP-7 are complete. The next phase should be RP-8: Documentation Cleanup And Public Index.
+RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, RP-7, and RP-8 are complete. The next phase should be RP-9: OpenAI Subsidy Summary Pack.
 
 Reason:
 
@@ -405,9 +405,10 @@ Reason:
 - The validation evidence summary now converts Phase 9J, DR-B benchmark scoring, and Rust parity work into a public reviewer-facing evidence story.
 - The local AI runtime story now explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
 - The report experience concept now shows what a professional ChromaLab report should contain without adding fake screenshots or fake metrics.
-- The next missing layer is a public documentation index that helps reviewers find the main product, science, validation, runtime, and development docs quickly.
+- The public documentation index now helps reviewers find the main product, science, validation, runtime, report, and development docs quickly.
+- The next missing layer is a concise OpenAI subsidy summary that separates application material from general README messaging.
 
-RP-8 should create `docs/README.md`, group public docs by purpose, and reduce reviewer friction without hiding internal phase history or validation blockers.
+RP-9 should create `docs/OPENAI_SUBSIDY_SUMMARY.md` as a short reviewer-ready summary built from the application narrative, without copying grant-specific language into the general README.
 
 ## Public README Target Structure
 
@@ -456,6 +457,7 @@ The public repository presentation is complete when:
 - The root README is clean English and visually polished.
 - The repository has a recognizable icon or visual identity.
 - The main docs explain product purpose, scientific workflow, architecture, model runtime, validation, and limitations.
+- A public documentation index exists and separates main docs from internal phase archive.
 - Validation evidence is summarized honestly.
 - Report experience is documented honestly, and real screenshots are added only when they show current app output without masking blocked/review states.
 - OpenAI subsidy summary exists and is reviewer-ready.

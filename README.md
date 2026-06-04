@@ -251,6 +251,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 
 ## Documentation Entry Points
 
+- [Documentation Index](docs/README.md)
 - [Technical Pipeline](PIPELINE.md)
 - [Roadmap](ROADMAP.md)
 - [Report Specification](REPORT_SPEC.md)
@@ -273,7 +274,7 @@ Near-term priorities:
 2. keep improving real Android fixture validation and truth-audit clarity;
 3. strengthen graph layout and axis calibration robustness;
 4. move Rust CV work from prototype parity toward production integration;
-5. improve report language, report experience design, and reviewer-facing documentation;
+5. improve report language and reviewer-facing documentation;
 6. keep E2B FAST mode safe as a supported weaker-device baseline;
 7. prepare a cleaner contribution, privacy, and release policy once the public repository structure is stable.
 
