@@ -91,11 +91,19 @@ and robust-fit contracts used by DR-E1 and DR-E2.
 
 ## Next Slice
 
-Recommended next slice:
+Completed next slice:
 
 `DR-E6: Remaining Axis OCR Recovery For Y-Axis And Photo Graphs`
 
-Goal:
+Result:
+
+- documented in `docs/DRE6_REMAINING_AXIS_OCR_RECOVERY.md`;
+- usable axes improved from 22 to 24;
+- usable graphs improved from 10 to 12;
+- remaining partial/invalid graph count is now 0 in the PC-side benchmark;
+- graph regressions: 0.
+
+Original goal:
 
 - target `bench_05_graph_3` Y-axis safe-label recovery;
 - target `bench_06_graph_2` X-axis OCR visibility/preprocessing;

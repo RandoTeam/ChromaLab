@@ -245,3 +245,13 @@ python tools/benchmark/run_dre5_repaired_crop_calibration_pipeline.py
 The DR-E5 repaired crop calibration report is written to:
 
 `benchmark/reports/dre5_repaired_crop_calibration_pipeline/`
+
+Recover remaining partial calibration axes with targeted OCR fallback:
+
+```powershell
+python tools/benchmark/run_dre6_remaining_axis_ocr_recovery.py
+```
+
+The DR-E6 remaining-axis OCR recovery report and overlay are written to:
+
+`benchmark/reports/dre6_remaining_axis_ocr_recovery/`
