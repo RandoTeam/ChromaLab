@@ -168,10 +168,11 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
-Current status: `DR_E3_COMPLETE_MISSING_ANCHOR_RECOVERY_BLOCKED_BY_CROP_COVERAGE`
+Current status: `DR_E4_COMPLETE_LABEL_BAND_COVERAGE_REPAIR_RECOVERS_SCALE_CANDIDATES`
 in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md` and
 `docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`;
-`docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`.
+`docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`;
+`docs/DRE4_LABEL_BAND_CROP_COVERAGE_REPAIR.md`.
 
 Methods to compare:
 
@@ -197,6 +198,15 @@ Acceptance:
 - exactly why calibration failed is machine-readable;
 - old valid strategy cannot be replaced by invalid new strategy;
 - no title/ion/m/z label can become a scale anchor.
+
+Next slice:
+
+`DR-E5: Repaired Crop Pipeline End-To-End Calibration Benchmark`
+
+Purpose: run the repaired X label-band crop plan through the full safe OCR
+anchor and robust-fit chain, then separate recovered `bench_04`/`bench_05`
+calibration evidence from the still-unresolved `bench_06_graph_2` OCR recovery
+case.
 
 ## Wave DR-F: Trace Extraction Candidate Ensemble
 

@@ -225,3 +225,13 @@ python tools/benchmark/run_dre3_missing_anchor_coverage_benchmark.py
 The DR-E3 missing-anchor coverage report is written to:
 
 `benchmark/reports/dre3_missing_anchor_coverage/`
+
+Prototype repaired X label-band crops for remaining non-valid scale axes:
+
+```powershell
+python tools/benchmark/run_dre4_label_band_crop_coverage_repair.py
+```
+
+The DR-E4 crop coverage repair report and overlays are written to:
+
+`benchmark/reports/dre4_label_band_crop_coverage_repair/`

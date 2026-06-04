@@ -99,11 +99,20 @@ labels, coordinates, or calibration coefficients.
 
 ## Next Slice
 
-Recommended next slice:
+Completed next slice:
 
 `DR-E4: Label-Band Crop Coverage Repair Prototype`
 
-Goal:
+Result:
+
+- documented in `docs/DRE4_LABEL_BAND_CROP_COVERAGE_REPAIR.md`;
+- repaired X label-band crops recovered 40 safe X anchors across 4 of 5 target
+  X axes;
+- 4 axes moved from invalid baseline scale fit to usable `VALID`/`REVIEW`
+  repaired fit candidates;
+- `bench_06_graph_2` remains blocked by OCR recovery despite repaired coverage.
+
+Original goal:
 
 - repair inferred X label-band coverage for stacked/TIC+ion panels;
 - add crop subdivision candidates for dense X-label bands;
