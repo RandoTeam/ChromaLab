@@ -168,11 +168,12 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
-Current status: `DR_E4_COMPLETE_LABEL_BAND_COVERAGE_REPAIR_RECOVERS_SCALE_CANDIDATES`
+Current status: `DR_E5_COMPLETE_REPAIRED_CROP_PIPELINE_IMPROVES_CALIBRATION_NOT_ACCEPTANCE_READY`
 in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md` and
 `docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`;
 `docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`;
-`docs/DRE4_LABEL_BAND_CROP_COVERAGE_REPAIR.md`.
+`docs/DRE4_LABEL_BAND_CROP_COVERAGE_REPAIR.md`;
+`docs/DRE5_REPAIRED_CROP_PIPELINE_END_TO_END_CALIBRATION.md`.
 
 Methods to compare:
 
@@ -201,12 +202,11 @@ Acceptance:
 
 Next slice:
 
-`DR-E5: Repaired Crop Pipeline End-To-End Calibration Benchmark`
+`DR-E6: Remaining Axis OCR Recovery For Y-Axis And Photo Graphs`
 
-Purpose: run the repaired X label-band crop plan through the full safe OCR
-anchor and robust-fit chain, then separate recovered `bench_04`/`bench_05`
-calibration evidence from the still-unresolved `bench_06_graph_2` OCR recovery
-case.
+Purpose: recover or precisely classify the two remaining partial calibration
+cases after DR-E5: `bench_05_graph_3` Y-axis safe-label recovery and
+`bench_06_graph_2` X-axis OCR visibility/preprocessing.
 
 ## Wave DR-F: Trace Extraction Candidate Ensemble
 

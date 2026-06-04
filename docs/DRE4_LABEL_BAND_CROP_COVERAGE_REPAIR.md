@@ -97,11 +97,20 @@ coverage produces safe OCR evidence.
 
 ## Next Slice
 
-Recommended next slice:
+Completed next slice:
 
 `DR-E5: Repaired Crop Pipeline End-To-End Calibration Benchmark`
 
-Goal:
+Result:
+
+- documented in `docs/DRE5_REPAIRED_CROP_PIPELINE_END_TO_END_CALIBRATION.md`;
+- usable axes improved from 18 to 22;
+- usable graphs improved from 7 to 10;
+- graph regressions: 0;
+- remaining partial graphs are isolated to `bench_05_graph_3` Y-axis recovery
+  and `bench_06_graph_2` X-axis OCR recovery.
+
+Original goal:
 
 - rerun the scale-candidate and robust-fit chain with repaired crop plans as a
   first-class input;

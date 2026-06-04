@@ -235,3 +235,13 @@ python tools/benchmark/run_dre4_label_band_crop_coverage_repair.py
 The DR-E4 crop coverage repair report and overlays are written to:
 
 `benchmark/reports/dre4_label_band_crop_coverage_repair/`
+
+Run repaired label-band crops through end-to-end robust calibration scoring:
+
+```powershell
+python tools/benchmark/run_dre5_repaired_crop_calibration_pipeline.py
+```
+
+The DR-E5 repaired crop calibration report is written to:
+
+`benchmark/reports/dre5_repaired_crop_calibration_pipeline/`
