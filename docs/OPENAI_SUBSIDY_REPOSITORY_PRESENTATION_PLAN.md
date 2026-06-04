@@ -385,15 +385,16 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1 and RP-2 are complete. The next phase should be RP-3: Scientific And Product Narrative.
+RP-1, RP-2, and RP-3 are complete. The next phase should be RP-4: Architecture And Technology Map.
 
 Reason:
 
 - The root README now gives a clean first impression.
 - The visual identity now gives the project a public scientific signal.
-- The next missing layer is a deep product/scientific overview that explains the value without using grant-specific language.
+- The scientific/product overview now explains the product value without using grant-specific language.
+- The next missing layer is a clean architecture map that helps reviewers understand how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
 
-RP-3 should create `docs/CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md` and use `docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md` as the claim-safety guardrail.
+RP-4 should create `docs/CHROMALAB_ARCHITECTURE_OVERVIEW.md` with diagrams, technology tables, runtime boundaries, and reviewer-friendly explanations.
 
 ## Public README Target Structure
 

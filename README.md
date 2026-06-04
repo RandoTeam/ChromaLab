@@ -254,6 +254,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Technical Pipeline](PIPELINE.md)
 - [Roadmap](ROADMAP.md)
 - [Report Specification](REPORT_SPEC.md)
+- [Scientific Product Overview](docs/CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md)
 - [Data Flow](docs/DATA_FLOW.md)
 - [Autonomous Production Architecture](docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md)
 - [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
