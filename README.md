@@ -258,6 +258,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Architecture Overview](docs/CHROMALAB_ARCHITECTURE_OVERVIEW.md)
 - [Validation Evidence Summary](docs/CHROMALAB_VALIDATION_SUMMARY.md)
 - [Autonomous Production Architecture](docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md)
+- [Local AI Runtime](docs/CHROMALAB_LOCAL_AI_RUNTIME.md)
 - [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
 - [Visual Identity](docs/CHROMALAB_VISUAL_IDENTITY.md)
 - [Public Messaging Guide](docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md)

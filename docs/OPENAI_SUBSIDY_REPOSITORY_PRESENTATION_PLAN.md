@@ -385,7 +385,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, RP-4, and RP-5 are complete. The next phase should be RP-6: Model And Runtime Story.
+RP-1, RP-2, RP-3, RP-4, RP-5, and RP-6 are complete. The next phase should be RP-7: User Experience And Screenshots.
 
 Reason:
 
@@ -394,9 +394,10 @@ Reason:
 - The scientific/product overview now explains the product value without using grant-specific language.
 - The architecture overview now explains how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
 - The validation evidence summary now converts Phase 9J, DR-B benchmark scoring, and Rust parity work into a public reviewer-facing evidence story.
-- The next missing layer is a clean local AI runtime story that explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
+- The local AI runtime story now explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
+- The next missing layer is a real user-facing screenshot and flow package that shows what the app and validation outputs look like.
 
-RP-6 should create `docs/CHROMALAB_LOCAL_AI_RUNTIME.md` with model/runtime roles, device mode boundaries, supported and experimental paths, and strict AI numeric-authority rules.
+RP-7 should add a screenshot/contact-sheet plan and current visual evidence paths for capture, analysis, overlays, report output, model manager, and local chat without hiding review/blocked states.
 
 ## Public README Target Structure
 
