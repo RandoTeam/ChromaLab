@@ -307,22 +307,42 @@ Objective: Prepare a concise English package specifically for grant/subsidy revi
 
 Deliverables:
 
+- `docs/OPENAI_SUBSIDY_APPLICATION_NARRATIVE.md`.
 - `docs/OPENAI_SUBSIDY_SUMMARY.md`.
 - One-page pitch.
+- Field-ready application answers:
+  - role;
+  - repository eligibility;
+  - areas of interest;
+  - API-credit usage;
+  - additional maintainer context;
+  - Codex Security rationale.
 - Impact statement.
 - Technical novelty.
 - Why local OpenAI-compatible AI matters.
 - Student and education value.
+- GC/MS, petroleum geochemistry, and analytical chemistry relevance.
 - Scientific validation plan.
 - Compute/model support request.
+- Security and privacy review need:
+  - user chromatogram images;
+  - local reports;
+  - evidence packages;
+  - logs;
+  - export/share workflows;
+  - Android/KMP/Rust/native dependency surfaces.
 - Milestones and expected outcomes.
 - Risks and mitigation plan.
+- License-status check before using the word "open-source" externally.
 
 Acceptance gate:
 
 - The document explains why the project deserves support.
 - The ask is concrete.
 - The proposed milestones are realistic and auditable.
+- The application text is clear enough to paste into a subsidy form.
+- The security rationale is explicit and tied to real repository risks.
+- The text does not claim open-source licensing until the root license is added.
 
 Suggested commit message:
 
@@ -423,4 +443,3 @@ The public repository presentation is complete when:
 - Public links render correctly.
 - No primary public document contains corrupted text.
 - Every completed phase has a focused commit.
-
