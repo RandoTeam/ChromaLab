@@ -111,6 +111,7 @@ materials are not a replacement for the public README.
 |---|---|
 | [Visual Identity](CHROMALAB_VISUAL_IDENTITY.md) | Logo, color, and identity direction. |
 | [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md) | Repository-safe wording and claims. |
+| [Public Repository QA](CHROMALAB_PUBLIC_REPOSITORY_QA.md) | Final public-presentation QA, claim check, link check, and remaining gaps. |
 | [OpenAI Subsidy Repository Presentation Plan](OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md) | Public presentation phase plan. |
 | [OpenAI Subsidy Summary](OPENAI_SUBSIDY_SUMMARY.md) | Concise reviewer-ready subsidy, API credit, and Codex Security summary. |
 | [OpenAI Subsidy Application Narrative](OPENAI_SUBSIDY_APPLICATION_NARRATIVE.md) | Grant/application source text, not general README copy. |

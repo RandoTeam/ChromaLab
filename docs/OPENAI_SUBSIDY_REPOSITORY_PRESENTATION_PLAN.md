@@ -394,7 +394,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, RP-7, RP-8, and RP-9 are complete. The next phase should be RP-10: Final Public Repository QA.
+RP-1, RP-2, RP-3, RP-4, RP-5, RP-6, RP-7, RP-8, RP-9, and RP-10 are complete.
 
 Reason:
 
@@ -407,9 +407,9 @@ Reason:
 - The report experience concept now shows what a professional ChromaLab report should contain without adding fake screenshots or fake metrics.
 - The public documentation index now helps reviewers find the main product, science, validation, runtime, report, and development docs quickly.
 - The OpenAI subsidy summary now separates application material from general README messaging.
-- The next missing layer is a final public repository QA pass that checks links, readability, public claims, and accidental exposure risks.
+- The final public repository QA pass now checks links, readability, public claims, and accidental exposure risks.
 
-RP-10 should create a final public repository readiness note and verify that the main public documents render cleanly, link correctly, and avoid unsupported claims.
+The public presentation work can now move from documentation setup into policy cleanup or runtime engineering, depending on project priority.
 
 ## Public README Target Structure
 
@@ -465,3 +465,11 @@ The public repository presentation is complete when:
 - Public links render correctly.
 - No primary public document contains corrupted text.
 - Every completed phase has a focused commit.
+
+Current RP-10 decision:
+
+```text
+PUBLIC_PRESENTATION_READY_WITH_DOCUMENTED_LIMITATIONS
+```
+
+Remaining public gaps are tracked in `docs/CHROMALAB_PUBLIC_REPOSITORY_QA.md`.

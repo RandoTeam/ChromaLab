@@ -264,6 +264,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
 - [Visual Identity](docs/CHROMALAB_VISUAL_IDENTITY.md)
 - [Public Messaging Guide](docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md)
+- [Public Repository QA](docs/CHROMALAB_PUBLIC_REPOSITORY_QA.md)
 - [Public Repository Presentation Plan](docs/OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md)
 
 ## Current Roadmap
