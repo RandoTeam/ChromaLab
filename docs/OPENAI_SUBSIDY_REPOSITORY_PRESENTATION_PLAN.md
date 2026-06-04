@@ -35,6 +35,7 @@ Observed public-facing issues:
 All public repository content must follow these principles:
 
 - English only for public-facing repository pages.
+- Public repository messaging must be separated from grant/subsidy application language.
 - Honest status reporting: do not claim production accuracy that has not been validated.
 - Scientific credibility before marketing language.
 - Clear separation between deterministic calculations and AI-assisted interpretation.
@@ -43,6 +44,7 @@ All public repository content must follow these principles:
 - No fake screenshots, fake metrics, fake reports, or hardcoded examples.
 - Every strong claim should point to code, documentation, validation artifacts, or a known roadmap item.
 - The repository should be understandable to three audiences: OpenAI reviewers, scientists/educators, and mobile developers.
+- Grant-specific language such as API-credit requests, Codex Security interest, and sole-maintainer context belongs in subsidy documents, not the root README.
 
 ## Phase Plan
 
@@ -117,6 +119,7 @@ Objective: Write the deep English explanation of what the product does and why t
 
 Deliverables:
 
+- `docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md` as the guardrail for repository-safe claims.
 - `docs/CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md`.
 - Explanation of chromatograms, axes, calibration, traces, peaks, baseline, integration, S/N, FWHM, area percent, and report gates.
 - User story for students, laboratory learners, researchers, and field users.
@@ -133,6 +136,7 @@ Acceptance gate:
 - A non-project reviewer can understand the scientific purpose.
 - A scientific reviewer can see that the project is careful about evidence and uncertainty.
 - AI is described as assistance, not numeric authority.
+- The document uses repository-safe public messaging instead of copying grant application text.
 
 Suggested commit message:
 
@@ -343,6 +347,7 @@ Acceptance gate:
 - The application text is clear enough to paste into a subsidy form.
 - The security rationale is explicit and tied to real repository risks.
 - The text does not claim open-source licensing until the root license is added.
+- The document remains clearly labeled as application material, not general README copy.
 
 Suggested commit message:
 
@@ -380,15 +385,15 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-The next phase should be RP-1: Public README Rewrite.
+RP-1 and RP-2 are complete. The next phase should be RP-3: Scientific And Product Narrative.
 
 Reason:
 
-- The root README is the first document OpenAI reviewers and GitHub visitors will see.
-- It is currently corrupted and cannot represent the project.
-- Fixing it first will create the public narrative that later icon, architecture, validation, and subsidy documents can support.
+- The root README now gives a clean first impression.
+- The visual identity now gives the project a public scientific signal.
+- The next missing layer is a deep product/scientific overview that explains the value without using grant-specific language.
 
-RP-1 should not attempt to solve all documentation at once. It should create a strong root README with accurate links and honest current status. Deeper pages can be filled in during RP-2 through RP-10.
+RP-3 should create `docs/CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md` and use `docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md` as the claim-safety guardrail.
 
 ## Public README Target Structure
 
