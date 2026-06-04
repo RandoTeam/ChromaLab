@@ -385,16 +385,17 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, and RP-3 are complete. The next phase should be RP-4: Architecture And Technology Map.
+RP-1, RP-2, RP-3, and RP-4 are complete. The next phase should be RP-5: Validation Evidence And Benchmark Summary.
 
 Reason:
 
 - The root README now gives a clean first impression.
 - The visual identity now gives the project a public scientific signal.
 - The scientific/product overview now explains the product value without using grant-specific language.
-- The next missing layer is a clean architecture map that helps reviewers understand how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
+- The architecture overview now explains how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
+- The next missing layer is a clean validation evidence summary that converts Phase 9J and benchmark work into a public reviewer-facing evidence story.
 
-RP-4 should create `docs/CHROMALAB_ARCHITECTURE_OVERVIEW.md` with diagrams, technology tables, runtime boundaries, and reviewer-friendly explanations.
+RP-5 should create `docs/CHROMALAB_VALIDATION_SUMMARY.md` with Android fixture truth, benchmark status, report gates, artifact types, known blockers, and next engineering fixes.
 
 ## Public README Target Structure
 
