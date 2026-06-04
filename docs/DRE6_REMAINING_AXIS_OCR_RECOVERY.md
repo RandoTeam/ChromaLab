@@ -104,11 +104,18 @@ calibration.
 
 ## Next Slice
 
-Recommended next slice:
+Completed next slice:
 
 `DR-E7: Axis OCR Runtime Candidate Contract And Android Parity Plan`
 
-Goal:
+Result:
+
+- documented in `docs/DRE7_AXIS_OCR_RUNTIME_CANDIDATE_CONTRACT_AND_ANDROID_PARITY_PLAN.md`;
+- defines `AXIS_OWNED_OCR_FALLBACK_CANDIDATE_V1`;
+- defines Android parity gates before runtime production integration;
+- keeps the next slice scoped to validation/runtime implementation only.
+
+Original goal:
 
 - convert the proven PC-side rules into a minimal runtime candidate contract;
 - specify per-axis OCR variant fallback without changing scientific math;

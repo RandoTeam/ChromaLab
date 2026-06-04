@@ -168,13 +168,14 @@ Acceptance:
 Goal: prove scale resolution from ticks, grid lines, label boxes, regular
 sequences, and frame evidence.
 
-Current status: `DR_E6_COMPLETE_ALL_TARGET_AXES_USABLE_NOT_RUNTIME_READY`
+Current status: `DR_E7_COMPLETE_RUNTIME_CANDIDATE_CONTRACT_READY_FOR_IMPLEMENTATION`
 in `docs/DRE1_AXIS_SCALE_CANDIDATE_BUILDER_FROM_SAFE_OCR.md` and
 `docs/DRE2_ROBUST_AXIS_SCALE_FIT_AND_OUTLIER_REJECTION.md`;
 `docs/DRE3_MISSING_ANCHOR_RECOVERY_AND_LABEL_BAND_COVERAGE.md`;
 `docs/DRE4_LABEL_BAND_CROP_COVERAGE_REPAIR.md`;
 `docs/DRE5_REPAIRED_CROP_PIPELINE_END_TO_END_CALIBRATION.md`;
-`docs/DRE6_REMAINING_AXIS_OCR_RECOVERY.md`.
+`docs/DRE6_REMAINING_AXIS_OCR_RECOVERY.md`;
+`docs/DRE7_AXIS_OCR_RUNTIME_CANDIDATE_CONTRACT_AND_ANDROID_PARITY_PLAN.md`.
 
 Methods to compare:
 
@@ -203,11 +204,10 @@ Acceptance:
 
 Next slice:
 
-`DR-E7: Axis OCR Runtime Candidate Contract And Android Parity Plan`
+`DR-E8: Android Runtime Axis OCR Candidate Implementation`
 
-Purpose: convert the proven PC-side axis OCR/crop recovery rules into a minimal
-runtime candidate contract and define Android parity checks before production
-integration.
+Purpose: implement `AXIS_OWNED_OCR_FALLBACK_CANDIDATE_V1` in validation/runtime
+code and prove Android parity before claiming product improvement.
 
 ## Wave DR-F: Trace Extraction Candidate Ensemble
 
