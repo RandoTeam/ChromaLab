@@ -1,158 +1,278 @@
 <h1 align="center">ChromaLab</h1>
 
 <p align="center">
-  <b>Offline-first лабораторная рабочая среда для анализа хроматограмм и локальных AI-моделей</b>
+  <b>Offline-first chromatogram analysis, local AI assistance, and evidence-gated scientific reporting for Android and desktop research workflows.</b>
 </p>
 
 <p align="center">
   <a href="https://github.com/RandoTeam/ChromaLab/releases">
-    <img alt="Beta" src="https://img.shields.io/badge/release-v0.0.4--beta-2563eb?style=for-the-badge">
+    <img alt="Release track" src="https://img.shields.io/badge/release-v0.0.4--beta-2563eb?style=for-the-badge">
   </a>
-  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Multiplatform-7f52ff?style=for-the-badge&logo=kotlin&logoColor=white">
-  <img alt="Compose" src="https://img.shields.io/badge/Compose-Material%203-0f9d58?style=for-the-badge">
-  <img alt="Offline" src="https://img.shields.io/badge/offline--first-on--device-111827?style=for-the-badge">
+  <img alt="Kotlin Multiplatform" src="https://img.shields.io/badge/Kotlin-Multiplatform-7f52ff?style=for-the-badge&logo=kotlin&logoColor=white">
+  <img alt="Android" src="https://img.shields.io/badge/Android-on--device-3ddc84?style=for-the-badge&logo=android&logoColor=white">
+  <img alt="Rust CV" src="https://img.shields.io/badge/Rust-CV%20core-b7410e?style=for-the-badge&logo=rust&logoColor=white">
+  <img alt="Local AI" src="https://img.shields.io/badge/AI-local%20first-111827?style=for-the-badge">
 </p>
 
 ---
 
-ChromaLab начинался как мобильное приложение для оцифровки и расчета хроматограмм. Сейчас проект развивается в более широкую офлайн-среду: лабораторный расчетный контур, общий менеджер локальных моделей, VLM/LLM-чат и модульная база для будущих анализаторов.
+ChromaLab is a scientific mobile and desktop project for turning chromatogram photos, screenshots, and future digital imports into auditable analysis results. The product goal is simple for the user: take a photo or select an image, then let the app detect the graph, calibrate the axes, extract the trace, detect peaks, validate the evidence, and generate a professional report.
 
-> ChromaLab является вспомогательным аналитическим инструментом. Результаты должны проверяться квалифицированным специалистом перед научным, промышленным, медицинским или юридически значимым использованием.
+The engineering principle is stricter: chromatographic numbers must come from deterministic, inspectable algorithms. Local AI can help with OCR, graph understanding, semantic warnings, explanations, and report language, but it must not invent retention times, peak areas, calibration coefficients, compound identities, or other scientific measurements.
 
-## Что Уже Есть
+> ChromaLab is an analytical research and education tool under active validation. It is not a certified medical, forensic, regulatory, or industrial decision system. Scientific or legally significant use requires expert review and independent validation.
 
-| Контур | Статус | Описание |
-|---|---:|---|
-| Захват хроматограммы | Alpha | Камера через ML Kit Document Scanner, галерея, desktop file bridge |
-| Оцифровка графика | Alpha | Поиск области графика, осей, кривой, OCR/VLM-подсказки, fallback-логика |
-| Расчет пиков | Alpha 2 | Baseline, noise, peak detection, boundaries, integration, S/N, area %, resolution |
-| Отчеты | Alpha | Таблицы пиков и параметры расчета уже выводятся, профессиональная интерпретация еще расширяется |
-| Менеджер моделей | Beta | LiteRT-LM, GGUF, Hugging Face search, download/import/export/delete, роли моделей |
-| Локальный чат | Beta | Чаты, история, Gallery-style UI, выбор модели из общего пула, runtime controls, streaming UI, lazy loading, GGUF MTP |
-| Интерфейс | Alpha 2 | Настройка темы system/light/dark и портретный режим Android до отдельной landscape-проработки |
+## Why ChromaLab Exists
 
-## Beta 0.0.4
+Chromatograms are central to analytical chemistry, but many students, laboratories, and field users still work with screenshots, printouts, exported images, or photos of instrument software. Converting those visuals into useful calculations is difficult:
 
-### Хроматография
+- the graph may be cropped, rotated, compressed, or photographed at an angle;
+- axes and tick labels may be small, blurred, or partially missing;
+- multiple ion traces can share one plot or appear as several panels;
+- peak boundaries, baselines, and integrations must be explainable;
+- AI can read text and assist interpretation, but it cannot be trusted as a numeric authority.
 
-- Обработка входа из камеры, галереи и файлового bridge.
-- Расчетное ядро учитывает реальные параметры интеграции, а не только отображает их в UI:
-  - boundary method;
-  - clamp negative;
-  - max width;
-  - integration mode.
-- Peak metrics: apex RT, centroid, height, area, width, prominence, S/N, confidence, overlap, tailing/asymmetry, resolution, area percent.
-- В отчет добавлены параметры расчета, влияющие на результат.
+ChromaLab approaches this as an evidence problem. Every serious stage should expose what it saw, what it accepted, what it rejected, and why the final report is release-ready, review-only, diagnostic-only, or blocked.
 
-### Локальные Модели
+## What The App Does
 
-- Единый раздел моделей для научного контура и чата.
-- Поддержка `.litertlm` через Google LiteRT-LM.
-- Поддержка `.gguf` через llama.cpp bridge на актуальном upstream `b9464`.
-- GGUF text-only чат поддерживает MTP speculative decoding через `draft-mtp` и настраиваемое число draft tokens.
-- Hugging Face поиск по моделям с сортировкой и compatibility metadata.
-- Локальный import/export остается частью основного model manager.
-- Модели не загружаются в память из менеджера моделей: чат и анализ хроматограмм загружают runtime только в момент работы.
-- Отдельный выбор модели для хроматограмм сохраняется независимо от модели чата.
+| Area | Current capability | Status |
+|---|---|---:|
+| Capture and import | Android camera/gallery flow, ML Kit document scanner, desktop development bridge | Alpha |
+| Graph detection | Graph panel, plot area, layout classification, multi-panel handling research, Android fixture validation | Research alpha |
+| Axis and scale resolution | Deterministic tick/grid/label evidence, calibration strategies, regression shields | Research alpha |
+| Trace extraction | Pixel-to-signal extraction and overlay evidence for supported fixtures | Alpha |
+| Peak calculation | Deterministic `CalculationEngine` with baseline, noise, peak boundaries, integration, S/N, area percent, FWHM, resolution, and warnings | Alpha |
+| Reports | Report contract JSON, Markdown/HTML exports, evidence gates, validator output | Alpha |
+| Local AI models | LiteRT-LM, GGUF, llama.cpp bridge, model manager, Hugging Face search/import workflows | Beta |
+| Local chat | Multi-session local chat, model picker, runtime controls, streaming, GGUF MTP text acceleration | Beta |
+| Rust CV core | Rust axis/geometry prototype and Android bridge experiments | In progress |
 
-### Чат
-
-- Отдельный раздел чатов.
-- Несколько chat sessions.
-- Настройки на уровне чата: system prompt, temperature, top-p, top-k, max tokens, repeat penalty, repeat last N.
-- Для GGUF text-only чата доступен MTP-переключатель и настройка draft tokens.
-- Gallery-style верхняя панель: название чата, model chip, отдельный model picker.
-- Выбор модели из общего downloaded model pool без загрузки модели из менеджера.
-- Capability-gated runtime controls: backend/accelerator выбираются только там, где это реально поддержано.
-- Thinking toggle показывается только для моделей/runtime, которые могут вернуть thinking отдельно.
-- Streaming-ответы с плавным буферизованным появлением текста и stop state во время генерации.
-- Статистика под ответом: модель, backend, accelerator, prompt tokens, answer tokens, время, скорость генерации.
-- Composer пока text-only: image/file context для чата отложен до полноценной поддержки storage, capability gating и runtime routing.
-- При выходе из чата модель выгружается по lifecycle-таймеру, а перед анализом хроматограмм освобождается память.
-
-## Pipeline
+## Autonomous Analysis Pipeline
 
 ```mermaid
 flowchart LR
-    A["Camera / Gallery / File"] --> B["Image preparation"]
-    B --> C["Graph region + axes"]
-    C --> D["Curve extraction"]
-    D --> E["Digital signal"]
-    E --> F["CalculationEngine"]
-    F --> G["Report / Export"]
+    A["Photo / screenshot / future file import"] --> B["Image normalization"]
+    B --> C["Graph layout detection"]
+    C --> D["Graph panel and plot area"]
+    D --> E["Axis, scale, and OCR evidence"]
+    E --> F["Pixel-to-unit calibration"]
+    F --> G["Trace extraction"]
+    G --> H["Deterministic CalculationEngine"]
+    H --> I["Peak table and quality warnings"]
+    I --> J["Evidence-gated report"]
 
-    M["Model Manager"] --> L["LiteRT-LM"]
-    M --> Q["GGUF / llama.cpp b9464"]
-    L --> V["VLM helpers"]
-    Q --> V
-    L --> H["Local chat"]
-    Q --> H
-    V --> C
+    M["Local model manager"] --> N["LiteRT-LM / Gemma"]
+    M --> O["GGUF / llama.cpp"]
+    N --> P["OCR, semantic, and explanation assistance"]
+    O --> P
+    P --> E
+    P --> J
 ```
 
-## Архитектура
+AI assists the pipeline. It does not replace the deterministic calculation path.
 
-| Модуль | Назначение |
+## Scientific Calculation Core
+
+The calculation layer receives a calibrated `DigitalSignal(time, intensity)` and returns an immutable calculation run. The current deterministic pipeline includes:
+
+1. input signal validation;
+2. optional smoothing;
+3. baseline estimation;
+4. baseline correction;
+5. noise estimation;
+6. peak detection;
+7. peak boundary detection;
+8. overlap classification;
+9. peak integration;
+10. peak metrics and confidence;
+11. run warnings;
+12. report/export parameters.
+
+Supported calculation concepts include:
+
+- boundary methods such as prominence bases, local minima, baseline intersection, and percent-height boundaries;
+- trapezoidal and interpolated trapezoidal integration;
+- optional negative-area clamping;
+- peak metrics including apex retention time, centroid, height, area, width, prominence, S/N, confidence, overlap, tailing/asymmetry, resolution, and area percent.
+
+The calculation engine is intentionally separated from the vision and AI stages so that model behavior cannot silently change chromatographic math.
+
+## Local AI Runtime
+
+ChromaLab is designed around local, privacy-preserving AI:
+
+- LiteRT-LM is the Android reference path for compatible local Gemma-style models.
+- Gemma E2B is treated as the baseline FAST/weaker-device mode where supported.
+- Larger/full-analysis models can be used when device memory and acceleration allow.
+- GGUF models run through a native llama.cpp bridge for local chat and compatible text tasks.
+- GGUF MTP speculative decoding is scoped to text-only chat until strict chromatogram-analysis quality gates validate it.
+- OCR/document-only models remain specialized tools unless they satisfy the chromatogram vision contract.
+
+Model safety rules:
+
+- AI may improve local crop OCR, title/ion classification, warning explanations, Knowledge Pack explanations, and overlay review comments.
+- AI may be advisory for graph quality, plot-area warnings, axis visibility warnings, and multi-graph suspicion.
+- AI must not erase deterministic graph candidates.
+- AI must not create pixel coordinates, calibration coefficients, RT, height, area, FWHM, S/N, baseline, Kovats index, or compound identification without explicit evidence.
+
+## Evidence Gates
+
+ChromaLab reports are gated by evidence, not appearance.
+
+| Gate | Meaning |
 |---|---|
-| `composeApp/src/commonMain/kotlin/com/chromalab/feature/capture` | Захват и импорт входных данных |
-| `composeApp/src/commonMain/kotlin/com/chromalab/feature/processing` | Image processing, OCR/VLM, signal extraction |
-| `composeApp/src/commonMain/kotlin/com/chromalab/feature/calculation` | Детерминированные расчеты хроматограмм |
-| `composeApp/src/commonMain/kotlin/com/chromalab/feature/settings` | Менеджер моделей и настройки |
-| `composeApp/src/commonMain/kotlin/com/chromalab/feature/chat` | Локальный LLM-чат |
-| `androidApp/src/main/cpp` | Native llama.cpp bridge для GGUF |
+| `RELEASE_READY` | Required evidence is complete and no critical blocker remains. |
+| `REVIEW_ONLY` | The app produced useful analysis, but a human should review evidence before relying on it. |
+| `DIAGNOSTIC_ONLY` | The run is useful for debugging or learning, but not for scientific reporting. |
+| `BLOCKED` | A critical stage failed, such as graph detection, calibration, trace extraction, export, or validator evidence. |
 
-## Технологии
+Current public truth audit status: Phase 9 is not accepted as a production autonomous pipeline. Recent fixture validation shows several review-grade successes and remaining blocked cases, especially around difficult axis calibration and multi-panel graph layout semantics. This is documented rather than hidden.
 
-| Компонент | Технология |
+Start with:
+
+- [Phase 9J Autonomous Analysis Truth Audit](docs/PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT.md)
+- [Phase 9J Product Acceptance Table](docs/PHASE9J_PRODUCT_ACCEPTANCE_TABLE.md)
+- [Phase 9J Scientific Acceptance Table](docs/PHASE9J_SCIENTIFIC_ACCEPTANCE_TABLE.md)
+- [Phase 9J E2B Acceptance Matrix](docs/PHASE9J_E2B_ACCEPTANCE_MATRIX.md)
+- [Engineering Next Fixes](docs/PHASE9J_ENGINEERING_NEXT_FIXES.md)
+
+## Technology Stack
+
+| Layer | Technologies |
 |---|---|
-| Язык | Kotlin Multiplatform |
-| UI | Compose Multiplatform / Jetpack Compose Material 3 |
-| Android capture | ML Kit Document Scanner |
-| OCR | ML Kit Text Recognition |
-| Local LLM/VLM | LiteRT-LM, llama.cpp |
-| Data | Room, bundled SQLite, Kotlin serialization |
-| Native | Android NDK, CMake |
+| Shared app code | Kotlin Multiplatform |
+| UI | Compose Multiplatform, Jetpack Compose, Material 3 |
+| Android capture | Camera/gallery flow, ML Kit Document Scanner |
+| OCR | ML Kit Text Recognition, local crop OCR workflows |
+| Calculation | Deterministic Kotlin `CalculationEngine` |
+| Computer vision | Kotlin CV pipeline, Rust CV core in progress, OpenCV bindings where applicable |
+| Local AI | LiteRT-LM, Gemma-compatible local models, GGUF, llama.cpp |
+| Storage | Room, bundled SQLite, Kotlin serialization |
+| Dependency injection | Koin |
+| Native runtime | Android NDK, CMake, JNI bridge |
+| Validation | Android fixture runs, desktop benchmarks, runtime evidence packages, validator JSON/Markdown |
+| Research tooling | Python/Rust/Kotlin benchmark scripts and artifact generators |
 
-## Сборка
+## Repository Map
 
-Требования:
+| Path | Purpose |
+|---|---|
+| `composeApp/` | Kotlin Multiplatform app code, shared UI, processing, calculation, reporting, model management, and chat features. |
+| `androidApp/` | Android application wrapper, native runtime bridge, APK build targets, Android-specific model/runtime integration. |
+| `rust/chromalab-cv-core/` | Rust computer-vision core experiments and bridge work for faster graph/axis analysis. |
+| `docs/` | Product, scientific, validation, architecture, model, research, and phase documentation. |
+| `artifacts/` | Local validation artifacts, screenshots, benchmark outputs, and truth-audit evidence. Not all artifacts are intended for release packaging. |
+| `tools/` | Utility scripts for validation, benchmarking, and repository workflows. |
+| `benchmark/` | Benchmark scaffolding and supporting data where present. |
 
-- JDK 17
-- Android SDK 35
-- Android NDK `27.2.12479018`
-- CMake `3.22.1`
+## Validation Snapshot
 
-Команды:
+The current validation story is intentionally transparent:
+
+- Supported fixtures can reach graph detection, inferred calibration, trace extraction, peak calculation, report export, and validator output.
+- Some difficult real-world fixtures remain blocked or review-only because graph layout, axis scale resolution, or calibration evidence is not strong enough.
+- E2B model-enabled mode is tested against deterministic baseline behavior and must not degrade graph count, calibration, trace, peak metrics, or report gates.
+- The project keeps blocked cases visible through artifact packages, validator reports, overlays, and next-fix documents.
+
+Useful validation documents:
+
+- [Autonomous Analysis Evidence Gates](docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md)
+- [Chromatogram Failure Taxonomy](docs/CHROMATOGRAM_FAILURE_TAXONOMY.md)
+- [Chromatogram Regression Dataset](docs/CHROMATOGRAM_REGRESSION_DATASET.md)
+- [Chromatogram Regression Matrix](docs/CHROMATOGRAM_REGRESSION_MATRIX.md)
+- [Ground Truth Corpus And Metrics](docs/DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md)
+
+## Why This Matters For Students And Science
+
+ChromaLab is designed for people who need to learn, inspect, and explain chromatographic results, not only click a black-box button.
+
+For students:
+
+- shows how a visual graph becomes a calibrated signal;
+- exposes peak metrics and calculation parameters;
+- teaches why evidence quality matters;
+- supports local experimentation without cloud dependence.
+
+For researchers and educators:
+
+- provides an auditable analysis path for screenshots and photos;
+- separates deterministic measurements from AI assistance;
+- makes uncertainty and blocked evidence visible;
+- creates a foundation for reproducible teaching datasets and validation fixtures.
+
+For developers:
+
+- combines mobile UI, local AI, scientific calculation, computer vision, and Rust/Kotlin systems work in one serious applied project;
+- keeps validation artifacts close to implementation;
+- makes failures inspectable instead of hiding them behind polished output.
+
+## Developer Quick Start
+
+Requirements:
+
+- JDK 17;
+- Android SDK 35;
+- Android NDK `27.2.12479018`;
+- CMake `3.22.1`;
+- a recent Android Studio or compatible Gradle environment.
+
+Common validation commands:
 
 ```bash
-./gradlew :composeApp:compileAndroidMain :composeApp:compileKotlinDesktop --no-daemon
+./gradlew :composeApp:compileKotlinDesktop --no-daemon
+./gradlew :composeApp:assembleAndroidMain --no-daemon
 ./gradlew :androidApp:assembleDebug --no-daemon
-./gradlew :androidApp:installDebug --no-daemon
 ```
 
-Debug APK:
+On Windows PowerShell:
+
+```powershell
+.\gradlew.bat :composeApp:compileKotlinDesktop --no-daemon
+.\gradlew.bat :composeApp:assembleAndroidMain --no-daemon
+.\gradlew.bat :androidApp:assembleDebug --no-daemon
+```
+
+Debug APK path after build:
 
 ```text
 androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
 
-## Roadmap
+Validation APK path after validation build:
 
-| Этап | Цель |
-|---|---|
-| Beta 0.0.4 | Актуализировать GGUF runtime, добавить text-only MTP для чата, собрать подписанную beta |
-| Alpha 3 | Профессиональный отчет, лучшее объяснение расчетов, больше real-world validation |
-| MVP | Полный цикл: capture/import -> digitization -> calculation -> report -> local AI explanation |
-| Next | Chat attachments, real-world report validation, landscape UI only after dedicated design and QA |
+```text
+androidApp/build/outputs/apk/validation/androidApp-validation.apk
+```
 
-## Ограничения Alpha
+## Documentation Entry Points
 
-- CSV/TXT/PDF/mzML import еще не является production-grade парсером.
-- GGUF image analysis требует подходящий `mmproj`; text-only GGUF модели используются для чата и текстовых задач.
-- MTP включается только для GGUF text-only чата. Для `mmproj`/VLM и строгого анализа хроматограмм MTP пока отключен до отдельной валидации качества.
-- Токены в чате пока считаются локальной оценкой, пока runtime не отдаёт точные tokenizer metrics.
-- Большая валидация на наборе реальных хроматограмм еще впереди.
+- [Technical Pipeline](PIPELINE.md)
+- [Roadmap](ROADMAP.md)
+- [Report Specification](REPORT_SPEC.md)
+- [Data Flow](docs/DATA_FLOW.md)
+- [Autonomous Production Architecture](docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md)
+- [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
+- [Public Repository Presentation Plan](docs/OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md)
 
-## Лицензия
+## Current Roadmap
 
-Proprietary. Copyright 2026.
+Near-term priorities:
+
+1. finish the public repository presentation work;
+2. keep improving real Android fixture validation and truth-audit clarity;
+3. strengthen graph layout and axis calibration robustness;
+4. move Rust CV work from prototype parity toward production integration;
+5. improve report language, screenshots, and reviewer-facing documentation;
+6. keep E2B FAST mode safe as a supported weaker-device baseline;
+7. prepare a cleaner contribution, privacy, and release policy once the public repository structure is stable.
+
+## Responsible Use
+
+ChromaLab is not a substitute for validated laboratory software, calibrated instruments, or qualified scientific judgment. It is a research and education platform for offline chromatogram analysis workflows. Reports should be treated according to their evidence gate, and blocked or review-only output must not be presented as final scientific proof.
+
+## License And Contribution Status
+
+No public open-source license is currently declared at the repository root. Until a license is added, treat this repository as publicly visible source code rather than freely reusable open-source software.
+
+External contribution guidelines, security policy, privacy statement, and release-quality documentation are planned as part of the public repository presentation work.
