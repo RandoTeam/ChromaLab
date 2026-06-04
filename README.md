@@ -14,6 +14,10 @@
   <img alt="Local AI" src="https://img.shields.io/badge/AI-local%20first-111827?style=for-the-badge">
 </p>
 
+<p align="center">
+  <img src="assets/brand/chromalab-hero.svg" alt="ChromaLab repository hero: offline chromatogram analysis with local AI assistance" width="900">
+</p>
+
 ---
 
 ChromaLab is a scientific mobile and desktop project for turning chromatogram photos, screenshots, and future digital imports into auditable analysis results. The product goal is simple for the user: take a photo or select an image, then let the app detect the graph, calibrate the axes, extract the trace, detect peaks, validate the evidence, and generate a professional report.
@@ -253,6 +257,7 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Data Flow](docs/DATA_FLOW.md)
 - [Autonomous Production Architecture](docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md)
 - [Gemma LiteRT-LM Model Strategy](docs/GEMMA_LITERTLM_MODEL_STRATEGY.md)
+- [Visual Identity](docs/CHROMALAB_VISUAL_IDENTITY.md)
 - [Public Repository Presentation Plan](docs/OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md)
 
 ## Current Roadmap

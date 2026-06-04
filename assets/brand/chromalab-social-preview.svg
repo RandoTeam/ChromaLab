@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">ChromaLab GitHub social preview</title>
+  <desc id="desc">A social preview image for the ChromaLab repository.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.56" stop-color="#10233D"/>
+      <stop offset="1" stop-color="#123A4D"/>
+    </linearGradient>
+    <linearGradient id="trace" x1="544" y1="438" x2="1100" y2="168" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#62E0FF"/>
+      <stop offset="0.48" stop-color="#23D3A6"/>
+      <stop offset="1" stop-color="#F7C948"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <g opacity="0.13">
+    <path d="M526 120H1130M526 200H1130M526 280H1130M526 360H1130M526 440H1130" stroke="#D7E7F7" stroke-width="3"/>
+    <path d="M586 88V486M686 88V486M786 88V486M886 88V486M986 88V486M1086 88V486" stroke="#D7E7F7" stroke-width="3"/>
+  </g>
+  <g transform="translate(92 114)">
+    <rect width="176" height="176" rx="42" fill="#0D1B2A" stroke="#D7E7F7" stroke-opacity="0.18"/>
+    <path d="M40 148H150M40 148V42" stroke="#D7E7F7" stroke-width="7" stroke-linecap="round"/>
+    <path d="M44 139C56 137 65 130 72 122C83 108 89 82 100 78C111 74 116 124 126 124C138 124 142 58 154 50C162 44 166 86 172 96" fill="none" stroke="#23D3A6" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="100" cy="78" r="10" fill="#07111F" stroke="#23D3A6" stroke-width="4"/>
+    <circle cx="154" cy="50" r="10" fill="#07111F" stroke="#F7C948" stroke-width="4"/>
+  </g>
+  <text x="92" y="370" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="84" font-weight="800" fill="#FFFFFF">ChromaLab</text>
+  <text x="98" y="432" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="560" fill="#D7E7F7">Offline chromatogram analysis with local AI assistance</text>
+  <text x="98" y="486" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22" font-weight="540" fill="#9FB6CB">Deterministic calculations. Evidence-gated reports. On-device models.</text>
+  <path d="M548 432C585 428 612 410 636 378C670 334 684 194 724 184C759 175 776 404 812 404C862 404 874 126 926 104C966 88 994 302 1034 342C1064 372 1094 350 1122 286" fill="none" stroke="url(#trace)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M526 456H1130M526 456V100" stroke="#D7E7F7" stroke-width="9" stroke-linecap="round" opacity="0.9"/>
+  <g fill="#07111F" stroke-width="7">
+    <circle cx="724" cy="184" r="19" stroke="#23D3A6"/>
+    <circle cx="926" cy="104" r="19" stroke="#F7C948"/>
+    <circle cx="1034" cy="342" r="19" stroke="#62E0FF"/>
+  </g>
+</svg>

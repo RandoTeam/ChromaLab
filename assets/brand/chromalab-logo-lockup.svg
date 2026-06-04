@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" role="img" aria-labelledby="title desc">
+  <title id="title">ChromaLab logo lockup</title>
+  <desc id="desc">ChromaLab wordmark with a chromatogram evidence icon.</desc>
+  <defs>
+    <linearGradient id="bg" x1="18" y1="12" x2="190" y2="202" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07111F"/>
+      <stop offset="0.58" stop-color="#10233D"/>
+      <stop offset="1" stop-color="#123A4D"/>
+    </linearGradient>
+    <linearGradient id="trace" x1="54" y1="154" x2="174" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#62E0FF"/>
+      <stop offset="0.48" stop-color="#23D3A6"/>
+      <stop offset="1" stop-color="#F7C948"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="240" fill="#FFFFFF"/>
+  <g transform="translate(40 32)">
+    <rect width="176" height="176" rx="42" fill="url(#bg)"/>
+    <g opacity="0.18">
+      <path d="M42 58H148M42 92H148M42 126H148" stroke="#D7E7F7" stroke-width="2"/>
+      <path d="M64 40V146M98 40V146M132 40V146" stroke="#D7E7F7" stroke-width="2"/>
+    </g>
+    <path d="M40 148H150M40 148V42" stroke="#D7E7F7" stroke-width="6" stroke-linecap="round"/>
+    <path d="M44 139C56 137 65 130 72 122C83 108 89 82 100 78C111 74 116 124 126 124C138 124 142 58 154 50C162 44 166 86 172 96" fill="none" stroke="url(#trace)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="100" cy="78" r="10" fill="#07111F" stroke="#23D3A6" stroke-width="4"/>
+    <circle cx="154" cy="50" r="10" fill="#07111F" stroke="#F7C948" stroke-width="4"/>
+  </g>
+  <g transform="translate(260 72)">
+    <text x="0" y="54" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="64" font-weight="760" fill="#0D1B2A">ChromaLab</text>
+    <text x="3" y="100" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="500" fill="#3A536B">Offline chromatogram analysis with local AI assistance</text>
+  </g>
+</svg>
