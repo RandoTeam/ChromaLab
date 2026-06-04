@@ -6,7 +6,7 @@ This document converts the maintainer's application notes into a polished Englis
 
 This text is intentionally grant-oriented. For public repository messaging, use `docs/CHROMALAB_PUBLIC_MESSAGING_GUIDE.md` and adapt only the product, scientific, security, privacy, and education-relevance ideas. Do not copy funding-request language into the README.
 
-Important licensing note: the repository is public, but the root repository does not currently declare a public open-source license. If an application field explicitly requires "open-source," add and document the intended license before making that claim externally.
+License note: the repository now declares the Apache License 2.0 at the root.
 
 ## Role
 

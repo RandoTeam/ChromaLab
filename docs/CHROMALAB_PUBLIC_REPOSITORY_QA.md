@@ -25,6 +25,7 @@ Primary public documents checked:
 - [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md)
 - [Visual Identity](CHROMALAB_VISUAL_IDENTITY.md)
 - [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md)
+- [OpenAI Reviewer Start Here](OPENAI_REVIEWER_START_HERE.md)
 - [OpenAI Subsidy Summary](OPENAI_SUBSIDY_SUMMARY.md)
 - [OpenAI Subsidy Application Narrative](OPENAI_SUBSIDY_APPLICATION_NARRATIVE.md)
 - [OpenAI Subsidy Repository Presentation Plan](OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md)
@@ -224,19 +225,16 @@ Grant/subsidy material is separated from general README messaging:
 
 ## Remaining Public Gaps
 
-These gaps remain after RP-10:
+These gaps remain after the OSS readiness patch:
 
-1. No root `LICENSE` file is declared.
-2. No root `CONTRIBUTING.md` exists.
-3. No root `SECURITY.md` exists.
-4. No root `PRIVACY.md` exists.
-5. GitHub social preview should be configured manually using
+1. GitHub social preview should be configured manually using
    `assets/brand/chromalab-social-preview.svg`.
-6. Real app screenshots should wait until current app output can be shown
+2. Real app screenshots should wait until current app output can be shown
    honestly without masking blocked/review states.
-7. Internal phase history is still large; the public documentation index now
+3. Internal phase history is still large; the public documentation index now
    mitigates this, but future cleanup may archive or group phase history more
    tightly.
+4. Phase 9 runtime blockers remain and must not be hidden by public polish.
 
 These are public-presentation gaps, not runtime fixes.
 
@@ -251,6 +249,8 @@ PUBLIC_PRESENTATION_READY_WITH_DOCUMENTED_LIMITATIONS
 Meaning:
 
 - the root README is presentable;
+- Apache-2.0 licensing is declared;
+- contribution, security, and privacy entry points exist;
 - the documentation index is navigable;
 - visual identity assets exist;
 - product, science, architecture, validation, local AI runtime, report concept,

@@ -255,6 +255,9 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 - [Technical Pipeline](PIPELINE.md)
 - [Roadmap](ROADMAP.md)
 - [Report Specification](REPORT_SPEC.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [Privacy](PRIVACY.md)
 - [Scientific Product Overview](docs/CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md)
 - [Architecture Overview](docs/CHROMALAB_ARCHITECTURE_OVERVIEW.md)
 - [Validation Evidence Summary](docs/CHROMALAB_VALIDATION_SUMMARY.md)
@@ -271,13 +274,12 @@ androidApp/build/outputs/apk/validation/androidApp-validation.apk
 
 Near-term priorities:
 
-1. finish the public repository presentation work;
-2. keep improving real Android fixture validation and truth-audit clarity;
-3. strengthen graph layout and axis calibration robustness;
-4. move Rust CV work from prototype parity toward production integration;
-5. improve report language and reviewer-facing documentation;
-6. keep E2B FAST mode safe as a supported weaker-device baseline;
-7. prepare a cleaner contribution, privacy, and release policy once the public repository structure is stable.
+1. keep improving real Android fixture validation and truth-audit clarity;
+2. strengthen graph layout and axis calibration robustness;
+3. move Rust CV work from prototype parity toward production integration;
+4. keep E2B FAST mode safe as a supported weaker-device baseline;
+5. improve report/export polish without hiding review or blocked states;
+6. keep security/privacy/export policy aligned with implementation.
 
 ## Responsible Use
 
@@ -285,6 +287,10 @@ ChromaLab is not a substitute for validated laboratory software, calibrated inst
 
 ## License And Contribution Status
 
-No public open-source license is currently declared at the repository root. Until a license is added, treat this repository as publicly visible source code rather than freely reusable open-source software.
+ChromaLab is licensed under the [Apache License 2.0](LICENSE).
 
-External contribution guidelines, security policy, privacy statement, and release-quality documentation are planned as part of the public repository presentation work.
+External contribution guidelines, security policy, and privacy notes are available:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [PRIVACY.md](PRIVACY.md)

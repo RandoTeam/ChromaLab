@@ -20,14 +20,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission
         run: chmod +x gradlew
 
-      - name: Build Android Debug
-        run: ./gradlew :androidApp:assembleDebug --no-daemon
+      - name: Compile Kotlin Desktop
+        run: ./gradlew :composeApp:compileKotlinDesktop --no-daemon --stacktrace
 
-      - name: Run Tests
-        run: ./gradlew test --no-daemon
+      - name: Assemble Android Main
+        run: ./gradlew :composeApp:assembleAndroidMain --no-daemon --stacktrace
+
+      - name: Assemble Android Debug
+        run: ./gradlew :androidApp:assembleDebug --no-daemon --stacktrace
+
+      - name: Run Desktop Tests
+        run: ./gradlew :composeApp:desktopTest --no-daemon --stacktrace

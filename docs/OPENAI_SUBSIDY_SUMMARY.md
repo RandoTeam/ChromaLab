@@ -12,10 +12,7 @@ For general repository messaging, use:
 - [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md)
 - [Scientific Product Overview](CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md)
 
-Important license note: this repository is public, but the root repository does
-not currently declare a public open-source license. If an application or program
-requires an explicit open-source license, add and document the intended license
-before making that claim externally.
+License note: this repository now declares the Apache License 2.0 at the root.
 
 ## One-Page Pitch
 
@@ -198,7 +195,7 @@ artifacts, and public documentation updates.
 | AI inventing scientific values | Keep deterministic code as numeric authority and reject forbidden model fields. |
 | Weak graph/calibration robustness | Build benchmark truth, compare methods, and keep blocked cases visible. |
 | Privacy leakage through exports | Separate user reports, technical evidence, diagnostic bundles, logs, and model paths. |
-| License ambiguity | Do not claim open-source licensing until a root license is selected and documented. |
+| License and contribution clarity | Keep `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, and `PRIVACY.md` aligned with current project status. |
 | Single-maintainer bandwidth | Use Codex support for review, tests, documentation, and security checks. |
 
 ## Field-Ready Application Answers

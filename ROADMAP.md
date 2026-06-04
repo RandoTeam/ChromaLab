@@ -1,5 +1,51 @@
 # ChromaLab Roadmap
 
+## 2026 Public Roadmap
+
+ChromaLab is currently a research-alpha public project. The public repository
+presentation is in place, but Phase 9 runtime validation is not accepted as
+production autonomous analysis. The next roadmap work should improve real
+analysis reliability without weakening validators or hiding blocked/review-only
+status.
+
+Current priorities:
+
+1. **Graph layout and axis scale repair**
+   - improve single-graph vs stacked-trace vs multi-panel classification;
+   - strengthen axis scale evidence for screenshots and photos;
+   - keep graph count decisions tied to visual evidence and fixture truth.
+
+2. **Rust CV production integration**
+   - continue moving graph/layout/axis primitives from prototypes toward a
+     tested production bridge;
+   - compare Rust CV results against the current Phase 9J benchmark records;
+   - avoid porting weak heuristics blindly from older Kotlin paths.
+
+3. **E2B baseline validation**
+   - keep Gemma E2B as the FAST/weaker-device baseline where supported;
+   - verify that E2B improves OCR/semantic assistance without degrading graph
+     count, calibration, trace, peak metrics, or report gates;
+   - keep model disagreement advisory and evidence-recorded.
+
+4. **Report and export polish**
+   - improve report readability, evidence summaries, and export separation;
+   - keep `REVIEW_ONLY`, `DIAGNOSTIC_ONLY`, and `BLOCKED` states visible;
+   - do not present incomplete outputs as release-ready.
+
+5. **Security and privacy hardening**
+   - keep `SECURITY.md`, `PRIVACY.md`, and `CONTRIBUTING.md` current;
+   - review Android storage, exports, diagnostic bundles, local model files, and
+     native runtime surfaces;
+   - prevent private chromatogram images, logs, local paths, signing data, and
+     model files from entering public artifacts.
+
+6. **Ground truth and validation depth**
+   - expand fixture truth records and benchmark scoring;
+   - add more real graph classes only when expected outcomes are documented;
+   - keep Product/QA/Scientific acceptance separate from visual polish.
+
+## Historical Alpha Track
+
 This roadmap tracks the current product direction after alpha 2. ChromaLab is becoming a modular offline AI analysis app, with chromatography as the first serious domain module.
 
 ## Status Summary

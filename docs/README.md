@@ -15,6 +15,7 @@ phase-history files.
 | Document | Use it for |
 |---|---|
 | [Root README](../README.md) | Main public project story, status, stack, roadmap, and responsible-use note. |
+| [OpenAI Reviewer Start Here](OPENAI_REVIEWER_START_HERE.md) | One-page reviewer entry point for product value, validation status, credits, and security relevance. |
 | [Scientific Product Overview](CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md) | Product purpose, target users, scientific workflow, and current limitations. |
 | [Architecture Overview](CHROMALAB_ARCHITECTURE_OVERVIEW.md) | How Android/KMP, Rust CV, local AI runtime, reports, evidence packages, and validation fit together. |
 | [Validation Evidence Summary](CHROMALAB_VALIDATION_SUMMARY.md) | What the Android validation suite currently proves and what remains blocked. |
@@ -101,6 +102,9 @@ Use these documents when working in the repository.
 | [Quality Gates](agent-orchestration/protocols/QUALITY_GATES.md) | Validation expectations for phase work. |
 | [No Hardcode Policy](agent-orchestration/protocols/NO_HARDCODE_POLICY.md) | Rules against fixture-specific hardcoding. |
 | [Report Implementation Plan](../REPORT_IMPLEMENTATION_PLAN.md) | Report implementation planning. |
+| [Contributing](../CONTRIBUTING.md) | Contribution rules, setup, validation, and no-overclaiming boundaries. |
+| [Security Policy](../SECURITY.md) | Vulnerability reporting and security scope. |
+| [Privacy](../PRIVACY.md) | Offline-first data handling, exports, diagnostics, and model-file privacy. |
 
 ## Public Presentation And Application Materials
 
@@ -113,6 +117,7 @@ materials are not a replacement for the public README.
 | [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md) | Repository-safe wording and claims. |
 | [Public Repository QA](CHROMALAB_PUBLIC_REPOSITORY_QA.md) | Final public-presentation QA, claim check, link check, and remaining gaps. |
 | [OpenAI Subsidy Repository Presentation Plan](OPENAI_SUBSIDY_REPOSITORY_PRESENTATION_PLAN.md) | Public presentation phase plan. |
+| [OpenAI Reviewer Start Here](OPENAI_REVIEWER_START_HERE.md) | One-page reviewer entry point for OpenAI/Codex reviewers. |
 | [OpenAI Subsidy Summary](OPENAI_SUBSIDY_SUMMARY.md) | Concise reviewer-ready subsidy, API credit, and Codex Security summary. |
 | [OpenAI Subsidy Application Narrative](OPENAI_SUBSIDY_APPLICATION_NARRATIVE.md) | Grant/application source text, not general README copy. |
 
@@ -139,13 +144,8 @@ Recommended archive paths:
 
 ## Current Public Documentation Gaps
 
-The public repository presentation still needs:
+The public repository presentation still needs real screenshots only when they
+show current app output honestly.
 
-- root `CONTRIBUTING.md`, if contributors are invited;
-- root `SECURITY.md`, if security reporting is opened publicly;
-- root `PRIVACY.md`, because user images, reports, evidence packages, logs, and
-  model files are central to the product;
-- real screenshots only when they show current app output honestly.
-
-Do not fill these gaps with placeholder claims. Each policy should be written
-when the project is ready to support it.
+Do not fill remaining gaps with placeholder claims. Add real screenshots only
+when they show current app output without masking review or blocked states.
