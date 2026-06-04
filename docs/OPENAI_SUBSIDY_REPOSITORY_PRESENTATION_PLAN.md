@@ -385,7 +385,7 @@ Complete public repository presentation QA
 
 ## Recommended Immediate Next Step
 
-RP-1, RP-2, RP-3, and RP-4 are complete. The next phase should be RP-5: Validation Evidence And Benchmark Summary.
+RP-1, RP-2, RP-3, RP-4, and RP-5 are complete. The next phase should be RP-6: Model And Runtime Story.
 
 Reason:
 
@@ -393,9 +393,10 @@ Reason:
 - The visual identity now gives the project a public scientific signal.
 - The scientific/product overview now explains the product value without using grant-specific language.
 - The architecture overview now explains how Kotlin Multiplatform, Android, Rust CV, LiteRT-LM, GGUF, evidence packages, reports, and validation fit together.
-- The next missing layer is a clean validation evidence summary that converts Phase 9J and benchmark work into a public reviewer-facing evidence story.
+- The validation evidence summary now converts Phase 9J, DR-B benchmark scoring, and Rust parity work into a public reviewer-facing evidence story.
+- The next missing layer is a clean local AI runtime story that explains LiteRT-LM, E2B baseline, GGUF, llama.cpp, MTP, model safety boundaries, and privacy.
 
-RP-5 should create `docs/CHROMALAB_VALIDATION_SUMMARY.md` with Android fixture truth, benchmark status, report gates, artifact types, known blockers, and next engineering fixes.
+RP-6 should create `docs/CHROMALAB_LOCAL_AI_RUNTIME.md` with model/runtime roles, device mode boundaries, supported and experimental paths, and strict AI numeric-authority rules.
 
 ## Public README Target Structure
 
