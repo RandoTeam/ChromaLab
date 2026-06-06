@@ -190,3 +190,14 @@ Adopt TurboVec as a research candidate for local Knowledge Pack dense retrieval,
 starting with a PC-side prototype and benchmark. Do not integrate it into Android
 runtime or chromatogram analysis calculations until benchmark and packaging gates
 pass.
+
+## Deep Audit Follow-Up
+
+The broader modernization plan is documented in
+`docs/TURBOVEC_DEEP_AUDIT_AND_MODERNIZATION_PLAN.md`.
+
+That follow-up separates two tracks:
+
+- TurboVec/TurboQuant as a local retrieval and research-memory accelerator;
+- Rust deterministic CV and evidence-gated validation as the real path for
+  improving graph, axis, calibration, trace, and peak analysis.
