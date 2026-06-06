@@ -1,0 +1,150 @@
+{
+  "fixtureId": "bench_03_small_tic_export",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "predictedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "layoutClassScore": "PASS",
+  "calibrationStrategyStatus": "REVIEW",
+  "selectedCalibrationGraphCount": 0,
+  "selectedReviewGraphCount": 0,
+  "annotatedGraphCount": 0,
+  "annotatedAnchorCount": 0,
+  "selectedXMeanRmse": -1.0,
+  "selectedYMeanRmse": -1.0,
+  "graphCalibrationResults": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 15,
+        "y": 3,
+        "width": 158,
+        "height": 96
+      },
+      "annotationAvailable": false,
+      "annotatedAnchorCount": 0,
+      "selectedStrategyId": "",
+      "selectedStatus": "MISSING",
+      "selectedStrategy": null,
+      "strategies": [
+        {
+          "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+          "status": "MISSING",
+          "selectionEligible": false,
+          "x": {
+            "status": "MISSING",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_INSUFFICIENT_ANCHORS"
+          },
+          "y": {
+            "status": "MISSING",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_INSUFFICIENT_ANCHORS"
+          },
+          "source": "NO_DRC4_ANNOTATION",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_DRC4_SCALE_TRUTH"
+        },
+        {
+          "strategyId": "TWO_ANCHOR_ENDPOINT_FIT",
+          "status": "MISSING",
+          "selectionEligible": false,
+          "x": {
+            "status": "MISSING",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_INSUFFICIENT_ANCHORS"
+          },
+          "y": {
+            "status": "MISSING",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_INSUFFICIENT_ANCHORS"
+          },
+          "source": "NO_DRC4_ANNOTATION",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_INSUFFICIENT_ANCHORS"
+        },
+        {
+          "strategyId": "R7_AXIS_FRAME_GEOMETRY_ONLY",
+          "status": "INVALID",
+          "selectionEligible": false,
+          "x": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "y": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "source": "R7_AXIS_FRAME_SCALE_EVIDENCE",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+        },
+        {
+          "strategyId": "FORBIDDEN_TEXT_REJECTION_AUDIT",
+          "status": "MISSING",
+          "selectionEligible": false,
+          "x": {},
+          "y": {},
+          "source": "NO_DRC4_ANNOTATION",
+          "forbiddenTextRejectedCount": 0,
+          "selectionReason": "",
+          "rejectionReason": "NOT_A_CALIBRATION_STRATEGY"
+        }
+      ],
+      "axisAlignment": {
+        "xAxisMeanPixelError": null,
+        "yAxisMeanPixelError": null,
+        "xAxisMaxPixelError": null,
+        "yAxisMaxPixelError": null
+      },
+      "rejectionReason": "NO_USABLE_CALIBRATION_STRATEGY_IN_SHADOW_RECORD"
+    }
+  ],
+  "overlayPath": "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/overlays/bench_03_small_tic_export_calibration_strategy_overlay.png",
+  "detailPath": "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/details/bench_03_small_tic_export_calibration_strategy_detail.json",
+  "recordPath": "benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/stage12345_bench_03_small_tic_export_pc_stage5_calibration_strategy_parity_candidate_v1/stage12345-parity-record.json",
+  "r7OverlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_03_small_tic_export_axis_frame_scale_overlay.png",
+  "r7RecordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_03_small_tic_export_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "promotionDecision": "STAGE5_CANDIDATE_REQUIRES_RUNTIME_CALIBRATION_PARITY",
+  "elapsedMs": 9.017
+}

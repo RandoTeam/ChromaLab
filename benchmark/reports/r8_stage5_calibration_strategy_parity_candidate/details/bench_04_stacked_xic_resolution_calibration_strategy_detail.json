@@ -1,0 +1,638 @@
+{
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 4,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "layoutClassScore": "PASS",
+  "calibrationStrategyStatus": "REVIEW",
+  "selectedCalibrationGraphCount": 4,
+  "selectedReviewGraphCount": 4,
+  "annotatedGraphCount": 4,
+  "annotatedAnchorCount": 56,
+  "selectedXMeanRmse": 0.000863,
+  "selectedYMeanRmse": 0.0,
+  "graphCalibrationResults": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 21,
+        "y": 25,
+        "width": 505,
+        "height": 201
+      },
+      "annotationAvailable": true,
+      "annotatedAnchorCount": 15,
+      "selectedStrategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+      "selectedStatus": "REVIEW",
+      "selectedStrategy": {
+        "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+        "status": "REVIEW",
+        "selectionEligible": true,
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "fitAnchorCount": 7,
+          "rmse": 0.000863,
+          "maxResidual": 0.001294,
+          "slope": 0.3020431057,
+          "intercept": 1269.126017,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 8,
+          "fitAnchorCount": 8,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": -3.125,
+          "intercept": 700.0,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+        "selectionReason": "SELECTED_REVIEW_SCORING_TRUTH",
+        "rejectionReason": ""
+      },
+      "strategies": [
+        {
+          "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 7,
+            "rmse": 0.000863,
+            "maxResidual": 0.001294,
+            "slope": 0.3020431057,
+            "intercept": 1269.126017,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 8,
+            "fitAnchorCount": 8,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -3.125,
+            "intercept": 700.0,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "TWO_ANCHOR_ENDPOINT_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 2,
+            "rmse": 0.000989,
+            "maxResidual": 0.00151,
+            "slope": 0.3020463641,
+            "intercept": 1269.124821,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 8,
+            "fitAnchorCount": 2,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -3.125,
+            "intercept": 700.0,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_ENDPOINT_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "R7_AXIS_FRAME_GEOMETRY_ONLY",
+          "status": "INVALID",
+          "selectionEligible": false,
+          "x": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "y": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "source": "R7_AXIS_FRAME_SCALE_EVIDENCE",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+        },
+        {
+          "strategyId": "FORBIDDEN_TEXT_REJECTION_AUDIT",
+          "status": "REVIEW",
+          "selectionEligible": false,
+          "x": {},
+          "y": {},
+          "source": "DRC4_TEXT_ROLE_ANNOTATIONS",
+          "forbiddenTextRejectedCount": 3,
+          "selectionReason": "",
+          "rejectionReason": "NOT_A_CALIBRATION_STRATEGY"
+        }
+      ],
+      "axisAlignment": {
+        "xAxisMeanPixelError": 2.0,
+        "yAxisMeanPixelError": 15.0,
+        "xAxisMaxPixelError": 2.0,
+        "yAxisMaxPixelError": 15.0
+      },
+      "rejectionReason": ""
+    },
+    {
+      "graphIndex": 2,
+      "plotArea": {
+        "x": 20,
+        "y": 300,
+        "width": 505,
+        "height": 196
+      },
+      "annotationAvailable": true,
+      "annotatedAnchorCount": 15,
+      "selectedStrategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+      "selectedStatus": "REVIEW",
+      "selectedStrategy": {
+        "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+        "status": "REVIEW",
+        "selectionEligible": true,
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "fitAnchorCount": 7,
+          "rmse": 0.000863,
+          "maxResidual": 0.001294,
+          "slope": 0.3020431057,
+          "intercept": 1269.126017,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 8,
+          "fitAnchorCount": 8,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": -1.5625,
+          "intercept": 778.125,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+        "selectionReason": "SELECTED_REVIEW_SCORING_TRUTH",
+        "rejectionReason": ""
+      },
+      "strategies": [
+        {
+          "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 7,
+            "rmse": 0.000863,
+            "maxResidual": 0.001294,
+            "slope": 0.3020431057,
+            "intercept": 1269.126017,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 8,
+            "fitAnchorCount": 8,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.5625,
+            "intercept": 778.125,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "TWO_ANCHOR_ENDPOINT_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 2,
+            "rmse": 0.000989,
+            "maxResidual": 0.00151,
+            "slope": 0.3020463641,
+            "intercept": 1269.124821,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 8,
+            "fitAnchorCount": 2,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.5625,
+            "intercept": 778.125,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_ENDPOINT_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "R7_AXIS_FRAME_GEOMETRY_ONLY",
+          "status": "INVALID",
+          "selectionEligible": false,
+          "x": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "y": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "source": "R7_AXIS_FRAME_SCALE_EVIDENCE",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+        },
+        {
+          "strategyId": "FORBIDDEN_TEXT_REJECTION_AUDIT",
+          "status": "REVIEW",
+          "selectionEligible": false,
+          "x": {},
+          "y": {},
+          "source": "DRC4_TEXT_ROLE_ANNOTATIONS",
+          "forbiddenTextRejectedCount": 3,
+          "selectionReason": "",
+          "rejectionReason": "NOT_A_CALIBRATION_STRATEGY"
+        }
+      ],
+      "axisAlignment": {
+        "xAxisMeanPixelError": 2.0,
+        "yAxisMeanPixelError": 16.0,
+        "xAxisMaxPixelError": 2.0,
+        "yAxisMaxPixelError": 16.0
+      },
+      "rejectionReason": ""
+    },
+    {
+      "graphIndex": 3,
+      "plotArea": {
+        "x": 20,
+        "y": 573,
+        "width": 505,
+        "height": 206
+      },
+      "annotationAvailable": true,
+      "annotatedAnchorCount": 13,
+      "selectedStrategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+      "selectedStatus": "REVIEW",
+      "selectedStrategy": {
+        "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+        "status": "REVIEW",
+        "selectionEligible": true,
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "fitAnchorCount": 7,
+          "rmse": 0.000863,
+          "maxResidual": 0.001294,
+          "slope": 0.3020431057,
+          "intercept": 1269.126017,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 6,
+          "fitAnchorCount": 6,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": -1.1013215859,
+          "intercept": 859.030837,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+        "selectionReason": "SELECTED_REVIEW_SCORING_TRUTH",
+        "rejectionReason": ""
+      },
+      "strategies": [
+        {
+          "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 7,
+            "rmse": 0.000863,
+            "maxResidual": 0.001294,
+            "slope": 0.3020431057,
+            "intercept": 1269.126017,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 6,
+            "fitAnchorCount": 6,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.1013215859,
+            "intercept": 859.030837,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "TWO_ANCHOR_ENDPOINT_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 2,
+            "rmse": 0.000989,
+            "maxResidual": 0.00151,
+            "slope": 0.3020463641,
+            "intercept": 1269.124821,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 6,
+            "fitAnchorCount": 2,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.1013215859,
+            "intercept": 859.030837,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_ENDPOINT_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "R7_AXIS_FRAME_GEOMETRY_ONLY",
+          "status": "INVALID",
+          "selectionEligible": false,
+          "x": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "y": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "source": "R7_AXIS_FRAME_SCALE_EVIDENCE",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+        },
+        {
+          "strategyId": "FORBIDDEN_TEXT_REJECTION_AUDIT",
+          "status": "REVIEW",
+          "selectionEligible": false,
+          "x": {},
+          "y": {},
+          "source": "DRC4_TEXT_ROLE_ANNOTATIONS",
+          "forbiddenTextRejectedCount": 3,
+          "selectionReason": "",
+          "rejectionReason": "NOT_A_CALIBRATION_STRATEGY"
+        }
+      ],
+      "axisAlignment": {
+        "xAxisMeanPixelError": 1.0,
+        "yAxisMeanPixelError": 16.0,
+        "xAxisMaxPixelError": 1.0,
+        "yAxisMaxPixelError": 16.0
+      },
+      "rejectionReason": ""
+    },
+    {
+      "graphIndex": 4,
+      "plotArea": {
+        "x": 20,
+        "y": 855,
+        "width": 505,
+        "height": 203
+      },
+      "annotationAvailable": true,
+      "annotatedAnchorCount": 13,
+      "selectedStrategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+      "selectedStatus": "REVIEW",
+      "selectedStrategy": {
+        "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+        "status": "REVIEW",
+        "selectionEligible": true,
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "fitAnchorCount": 7,
+          "rmse": 0.000863,
+          "maxResidual": 0.001294,
+          "slope": 0.3020431057,
+          "intercept": 1269.126017,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 6,
+          "fitAnchorCount": 6,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": -1.0638297872,
+          "intercept": 1127.659574,
+          "monotonic": true,
+          "rejectionReason": ""
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+        "selectionReason": "SELECTED_REVIEW_SCORING_TRUTH",
+        "rejectionReason": ""
+      },
+      "strategies": [
+        {
+          "strategyId": "MANUAL_REVIEW_ALL_ANCHOR_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 7,
+            "rmse": 0.000863,
+            "maxResidual": 0.001294,
+            "slope": 0.3020431057,
+            "intercept": 1269.126017,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 6,
+            "fitAnchorCount": 6,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.0638297872,
+            "intercept": 1127.659574,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_MANUAL_REVIEW_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "TWO_ANCHOR_ENDPOINT_FIT",
+          "status": "REVIEW",
+          "selectionEligible": true,
+          "x": {
+            "status": "REVIEW",
+            "anchorCount": 7,
+            "fitAnchorCount": 2,
+            "rmse": 0.000989,
+            "maxResidual": 0.00151,
+            "slope": 0.3020463641,
+            "intercept": 1269.124821,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "y": {
+            "status": "REVIEW",
+            "anchorCount": 6,
+            "fitAnchorCount": 2,
+            "rmse": 0.0,
+            "maxResidual": 0.0,
+            "slope": -1.0638297872,
+            "intercept": 1127.659574,
+            "monotonic": true,
+            "rejectionReason": ""
+          },
+          "source": "DRC4_ENDPOINT_ANCHORS",
+          "selectionReason": "",
+          "rejectionReason": ""
+        },
+        {
+          "strategyId": "R7_AXIS_FRAME_GEOMETRY_ONLY",
+          "status": "INVALID",
+          "selectionEligible": false,
+          "x": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "y": {
+            "status": "INVALID",
+            "anchorCount": 0,
+            "fitAnchorCount": 0,
+            "rmse": null,
+            "maxResidual": null,
+            "slope": null,
+            "intercept": null,
+            "monotonic": false,
+            "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+          },
+          "source": "R7_AXIS_FRAME_SCALE_EVIDENCE",
+          "selectionReason": "",
+          "rejectionReason": "REJECTED_NO_NUMERIC_VALUES"
+        },
+        {
+          "strategyId": "FORBIDDEN_TEXT_REJECTION_AUDIT",
+          "status": "REVIEW",
+          "selectionEligible": false,
+          "x": {},
+          "y": {},
+          "source": "DRC4_TEXT_ROLE_ANNOTATIONS",
+          "forbiddenTextRejectedCount": 3,
+          "selectionReason": "",
+          "rejectionReason": "NOT_A_CALIBRATION_STRATEGY"
+        }
+      ],
+      "axisAlignment": {
+        "xAxisMeanPixelError": 2.0,
+        "yAxisMeanPixelError": 16.0,
+        "xAxisMaxPixelError": 2.0,
+        "yAxisMaxPixelError": 16.0
+      },
+      "rejectionReason": ""
+    }
+  ],
+  "overlayPath": "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/overlays/bench_04_stacked_xic_resolution_calibration_strategy_overlay.png",
+  "detailPath": "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/details/bench_04_stacked_xic_resolution_calibration_strategy_detail.json",
+  "recordPath": "benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/stage12345_bench_04_stacked_xic_resolution_pc_stage5_calibration_strategy_parity_candidate_v1/stage12345-parity-record.json",
+  "r7OverlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_04_stacked_xic_resolution_axis_frame_scale_overlay.png",
+  "r7RecordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_04_stacked_xic_resolution_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "promotionDecision": "STAGE5_CANDIDATE_REQUIRES_RUNTIME_CALIBRATION_PARITY",
+  "elapsedMs": 29.659
+}

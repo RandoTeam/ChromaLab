@@ -265,7 +265,8 @@ Completed:
 - `R4 - Rust Stage 1 Image Preparation Parity Bridge`;
 - `R5 - Stage 2 Graph Discovery Candidate`;
 - `R6 - Stage 3 PlotArea And Layout Semantics Candidate`;
-- `R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate`.
+- `R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate`;
+- `R8 - Stage 5 Calibration Strategy Parity Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -276,7 +277,9 @@ status parity against R3. R5 added a Stage 2 graph discovery candidate with 8/8
 graph-count pass in shadow mode. R6 added a Stage 3 plotArea/layout candidate
 with 8/8 layout-class pass and REVIEW-only plotArea evidence. R7 added Stage 4
 axis/frame/scale evidence with 12 P0 annotated manual-review scale graphs and
-REVIEW-only axis/frame/scale output.
+REVIEW-only axis/frame/scale output. R8 added Stage 5 calibration strategy
+parity with 12 selected manual-review scoring fits and REVIEW-only calibration
+strategy output.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -290,22 +293,21 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R8 - Stage 5 Calibration Strategy Parity Candidate
+R9 - Stage 6 Automatic OCR Anchor Candidate
 ```
 
 Purpose:
 
-- consume R7 axis/frame/scale evidence;
-- compare deterministic calibration strategy candidates against manual-review
-  annotation truth where available;
-- preserve Stage 1-4 evidence tables and rejection reasons;
+- consume R8 calibration strategy parity evidence;
+- measure automatic OCR, label-band, and anchor generation against DR-C4 truth;
+- preserve Stage 1-5 evidence tables and rejection reasons;
 - keep manual-review anchors as scoring truth only, not runtime calibration;
 - keep production runtime unchanged until promotion gates pass.
 
 Deliverables:
 
-- Stage 5 calibration strategy parity candidate output;
-- updated Stage 1-5 parity/evidence records;
+- Stage 6 automatic OCR anchor candidate output;
+- updated Stage 1-6 parity/evidence records;
 - source-of-truth docs updated;
 - PC validation command output;
 - focused commit.

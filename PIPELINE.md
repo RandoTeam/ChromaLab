@@ -138,6 +138,19 @@ and axis/frame/scale overlays, detail JSON files, and a contact sheet under
 manual-review tick/text annotations only for scoring candidate evidence. It is
 not runtime calibration and is not used by runtime analysis.
 
+R8 adds a PC-side Stage 5 calibration strategy parity candidate:
+
+```text
+python tools/benchmark/run_r8_stage5_calibration_strategy_parity_candidate.py --clean
+```
+
+It writes records under
+`benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/` and
+calibration strategy overlays, detail JSON files, and a contact sheet under
+`benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/`. R8 uses
+DR-C4 manual-review anchors only as scoring truth. It is not runtime
+calibration and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

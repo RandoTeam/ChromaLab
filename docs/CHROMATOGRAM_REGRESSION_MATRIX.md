@@ -127,6 +127,30 @@ Regression rule: R7 output may guide Stage 5 calibration strategy parity, but it
 cannot upgrade Android Phase 9 blocked/review outcomes and cannot be used as
 runtime calibration, trace, peak, or report-gate evidence.
 
+## R8 Stage 5 Shadow Benchmark Addendum
+
+R8 adds PC-side calibration strategy parity records under
+`benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/` and
+reports under
+`benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/`.
+
+R8 regression result:
+
+- 8/8 fixture graph-count pass.
+- 8/8 fixture layout-class pass.
+- 4 P0 annotated fixtures used for calibration strategy scoring.
+- 12 selected manual-review calibration graph fits.
+- 194 annotated anchors used as scoring truth.
+- Selected X mean RMSE: 0.000287.
+- Selected Y mean RMSE: 0.231479.
+- All R8 records remain REVIEW because manual-review anchors are scoring truth,
+  not production runtime calibration.
+
+Regression rule: R8 output may guide automatic OCR anchor and runtime
+calibration strategy work, but it cannot upgrade Android Phase 9 blocked/review
+outcomes and cannot be used as runtime calibration, trace, peak, or report-gate
+evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

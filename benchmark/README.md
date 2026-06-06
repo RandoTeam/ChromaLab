@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R7 Stage 4 axis/frame/scale candidate generation:
+Expected result after R8 Stage 5 calibration strategy parity candidate generation:
 
 ```text
-Benchmark schema validation passed: 7 schemas, 149 example documents.
+Benchmark schema validation passed: 8 schemas, 157 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -162,6 +162,22 @@ The R7 summary report, overlays, detail JSON files, and axis/frame/scale contact
 sheet are written to:
 
 `benchmark/reports/r7_stage4_axis_frame_scale_candidate/`
+
+Build the R8 Stage 5 calibration strategy parity candidate records:
+
+```powershell
+python tools/benchmark/run_r8_stage5_calibration_strategy_parity_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R8 Stage 5 records are written to:
+
+`benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/`
+
+The R8 summary report, overlays, detail JSON files, and calibration strategy
+contact sheet are written to:
+
+`benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/`
 
 Create graph/layout annotation workflow records with:
 

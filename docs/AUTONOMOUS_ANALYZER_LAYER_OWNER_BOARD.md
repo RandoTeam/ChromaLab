@@ -91,6 +91,7 @@ R4 - Rust Stage 1 Image Preparation Parity Bridge
 R5 - Stage 2 Graph Discovery Candidate
 R6 - Stage 3 PlotArea And Layout Semantics Candidate
 R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
+R8 - Stage 5 Calibration Strategy Parity Candidate
 ```
 
 R1 is now documented in:
@@ -166,14 +167,26 @@ manual-review scale graphs. The stage remains REVIEW because manual-review
 anchors are scoring evidence, not runtime calibration, and axis alignment errors
 remain high on page/photo cases.
 
+R8 is documented in:
+
+- `docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md`;
+- `benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/`;
+- `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/summary.md`.
+
+R8 closed as PC/shadow Stage 5 calibration strategy parity only. It selected
+12 manual-review scoring fits from 194 DR-C4 anchors and rejected geometry-only
+no-numeric candidates. The stage remains REVIEW because no automatic runtime OCR
+anchor generation was measured.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R8 - Stage 5 Calibration Strategy Parity Candidate
+R9 - Stage 6 Automatic OCR Anchor Candidate
 ```
 
-R8 should consume R7 axis/frame/scale evidence, compare calibration strategy
-candidates, preserve manual-review anchors as scoring truth only, and keep
-production runtime unchanged until parity and promotion gates pass.
+R9 should consume R8 calibration strategy tables, measure automatic OCR and
+label-band anchor generation against DR-C4 truth, preserve manual-review anchors
+as scoring truth only, and keep production runtime unchanged until parity and
+promotion gates pass.

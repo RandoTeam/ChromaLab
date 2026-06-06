@@ -92,3 +92,7 @@ R8 - Stage 5 Calibration Strategy Parity Candidate
 
 R8 should consume R7 axis/frame/scale evidence and compare calibration strategy
 candidates without changing Android runtime or `CalculationEngine`.
+
+Update: R8 is complete in
+`docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md`. The next replacement
+step is R9 automatic OCR anchor evidence, still shadow-only.

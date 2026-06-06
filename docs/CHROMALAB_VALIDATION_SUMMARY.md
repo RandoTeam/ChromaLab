@@ -358,6 +358,44 @@ Interpretation:
 - High axis alignment errors on page/photo cases show that calibration parity
   must still improve or precisely classify upstream geometry before promotion.
 
+## R8 Stage 5 Calibration Strategy Parity Candidate
+
+R8 adds a PC-side Stage 5 calibration strategy parity candidate that consumes R7
+axis/frame/scale evidence and DR-C4 manual-review tick/text annotations.
+
+It writes:
+
+- `benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/`
+- `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/summary.json`
+- `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/summary.md`
+- `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/contact_sheet_calibration_strategy.png`
+- `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/details/`
+
+R8 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 5 calibration strategy records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| Annotated truth fixtures | 4 |
+| Selected calibration graph count | 12 |
+| Annotated anchor count | 194 |
+| Selected X mean RMSE | 0.000287 |
+| Selected Y mean RMSE | 0.231479 |
+| Stage evidence status | REVIEW |
+| Schemas validated | 8 |
+| Example documents validated | 157 |
+
+Interpretation:
+
+- R8 is shadow-only Stage 5 calibration strategy parity evidence.
+- It shows that all-anchor and endpoint strategies are coherent when DR-C4
+  manual-review anchors are available.
+- It rejects geometry-only/no-numeric candidates.
+- It does not prove automatic OCR anchors or Android runtime calibration.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

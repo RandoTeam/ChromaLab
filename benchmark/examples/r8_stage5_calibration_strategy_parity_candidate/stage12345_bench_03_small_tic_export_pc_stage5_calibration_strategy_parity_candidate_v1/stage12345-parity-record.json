@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage12345_parity_record.v1",
+  "recordId": "stage12345_bench_03_small_tic_export_pc_stage5_calibration_strategy_parity_candidate_v1",
+  "fixtureId": "bench_03_small_tic_export",
+  "mode": "pc_prototype",
+  "sourceId": "r8_stage5_calibration_strategy_parity_candidate_v1",
+  "sourceKind": "PC_STAGE5_CALIBRATION_STRATEGY_PARITY_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE5_CALIBRATION_STRATEGY_PARITY_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "predictedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Uses R4 Rust Stage 1 selected preprocessing evidence as the upstream image-preparation input.",
+    "metrics": {
+      "r4SelectedVariantScore": 0.362928,
+      "r4SelectedVariantParity": true,
+      "r4StatusParity": true
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Detects graph count from deterministic row-axis projection candidates, with rejected giant/title/page bands preserved as evidence.",
+    "metrics": {
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "rowCandidateCount": 1,
+      "selectedRowCount": 1,
+      "rejectedRowCandidateCount": 0,
+      "threshold": 185.0,
+      "contentCropX": 0,
+      "contentCropY": 0,
+      "contentCropWidth": 381,
+      "contentCropHeight": 132
+    }
+  },
+  "plotAreaLayout": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic plotArea candidates from R5 graphPanel candidates and axis-run projection, then scores semantic layout class. This remains shadow-only.",
+    "metrics": {
+      "plotAreaCandidateCount": 1,
+      "annotatedTruthAvailable": false,
+      "graphPanelMeanIou": -1.0,
+      "plotAreaMeanIou": -1.0,
+      "predictedLayoutMatchesExpected": true,
+      "selectedRowsCount": 1
+    }
+  },
+  "axisFrameScale": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic axis/frame/grid/label-band evidence from R6 plotArea candidates and scores manual-review scale fits where DRC4 anchors exist. This is not runtime calibration.",
+    "metrics": {
+      "graphCount": 1,
+      "xAxisSupportMean": 0.449367,
+      "yAxisSupportMean": 0.147917,
+      "manualReviewScaleGraphCount": 0,
+      "annotationTruthAvailable": false,
+      "xAxisMeanPixelError": -1.0,
+      "yAxisMeanPixelError": -1.0,
+      "verticalGridLineCount": 9,
+      "horizontalGridLineCount": 6
+    }
+  },
+  "calibrationStrategy": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Compares shadow calibration strategy candidates using DRC4 manual-review anchors as scoring truth only. This is not runtime calibration.",
+    "metrics": {
+      "graphCount": 1,
+      "annotatedGraphCount": 0,
+      "selectedCalibrationGraphCount": 0,
+      "selectedReviewGraphCount": 0,
+      "annotatedAnchorCount": 0,
+      "selectedXMeanRmse": -1.0,
+      "selectedYMeanRmse": -1.0
+    }
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg",
+    "recordSource": "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/overlays/bench_03_small_tic_export_calibration_strategy_overlay.png",
+      "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/details/bench_03_small_tic_export_calibration_strategy_detail.json",
+      "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_03_small_tic_export_axis_frame_scale_overlay.png",
+      "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_03_small_tic_export_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json"
+    ]
+  },
+  "promotionDecision": "STAGE5_CANDIDATE_REQUIRES_RUNTIME_CALIBRATION_PARITY",
+  "notes": [
+    "Shadow-only R8 Stage 5 calibration strategy parity candidate.",
+    "DRC4 manual-review anchors are scoring truth only, not production calibration evidence.",
+    "Geometry-only candidates with no numeric values are rejected.",
+    "No Android runtime, OCR runtime, trace, peak, report-gate, or CalculationEngine authority."
+  ]
+}

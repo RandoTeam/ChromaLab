@@ -48,6 +48,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md` | R5 closeout for the Stage 2 graph discovery candidate. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R6_STAGE3_PLOTAREA_LAYOUT_CANDIDATE_CLOSEOUT.md` | R6 closeout for the Stage 3 plotArea/layout candidate. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md` | R7 closeout for the Stage 4 axis/frame/scale evidence candidate. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md` | R8 closeout for the Stage 5 calibration strategy parity candidate. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |
@@ -112,6 +113,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md` | Stage 2 graph discovery candidate closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R6_STAGE3_PLOTAREA_LAYOUT_CANDIDATE_CLOSEOUT.md` | Stage 3 plotArea/layout candidate closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md` | Stage 4 axis/frame/scale evidence candidate closeout and next-step decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md` | Stage 5 calibration strategy parity candidate closeout and next-step decision. |
 | `ACTIVE_TEST` | `benchmark/schemas/` | Benchmark record schemas for truth, predictions, metrics, evidence packages, and report claims. |
 | `ACTIVE_TEST` | `benchmark/examples/` | Source-controlled benchmark examples, including Phase 9J-derived records. |
 | `ACTIVE_TEST` | `benchmark/examples/stage123_shadow_parity/` | R2 Stage 1-3 parity example records. |
@@ -120,6 +122,7 @@ current behavior.
 | `ACTIVE_TEST` | `benchmark/examples/r5_stage2_graph_discovery_candidate/` | R5 Stage 2 graph discovery candidate records. |
 | `ACTIVE_TEST` | `benchmark/examples/r6_stage3_plotarea_layout_candidate/` | R6 Stage 3 plotArea/layout candidate records. |
 | `ACTIVE_TEST` | `benchmark/examples/r7_stage4_axis_frame_scale_candidate/` | R7 Stage 4 axis/frame/scale candidate records. |
+| `ACTIVE_TEST` | `benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/` | R8 Stage 5 calibration strategy parity candidate records. |
 | `ACTIVE_TEST` | `benchmark/annotations/` | Graph/layout/OCR annotation records used by research benchmark phases. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/` | Small tracked benchmark summaries and overlays. Update only with benchmark phase intent. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/stage123_shadow_parity/` | R2 Stage 1-3 parity summary. |
@@ -128,6 +131,7 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r5_stage2_graph_discovery_candidate/` | R5 Stage 2 graph discovery summary, overlays, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r6_stage3_plotarea_layout_candidate/` | R6 Stage 3 plotArea/layout summary, overlays, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r7_stage4_axis_frame_scale_candidate/` | R7 Stage 4 axis/frame/scale summary, overlays, details, and contact sheet. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/` | R8 Stage 5 calibration strategy summary, overlays, details, and contact sheet. |
 
 ## Active Code Owner Areas
 
@@ -177,6 +181,7 @@ R4 - Rust Stage 1 Image Preparation Parity Bridge
 R5 - Stage 2 Graph Discovery Candidate
 R6 - Stage 3 PlotArea And Layout Semantics Candidate
 R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
+R8 - Stage 5 Calibration Strategy Parity Candidate
 ```
 
 Decision:
@@ -192,12 +197,14 @@ Decision:
   REVIEW-only plotArea evidence in shadow mode;
 - R7 created a Stage 4 axis/frame/scale evidence candidate with 12 annotated
   manual-review scale graphs and REVIEW-only axis/frame/scale evidence;
-- R1/R2/R3/R4/R5/R6/R7 did not change runtime behavior.
+- R8 created a Stage 5 calibration strategy parity candidate with 12 selected
+  manual-review scoring fits and REVIEW-only calibration strategy evidence;
+- R1/R2/R3/R4/R5/R6/R7/R8 did not change runtime behavior.
 
 Recommended next broad phase:
 
 ```text
-R8 - Stage 5 Calibration Strategy Parity Candidate
+R9 - Stage 6 Automatic OCR Anchor Candidate
 ```
 
 ## R0 Agent Swarm Summary
