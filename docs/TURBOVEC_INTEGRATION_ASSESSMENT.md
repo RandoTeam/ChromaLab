@@ -11,16 +11,18 @@ developer-side RAG experiments. It is not a chromatogram analysis algorithm and
 must not be wired into graph detection, axis calibration, trace extraction, peak
 metrics, or report gates.
 
-The right integration path is:
+The right integration path is replacement-gated, not permanently additive:
 
-1. keep the existing lexical `KnowledgeRetrievalEngine` as the default and safety
-   baseline;
-2. prototype TurboVec as an optional dense reranker for local Knowledge Pack
-   entries on desktop/dev machines;
-3. benchmark retrieval quality, memory, latency, index size, and citation
-   correctness;
-4. consider Android/native integration only after dependency, packaging, and
-   safety gates pass.
+1. keep the existing lexical `KnowledgeRetrievalEngine` as the active safety
+   baseline while research is running;
+2. prototype TurboVec only in shadow/parity mode for local Knowledge Pack
+   retrieval;
+3. benchmark retrieval quality, memory, latency, index size, citation
+   correctness, and forbidden-use behavior;
+4. promote TurboVec only if it becomes the single active retrieval owner behind
+   the existing policy/rule gates;
+5. retire or clearly demote the old ranker after promotion so the app does not
+   accumulate confusing parallel retrieval paths.
 
 ## Sources Reviewed
 
@@ -201,3 +203,8 @@ That follow-up separates two tracks:
 - TurboVec/TurboQuant as a local retrieval and research-memory accelerator;
 - Rust deterministic CV and evidence-gated validation as the real path for
   improving graph, axis, calibration, trace, and peak analysis.
+
+The layer-by-layer replacement protocol is documented in
+`docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`. That roadmap is the
+current source for deciding the first phase and prevents permanent additive
+runtime layers.

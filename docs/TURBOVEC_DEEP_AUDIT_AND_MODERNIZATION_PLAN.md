@@ -363,15 +363,30 @@ modernization path.
 
 ## Immediate Next Step
 
-Do not integrate TurboVec into Android yet.
+Do not integrate TurboVec into Android yet, and do not install it as a runtime
+dependency before the replacement-control phase exists.
 
-The next safe work slice should be:
+This plan is now subordinate to the replacement roadmap in
+`docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
+
+The corrected next safe work slice is:
+
+```text
+R0 - Source-of-Truth And Layer Inventory
+```
+
+R0 must identify active owner docs, implementation files, tests, generated
+artifacts, stale historical documents, and replacement gates for every analyzer
+stage. This prevents ChromaLab from accumulating extra parallel layers and old
+references.
+
+After R0, TurboVec work may proceed only as:
 
 ```text
 TV-A: Dependency/license gate + local prototype design
 ```
 
-Then:
+Then, if TV-A passes:
 
 ```text
 TV-B: PC-only Knowledge Pack TurboVec prototype

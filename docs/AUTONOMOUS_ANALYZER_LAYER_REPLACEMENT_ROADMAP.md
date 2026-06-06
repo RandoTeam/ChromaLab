@@ -1,0 +1,299 @@
+# Autonomous Analyzer Layer Replacement Roadmap
+
+Date: 2026-06-06
+
+Status: `PLANNING_READY`
+
+Scope: planning only. This roadmap does not start implementation, does not add
+new runtime dependencies, does not modify `CalculationEngine`, and does not
+change chromatographic math, validators, Android behavior, or report gates.
+
+## Core Decision
+
+ChromaLab should not keep adding parallel analysis layers. The modernization
+path is layer replacement with strict gates:
+
+```text
+inventory old layer
+-> define target contract
+-> build replacement in isolated/shadow mode
+-> compare against truth corpus
+-> promote only if gates pass
+-> retire old path and stale docs
+-> commit one completed slice
+```
+
+Shadow mode is allowed only for validation and parity measurement. It must not
+become a permanent second production path.
+
+## Why The Previous Plan Needed Tightening
+
+The previous TurboVec plan correctly identified that TurboVec/TurboQuant is not
+a graph/axis/calibration algorithm. It was still too loose in one area: it
+described TurboVec as an optional layer. That is acceptable for research, but it
+is not acceptable as the final architecture.
+
+The corrected rule is:
+
+- during research, run old and new side by side only to measure;
+- during production, keep one active implementation per responsibility;
+- when a replacement is accepted, update source-of-truth docs and remove or
+  clearly retire stale references;
+- when a replacement fails, remove the experimental runtime path and keep only
+  the evidence/report explaining why.
+
+## Non-Negotiable Architecture Rules
+
+1. One responsibility has one production owner.
+2. A replacement must define its contract before code changes.
+3. A replacement must be benchmarked against real fixtures before promotion.
+4. A replacement must not silently lower validator strictness.
+5. A replacement must not hide BLOCKED as REVIEW.
+6. A replacement must not hardcode fixture coordinates, run ids, image sizes, or
+   expected peak counts.
+7. Old code paths may remain temporarily only behind a named parity/shadow gate.
+8. Old docs must be marked historical or updated when ownership changes.
+9. Generated artifacts stay ignored unless policy explicitly says otherwise.
+10. Every phase ends with validation, documentation, and a focused commit.
+
+## Layer Replacement Protocol
+
+Every future phase must follow this protocol.
+
+### 1. Inventory
+
+Record:
+
+- current owner files;
+- current source-of-truth docs;
+- current tests;
+- current Android/desktop artifacts;
+- current known blockers;
+- current stale or historical docs that could mislead future agents.
+
+Output:
+
+- a layer inventory table;
+- a list of files that are active, historical, generated, or deprecated.
+
+### 2. Contract
+
+Define:
+
+- input schema;
+- output schema;
+- evidence artifacts;
+- validator expectations;
+- report-gate impact;
+- forbidden behavior;
+- rollback behavior.
+
+No implementation starts before this contract exists.
+
+### 3. Isolated Replacement
+
+Build the new layer without changing production authority:
+
+- Rust or TurboVec prototype may run off to the side;
+- Kotlin production path remains unchanged;
+- all outputs must be comparable to the existing contract;
+- no result is accepted without evidence.
+
+### 4. Shadow/Parity Run
+
+Run old and new paths on the same corpus:
+
+- all eight Android validation fixtures where applicable;
+- PC fixture corpus;
+- known failure cases;
+- deterministic and E2B modes when model semantics are relevant.
+
+Record:
+
+- correctness;
+- speed;
+- memory;
+- artifact completeness;
+- validator impact;
+- product/scientific usability.
+
+### 5. Promotion Gate
+
+The new layer becomes production owner only if:
+
+- it meets or exceeds old correctness on accepted fixtures;
+- it does not regress White Tiger / bench_03 / bench_07 style witnesses;
+- it improves or precisely classifies blocked fixtures;
+- it preserves evidence completeness;
+- it preserves or improves performance enough for the target mode;
+- Product, QA, and Scientific acceptance do not block it.
+
+### 6. Retirement
+
+After promotion:
+
+- remove or disable the old production path;
+- update source-of-truth docs;
+- mark old phase docs as historical when needed;
+- remove misleading references from README/docs index;
+- keep only necessary regression artifacts and summaries.
+
+### 7. Closeout
+
+Every phase must close with:
+
+- changed files;
+- exact active owner after the phase;
+- tests and Android/PC validation;
+- remaining blockers;
+- next phase recommendation;
+- commit hash.
+
+## Replacement Stack
+
+The stack below is ordered. Do not skip ahead to lower layers until the current
+layer has an owner, a truth corpus, and a replacement gate.
+
+| Order | Layer | Current problem | Replacement target | TurboVec/TurboQuant role | Promotion gate |
+|---:|---|---|---|---|---|
+| 0 | Source-of-truth control | Many phase docs exist; some are historical and can mislead future work. | Active/historical/deprecated file map and layer owner board. | Index docs only after source-of-truth map exists. | Every active layer has one owner doc and one code owner path. |
+| 1 | Truth corpus and fixture registry | Product truth is fragmented across phase reports and artifacts. | Canonical corpus registry with expected layout, graph count, evidence status, and artifact policy. | Later retrieval over corpus notes. | Every fixture has metadata, expected class, and current result. |
+| 2 | Evidence/export validation | Runs can look complete while missing the evidence users need. | Evidence package validator as the product truth gate. | Retrieve historical failure templates only. | Missing evidence fails; no silent timeout/no export. |
+| 3 | Image preparation | Old preprocessing may be heavy and not ranked by evidence. | Rust image preparation contract with parity against current fixtures. | No direct runtime role. | New prep beats or equals old on graph discovery inputs. |
+| 4 | Graph layout and graph count | 0-graph and wrong-count cases remain. | Rust graph layout classifier and candidate resolver. | Retrieve layout rules only. | Correct graph count or precise unsupported class. |
+| 5 | PlotArea and axis/frame evidence | Plot area/axis evidence is inconsistent on real images. | Rust plot/frame/axis evidence contract. | No numeric role. | Axis/frame evidence improves without report overclaim. |
+| 6 | Scale/calibration | Tick-only and single-strategy approaches regress. | Calibration strategy ensemble with deterministic arbitration. | No numeric role. | Usable old calibration cannot be replaced by invalid new result. |
+| 7 | OCR label and semantic classification | OCR text can contaminate tick labels and ion/title evidence. | Local crop OCR + rule classifier + model advisory text. | Knowledge retrieval for classification caveats. | Text cannot create pixel geometry or metrics. |
+| 8 | Trace extraction | Sparse/dense/stacked trace handling is incomplete. | Rust trace mask/centerline evidence with parity tests. | No direct role. | Trace evidence complete or precise failure. |
+| 9 | Peak evidence | Metrics depend on upstream correctness and need stronger flags. | Evidence-rich peak review around existing calculation math. | Report caveat retrieval only. | No metric changes without isolated proof. |
+| 10 | Knowledge retrieval | Lexical retrieval is safe but limited for larger local knowledge. | Replace lexical ranker with gated hybrid or dense backend only after benchmark proof. | Primary candidate layer. | Dense retrieval improves semantic tasks and old ranker is retired or demoted to policy filter. |
+| 11 | Model semantic layer | E2B must help without becoming authority. | E2B baseline semantic mode with cited bounded context. | Supplies compact context cards. | No geometry/calibration/metric/report gate regression. |
+| 12 | Report and user truth | Reports can look polished without product clarity. | Truth-first report with evidence tables and clear blocked/review status. | Grounded explanations only. | User can see what worked and what did not. |
+
+## TurboVec Replacement Position
+
+TurboVec should not be treated as "one more optional retrieval helper" forever.
+It has one possible ownership target:
+
+```text
+Knowledge retrieval ranking/storage for local semantic context.
+```
+
+It does not replace:
+
+- `KnowledgeUsePolicyValidator`;
+- deterministic rule classification;
+- report validators;
+- graph/axis/calibration/trace/peak stages.
+
+Correct final shape if TurboVec passes:
+
+```text
+Knowledge rules and policy filters
+-> TurboVec-backed retrieval/ranking
+-> bounded citation cards
+-> E2B/E4B semantic prompt
+-> used_entry_ids / unsupported_claims validation
+```
+
+Correct final shape if TurboVec fails:
+
+```text
+Knowledge rules and policy filters
+-> existing lexical retrieval
+-> bounded citation cards
+```
+
+In both cases, there is one active retrieval owner. The rejected path is not kept
+as a confusing runtime alternative.
+
+## Stale-File Control
+
+Each replacement phase must update a file-state table.
+
+Allowed file states:
+
+- `ACTIVE_SOURCE_OF_TRUTH`
+- `ACTIVE_IMPLEMENTATION`
+- `ACTIVE_TEST`
+- `HISTORICAL_REFERENCE`
+- `GENERATED_IGNORED_ARTIFACT`
+- `DEPRECATED_PENDING_REMOVAL`
+- `REMOVED`
+
+Rules:
+
+- README and `docs/README.md` should link only to active source-of-truth or
+  clearly historical documents.
+- Historical phase docs may remain, but they must not be presented as current
+  behavior.
+- If a new layer becomes active, the old layer's docs must be updated in the same
+  phase or the phase is not complete.
+- Generated validation artifacts should remain under ignored `artifacts/` unless
+  a policy explicitly promotes a small summary file.
+
+## Automatic Checks Per Phase
+
+Minimum checks before moving to the next layer:
+
+- `git diff --check`;
+- targeted unit tests for the changed layer;
+- source-of-truth doc updated;
+- active/historical file map updated;
+- no unrelated dirty files staged;
+- no validator weakening;
+- no CalculationEngine change unless separately approved.
+
+Additional checks by layer:
+
+| Layer type | Required check |
+|---|---|
+| Rust CV | Rust format/check/test or documented linker blocker, plus Kotlin parity test if bridge is touched. |
+| Android runtime | `assembleAndroidMain`, validation APK build, targeted Android fixture rerun. |
+| Knowledge retrieval | retrieval benchmark, forbidden-use tests, citation tests. |
+| Model/E2B | deterministic vs E2B comparison and forbidden numeric field audit. |
+| Report/export | report tests, manifest checks, privacy/export review. |
+
+## First Phase To Run
+
+The first implementation phase should not be TurboVec dependency installation and
+should not be Rust algorithm migration.
+
+The first phase should be:
+
+```text
+R0 - Source-of-Truth And Layer Inventory
+```
+
+Purpose:
+
+- stop confusion from old phase docs and old code paths;
+- identify the current active owner for each pipeline layer;
+- identify stale/historical docs and generated artifacts;
+- define the exact first replaceable layer and its validation gate.
+
+Deliverables:
+
+- `docs/AUTONOMOUS_ANALYZER_SOURCE_OF_TRUTH_INDEX.md`;
+- `docs/AUTONOMOUS_ANALYZER_LAYER_OWNER_BOARD.md`;
+- `docs/AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md`;
+- update `docs/README.md` if active links are misleading;
+- no runtime/code changes unless the audit discovers purely documentation
+  misrouting.
+
+First concrete step inside R0:
+
+```text
+R0.1 - Inventory active docs, active implementation files, tests, and generated
+artifacts for each stage 0-12 of `CHROMATOGRAM_AUTONOMOUS_ANALYSIS_STAGE_MAP`.
+```
+
+Only after R0 is complete should we choose whether the next replacement phase is:
+
+- `R1` Rust image-preparation replacement contract;
+- `R1` graph-layout replacement contract;
+- or `TV-A` TurboVec dependency/license gate.
+
+The likely best next technical layer after R0 is graph/layout or image
+preparation, not TurboVec, because current product blockers are still geometry
+and calibration, not Knowledge Pack retrieval.
