@@ -1,0 +1,135 @@
+{
+  "fixtureId": "bench_07_rotated_page_photo",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "layoutClassScore": "PASS",
+  "axisFrameScaleStatus": "REVIEW",
+  "annotationTruthAvailable": false,
+  "manualReviewScaleGraphCount": 0,
+  "xAxisSupportMean": 0.390451,
+  "yAxisSupportMean": 0.484943,
+  "xAxisMeanPixelError": -1.0,
+  "yAxisMeanPixelError": -1.0,
+  "graphEvidence": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 86,
+        "y": 259,
+        "width": 1138,
+        "height": 704
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 86,
+          "y": 963
+        },
+        "end": {
+          "x": 1224,
+          "y": 963
+        },
+        "support": 0.390451
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 86,
+          "y": 963
+        },
+        "end": {
+          "x": 86,
+          "y": 259
+        },
+        "support": 0.484943
+      },
+      "frameSupport": {
+        "bottom": 0.390451,
+        "left": 0.484943,
+        "top": 0.588401,
+        "right": 0.401989
+      },
+      "gridLineCandidates": {
+        "verticalCount": 5,
+        "horizontalCount": 12,
+        "vertical": [
+          556,
+          1056,
+          1094,
+          1119,
+          1179
+        ],
+        "horizontal": [
+          421,
+          593,
+          619,
+          643,
+          667,
+          689,
+          711,
+          732,
+          753,
+          773,
+          791,
+          857
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 86,
+          "y": 963,
+          "width": 1138,
+          "height": 1
+        },
+        "y": {
+          "x": 0,
+          "y": 259,
+          "width": 86,
+          "height": 704
+        },
+        "annotatedXLabelCountInBand": 0,
+        "annotatedYLabelCountInBand": 0,
+        "rejectedTextRoleCount": 0
+      },
+      "manualReviewScaleFit": {
+        "status": "MISSING",
+        "x": {
+          "status": "MISSING",
+          "anchorCount": 0,
+          "rmse": null,
+          "maxResidual": null,
+          "slope": null,
+          "intercept": null,
+          "monotonic": false
+        },
+        "y": {
+          "status": "MISSING",
+          "anchorCount": 0,
+          "rmse": null,
+          "maxResidual": null,
+          "slope": null,
+          "intercept": null,
+          "monotonic": false
+        },
+        "alignment": {
+          "xAxisMeanPixelError": null,
+          "yAxisMeanPixelError": null,
+          "xAxisMaxPixelError": null,
+          "yAxisMaxPixelError": null
+        },
+        "source": "NO_DRC4_ANNOTATION"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    }
+  ],
+  "overlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_07_rotated_page_photo_axis_frame_scale_overlay.png",
+  "detailPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/bench_07_rotated_page_photo_axis_frame_scale_detail.json",
+  "recordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_07_rotated_page_photo_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "r6OverlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_07_rotated_page_photo_plotarea_layout_overlay.png",
+  "r6RecordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_07_rotated_page_photo_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE4_CANDIDATE_REQUIRES_CALIBRATION_PARITY",
+  "elapsedMs": 119.963
+}

@@ -126,6 +126,18 @@ fixtures with manual annotations, but every record remains REVIEW. It is not
 used by runtime analysis and does not prove axis scale, calibration, trace,
 peak, or report readiness.
 
+R7 adds a PC-side Stage 4 axis/frame/scale evidence candidate:
+
+```text
+python tools/benchmark/run_r7_stage4_axis_frame_scale_candidate.py --clean
+```
+
+It writes records under `benchmark/examples/r7_stage4_axis_frame_scale_candidate/`
+and axis/frame/scale overlays, detail JSON files, and a contact sheet under
+`benchmark/reports/r7_stage4_axis_frame_scale_candidate/`. R7 uses DR-C4
+manual-review tick/text annotations only for scoring candidate evidence. It is
+not runtime calibration and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

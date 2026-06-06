@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R6 Stage 3 plotArea/layout candidate generation:
+Expected result after R7 Stage 4 axis/frame/scale candidate generation:
 
 ```text
-Benchmark schema validation passed: 6 schemas, 141 example documents.
+Benchmark schema validation passed: 7 schemas, 149 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -146,6 +146,22 @@ The R6 summary report, overlays, detail JSON files, and plotArea/layout contact
 sheet are written to:
 
 `benchmark/reports/r6_stage3_plotarea_layout_candidate/`
+
+Build the R7 Stage 4 axis/frame/scale candidate records:
+
+```powershell
+python tools/benchmark/run_r7_stage4_axis_frame_scale_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R7 Stage 4 records are written to:
+
+`benchmark/examples/r7_stage4_axis_frame_scale_candidate/`
+
+The R7 summary report, overlays, detail JSON files, and axis/frame/scale contact
+sheet are written to:
+
+`benchmark/reports/r7_stage4_axis_frame_scale_candidate/`
 
 Create graph/layout annotation workflow records with:
 

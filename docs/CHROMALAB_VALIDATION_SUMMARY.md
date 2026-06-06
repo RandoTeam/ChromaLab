@@ -320,6 +320,44 @@ Interpretation:
 - Photo/page plotArea localization remains REVIEW and needs stronger
   axis/frame/scale evidence before any runtime promotion.
 
+## R7 Stage 4 Axis, Frame, And Scale Evidence Candidate
+
+R7 adds a PC-side Stage 4 axis/frame/scale evidence candidate that consumes R6
+plotArea/layout candidates and DR-C4 manual-review tick/text annotations.
+
+It writes:
+
+- `benchmark/examples/r7_stage4_axis_frame_scale_candidate/`
+- `benchmark/reports/r7_stage4_axis_frame_scale_candidate/summary.json`
+- `benchmark/reports/r7_stage4_axis_frame_scale_candidate/summary.md`
+- `benchmark/reports/r7_stage4_axis_frame_scale_candidate/contact_sheet_axis_frame_scale.png`
+- `benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/`
+
+R7 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 4 axis/frame/scale records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| P0 annotated truth fixtures | 4 |
+| Manual-review scale graph count | 12 |
+| Mean x-axis support | 0.519346 |
+| Mean y-axis support | 0.45788 |
+| Annotated x-axis mean pixel error | 21.482143 |
+| Annotated y-axis mean pixel error | 110.5 |
+| Stage evidence status | REVIEW |
+| Schemas validated | 7 |
+| Example documents validated | 149 |
+
+Interpretation:
+
+- R7 is shadow-only Stage 4 axis/frame/scale evidence.
+- DR-C4 anchors are scoring truth only; they are not runtime calibration.
+- High axis alignment errors on page/photo cases show that calibration parity
+  must still improve or precisely classify upstream geometry before promotion.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

@@ -1,0 +1,124 @@
+{
+  "fixtureId": "bench_02_mz92_belyi_tigr",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_02_mz92_belyi_tigr.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "layoutClassScore": "PASS",
+  "axisFrameScaleStatus": "REVIEW",
+  "annotationTruthAvailable": false,
+  "manualReviewScaleGraphCount": 0,
+  "xAxisSupportMean": 0.615707,
+  "yAxisSupportMean": 1.0,
+  "xAxisMeanPixelError": -1.0,
+  "yAxisMeanPixelError": -1.0,
+  "graphEvidence": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 1,
+        "y": 204,
+        "width": 573,
+        "height": 699
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 1,
+          "y": 903
+        },
+        "end": {
+          "x": 574,
+          "y": 903
+        },
+        "support": 0.615707
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 1,
+          "y": 903
+        },
+        "end": {
+          "x": 1,
+          "y": 204
+        },
+        "support": 1.0
+      },
+      "frameSupport": {
+        "bottom": 0.615707,
+        "left": 1.0,
+        "top": 1.0,
+        "right": 1.0
+      },
+      "gridLineCandidates": {
+        "verticalCount": 1,
+        "horizontalCount": 5,
+        "vertical": [
+          287
+        ],
+        "horizontal": [
+          314,
+          475,
+          847,
+          860,
+          874
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 1,
+          "y": 905,
+          "width": 573,
+          "height": 40
+        },
+        "y": {
+          "x": 1,
+          "y": 204,
+          "width": 1,
+          "height": 699
+        },
+        "annotatedXLabelCountInBand": 0,
+        "annotatedYLabelCountInBand": 0,
+        "rejectedTextRoleCount": 0
+      },
+      "manualReviewScaleFit": {
+        "status": "MISSING",
+        "x": {
+          "status": "MISSING",
+          "anchorCount": 0,
+          "rmse": null,
+          "maxResidual": null,
+          "slope": null,
+          "intercept": null,
+          "monotonic": false
+        },
+        "y": {
+          "status": "MISSING",
+          "anchorCount": 0,
+          "rmse": null,
+          "maxResidual": null,
+          "slope": null,
+          "intercept": null,
+          "monotonic": false
+        },
+        "alignment": {
+          "xAxisMeanPixelError": null,
+          "yAxisMeanPixelError": null,
+          "xAxisMaxPixelError": null,
+          "yAxisMaxPixelError": null
+        },
+        "source": "NO_DRC4_ANNOTATION"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    }
+  ],
+  "overlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_02_mz92_belyi_tigr_axis_frame_scale_overlay.png",
+  "detailPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/bench_02_mz92_belyi_tigr_axis_frame_scale_detail.json",
+  "recordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_02_mz92_belyi_tigr_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "r6OverlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_02_mz92_belyi_tigr_plotarea_layout_overlay.png",
+  "r6RecordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_02_mz92_belyi_tigr_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE4_CANDIDATE_REQUIRES_CALIBRATION_PARITY",
+  "elapsedMs": 42.139
+}

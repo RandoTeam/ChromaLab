@@ -90,6 +90,7 @@ R3 - Stage 1 Image Preparation Candidate
 R4 - Rust Stage 1 Image Preparation Parity Bridge
 R5 - Stage 2 Graph Discovery Candidate
 R6 - Stage 3 PlotArea And Layout Semantics Candidate
+R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 ```
 
 R1 is now documented in:
@@ -153,15 +154,26 @@ layout-class pass and 8/8 graph-count pass, with 4 P0 annotated truth fixtures
 scored at 0.62146 mean plotArea IoU. The stage remains REVIEW because plotArea
 localization is candidate-only and not production-ready.
 
+R7 is documented in:
+
+- `docs/R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md`;
+- `benchmark/examples/r7_stage4_axis_frame_scale_candidate/`;
+- `benchmark/reports/r7_stage4_axis_frame_scale_candidate/summary.md`.
+
+R7 closed as PC/shadow Stage 4 axis/frame/scale evidence only. It reached 8/8
+graph-count pass and 8/8 layout-class pass, with 12 P0 annotated
+manual-review scale graphs. The stage remains REVIEW because manual-review
+anchors are scoring evidence, not runtime calibration, and axis alignment errors
+remain high on page/photo cases.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
+R8 - Stage 5 Calibration Strategy Parity Candidate
 ```
 
-R7 should consume R6 plotArea/layout candidates, build axis/frame/grid/scale
-evidence for all eight validation fixtures, compare candidate quality against
-benchmark records, and keep production runtime unchanged until parity and
-promotion gates pass.
+R8 should consume R7 axis/frame/scale evidence, compare calibration strategy
+candidates, preserve manual-review anchors as scoring truth only, and keep
+production runtime unchanged until parity and promotion gates pass.

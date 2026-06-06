@@ -25,8 +25,9 @@ Current priorities:
      evidence; R4 added a Rust Stage 1 parity bridge with 8/8 selected-variant
      parity and 8/8 PASS/REVIEW status parity against R3; R5 reached 8/8
      graph-count pass in shadow mode; R6 reached 8/8 layout-class pass with
-     REVIEW-only plotArea evidence. The next slice is Stage 4 axis/frame/scale
-     evidence, not a production Rust switch.
+     REVIEW-only plotArea evidence; R7 added REVIEW-only axis/frame/scale
+     evidence with 12 annotated manual-review scale graphs. The next slice is
+     Stage 5 calibration strategy parity, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

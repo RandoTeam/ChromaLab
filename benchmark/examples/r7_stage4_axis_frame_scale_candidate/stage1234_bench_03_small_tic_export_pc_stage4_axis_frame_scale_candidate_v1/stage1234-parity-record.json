@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage1234_parity_record.v1",
+  "recordId": "stage1234_bench_03_small_tic_export_pc_stage4_axis_frame_scale_candidate_v1",
+  "fixtureId": "bench_03_small_tic_export",
+  "mode": "pc_prototype",
+  "sourceId": "r7_stage4_axis_frame_scale_candidate_v1",
+  "sourceKind": "PC_STAGE4_AXIS_FRAME_SCALE_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "predictedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Uses R4 Rust Stage 1 selected preprocessing evidence as the upstream image-preparation input.",
+    "metrics": {
+      "r4SelectedVariantScore": 0.362928,
+      "r4SelectedVariantParity": true,
+      "r4StatusParity": true
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Detects graph count from deterministic row-axis projection candidates, with rejected giant/title/page bands preserved as evidence.",
+    "metrics": {
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "rowCandidateCount": 1,
+      "selectedRowCount": 1,
+      "rejectedRowCandidateCount": 0,
+      "threshold": 185.0,
+      "contentCropX": 0,
+      "contentCropY": 0,
+      "contentCropWidth": 381,
+      "contentCropHeight": 132
+    }
+  },
+  "plotAreaLayout": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic plotArea candidates from R5 graphPanel candidates and axis-run projection, then scores semantic layout class. This remains shadow-only.",
+    "metrics": {
+      "plotAreaCandidateCount": 1,
+      "annotatedTruthAvailable": false,
+      "graphPanelMeanIou": -1.0,
+      "plotAreaMeanIou": -1.0,
+      "predictedLayoutMatchesExpected": true,
+      "selectedRowsCount": 1
+    }
+  },
+  "axisFrameScale": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic axis/frame/grid/label-band evidence from R6 plotArea candidates and scores manual-review scale fits where DRC4 anchors exist. This is not runtime calibration.",
+    "metrics": {
+      "graphCount": 1,
+      "xAxisSupportMean": 0.449367,
+      "yAxisSupportMean": 0.147917,
+      "manualReviewScaleGraphCount": 0,
+      "annotationTruthAvailable": false,
+      "xAxisMeanPixelError": -1.0,
+      "yAxisMeanPixelError": -1.0,
+      "verticalGridLineCount": 9,
+      "horizontalGridLineCount": 6
+    }
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg",
+    "recordSource": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_03_small_tic_export_axis_frame_scale_overlay.png",
+      "benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/bench_03_small_tic_export_axis_frame_scale_detail.json",
+      "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_03_small_tic_export_plotarea_layout_overlay.png",
+      "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_03_small_tic_export_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json"
+    ]
+  },
+  "promotionDecision": "STAGE4_CANDIDATE_REQUIRES_CALIBRATION_PARITY",
+  "notes": [
+    "Shadow-only R7 Stage 4 axis/frame/scale evidence candidate.",
+    "Manual-review DRC4 anchors are used only for scoring candidate evidence, not production calibration.",
+    "No Android runtime, OCR runtime, calibration, trace, peak, report-gate, or CalculationEngine authority.",
+    "Unannotated fixtures keep scale truth unavailable and cannot be promoted from this record alone."
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "fixtureId": "bench_06_photo_two_graphs_page",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+  "expectedGraphCount": 2,
+  "detectedGraphCount": 2,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "TWO_GRAPH_PAGE",
+  "predictedLayoutClass": "TWO_GRAPH_PAGE",
+  "layoutClassScore": "PASS",
+  "axisFrameScaleStatus": "REVIEW",
+  "annotationTruthAvailable": true,
+  "manualReviewScaleGraphCount": 2,
+  "xAxisSupportMean": 0.697805,
+  "yAxisSupportMean": 0.64773,
+  "xAxisMeanPixelError": 66.5,
+  "yAxisMeanPixelError": 242.5,
+  "graphEvidence": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 554,
+        "y": 493,
+        "width": 307,
+        "height": 129
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 554,
+          "y": 622
+        },
+        "end": {
+          "x": 861,
+          "y": 622
+        },
+        "support": 0.40456
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 554,
+          "y": 622
+        },
+        "end": {
+          "x": 554,
+          "y": 493
+        },
+        "support": 0.324031
+      },
+      "frameSupport": {
+        "bottom": 0.40456,
+        "left": 0.324031,
+        "top": 0.068404,
+        "right": 0.074419
+      },
+      "gridLineCandidates": {
+        "verticalCount": 21,
+        "horizontalCount": 1,
+        "vertical": [
+          555,
+          565,
+          582,
+          590,
+          607,
+          614,
+          636,
+          658,
+          680,
+          702,
+          722,
+          741,
+          758,
+          765,
+          775,
+          783,
+          792,
+          800,
+          812,
+          836,
+          856
+        ],
+        "horizontal": [
+          583
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 554,
+          "y": 624,
+          "width": 307,
+          "height": 40
+        },
+        "y": {
+          "x": 69,
+          "y": 493,
+          "width": 485,
+          "height": 129
+        },
+        "annotatedXLabelCountInBand": 0,
+        "annotatedYLabelCountInBand": 5,
+        "rejectedTextRoleCount": 3
+      },
+      "manualReviewScaleFit": {
+        "status": "REVIEW",
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 11,
+          "rmse": 0.000233,
+          "maxResidual": 0.000349,
+          "slope": 0.08160249,
+          "intercept": -10.341306,
+          "monotonic": true
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 15,
+          "rmse": 0.970747,
+          "maxResidual": 1.597935,
+          "slope": -360.82288217,
+          "intercept": 241030.046151,
+          "monotonic": true
+        },
+        "alignment": {
+          "xAxisMeanPixelError": 46.0,
+          "yAxisMeanPixelError": 366.0,
+          "xAxisMaxPixelError": 46.0,
+          "yAxisMaxPixelError": 366.0
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    },
+    {
+      "graphIndex": 2,
+      "plotArea": {
+        "x": 69,
+        "y": 796,
+        "width": 894,
+        "height": 441
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 69,
+          "y": 1237
+        },
+        "end": {
+          "x": 963,
+          "y": 1237
+        },
+        "support": 0.991051
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 69,
+          "y": 1237
+        },
+        "end": {
+          "x": 69,
+          "y": 796
+        },
+        "support": 0.971429
+      },
+      "frameSupport": {
+        "bottom": 0.991051,
+        "left": 0.971429,
+        "top": 0.146309,
+        "right": 0.462585
+      },
+      "gridLineCandidates": {
+        "verticalCount": 8,
+        "horizontalCount": 5,
+        "vertical": [
+          75,
+          336,
+          717,
+          729,
+          754,
+          776,
+          787,
+          961
+        ],
+        "horizontal": [
+          814,
+          861,
+          889,
+          913,
+          1087
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 69,
+          "y": 1239,
+          "width": 894,
+          "height": 40
+        },
+        "y": {
+          "x": 69,
+          "y": 796,
+          "width": 1,
+          "height": 441
+        },
+        "annotatedXLabelCountInBand": 0,
+        "annotatedYLabelCountInBand": 0,
+        "rejectedTextRoleCount": 3
+      },
+      "manualReviewScaleFit": {
+        "status": "REVIEW",
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 11,
+          "rmse": 0.000226,
+          "maxResidual": 0.000381,
+          "slope": 0.07913658,
+          "intercept": -9.87764,
+          "monotonic": true
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 15,
+          "rmse": 0.875931,
+          "maxResidual": 1.441858,
+          "slope": -325.57988089,
+          "intercept": 374417.188632,
+          "monotonic": true
+        },
+        "alignment": {
+          "xAxisMeanPixelError": 87.0,
+          "yAxisMeanPixelError": 119.0,
+          "xAxisMaxPixelError": 87.0,
+          "yAxisMaxPixelError": 119.0
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    }
+  ],
+  "overlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_06_photo_two_graphs_page_axis_frame_scale_overlay.png",
+  "detailPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/bench_06_photo_two_graphs_page_axis_frame_scale_detail.json",
+  "recordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_06_photo_two_graphs_page_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "r6OverlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_06_photo_two_graphs_page_plotarea_layout_overlay.png",
+  "r6RecordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE4_CANDIDATE_REQUIRES_CALIBRATION_PARITY",
+  "elapsedMs": 116.126
+}

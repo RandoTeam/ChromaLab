@@ -88,3 +88,7 @@ R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 
 R7 should consume R6 plotArea/layout candidates and add axis/frame/grid/scale
 evidence before any Rust or Android runtime promotion.
+
+Update: R7 is complete in
+`docs/R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md`. The next replacement
+step is R8 calibration strategy parity, still shadow-only.

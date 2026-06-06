@@ -264,7 +264,8 @@ Completed:
 - `R3 - Stage 1 Image Preparation Candidate`;
 - `R4 - Rust Stage 1 Image Preparation Parity Bridge`;
 - `R5 - Stage 2 Graph Discovery Candidate`;
-- `R6 - Stage 3 PlotArea And Layout Semantics Candidate`.
+- `R6 - Stage 3 PlotArea And Layout Semantics Candidate`;
+- `R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -273,7 +274,9 @@ quality metrics, preview artifacts, and schema-backed records. R4 added a
 Rust Stage 1 parity bridge with 8/8 selected-variant parity and 8/8 PASS/REVIEW
 status parity against R3. R5 added a Stage 2 graph discovery candidate with 8/8
 graph-count pass in shadow mode. R6 added a Stage 3 plotArea/layout candidate
-with 8/8 layout-class pass and REVIEW-only plotArea evidence.
+with 8/8 layout-class pass and REVIEW-only plotArea evidence. R7 added Stage 4
+axis/frame/scale evidence with 12 P0 annotated manual-review scale graphs and
+REVIEW-only axis/frame/scale output.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -287,23 +290,22 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
+R8 - Stage 5 Calibration Strategy Parity Candidate
 ```
 
 Purpose:
 
-- consume R6 plotArea/layout candidates;
-- build axis, frame, grid, label-band, and scale evidence for all eight
-  validation fixtures;
-- compare axis/frame/scale candidate quality and semantic layout output against
-  benchmark records;
-- preserve Stage 1-3 evidence tables and rejection reasons;
+- consume R7 axis/frame/scale evidence;
+- compare deterministic calibration strategy candidates against manual-review
+  annotation truth where available;
+- preserve Stage 1-4 evidence tables and rejection reasons;
+- keep manual-review anchors as scoring truth only, not runtime calibration;
 - keep production runtime unchanged until promotion gates pass.
 
 Deliverables:
 
-- Stage 4 axis/frame/scale candidate output;
-- updated Stage 1-4 parity/evidence records;
+- Stage 5 calibration strategy parity candidate output;
+- updated Stage 1-5 parity/evidence records;
 - source-of-truth docs updated;
 - PC validation command output;
 - focused commit.

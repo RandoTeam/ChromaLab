@@ -1,0 +1,231 @@
+{
+  "fixtureId": "bench_01_mz71_screenshot_page",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+  "expectedGraphCount": 2,
+  "detectedGraphCount": 2,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "layoutClassScore": "PASS",
+  "axisFrameScaleStatus": "REVIEW",
+  "annotationTruthAvailable": true,
+  "manualReviewScaleGraphCount": 2,
+  "xAxisSupportMean": 0.304077,
+  "yAxisSupportMean": 0.089208,
+  "xAxisMeanPixelError": 16.928572,
+  "yAxisMeanPixelError": 158.0,
+  "graphEvidence": [
+    {
+      "graphIndex": 1,
+      "plotArea": {
+        "x": 169,
+        "y": 276,
+        "width": 721,
+        "height": 439
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 169,
+          "y": 715
+        },
+        "end": {
+          "x": 890,
+          "y": 715
+        },
+        "support": 0.312621
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 169,
+          "y": 715
+        },
+        "end": {
+          "x": 169,
+          "y": 276
+        },
+        "support": 0.117084
+      },
+      "frameSupport": {
+        "bottom": 0.312621,
+        "left": 0.117084,
+        "top": 0.003606,
+        "right": 0.099772
+      },
+      "gridLineCandidates": {
+        "verticalCount": 9,
+        "horizontalCount": 3,
+        "vertical": [
+          169,
+          183,
+          205,
+          368,
+          575,
+          594,
+          613,
+          627,
+          884
+        ],
+        "horizontal": [
+          608,
+          690,
+          707
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 169,
+          "y": 717,
+          "width": 721,
+          "height": 40
+        },
+        "y": {
+          "x": 12,
+          "y": 276,
+          "width": 157,
+          "height": 439
+        },
+        "annotatedXLabelCountInBand": 0,
+        "annotatedYLabelCountInBand": 0,
+        "rejectedTextRoleCount": 3
+      },
+      "manualReviewScaleFit": {
+        "status": "REVIEW",
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": 0.05882353,
+          "intercept": 18.117647,
+          "monotonic": true
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 8,
+          "rmse": 0.002577,
+          "maxResidual": 0.004132,
+          "slope": -0.96418733,
+          "intercept": 668.181818,
+          "monotonic": true
+        },
+        "alignment": {
+          "xAxisMeanPixelError": 25.5,
+          "yAxisMeanPixelError": 32.0,
+          "xAxisMaxPixelError": 28.12,
+          "yAxisMaxPixelError": 33.0
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    },
+    {
+      "graphIndex": 2,
+      "plotArea": {
+        "x": 503,
+        "y": 887,
+        "width": 291,
+        "height": 225
+      },
+      "xAxisCandidate": {
+        "start": {
+          "x": 503,
+          "y": 1112
+        },
+        "end": {
+          "x": 794,
+          "y": 1112
+        },
+        "support": 0.295533
+      },
+      "yAxisCandidate": {
+        "start": {
+          "x": 503,
+          "y": 1112
+        },
+        "end": {
+          "x": 503,
+          "y": 887
+        },
+        "support": 0.061333
+      },
+      "frameSupport": {
+        "bottom": 0.295533,
+        "left": 0.061333,
+        "top": 0.193814,
+        "right": 0.046222
+      },
+      "gridLineCandidates": {
+        "verticalCount": 6,
+        "horizontalCount": 3,
+        "vertical": [
+          551,
+          571,
+          583,
+          592,
+          604,
+          626
+        ],
+        "horizontal": [
+          900,
+          1017,
+          1109
+        ]
+      },
+      "labelBands": {
+        "x": {
+          "x": 503,
+          "y": 1114,
+          "width": 291,
+          "height": 40
+        },
+        "y": {
+          "x": 12,
+          "y": 887,
+          "width": 491,
+          "height": 225
+        },
+        "annotatedXLabelCountInBand": 3,
+        "annotatedYLabelCountInBand": 4,
+        "rejectedTextRoleCount": 3
+      },
+      "manualReviewScaleFit": {
+        "status": "REVIEW",
+        "x": {
+          "status": "REVIEW",
+          "anchorCount": 7,
+          "rmse": 0.0,
+          "maxResidual": 0.0,
+          "slope": 0.05970149,
+          "intercept": 16.865672,
+          "monotonic": true
+        },
+        "y": {
+          "status": "REVIEW",
+          "anchorCount": 8,
+          "rmse": 0.002577,
+          "maxResidual": 0.004132,
+          "slope": -0.96418733,
+          "intercept": 1050.964187,
+          "monotonic": true
+        },
+        "alignment": {
+          "xAxisMeanPixelError": 8.357143,
+          "yAxisMeanPixelError": 284.0,
+          "xAxisMaxPixelError": 18.25,
+          "yAxisMaxPixelError": 285.0
+        },
+        "source": "DRC4_MANUAL_REVIEW_ANCHORS"
+      },
+      "status": "REVIEW",
+      "rejectionReason": "SHADOW_AXIS_FRAME_SCALE_EVIDENCE_NOT_RUNTIME_CALIBRATION"
+    }
+  ],
+  "overlayPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/overlays/bench_01_mz71_screenshot_page_axis_frame_scale_overlay.png",
+  "detailPath": "benchmark/reports/r7_stage4_axis_frame_scale_candidate/details/bench_01_mz71_screenshot_page_axis_frame_scale_detail.json",
+  "recordPath": "benchmark/examples/r7_stage4_axis_frame_scale_candidate/stage1234_bench_01_mz71_screenshot_page_pc_stage4_axis_frame_scale_candidate_v1/stage1234-parity-record.json",
+  "r6OverlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_01_mz71_screenshot_page_plotarea_layout_overlay.png",
+  "r6RecordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_01_mz71_screenshot_page_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE4_CANDIDATE_REQUIRES_CALIBRATION_PARITY",
+  "elapsedMs": 157.606
+}
