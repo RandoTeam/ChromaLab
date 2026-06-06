@@ -92,6 +92,7 @@ R5 - Stage 2 Graph Discovery Candidate
 R6 - Stage 3 PlotArea And Layout Semantics Candidate
 R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 R8 - Stage 5 Calibration Strategy Parity Candidate
+R9 - Stage 6 Automatic OCR Anchor Candidate
 ```
 
 R1 is now documented in:
@@ -178,15 +179,27 @@ R8 closed as PC/shadow Stage 5 calibration strategy parity only. It selected
 no-numeric candidates. The stage remains REVIEW because no automatic runtime OCR
 anchor generation was measured.
 
+R9 is documented in:
+
+- `docs/R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md`;
+- `benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/`;
+- `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/summary.md`.
+
+R9 closed as PC/shadow Stage 6 automatic OCR anchor evidence only. It measured
+12 automatic OCR candidate graphs from DRD/DRE OCR outputs, with 9 valid graph
+decisions, 3 review graph decisions, and 155 accepted OCR anchors. The stage
+remains REVIEW because those anchors are not yet produced by Android or Rust
+runtime code.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R9 - Stage 6 Automatic OCR Anchor Candidate
+R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
 ```
 
-R9 should consume R8 calibration strategy tables, measure automatic OCR and
-label-band anchor generation against DR-C4 truth, preserve manual-review anchors
-as scoring truth only, and keep production runtime unchanged until parity and
-promotion gates pass.
+R10 should bridge the R9 safe OCR anchor generation into runtime/Rust parity
+without adding a permanent duplicate production layer. It must prove that
+automatic anchors can be generated with pixel geometry, forbidden-text
+rejection, residuals, and graph-level evidence before any promotion.

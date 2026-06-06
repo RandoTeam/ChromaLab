@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123456_parity_record.v1",
+  "recordId": "stage123456_bench_07_rotated_page_photo_pc_stage6_automatic_ocr_anchor_candidate_v1",
+  "fixtureId": "bench_07_rotated_page_photo",
+  "mode": "pc_prototype",
+  "sourceId": "r9_stage6_automatic_ocr_anchor_candidate_v1",
+  "sourceKind": "PC_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_NOT_ANDROID_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Uses R4 Rust Stage 1 selected preprocessing evidence as the upstream image-preparation input.",
+    "metrics": {
+      "r4SelectedVariantScore": 0.538049,
+      "r4SelectedVariantParity": true,
+      "r4StatusParity": true
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Detects graph count from deterministic row-axis projection candidates, with rejected giant/title/page bands preserved as evidence.",
+    "metrics": {
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "rowCandidateCount": 8,
+      "selectedRowCount": 1,
+      "rejectedRowCandidateCount": 1,
+      "threshold": 163.0,
+      "contentCropX": 0,
+      "contentCropY": 25,
+      "contentCropWidth": 1276,
+      "contentCropHeight": 939
+    }
+  },
+  "plotAreaLayout": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic plotArea candidates from R5 graphPanel candidates and axis-run projection, then scores semantic layout class. This remains shadow-only.",
+    "metrics": {
+      "plotAreaCandidateCount": 1,
+      "annotatedTruthAvailable": false,
+      "graphPanelMeanIou": -1.0,
+      "plotAreaMeanIou": -1.0,
+      "predictedLayoutMatchesExpected": true,
+      "selectedRowsCount": 1
+    }
+  },
+  "axisFrameScale": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic axis/frame/grid/label-band evidence from R6 plotArea candidates and scores manual-review scale fits where DRC4 anchors exist. This is not runtime calibration.",
+    "metrics": {
+      "graphCount": 1,
+      "xAxisSupportMean": 0.390451,
+      "yAxisSupportMean": 0.484943,
+      "manualReviewScaleGraphCount": 0,
+      "annotationTruthAvailable": false,
+      "xAxisMeanPixelError": -1.0,
+      "yAxisMeanPixelError": -1.0,
+      "verticalGridLineCount": 5,
+      "horizontalGridLineCount": 12
+    }
+  },
+  "calibrationStrategy": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Compares shadow calibration strategy candidates using DRC4 manual-review anchors as scoring truth only. This is not runtime calibration.",
+    "metrics": {
+      "graphCount": 1,
+      "annotatedGraphCount": 0,
+      "selectedCalibrationGraphCount": 0,
+      "selectedReviewGraphCount": 0,
+      "annotatedAnchorCount": 0,
+      "selectedXMeanRmse": -1.0,
+      "selectedYMeanRmse": -1.0
+    }
+  },
+  "ocrAnchorCandidate": {
+    "status": "MISSING",
+    "available": false,
+    "summary": "Consumes DRE6 PC-side safe OCR anchors as automatic anchor evidence. This remains shadow-only and is not Android runtime calibration authority.",
+    "metrics": {
+      "graphCount": 1,
+      "automaticCandidateGraphCount": 0,
+      "validCandidateGraphCount": 0,
+      "reviewCandidateGraphCount": 0,
+      "acceptedAnchorCount": 0,
+      "rejectedAnchorCount": 0,
+      "meanFitRmsePx": -1.0,
+      "meanTruthTickRmsePx": -1.0,
+      "drd4BestBoxRecall": -1.0,
+      "drd4BestSafeRoleAccuracy": -1.0
+    }
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+    "recordSource": "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/overlays/bench_07_rotated_page_photo_automatic_ocr_anchor_overlay.png",
+      "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/details/bench_07_rotated_page_photo_automatic_ocr_anchor_detail.json",
+      "benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/overlays/bench_07_rotated_page_photo_calibration_strategy_overlay.png",
+      "benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/stage12345_bench_07_rotated_page_photo_pc_stage5_calibration_strategy_parity_candidate_v1/stage12345-parity-record.json",
+      "benchmark/reports/dre6_remaining_axis_ocr_recovery/summary.json",
+      "benchmark/reports/drd4_second_ocr_text_box_benchmark/summary.json",
+      "benchmark/reports/drd6_axis_owned_ocr_preprocessing_grid/summary.json"
+    ]
+  },
+  "promotionDecision": "STAGE6_CANDIDATE_REQUIRES_ANDROID_OCR_ANCHOR_PARITY",
+  "notes": [
+    "Shadow-only R9 Stage 6 automatic OCR anchor candidate.",
+    "DRE6 safe OCR anchors are PC-side evidence only and are not Android runtime calibration evidence.",
+    "Accepted anchors come from OCR label boxes with pixel geometry; no VLM pixel coordinates are used.",
+    "Fixtures without DRC4/DRE6 OCR truth remain unscored instead of fabricated.",
+    "No Android runtime, trace, peak, report-gate, or CalculationEngine authority."
+  ]
+}

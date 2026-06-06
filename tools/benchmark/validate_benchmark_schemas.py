@@ -27,6 +27,7 @@ SCHEMA_BY_EXAMPLE_NAME = {
     "stage123-parity-record.json": "stage123-parity-record.schema.json",
     "stage1234-parity-record.json": "stage1234-parity-record.schema.json",
     "stage12345-parity-record.json": "stage12345-parity-record.schema.json",
+    "stage123456-parity-record.json": "stage123456-parity-record.schema.json",
 }
 
 

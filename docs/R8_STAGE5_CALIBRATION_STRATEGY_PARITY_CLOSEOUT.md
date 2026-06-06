@@ -96,3 +96,7 @@ R9 - Stage 6 Automatic OCR Anchor Candidate
 
 R9 should consume R8 strategy tables and measure automatic OCR/label-band anchor
 generation against DR-C4 truth before any runtime promotion.
+
+Update: R9 has been completed as a PC-side shadow benchmark in
+`docs/R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md`. R8 remains
+historically valid as the Stage 5 input to that work.

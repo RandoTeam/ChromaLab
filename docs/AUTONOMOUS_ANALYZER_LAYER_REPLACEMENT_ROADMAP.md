@@ -266,7 +266,8 @@ Completed:
 - `R5 - Stage 2 Graph Discovery Candidate`;
 - `R6 - Stage 3 PlotArea And Layout Semantics Candidate`;
 - `R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate`;
-- `R8 - Stage 5 Calibration Strategy Parity Candidate`.
+- `R8 - Stage 5 Calibration Strategy Parity Candidate`;
+- `R9 - Stage 6 Automatic OCR Anchor Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -279,7 +280,9 @@ with 8/8 layout-class pass and REVIEW-only plotArea evidence. R7 added Stage 4
 axis/frame/scale evidence with 12 P0 annotated manual-review scale graphs and
 REVIEW-only axis/frame/scale output. R8 added Stage 5 calibration strategy
 parity with 12 selected manual-review scoring fits and REVIEW-only calibration
-strategy output.
+strategy output. R9 added Stage 6 automatic OCR anchor candidate evidence with
+12 automatic OCR candidate graphs, 9 valid graph decisions, 3 review graph
+decisions, and 155 accepted OCR anchors.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -293,21 +296,21 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R9 - Stage 6 Automatic OCR Anchor Candidate
+R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
 ```
 
 Purpose:
 
-- consume R8 calibration strategy parity evidence;
-- measure automatic OCR, label-band, and anchor generation against DR-C4 truth;
-- preserve Stage 1-5 evidence tables and rejection reasons;
-- keep manual-review anchors as scoring truth only, not runtime calibration;
+- consume R9 automatic OCR anchor evidence;
+- produce equivalent anchor rows through Android or Rust runtime/shadow bridge;
+- preserve Stage 1-6 evidence tables and rejection reasons;
+- keep DRC4/DRE6 data as scoring truth only, not runtime calibration;
 - keep production runtime unchanged until promotion gates pass.
 
 Deliverables:
 
-- Stage 6 automatic OCR anchor candidate output;
-- updated Stage 1-6 parity/evidence records;
+- runtime/Rust OCR anchor bridge output;
+- updated Stage 1-6 parity/evidence records if the bridge produces comparable evidence;
 - source-of-truth docs updated;
 - PC validation command output;
 - focused commit.

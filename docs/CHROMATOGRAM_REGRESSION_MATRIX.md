@@ -151,6 +151,29 @@ calibration strategy work, but it cannot upgrade Android Phase 9 blocked/review
 outcomes and cannot be used as runtime calibration, trace, peak, or report-gate
 evidence.
 
+## R9 Stage 6 Shadow Benchmark Addendum
+
+R9 adds PC-side automatic OCR anchor candidate records under
+`benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/` and reports under
+`benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`.
+
+R9 regression result:
+
+- 8/8 fixture graph-count pass.
+- 8/8 fixture layout-class pass.
+- 4 P0 annotated fixtures used for OCR anchor scoring.
+- 12 automatic OCR candidate graphs.
+- 9 valid graph decisions and 3 review graph decisions.
+- 155 accepted OCR anchors and 20 rejected OCR anchors.
+- Mean fit RMSE: 0.725662 px.
+- Mean truth tick RMSE: 12.601638 px.
+- R9 records remain REVIEW/MISSING because the anchors are PC-side shadow
+  evidence and are not runtime calibration evidence.
+
+Regression rule: R9 output may guide runtime/Rust OCR anchor bridge work, but
+it cannot upgrade Android Phase 9 blocked/review outcomes and cannot be used as
+runtime calibration, trace, peak, or report-gate evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

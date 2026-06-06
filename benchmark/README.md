@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R8 Stage 5 calibration strategy parity candidate generation:
+Expected result after R9 Stage 6 automatic OCR anchor candidate generation:
 
 ```text
-Benchmark schema validation passed: 8 schemas, 157 example documents.
+Benchmark schema validation passed: 9 schemas, 165 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -178,6 +178,22 @@ The R8 summary report, overlays, detail JSON files, and calibration strategy
 contact sheet are written to:
 
 `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/`
+
+Build the R9 Stage 6 automatic OCR anchor candidate records:
+
+```powershell
+python tools/benchmark/run_r9_stage6_automatic_ocr_anchor_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R9 Stage 6 records are written to:
+
+`benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/`
+
+The R9 summary report, overlays, detail JSON files, and automatic OCR anchor
+contact sheet are written to:
+
+`benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`
 
 Create graph/layout annotation workflow records with:
 

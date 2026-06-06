@@ -396,6 +396,48 @@ Interpretation:
 - It rejects geometry-only/no-numeric candidates.
 - It does not prove automatic OCR anchors or Android runtime calibration.
 
+## R9 Stage 6 Automatic OCR Anchor Candidate
+
+R9 adds PC-side automatic OCR anchor candidate records that consume R8
+calibration strategy evidence plus DRD/DRE OCR reports.
+
+It writes:
+
+- `benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/`
+- `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/summary.json`
+- `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/summary.md`
+- `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/contact_sheet_automatic_ocr_anchor_candidate.png`
+- `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/details/`
+
+R9 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 6 automatic OCR anchor records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| Annotated truth fixtures | 4 |
+| Automatic OCR candidate graphs | 12 |
+| Valid candidate graphs | 9 |
+| Review candidate graphs | 3 |
+| Accepted OCR anchors | 155 |
+| Rejected OCR anchors | 20 |
+| Mean fit RMSE px | 0.725662 |
+| Mean truth tick RMSE px | 12.601638 |
+| Stage evidence status | REVIEW/MISSING |
+| Schemas validated | 9 |
+| Example documents validated | 165 |
+
+Interpretation:
+
+- R9 is shadow-only Stage 6 automatic OCR anchor evidence.
+- It shows that PC-side safe OCR can recover usable anchors on the four P0
+  annotated fixtures.
+- It does not prove Android runtime OCR anchor generation or runtime
+  calibration.
+- It cannot upgrade Android Phase 9 blocked/review outcomes.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

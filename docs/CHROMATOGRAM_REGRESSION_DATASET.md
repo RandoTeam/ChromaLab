@@ -137,3 +137,25 @@ Artifact root: `artifacts/phase9f-multi-fixture-android-final/`
 | `bench_07_rotated_page_photo` | `REVIEW_ONLY`: stable no-regression result. |
 
 Phase 9F does not accept Phase 9. Product/QA/Scientific remain blocked because supported fixtures still end in `BLOCKED` and multi-panel report propagation is incomplete.
+
+## R9 Stage 6 Benchmark Dataset Status
+
+R9 uses the same eight validation fixtures but remains PC-side shadow benchmark
+evidence, not Android runtime evidence.
+
+Report root: `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`
+
+| Fixture | R9 automatic OCR anchor status |
+| --- | --- |
+| `white_tiger_ion71` | No DRC4/DRE6 OCR anchor truth; unscored for R9. |
+| `bench_01_mz71_screenshot_page` | 2 candidate graphs, 2 valid decisions, 25 accepted OCR anchors. |
+| `bench_02_mz92_belyi_tigr` | No DRC4/DRE6 OCR anchor truth; unscored for R9. |
+| `bench_03_small_tic_export` | No DRC4/DRE6 OCR anchor truth; unscored for R9. |
+| `bench_04_stacked_xic_resolution` | 4 candidate graphs, 4 valid decisions, 52 accepted OCR anchors. |
+| `bench_05_tic_plus_ions` | 4 candidate graphs, 1 valid and 3 review decisions, 40 accepted OCR anchors. |
+| `bench_06_photo_two_graphs_page` | 2 candidate graphs, 2 valid decisions, 38 accepted OCR anchors. |
+| `bench_07_rotated_page_photo` | No DRC4/DRE6 OCR anchor truth; unscored for R9. |
+
+R9 does not accept Phase 9. It shows that PC-side OCR anchor recovery is
+promising for the four P0 annotated fixtures, but those anchors must be produced
+by Android or Rust runtime before they can affect calibration/report gates.

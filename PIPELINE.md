@@ -151,6 +151,19 @@ calibration strategy overlays, detail JSON files, and a contact sheet under
 DR-C4 manual-review anchors only as scoring truth. It is not runtime
 calibration and is not used by runtime analysis.
 
+R9 adds a PC-side Stage 6 automatic OCR anchor candidate:
+
+```text
+python tools/benchmark/run_r9_stage6_automatic_ocr_anchor_candidate.py --clean
+```
+
+It writes records under
+`benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/` and automatic
+OCR anchor overlays, detail JSON files, and a contact sheet under
+`benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`. R9 consumes DRD
+and DRE OCR reports and measures PC-side safe OCR anchors against DR-C4 truth.
+It is not Android runtime calibration and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;
