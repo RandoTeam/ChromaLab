@@ -76,3 +76,18 @@ The architecture now separates:
 - provenance: source refs, source tiers, claim scopes, and attribution manifests.
 
 Compact retrieval cards are optimized for Gemma E4B/E2B semantic prompts and include only bounded fields. Rule classifications run before VLM use for adversarial OCR cases.
+
+## TurboVec Dense Retrieval Candidate
+
+TurboVec is tracked as a research candidate for optional local dense retrieval,
+documented in `docs/TURBOVEC_INTEGRATION_ASSESSMENT.md`.
+
+The current decision is conservative:
+
+- keep `KnowledgeRetrievalEngine` as the default lexical and safety baseline;
+- prototype TurboVec only as a PC-side dense reranker over curated Knowledge Pack
+  entries;
+- require local embeddings, stable entry-id mapping, retrieval benchmarks, and
+  citation-safety tests before any Android runtime dependency is considered;
+- never let vector similarity create or override graph geometry, calibration,
+  trace data, peak metrics, report gates, or compound identity.
