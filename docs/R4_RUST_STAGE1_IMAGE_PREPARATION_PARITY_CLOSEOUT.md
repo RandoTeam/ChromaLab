@@ -105,3 +105,6 @@ R5 - Stage 2 Graph Discovery Candidate
 R5 should consume the Rust Stage 1 selected variant and build graphPanel
 candidate evidence for the same eight fixtures. It must compare graph count and
 layout against the current benchmark records before any runtime promotion.
+
+Update 2026-06-06: R5 completed the Stage 2 graph discovery candidate in
+`docs/R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md`.

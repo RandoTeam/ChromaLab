@@ -24,7 +24,8 @@ Current priorities:
      R3 added a shadow-only Stage 1 image-preparation candidate with preview
      evidence; R4 added a Rust Stage 1 parity bridge with 8/8 selected-variant
      parity and 8/8 PASS/REVIEW status parity against R3. The next slice is
-     Stage 2 graph discovery evidence, not a production Rust switch.
+     Stage 3 plotArea/layout evidence after R5 reached 8/8 graph-count pass in
+     shadow mode, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

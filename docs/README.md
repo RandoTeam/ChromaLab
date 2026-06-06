@@ -27,6 +27,7 @@ phase-history files.
 | [R2 Stage 1-3 Shadow Parity Harness Closeout](R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md) | R2 schema-backed parity harness, output summary, and R3 start decision. |
 | [R3 Image Preparation Candidate Closeout](R3_IMAGE_PREPARATION_CANDIDATE_CLOSEOUT.md) | R3 Stage 1 image-preparation candidate, preview evidence, and R4 start decision. |
 | [R4 Rust Stage 1 Image Preparation Parity Closeout](R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md) | R4 Rust Stage 1 parity bridge, decoder-limit findings, and R5 start decision. |
+| [R5 Stage 2 Graph Discovery Candidate Closeout](R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md) | R5 graph-count candidate, overlays, and R6 start decision. |
 | [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
@@ -100,6 +101,7 @@ graph, axis, scale, and trace extraction.
 | [R2 Stage 1-3 Shadow Parity Harness Closeout](R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md) | PC-side Stage 1-3 parity records and next implementation step. |
 | [R3 Image Preparation Candidate Closeout](R3_IMAGE_PREPARATION_CANDIDATE_CLOSEOUT.md) | PC-side Stage 1 image-preparation candidate and next Rust parity bridge step. |
 | [R4 Rust Stage 1 Image Preparation Parity Closeout](R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md) | Rust Stage 1 image-preparation parity records and next graph discovery step. |
+| [R5 Stage 2 Graph Discovery Candidate Closeout](R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md) | PC-side graph-count candidate records and next plotArea/layout step. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |

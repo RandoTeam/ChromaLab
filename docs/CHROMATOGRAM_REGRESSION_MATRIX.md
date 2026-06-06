@@ -447,3 +447,20 @@ runtime behavior or acceptance status.
 | Normalized byte SHA parity | REVIEW: 2/8 match R3; JPEG fixtures differ by Rust/Pillow decoder bytes |
 | Runtime impact | NONE: Android runtime, validators, reports, graph counts, and `CalculationEngine` unchanged |
 | Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R4 is Stage 1 Rust shadow evidence only |
+
+## R5 Stage 2 Graph Discovery Candidate Update
+
+Date: 2026-06-06
+
+R5 adds a PC-side Stage 2 graph discovery candidate. It does not change runtime
+behavior or acceptance status.
+
+| Area | R5 Result |
+| --- | --- |
+| Benchmark examples | PASS: 8 Stage 2 `stage123-parity-record.json` examples generated |
+| Fixture coverage | PASS: all 8 Android validation fixtures processed |
+| Graph-count pass | PASS: 8/8 expected physical graph counts matched |
+| Stage status | REVIEW: graphPanel localization is candidate-only until Stage 3 scoring |
+| Visual evidence | PASS: graph discovery overlays and contact sheet generated |
+| Runtime impact | NONE: Android runtime, validators, reports, graph counts, and `CalculationEngine` unchanged |
+| Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R5 is graph-count shadow evidence only |

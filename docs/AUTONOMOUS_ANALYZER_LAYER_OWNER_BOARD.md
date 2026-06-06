@@ -88,6 +88,7 @@ R1 - Graph/Layout And Image Preparation Replacement Contract
 R2 - Stage 1-3 Shadow Parity Harness
 R3 - Stage 1 Image Preparation Candidate
 R4 - Rust Stage 1 Image Preparation Parity Bridge
+R5 - Stage 2 Graph Discovery Candidate
 ```
 
 R1 is now documented in:
@@ -130,15 +131,25 @@ parity and 8/8 PASS/REVIEW status parity against R3. It did not change Android
 runtime behavior, validators, chromatographic math, report gates, graph-count
 metadata, model policy, or `CalculationEngine`.
 
+R5 is documented in:
+
+- `docs/R5_STAGE2_GRAPH_DISCOVERY_CANDIDATE_CLOSEOUT.md`;
+- `benchmark/examples/r5_stage2_graph_discovery_candidate/`;
+- `benchmark/reports/r5_stage2_graph_discovery_candidate/summary.md`.
+
+R5 closed as PC/shadow Stage 2 graph discovery only. It reached 8/8 graph-count
+pass across the validation fixtures, but graphPanel localization remains
+candidate-only and REVIEW until Stage 3 plotArea/layout scoring.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R5 - Stage 2 Graph Discovery Candidate
+R6 - Stage 3 PlotArea And Layout Semantics Candidate
 ```
 
-R5 should consume the Rust Stage 1 selected variant, build graphPanel candidate
-evidence for all eight validation fixtures, compare graph count/layout against
-benchmark records, and keep production runtime unchanged until parity and
-promotion gates pass.
+R6 should consume R5 graphPanel candidates, build plotArea/layout candidate
+evidence for all eight validation fixtures, compare graphPanel/plotArea quality
+against benchmark records, and keep production runtime unchanged until parity
+and promotion gates pass.

@@ -254,6 +254,36 @@ Interpretation:
 - It does not fix graph/layout/calibration blockers.
 - It prepares Stage 2 graph discovery candidate work.
 
+## R5 Stage 2 Graph Discovery Candidate
+
+R5 adds a PC-side Stage 2 graph discovery candidate that consumes R4 Rust Stage
+1 evidence.
+
+It writes:
+
+- `benchmark/examples/r5_stage2_graph_discovery_candidate/`
+- `benchmark/reports/r5_stage2_graph_discovery_candidate/summary.json`
+- `benchmark/reports/r5_stage2_graph_discovery_candidate/summary.md`
+- `benchmark/reports/r5_stage2_graph_discovery_candidate/contact_sheet_graph_discovery.png`
+
+R5 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 2 graph discovery records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Stage evidence status | REVIEW |
+| Schemas validated | 6 |
+| Example documents validated | 133 |
+
+Interpretation:
+
+- R5 is shadow-only Stage 2 graph-count evidence.
+- It does not prove final graphPanel bounds, plotArea, calibration, trace, peak,
+  report readiness, or product acceptance.
+- It prepares Stage 3 plotArea/layout candidate work.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

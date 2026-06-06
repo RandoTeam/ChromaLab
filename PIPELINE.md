@@ -99,6 +99,19 @@ fixtures keep `NORMALIZED_SHA_MISMATCH` review notes because Pillow and Rust
 decode normalized RGB bytes differently. R4 remains shadow-only and is not used
 by runtime analysis.
 
+R5 adds a PC-side Stage 2 graph discovery candidate:
+
+```text
+python tools/benchmark/run_r5_stage2_graph_discovery_candidate.py --clean
+```
+
+It writes records under `benchmark/examples/r5_stage2_graph_discovery_candidate/`
+and graph discovery overlays under
+`benchmark/reports/r5_stage2_graph_discovery_candidate/`. R5 reached 8/8
+graph-count pass against current fixture metadata, but graphPanel localization
+remains candidate-only and REVIEW until Stage 3 plotArea/layout scoring. R5
+remains shadow-only and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

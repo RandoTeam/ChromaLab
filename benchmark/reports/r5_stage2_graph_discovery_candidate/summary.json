@@ -1,0 +1,783 @@
+{
+  "schemaVersion": "chromalab.benchmark.r5_stage2_graph_discovery_candidate_summary.v1",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "overallVerdict": "R5_STAGE2_GRAPH_DISCOVERY_COUNT_READY_FOR_STAGE3_SHADOW",
+  "recordCount": 8,
+  "fixtureCount": 8,
+  "graphCountPass": 8,
+  "graphCountFail": 0,
+  "statusCounts": {
+    "REVIEW": 8
+  },
+  "nextRequiredWork": [
+    "Keep R5 graph discovery shadow-only until Stage 3 plotArea/layout semantics are measured.",
+    "Add Stage 3 plotArea and semantic layout candidate before any Android runtime promotion.",
+    "Do not treat R5 graph-count pass as calibration or report readiness.",
+    "Keep Android runtime unchanged until Stage 1-3 promotion gates pass."
+  ],
+  "records": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        715,
+        1112
+      ],
+      "rowCandidates": [
+        {
+          "row": 688,
+          "score": 0.477679,
+          "darkRun": 289,
+          "clusterHeight": 2,
+          "belowDarkFraction": 0.202101,
+          "aboveDarkFraction": 0.050928,
+          "rejectionReason": ""
+        },
+        {
+          "row": 715,
+          "score": 0.570641,
+          "darkRun": 407,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.158999,
+          "aboveDarkFraction": 0.121166,
+          "rejectionReason": ""
+        },
+        {
+          "row": 890,
+          "score": 0.496586,
+          "darkRun": 313,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.18216,
+          "aboveDarkFraction": 0.214461,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1112,
+          "score": 0.491071,
+          "darkRun": 306,
+          "clusterHeight": 2,
+          "belowDarkFraction": 0.31805,
+          "aboveDarkFraction": 0.105112,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1137,
+          "score": 0.482405,
+          "darkRun": 295,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.396201,
+          "aboveDarkFraction": 0.205602,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1224,
+          "score": 1.0,
+          "darkRun": 952,
+          "clusterHeight": 93,
+          "belowDarkFraction": 0.991959,
+          "aboveDarkFraction": 0.543382,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 12,
+            "y": 0,
+            "width": 952,
+            "height": 757
+          },
+          "axisRow": 715,
+          "confidence": 0.5706,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 12,
+            "y": 765,
+            "width": 952,
+            "height": 389
+          },
+          "axisRow": 1112,
+          "confidence": 0.4911,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_01_mz71_screenshot_page_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_01_mz71_screenshot_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "sharpened_autocontrast",
+      "r4SelectedVariantScore": 0.53662,
+      "r4Status": "PASS",
+      "elapsedMs": 214.428
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        903
+      ],
+      "rowCandidates": [
+        {
+          "row": 103,
+          "score": 1.0,
+          "darkRun": 574,
+          "clusterHeight": 323,
+          "belowDarkFraction": 0.997735,
+          "aboveDarkFraction": 0.999884,
+          "rejectionReason": "REJECTED_TOP_PAGE_OR_TITLE_BAND"
+        },
+        {
+          "row": 479,
+          "score": 0.651132,
+          "darkRun": 307,
+          "clusterHeight": 2,
+          "belowDarkFraction": 0.032985,
+          "aboveDarkFraction": 0.229152,
+          "rejectionReason": ""
+        },
+        {
+          "row": 847,
+          "score": 0.81446,
+          "darkRun": 432,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.181391,
+          "aboveDarkFraction": 0.050116,
+          "rejectionReason": ""
+        },
+        {
+          "row": 903,
+          "score": 1.0,
+          "darkRun": 574,
+          "clusterHeight": 8,
+          "belowDarkFraction": 1.0,
+          "aboveDarkFraction": 0.076249,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 1,
+            "y": 13,
+            "width": 574,
+            "height": 932
+          },
+          "axisRow": 903,
+          "confidence": 1.0,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_02_mz92_belyi_tigr_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_02_mz92_belyi_tigr_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "sharpened_autocontrast",
+      "r4SelectedVariantScore": 0.513373,
+      "r4Status": "PASS",
+      "elapsedMs": 72.099
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        99
+      ],
+      "rowCandidates": [
+        {
+          "row": 99,
+          "score": 0.982283,
+          "darkRun": 372,
+          "clusterHeight": 8,
+          "belowDarkFraction": 0.101519,
+          "aboveDarkFraction": 0.041601,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 381,
+            "height": 132
+          },
+          "axisRow": 99,
+          "confidence": 0.9823,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_03_small_tic_export_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_03_small_tic_export_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "autocontrast",
+      "r4SelectedVariantScore": 0.362928,
+      "r4Status": "REVIEW",
+      "elapsedMs": 8.22
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        226,
+        496,
+        779,
+        1058
+      ],
+      "rowCandidates": [
+        {
+          "row": 226,
+          "score": 0.978933,
+          "darkRun": 519,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.089669,
+          "aboveDarkFraction": 0.132272,
+          "rejectionReason": ""
+        },
+        {
+          "row": 254,
+          "score": 0.484551,
+          "darkRun": 167,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.044132,
+          "aboveDarkFraction": 0.177216,
+          "rejectionReason": ""
+        },
+        {
+          "row": 496,
+          "score": 0.977528,
+          "darkRun": 518,
+          "clusterHeight": 6,
+          "belowDarkFraction": 0.090637,
+          "aboveDarkFraction": 0.117728,
+          "rejectionReason": ""
+        },
+        {
+          "row": 532,
+          "score": 0.491573,
+          "darkRun": 175,
+          "clusterHeight": 5,
+          "belowDarkFraction": 0.030774,
+          "aboveDarkFraction": 0.202372,
+          "rejectionReason": ""
+        },
+        {
+          "row": 779,
+          "score": 0.977528,
+          "darkRun": 518,
+          "clusterHeight": 4,
+          "belowDarkFraction": 0.096629,
+          "aboveDarkFraction": 0.02397,
+          "rejectionReason": ""
+        },
+        {
+          "row": 809,
+          "score": 0.509831,
+          "darkRun": 185,
+          "clusterHeight": 14,
+          "belowDarkFraction": 0.03402,
+          "aboveDarkFraction": 0.124938,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1058,
+          "score": 0.977528,
+          "darkRun": 518,
+          "clusterHeight": 4,
+          "belowDarkFraction": 0.119093,
+          "aboveDarkFraction": 0.018071,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1094,
+          "score": 0.518258,
+          "darkRun": 191,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.072182,
+          "aboveDarkFraction": 0.132428,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 534,
+            "height": 268
+          },
+          "axisRow": 226,
+          "confidence": 0.9789,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 0,
+            "y": 276,
+            "width": 534,
+            "height": 262
+          },
+          "axisRow": 496,
+          "confidence": 0.9775,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 3,
+          "graphPanel": {
+            "x": 0,
+            "y": 546,
+            "width": 534,
+            "height": 275
+          },
+          "axisRow": 779,
+          "confidence": 0.9775,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 4,
+          "graphPanel": {
+            "x": 0,
+            "y": 829,
+            "width": 534,
+            "height": 271
+          },
+          "axisRow": 1058,
+          "confidence": 0.9775,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_04_stacked_xic_resolution_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_04_stacked_xic_resolution_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "autocontrast",
+      "r4SelectedVariantScore": 0.291649,
+      "r4Status": "REVIEW",
+      "elapsedMs": 58.873
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        362,
+        506,
+        644,
+        783
+      ],
+      "rowCandidates": [
+        {
+          "row": 362,
+          "score": 0.923133,
+          "darkRun": 613,
+          "clusterHeight": 9,
+          "belowDarkFraction": 0.054026,
+          "aboveDarkFraction": 0.101977,
+          "rejectionReason": ""
+        },
+        {
+          "row": 419,
+          "score": 0.56735,
+          "darkRun": 289,
+          "clusterHeight": 7,
+          "belowDarkFraction": 0.022865,
+          "aboveDarkFraction": 0.069741,
+          "rejectionReason": ""
+        },
+        {
+          "row": 506,
+          "score": 0.925329,
+          "darkRun": 615,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.078355,
+          "aboveDarkFraction": 0.012201,
+          "rejectionReason": ""
+        },
+        {
+          "row": 556,
+          "score": 0.566252,
+          "darkRun": 288,
+          "clusterHeight": 8,
+          "belowDarkFraction": 0.026403,
+          "aboveDarkFraction": 0.099512,
+          "rejectionReason": ""
+        },
+        {
+          "row": 644,
+          "score": 0.925329,
+          "darkRun": 615,
+          "clusterHeight": 12,
+          "belowDarkFraction": 0.073353,
+          "aboveDarkFraction": 0.013958,
+          "rejectionReason": ""
+        },
+        {
+          "row": 694,
+          "score": 0.566252,
+          "darkRun": 288,
+          "clusterHeight": 8,
+          "belowDarkFraction": 0.02123,
+          "aboveDarkFraction": 0.093875,
+          "rejectionReason": ""
+        },
+        {
+          "row": 783,
+          "score": 0.924231,
+          "darkRun": 614,
+          "clusterHeight": 13,
+          "belowDarkFraction": 0.154427,
+          "aboveDarkFraction": 0.008028,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 683,
+            "height": 404
+          },
+          "axisRow": 362,
+          "confidence": 0.9231,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 0,
+            "y": 386,
+            "width": 683,
+            "height": 162
+          },
+          "axisRow": 506,
+          "confidence": 0.9253,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 3,
+          "graphPanel": {
+            "x": 0,
+            "y": 524,
+            "width": 683,
+            "height": 162
+          },
+          "axisRow": 644,
+          "confidence": 0.9253,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 4,
+          "graphPanel": {
+            "x": 0,
+            "y": 663,
+            "width": 683,
+            "height": 144
+          },
+          "axisRow": 783,
+          "confidence": 0.9242,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_05_tic_plus_ions_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_05_tic_plus_ions_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "autocontrast",
+      "r4SelectedVariantScore": 0.278618,
+      "r4Status": "REVIEW",
+      "elapsedMs": 58.977
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        622,
+        1237
+      ],
+      "rowCandidates": [
+        {
+          "row": 184,
+          "score": 0.469553,
+          "darkRun": 262,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.257896,
+          "aboveDarkFraction": 0.272831,
+          "rejectionReason": ""
+        },
+        {
+          "row": 243,
+          "score": 0.612849,
+          "darkRun": 433,
+          "clusterHeight": 9,
+          "belowDarkFraction": 0.170894,
+          "aboveDarkFraction": 0.244451,
+          "rejectionReason": ""
+        },
+        {
+          "row": 586,
+          "score": 0.478771,
+          "darkRun": 273,
+          "clusterHeight": 3,
+          "belowDarkFraction": 0.335493,
+          "aboveDarkFraction": 0.257244,
+          "rejectionReason": ""
+        },
+        {
+          "row": 622,
+          "score": 0.810615,
+          "darkRun": 669,
+          "clusterHeight": 61,
+          "belowDarkFraction": 0.297095,
+          "aboveDarkFraction": 0.295047,
+          "rejectionReason": ""
+        },
+        {
+          "row": 1237,
+          "score": 1.0,
+          "darkRun": 895,
+          "clusterHeight": 140,
+          "belowDarkFraction": 1.0,
+          "aboveDarkFraction": 0.533054,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 69,
+            "y": 28,
+            "width": 895,
+            "height": 636
+          },
+          "axisRow": 622,
+          "confidence": 0.8106,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 69,
+            "y": 672,
+            "width": 895,
+            "height": 607
+          },
+          "axisRow": 1237,
+          "confidence": 1.0,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_06_photo_two_graphs_page_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "sharpened_autocontrast",
+      "r4SelectedVariantScore": 0.729866,
+      "r4Status": "PASS",
+      "elapsedMs": 176.728
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        963
+      ],
+      "rowCandidates": [
+        {
+          "row": 198,
+          "score": 0.518025,
+          "darkRun": 456,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.430434,
+          "aboveDarkFraction": 0.382576,
+          "rejectionReason": ""
+        },
+        {
+          "row": 347,
+          "score": 0.848942,
+          "darkRun": 1019,
+          "clusterHeight": 244,
+          "belowDarkFraction": 0.666288,
+          "aboveDarkFraction": 0.555159,
+          "rejectionReason": "REJECTED_GIANT_INTERIOR_DENSE_BAND"
+        },
+        {
+          "row": 509,
+          "score": 0.48511,
+          "darkRun": 400,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.172048,
+          "aboveDarkFraction": 0.41297,
+          "rejectionReason": ""
+        },
+        {
+          "row": 538,
+          "score": 0.485697,
+          "darkRun": 401,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.098877,
+          "aboveDarkFraction": 0.291379,
+          "rejectionReason": ""
+        },
+        {
+          "row": 565,
+          "score": 0.491575,
+          "darkRun": 411,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.053801,
+          "aboveDarkFraction": 0.206466,
+          "rejectionReason": ""
+        },
+        {
+          "row": 592,
+          "score": 0.510384,
+          "darkRun": 443,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.040347,
+          "aboveDarkFraction": 0.13925,
+          "rejectionReason": ""
+        },
+        {
+          "row": 618,
+          "score": 0.497453,
+          "darkRun": 421,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.038271,
+          "aboveDarkFraction": 0.082053,
+          "rejectionReason": ""
+        },
+        {
+          "row": 963,
+          "score": 1.0,
+          "darkRun": 1276,
+          "clusterHeight": 1,
+          "belowDarkFraction": 0.0,
+          "aboveDarkFraction": 0.0314,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 25,
+            "width": 1276,
+            "height": 939
+          },
+          "axisRow": 963,
+          "confidence": 1.0,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_07_rotated_page_photo_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_07_rotated_page_photo_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "sharpened_autocontrast",
+      "r4SelectedVariantScore": 0.538049,
+      "r4Status": "PASS",
+      "elapsedMs": 176.048
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "graphStatus": "REVIEW",
+      "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "predictedLayoutClass": "UNKNOWN_REVIEW",
+      "layoutClassScore": "NOT_SCOREABLE",
+      "selectedRows": [
+        838
+      ],
+      "rowCandidates": [
+        {
+          "row": 97,
+          "score": 1.0,
+          "darkRun": 564,
+          "clusterHeight": 395,
+          "belowDarkFraction": 0.996129,
+          "aboveDarkFraction": 0.977807,
+          "rejectionReason": "REJECTED_TOP_PAGE_OR_TITLE_BAND"
+        },
+        {
+          "row": 542,
+          "score": 0.553191,
+          "darkRun": 228,
+          "clusterHeight": 4,
+          "belowDarkFraction": 0.036732,
+          "aboveDarkFraction": 0.276566,
+          "rejectionReason": ""
+        },
+        {
+          "row": 838,
+          "score": 1.0,
+          "darkRun": 564,
+          "clusterHeight": 7,
+          "belowDarkFraction": 1.0,
+          "aboveDarkFraction": 0.057949,
+          "rejectionReason": ""
+        }
+      ],
+      "graphPanelCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 5,
+            "y": 13,
+            "width": 564,
+            "height": 867
+          },
+          "axisRow": 838,
+          "confidence": 1.0,
+          "evidenceSource": "ROW_AXIS_PROJECTION"
+        }
+      ],
+      "overlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/white_tiger_ion71_graph_discovery_overlay.png",
+      "recordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_white_tiger_ion71_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "r4SelectedVariantId": "sharpened_autocontrast",
+      "r4SelectedVariantScore": 0.54524,
+      "r4Status": "PASS",
+      "elapsedMs": 78.053
+    }
+  ],
+  "contactSheet": "benchmark/reports/r5_stage2_graph_discovery_candidate/contact_sheet_graph_discovery.png"
+}

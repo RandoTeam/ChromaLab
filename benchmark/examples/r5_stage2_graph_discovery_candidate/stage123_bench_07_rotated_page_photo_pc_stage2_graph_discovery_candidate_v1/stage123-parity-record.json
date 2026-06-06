@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_07_rotated_page_photo_pc_stage2_graph_discovery_candidate_v1",
+  "fixtureId": "bench_07_rotated_page_photo",
+  "mode": "pc_prototype",
+  "sourceId": "r5_stage2_graph_discovery_candidate_v1",
+  "sourceKind": "PC_STAGE2_GRAPH_DISCOVERY_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE2_GRAPH_DISCOVERY_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Uses R4 Rust Stage 1 selected preprocessing evidence as the upstream image-preparation input.",
+    "metrics": {
+      "r4SelectedVariantScore": 0.538049,
+      "r4SelectedVariantParity": true,
+      "r4StatusParity": true
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Detects graph count from deterministic row-axis projection candidates, with rejected giant/title/page bands preserved as evidence.",
+    "metrics": {
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "rowCandidateCount": 8,
+      "selectedRowCount": 1,
+      "rejectedRowCandidateCount": 1,
+      "threshold": 163.0,
+      "contentCropX": 0,
+      "contentCropY": 25,
+      "contentCropWidth": 1276,
+      "contentCropHeight": 939
+    }
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R5 is Stage 2 graph discovery only; plotArea and semantic layout remain Stage 3 work."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+    "recordSource": "benchmark/reports/r5_stage2_graph_discovery_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_07_rotated_page_photo_graph_discovery_overlay.png",
+      "benchmark/reports/r4_rust_stage1_image_preparation_parity/rust_reports/bench_07_rotated_page_photo_rust_stage1_report.json"
+    ]
+  },
+  "promotionDecision": "STAGE2_CANDIDATE_REQUIRES_STAGE3_PARITY",
+  "notes": [
+    "Shadow-only Stage 2 graph discovery candidate.",
+    "No plotArea, calibration, trace, peak, report-gate, or CalculationEngine authority.",
+    "Graph count is scored, but graphPanel localization is candidate-only until Stage 3 IoU/plotArea scoring.",
+    "Layout class is intentionally NOT_SCOREABLE in R5."
+  ]
+}

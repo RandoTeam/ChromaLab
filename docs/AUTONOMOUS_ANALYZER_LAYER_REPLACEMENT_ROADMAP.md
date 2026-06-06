@@ -262,14 +262,16 @@ Completed:
 - `R1 - Graph/Layout And Image Preparation Replacement Contract`;
 - `R2 - Stage 1-3 Shadow Parity Harness`;
 - `R3 - Stage 1 Image Preparation Candidate`;
-- `R4 - Rust Stage 1 Image Preparation Parity Bridge`.
+- `R4 - Rust Stage 1 Image Preparation Parity Bridge`;
+- `R5 - Stage 2 Graph Discovery Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
 Stage 1 candidate with normalized-image hashes, preprocessing variant ranking,
 quality metrics, preview artifacts, and schema-backed records. R4 added a
 Rust Stage 1 parity bridge with 8/8 selected-variant parity and 8/8 PASS/REVIEW
-status parity against R3.
+status parity against R3. R5 added a Stage 2 graph discovery candidate with 8/8
+graph-count pass in shadow mode.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -283,20 +285,21 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R5 - Stage 2 Graph Discovery Candidate
+R6 - Stage 3 PlotArea And Layout Semantics Candidate
 ```
 
 Purpose:
 
-- consume the Rust Stage 1 selected variant;
-- build graphPanel candidate evidence for all eight validation fixtures;
-- compare graph count and layout output against benchmark records;
+- consume R5 graphPanel candidates;
+- build plotArea and layout candidate evidence for all eight validation fixtures;
+- compare graphPanel/plotArea quality and semantic layout output against
+  benchmark records;
 - preserve Stage 1-3 evidence tables and rejection reasons;
 - keep production runtime unchanged until promotion gates pass.
 
 Deliverables:
 
-- Stage 2 graph discovery candidate output;
+- Stage 3 plotArea/layout candidate output;
 - updated Stage 1-3 parity records;
 - source-of-truth docs updated;
 - PC validation command output;
