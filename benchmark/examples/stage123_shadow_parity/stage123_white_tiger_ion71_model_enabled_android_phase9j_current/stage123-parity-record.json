@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_white_tiger_ion71_model_enabled_android_phase9j_current",
+  "caseId": "phase9j_white_tiger_ion71_model_enabled",
+  "runId": "white_tiger_ion71_20260526_184400",
+  "fixtureId": "white_tiger_ion71",
+  "mode": "model_enabled",
+  "sourceId": "android_phase9j_current",
+  "sourceKind": "ACTIVE_ANDROID_BASELINE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "ACTIVE_RUNTIME_RECORDED_OUTPUT",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+  "layoutClassScore": "FAIL",
+  "imagePreparation": {
+    "status": "NOT_RECORDED",
+    "available": false,
+    "summary": "Phase 9J benchmark records do not lock normalized-image hash, dimensions, orientation, or preprocessing variant.",
+    "metrics": {
+      "truthGap": "input_image_hash"
+    }
+  },
+  "graphDiscovery": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Active Android baseline graph-panel stage from Phase 9J records.",
+    "metrics": {
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountMatches": true
+    }
+  },
+  "plotAreaLayout": {
+    "status": "VALID",
+    "available": true,
+    "summary": "PlotArea/layout status from normalized Phase 9J prediction record.",
+    "metrics": {
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID"
+    }
+  },
+  "failureClass": "PEAK_EVIDENCE_FAILURE",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "validation/white_tiger_ion71_fixture.jpg",
+    "recordSource": "benchmark/examples/phase9j_truth_audit/phase9j_white_tiger_ion71_model_enabled/prediction.json",
+    "artifactPaths": [
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_package_run_1779810291646.json",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.json",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.md",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/final_report_contract_run_1779810291646.json",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.html",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.md",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_axis_tick_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_trace_overlay.png",
+      "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/graph_1_peak_overlay.png"
+    ]
+  },
+  "promotionDecision": "BASELINE_RECORD_ONLY",
+  "notes": [
+    "This is the current active Android baseline record.",
+    "It is not a replacement candidate."
+  ]
+}

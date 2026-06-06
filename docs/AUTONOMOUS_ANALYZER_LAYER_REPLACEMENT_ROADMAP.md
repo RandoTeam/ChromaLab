@@ -254,46 +254,45 @@ Additional checks by layer:
 | Model/E2B | deterministic vs E2B comparison and forbidden numeric field audit. |
 | Report/export | report tests, manifest checks, privacy/export review. |
 
-## First Phase To Run
+## Current Replacement Progress
 
-The first implementation phase should not be TurboVec dependency installation and
-should not be Rust algorithm migration.
+Completed:
 
-The first phase should be:
+- `R0 - Source-of-Truth And Layer Inventory`;
+- `R1 - Graph/Layout And Image Preparation Replacement Contract`;
+- `R2 - Stage 1-3 Shadow Parity Harness`.
+
+R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
+added schema-backed PC shadow parity records and reports.
+
+None of these phases changed Android runtime behavior, validators,
+chromatographic math, report gates, graph-count metadata, model policy, or
+`CalculationEngine`.
+
+## Next Phase To Run
+
+The next phase should still not be TurboVec dependency installation and should
+not directly switch production to Rust.
+
+The next phase should be:
 
 ```text
-R0 - Source-of-Truth And Layer Inventory
+R3 - Stage 1 Image Preparation Candidate
 ```
 
 Purpose:
 
-- stop confusion from old phase docs and old code paths;
-- identify the current active owner for each pipeline layer;
-- identify stale/historical docs and generated artifacts;
-- define the exact first replaceable layer and its validation gate.
+- build a real shadow-only image preparation candidate;
+- emit normalized-image dimensions/hash or perceptual hash where practical;
+- record orientation, page/prep status, preprocessing variant ranking, quality
+  metrics, and artifact paths;
+- feed the R2 Stage 1-3 parity record shape without changing production
+  runtime.
 
 Deliverables:
 
-- `docs/AUTONOMOUS_ANALYZER_SOURCE_OF_TRUTH_INDEX.md`;
-- `docs/AUTONOMOUS_ANALYZER_LAYER_OWNER_BOARD.md`;
-- `docs/AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md`;
-- update `docs/README.md` if active links are misleading;
-- no runtime/code changes unless the audit discovers purely documentation
-  misrouting.
-
-First concrete step inside R0:
-
-```text
-R0.1 - Inventory active docs, active implementation files, tests, and generated
-artifacts for each stage 0-12 of `CHROMATOGRAM_AUTONOMOUS_ANALYSIS_STAGE_MAP`.
-```
-
-Only after R0 is complete should we choose whether the next replacement phase is:
-
-- `R1` Rust image-preparation replacement contract;
-- `R1` graph-layout replacement contract;
-- or `TV-A` TurboVec dependency/license gate.
-
-The likely best next technical layer after R0 is graph/layout or image
-preparation, not TurboVec, because current product blockers are still geometry
-and calibration, not Knowledge Pack retrieval.
+- Stage 1 candidate output;
+- updated R2 parity records;
+- source-of-truth docs updated;
+- PC validation command output;
+- focused commit.

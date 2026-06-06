@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after DR-B2 Phase 9J benchmark conversion:
+Expected result after R2 Stage 1-3 parity record conversion:
 
 ```text
-Benchmark schema validation passed: 5 schemas, 73 example documents.
+Benchmark schema validation passed: 6 schemas, 109 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -67,6 +67,22 @@ python tools/benchmark/score_phase9j_benchmarks.py
 The score report is written to:
 
 `benchmark/reports/phase9j_truth_audit_score/`
+
+Build Stage 1-3 shadow parity records for image preparation, graph discovery,
+and plotArea/layout:
+
+```powershell
+python tools/benchmark/run_stage123_shadow_parity.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R2 Stage 1-3 parity records are written to:
+
+`benchmark/examples/stage123_shadow_parity/`
+
+The R2 summary report is written to:
+
+`benchmark/reports/stage123_shadow_parity/`
 
 Create graph/layout annotation workflow records with:
 

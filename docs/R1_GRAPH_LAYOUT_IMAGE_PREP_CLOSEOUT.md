@@ -85,15 +85,17 @@ Result: recorded in final response after command execution.
 
 No Gradle command is required for R1 because only Markdown documentation changed.
 
-## Next Phase
+## Follow-Up
 
 ```text
 R2 - Stage 1-3 Shadow Parity Harness
 ```
 
-R2 should:
+R2 is now completed as a shadow benchmark harness. It:
 
 - emit `Stage123ParityRecord` for current active Stage 1-3 output;
 - emit the same record shape for the replacement candidate path;
 - compare all eight Android validation fixtures;
 - keep production behavior unchanged until parity and promotion gates pass.
+
+The next phase should be `R3 - Stage 1 Image Preparation Candidate`.

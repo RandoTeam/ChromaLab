@@ -157,6 +157,36 @@ Source docs:
 - [DR-B2 Phase 9J Benchmark Records](DRB2_PHASE9J_BENCHMARK_RECORDS.md)
 - [DR-B3 Benchmark Scoring And Fixture Truth Gaps](DRB3_BENCHMARK_SCORING_AND_TRUTH_GAPS.md)
 
+## R2 Stage 1-3 Shadow Parity Harness
+
+R2 adds a PC-side schema-backed parity harness for Stage 1 image preparation,
+Stage 2 graph discovery, and Stage 3 plotArea/layout.
+
+It writes:
+
+- `benchmark/examples/stage123_shadow_parity/`
+- `benchmark/reports/stage123_shadow_parity/summary.json`
+- `benchmark/reports/stage123_shadow_parity/summary.md`
+
+R2 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 1-3 parity records | 36 |
+| Fixtures represented | 8 |
+| Schemas validated | 6 |
+| Example documents validated | 109 |
+| Current Android baseline graph-count pass | 8 / 16 |
+| Current Android baseline layout pass | 2 / 16 |
+| E2B Stage 1-3 graph-count regressions | 0 |
+
+Interpretation:
+
+- R2 is measurement only.
+- It does not change Android runtime behavior, validators, report gates, graph
+  counts, chromatographic math, E2B policy, or `CalculationEngine`.
+- Phase 9 remains blocked for production autonomous acceptance.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

@@ -57,6 +57,23 @@ Main stages:
 6. Convert pixels to real units.
 7. Save or pass `DigitalSignal`.
 
+### Stage 1-3 Shadow Parity
+
+Current benchmark tooling includes a PC-side Stage 1-3 shadow parity harness:
+
+```text
+python tools/benchmark/run_stage123_shadow_parity.py --clean
+```
+
+It writes schema-backed records under
+`benchmark/examples/stage123_shadow_parity/` and a summary under
+`benchmark/reports/stage123_shadow_parity/`.
+
+This harness is not part of the runtime pipeline. It does not change graph
+selection, plotArea selection, calibration, trace extraction, peak calculations,
+report gates, validators, model policy, or `CalculationEngine`. It exists so a
+future Rust/Kotlin replacement can be measured before promotion.
+
 VLM-assisted stages:
 
 - graph region detection;

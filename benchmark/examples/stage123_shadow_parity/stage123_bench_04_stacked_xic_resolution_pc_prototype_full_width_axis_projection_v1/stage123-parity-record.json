@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_04_stacked_xic_resolution_pc_prototype_full_width_axis_projection_v1",
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "mode": "pc_prototype",
+  "sourceId": "full_width_axis_projection_v1",
+  "sourceKind": "PC_PROTOTYPE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_RESEARCH_PROTOTYPE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 4,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "DR-C6 prototype consumes source images directly and does not produce Stage 1 normalized-image truth."
+  },
+  "graphDiscovery": {
+    "status": "PASS",
+    "available": true,
+    "summary": "PC prototype graph-count score from row/label-band projection.",
+    "metrics": {
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "selectedRowCount": 4
+    }
+  },
+  "plotAreaLayout": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Prototype layout class score; plotArea boxes are not production runtime outputs."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "validation/bench_04_stacked_xic_resolution.png",
+    "recordSource": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/drc6_p0_graph_layout_method_comparison/overlays/bench_04_stacked_xic_resolution_full_width_axis_projection_v1.png"
+    ]
+  },
+  "promotionDecision": "DO_NOT_PROMOTE_RESEARCH_ONLY",
+  "notes": [
+    "Counts long horizontal frame/axis rows; strong on PNG exports, vulnerable to page/footer lines.",
+    "Graph/layout improvement signal only; not Rust, not Android runtime, not production authority."
+  ]
+}

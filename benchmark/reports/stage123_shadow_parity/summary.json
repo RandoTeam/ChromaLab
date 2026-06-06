@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_shadow_parity_summary.v1",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "overallVerdict": "R2_SHADOW_PARITY_HARNESS_READY_PRODUCTION_UNCHANGED",
+  "recordCount": 36,
+  "fixtureCount": 8,
+  "sourceCount": 6,
+  "inputSources": {
+    "phase9jScore": "benchmark/reports/phase9j_truth_audit_score/summary.json",
+    "phase9jBenchmarkRoot": "benchmark/examples/phase9j_truth_audit",
+    "drc6MethodComparison": "benchmark/reports/drc6_p0_graph_layout_method_comparison/summary.json",
+    "drc7SemanticUpperBound": "benchmark/reports/drc7_panel_semantic_classifier/summary.json",
+    "fixtureMetadata": "composeApp/src/androidMain/assets/validation"
+  },
+  "sourceSummaries": [
+    {
+      "sourceId": "android_phase9j_current",
+      "sourceKind": "ACTIVE_ANDROID_BASELINE",
+      "recordCount": 16,
+      "graphCountPass": 8,
+      "graphCountFailOrMissing": 8,
+      "layoutClassPass": 2,
+      "layoutClassFailOrMissing": 14,
+      "runtimeReadiness": "ACTIVE_RUNTIME_RECORDED_OUTPUT",
+      "promotionDecision": "BASELINE_RECORD_ONLY"
+    },
+    {
+      "sourceId": "annotation_text_role_page_context_upper_bound_v1",
+      "sourceKind": "ANNOTATION_UPPER_BOUND",
+      "recordCount": 4,
+      "graphCountPass": 4,
+      "graphCountFailOrMissing": 0,
+      "layoutClassPass": 4,
+      "layoutClassFailOrMissing": 0,
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+      "promotionDecision": "DO_NOT_PROMOTE_UPPER_BOUND_ONLY"
+    },
+    {
+      "sourceId": "annotation_text_role_panel_family_v1",
+      "sourceKind": "ANNOTATION_UPPER_BOUND",
+      "recordCount": 4,
+      "graphCountPass": 4,
+      "graphCountFailOrMissing": 0,
+      "layoutClassPass": 3,
+      "layoutClassFailOrMissing": 1,
+      "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_OCR_TEXT_ROLE_EXTRACTION",
+      "promotionDecision": "DO_NOT_PROMOTE_UPPER_BOUND_ONLY"
+    },
+    {
+      "sourceId": "full_width_axis_projection_v1",
+      "sourceKind": "PC_PROTOTYPE",
+      "recordCount": 4,
+      "graphCountPass": 3,
+      "graphCountFailOrMissing": 1,
+      "layoutClassPass": 1,
+      "layoutClassFailOrMissing": 3,
+      "runtimeReadiness": "PC_RESEARCH_PROTOTYPE_NOT_RUNTIME_READY",
+      "promotionDecision": "DO_NOT_PROMOTE_RESEARCH_ONLY"
+    },
+    {
+      "sourceId": "geometry_only_panel_count_v1",
+      "sourceKind": "ANNOTATION_UPPER_BOUND",
+      "recordCount": 4,
+      "graphCountPass": 4,
+      "graphCountFailOrMissing": 0,
+      "layoutClassPass": 2,
+      "layoutClassFailOrMissing": 2,
+      "runtimeReadiness": "PROTOTYPE_GEOMETRY_ONLY",
+      "promotionDecision": "DO_NOT_PROMOTE_UPPER_BOUND_ONLY"
+    },
+    {
+      "sourceId": "label_band_assisted_axis_projection_v1",
+      "sourceKind": "PC_PROTOTYPE",
+      "recordCount": 4,
+      "graphCountPass": 4,
+      "graphCountFailOrMissing": 0,
+      "layoutClassPass": 2,
+      "layoutClassFailOrMissing": 2,
+      "runtimeReadiness": "PC_RESEARCH_PROTOTYPE_NOT_RUNTIME_READY",
+      "promotionDecision": "DO_NOT_PROMOTE_RESEARCH_ONLY"
+    }
+  ],
+  "e2bComparisons": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "UNKNOWN_REVIEW",
+      "modelEnabledLayoutClass": "UNKNOWN_REVIEW",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "modelEnabledLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "modelEnabledLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "modelEnabledLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "UNKNOWN_REVIEW",
+      "modelEnabledLayoutClass": "UNKNOWN_REVIEW",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "modelEnabledLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "ROTATED_PAGE_GRAPH",
+      "modelEnabledLayoutClass": "ROTATED_PAGE_GRAPH",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "deterministicGraphCount": 1,
+      "modelEnabledGraphCount": 1,
+      "graphCountDelta": 0,
+      "deterministicLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "modelEnabledLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+      "layoutChanged": false,
+      "comparison": "E2B_NEUTRAL_FOR_STAGE123"
+    }
+  ],
+  "nextRequiredWork": [
+    "Add a real Rust/Kotlin Stage 1 image-preparation candidate that emits normalized-image evidence.",
+    "Add a Rust/Kotlin graph-discovery candidate with graphPanel candidate/rejection tables.",
+    "Add automatic OCR text-role/page-context extraction before using DRC7-style semantic layout classification.",
+    "Keep shadow records out of production report gates until promotion criteria pass."
+  ]
+}

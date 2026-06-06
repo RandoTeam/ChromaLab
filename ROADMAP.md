@@ -20,6 +20,9 @@ Current priorities:
      tested production bridge;
    - compare Rust CV results against the current Phase 9J benchmark records;
    - avoid porting weak heuristics blindly from older Kotlin paths.
+   - current progress: R2 added a schema-backed Stage 1-3 shadow parity harness;
+     the next implementation slice is a shadow-only Stage 1 image-preparation
+     candidate, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_04_stacked_xic_resolution_annotation_upper_bound_annotation_text_role_page_context_upper_bound_v1",
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "mode": "annotation_upper_bound",
+  "sourceId": "annotation_text_role_page_context_upper_bound_v1",
+  "sourceKind": "ANNOTATION_UPPER_BOUND",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "UPPER_BOUND_REQUIRES_AUTOMATIC_PAGE_CONTEXT_AND_TEXT_ROLE_EXTRACTION",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 4,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "DR-C7 uses annotation-derived semantic/page context and does not produce Stage 1 image-prep evidence."
+  },
+  "graphDiscovery": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Graph count inherited from DR-C6 graph-row evidence.",
+    "metrics": {
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4
+    }
+  },
+  "plotAreaLayout": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Annotation upper-bound layout classification; requires automatic OCR/page-context extraction before runtime use."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "validation/bench_04_stacked_xic_resolution.png",
+    "recordSource": "benchmark/reports/drc7_panel_semantic_classifier/summary.json",
+    "artifactPaths": []
+  },
+  "promotionDecision": "DO_NOT_PROMOTE_UPPER_BOUND_ONLY",
+  "notes": [
+    "Text roles show multiple panels but no TIC+ion mix.",
+    "Upper-bound result only; not automatic runtime evidence."
+  ]
+}

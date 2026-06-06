@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_04_stacked_xic_resolution_deterministic_android_phase9j_current",
+  "caseId": "phase9j_bench_04_stacked_xic_resolution_deterministic",
+  "runId": "bench_04_stacked_xic_resolution_20260526_185040",
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "mode": "deterministic",
+  "sourceId": "android_phase9j_current",
+  "sourceKind": "ACTIVE_ANDROID_BASELINE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "ACTIVE_RUNTIME_RECORDED_OUTPUT",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 1,
+  "graphCountScore": "FAIL",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "DENSE_PEAK_SINGLE_AXIS",
+  "layoutClassScore": "FAIL",
+  "imagePreparation": {
+    "status": "NOT_RECORDED",
+    "available": false,
+    "summary": "Phase 9J benchmark records do not lock normalized-image hash, dimensions, orientation, or preprocessing variant.",
+    "metrics": {
+      "truthGap": "input_image_hash"
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Active Android baseline graph-panel stage from Phase 9J records.",
+    "metrics": {
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountMatches": false
+    }
+  },
+  "plotAreaLayout": {
+    "status": "VALID",
+    "available": true,
+    "summary": "PlotArea/layout status from normalized Phase 9J prediction record.",
+    "metrics": {
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID"
+    }
+  },
+  "failureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "validation/bench_04_stacked_xic_resolution.png",
+    "recordSource": "benchmark/examples/phase9j_truth_audit/phase9j_bench_04_stacked_xic_resolution_deterministic/prediction.json",
+    "artifactPaths": [
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_package_run_1779810722868.json",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.json",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.md",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/final_report_contract_run_1779810722868.json",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.html",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.md",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_graph_panel_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_plot_area_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_axis_tick_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_trace_overlay.png",
+      "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/graph_2_peak_overlay.png"
+    ]
+  },
+  "promotionDecision": "BASELINE_RECORD_ONLY",
+  "notes": [
+    "This is the current active Android baseline record.",
+    "It is not a replacement candidate."
+  ]
+}

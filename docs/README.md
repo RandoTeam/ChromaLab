@@ -24,6 +24,7 @@ phase-history files.
 | [R1 Graph/Layout Image Prep Contract](R1_GRAPH_LAYOUT_IMAGE_PREP_REPLACEMENT_CONTRACT.md) | Current Stage 1-3 replacement contract for image preparation, graph discovery, plotArea, and layout. |
 | [R1 Graph/Layout Image Prep Parity Plan](R1_GRAPH_LAYOUT_IMAGE_PREP_PARITY_PLAN.md) | Stage 1-3 shadow parity, metrics, fixture corpus, and promotion gates. |
 | [R1 Graph/Layout Image Prep Closeout](R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md) | R1 closeout and R2 start decision. |
+| [R2 Stage 1-3 Shadow Parity Harness Closeout](R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md) | R2 schema-backed parity harness, output summary, and R3 start decision. |
 | [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
@@ -94,6 +95,7 @@ graph, axis, scale, and trace extraction.
 | [R1 Graph/Layout Image Prep Contract](R1_GRAPH_LAYOUT_IMAGE_PREP_REPLACEMENT_CONTRACT.md) | Contract for replacing Stage 1-3 without adding a permanent duplicate production path. |
 | [R1 Graph/Layout Image Prep Parity Plan](R1_GRAPH_LAYOUT_IMAGE_PREP_PARITY_PLAN.md) | How the replacement must prove parity before promotion. |
 | [R1 Graph/Layout Image Prep Closeout](R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md) | What R1 completed and what R2 must build next. |
+| [R2 Stage 1-3 Shadow Parity Harness Closeout](R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md) | PC-side Stage 1-3 parity records and next implementation step. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |

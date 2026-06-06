@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_05_tic_plus_ions_model_enabled_android_phase9j_current",
+  "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+  "runId": "bench_05_tic_plus_ions_20260526_185451",
+  "fixtureId": "bench_05_tic_plus_ions",
+  "mode": "model_enabled",
+  "sourceId": "android_phase9j_current",
+  "sourceKind": "ACTIVE_ANDROID_BASELINE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "ACTIVE_RUNTIME_RECORDED_OUTPUT",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 1,
+  "graphCountScore": "FAIL",
+  "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "MISSING",
+  "imagePreparation": {
+    "status": "NOT_RECORDED",
+    "available": false,
+    "summary": "Phase 9J benchmark records do not lock normalized-image hash, dimensions, orientation, or preprocessing variant.",
+    "metrics": {
+      "truthGap": "input_image_hash"
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Active Android baseline graph-panel stage from Phase 9J records.",
+    "metrics": {
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "graphCountMatches": false
+    }
+  },
+  "plotAreaLayout": {
+    "status": "VALID",
+    "available": true,
+    "summary": "PlotArea/layout status from normalized Phase 9J prediction record.",
+    "metrics": {
+      "graphPanelStatus": "VALID",
+      "plotAreaStatus": "VALID"
+    }
+  },
+  "failureClass": "CALIBRATION_FAILURE",
+  "firstFailingStage": "Y_CALIBRATION",
+  "evidence": {
+    "sourceImage": "validation/bench_05_tic_plus_ions.png",
+    "recordSource": "benchmark/examples/phase9j_truth_audit/phase9j_bench_05_tic_plus_ions_model_enabled/prediction.json",
+    "artifactPaths": [
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_package_bench_05_tic_plus_ions_20260526_185451.json",
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.json",
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.md",
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/final_report_contract_bench_05_tic_plus_ions_20260526_185451.json",
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.html",
+      "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.md"
+    ]
+  },
+  "promotionDecision": "BASELINE_RECORD_ONLY",
+  "notes": [
+    "This is the current active Android baseline record.",
+    "It is not a replacement candidate."
+  ]
+}

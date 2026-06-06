@@ -79,12 +79,13 @@ targets. It does not change runtime behavior.
 | E2B `UNKNOWN_FAILURE` / semantic unavailability appears in summaries. | Model-enabled mode must remain advisory and cannot hide deterministic failures. |
 | Generated Phase 9 artifacts are ignored. | If they are needed for parity, copy/archive them before machine cleanup or regenerate on Android. |
 
-## Completed Broad Phase
+## Completed Broad Phases
 
 Completed:
 
 ```text
 R1 - Graph/Layout And Image Preparation Replacement Contract
+R2 - Stage 1-3 Shadow Parity Harness
 ```
 
 R1 is now documented in:
@@ -96,14 +97,25 @@ R1 is now documented in:
 R1 closed as contract/planning only. No runtime behavior, validators,
 chromatographic math, report gates, or graph-count metadata changed.
 
+R2 is documented in:
+
+- `docs/R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md`;
+- `benchmark/examples/stage123_shadow_parity/`;
+- `benchmark/reports/stage123_shadow_parity/summary.md`.
+
+R2 closed as benchmark/shadow measurement only. It did not change Android
+runtime behavior, validators, chromatographic math, report gates, graph-count
+metadata, model policy, or `CalculationEngine`.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R2 - Stage 1-3 Shadow Parity Harness
+R3 - Stage 1 Image Preparation Candidate
 ```
 
-R2 should implement comparison output for current active Stage 1-3 and the
-replacement candidate path, then run the eight validation fixtures before any
-production promotion.
+R3 should implement a real Stage 1 candidate that emits normalized-image
+evidence, preprocessing variant ranking, orientation/page-prep status, and
+artifact paths in the R2 record shape. It must remain shadow-only until parity
+and promotion gates pass.

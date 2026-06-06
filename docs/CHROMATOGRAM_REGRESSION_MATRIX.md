@@ -392,3 +392,22 @@ Final Phase 9G rerun result:
 | bench_01 | FAIL: remains `BLOCKED` at `TICK_LOCALIZATION_FAILURE` due insufficient Y anchors |
 | bench_05 | FAIL: remains `BLOCKED` at `CALIBRATION_FAILURE` due direction-inconsistent Y calibration evidence |
 | Product acceptance | FAIL: Phase 9 remains `PHASE_9B_BLOCKED_RUNTIME_FAILURE`; Phase 10 must not start |
+
+## R2 Stage 1-3 Shadow Parity Harness Update
+
+Date: 2026-06-06
+
+R2 adds schema-backed PC shadow parity records for Stage 1 image preparation,
+Stage 2 graph discovery, and Stage 3 plotArea/layout. R2 does not change runtime
+behavior or acceptance status.
+
+| Area | R2 Result |
+| --- | --- |
+| Benchmark examples | PASS: 36 `stage123-parity-record.json` examples generated |
+| Schema validation | PASS: 6 schemas and 109 example documents validated |
+| Current Android baseline graph count | PARTIAL: 8/16 Stage 1-3 records match expected graph count |
+| Current Android baseline layout class | FAIL/PARTIAL: 2/16 Stage 1-3 records match expected layout class |
+| E2B Stage 1-3 comparison | PASS: no E2B graph-count regression in current R2 records |
+| PC prototype signal | REVIEW: `label_band_assisted_axis_projection_v1` reaches 4/4 graph-count pass on P0 fixtures but is research-only |
+| Annotation upper bound | REVIEW: page-context/text-role upper bound reaches 4/4 layout pass but is not automatic runtime evidence |
+| Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R2 is measurement only |

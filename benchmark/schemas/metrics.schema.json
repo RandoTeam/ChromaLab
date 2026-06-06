@@ -67,6 +67,7 @@
         "stage": {
           "enum": [
             "input_provenance",
+            "image_preparation",
             "graph_panel",
             "plot_area",
             "axis_lines",
