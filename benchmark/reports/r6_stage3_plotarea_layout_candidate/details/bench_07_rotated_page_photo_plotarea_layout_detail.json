@@ -1,0 +1,48 @@
+{
+  "fixtureId": "bench_07_rotated_page_photo",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "layoutClassScore": "PASS",
+  "plotAreaLayoutStatus": "REVIEW",
+  "selectedRows": [
+    963
+  ],
+  "plotAreaCandidates": [
+    {
+      "graphIndex": 1,
+      "graphPanel": {
+        "x": 0,
+        "y": 25,
+        "width": 1276,
+        "height": 939
+      },
+      "plotArea": {
+        "x": 86,
+        "y": 259,
+        "width": 1138,
+        "height": 704
+      },
+      "axisRow": 963,
+      "confidence": 0.3961,
+      "status": "REVIEW",
+      "evidenceSource": "Y_AXIS_WITH_PANEL_MARGIN_FALLBACK",
+      "rejectionReason": "X_AXIS_RUN_NOT_STABLE_ENOUGH_FOR_AUTONOMOUS_PROMOTION"
+    }
+  ],
+  "annotationTruthAvailable": false,
+  "graphPanelMeanIou": null,
+  "plotAreaMeanIou": null,
+  "plotAreaMeanIouText": "-",
+  "annotationPairs": [],
+  "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_07_rotated_page_photo_plotarea_layout_overlay.png",
+  "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_07_rotated_page_photo_plotarea_layout_detail.json",
+  "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_07_rotated_page_photo_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_07_rotated_page_photo_graph_discovery_overlay.png",
+  "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_07_rotated_page_photo_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+  "elapsedMs": 128.435
+}

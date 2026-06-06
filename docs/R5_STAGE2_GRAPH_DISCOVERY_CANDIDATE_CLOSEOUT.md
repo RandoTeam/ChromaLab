@@ -80,3 +80,7 @@ R6 - Stage 3 PlotArea And Layout Semantics Candidate
 R6 should consume R5 graphPanel candidates and add plotArea candidate scoring,
 layout class evidence, and graphPanel/plotArea visual quality checks before any
 runtime promotion.
+
+Update: R6 is complete in
+`docs/R6_STAGE3_PLOTAREA_LAYOUT_CANDIDATE_CLOSEOUT.md`. The next replacement
+step is R7 axis/frame/scale evidence, still shadow-only.

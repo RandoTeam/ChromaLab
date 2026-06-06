@@ -112,6 +112,20 @@ graph-count pass against current fixture metadata, but graphPanel localization
 remains candidate-only and REVIEW until Stage 3 plotArea/layout scoring. R5
 remains shadow-only and is not used by runtime analysis.
 
+R6 adds a PC-side Stage 3 plotArea/layout candidate:
+
+```text
+python tools/benchmark/run_r6_stage3_plotarea_layout_candidate.py --clean
+```
+
+It writes records under `benchmark/examples/r6_stage3_plotarea_layout_candidate/`
+and plotArea/layout overlays, detail JSON files, and a contact sheet under
+`benchmark/reports/r6_stage3_plotarea_layout_candidate/`. R6 reached 8/8
+layout-class pass in shadow mode and 0.62146 mean plotArea IoU on the four P0
+fixtures with manual annotations, but every record remains REVIEW. It is not
+used by runtime analysis and does not prove axis scale, calibration, trace,
+peak, or report readiness.
+
 VLM-assisted stages:
 
 - graph region detection;

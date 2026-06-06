@@ -84,6 +84,26 @@ Current real-device status:
 - E2B/model-enabled mode did not regress deterministic graph count or calibration state.
 - Phase 9 remains blocked; Phase 10 may not start.
 
+## R6 Stage 3 Shadow Benchmark Addendum
+
+R6 adds PC-side plotArea/layout candidate records under
+`benchmark/examples/r6_stage3_plotarea_layout_candidate/` and reports under
+`benchmark/reports/r6_stage3_plotarea_layout_candidate/`.
+
+R6 regression result:
+
+- 8/8 fixture graph-count pass, inherited from R5 candidate evidence.
+- 8/8 fixture layout-class pass in shadow mode.
+- 4 P0 annotated fixtures scored against manual graph/plotArea annotations.
+- Annotated graphPanel mean IoU: 0.739372.
+- Annotated plotArea mean IoU: 0.62146.
+- All R6 records remain REVIEW because plotArea candidates are not production
+  runtime evidence.
+
+Regression rule: R6 output may be used to guide Stage 4 axis/frame/scale work,
+but it cannot upgrade Android Phase 9 blocked/review outcomes and cannot be
+used as calibration, trace, peak, or report-gate evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

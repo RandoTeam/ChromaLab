@@ -1,0 +1,106 @@
+{
+  "fixtureId": "bench_06_photo_two_graphs_page",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+  "expectedGraphCount": 2,
+  "detectedGraphCount": 2,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "TWO_GRAPH_PAGE",
+  "predictedLayoutClass": "TWO_GRAPH_PAGE",
+  "layoutClassScore": "PASS",
+  "plotAreaLayoutStatus": "REVIEW",
+  "selectedRows": [
+    622,
+    1237
+  ],
+  "plotAreaCandidates": [
+    {
+      "graphIndex": 1,
+      "graphPanel": {
+        "x": 69,
+        "y": 28,
+        "width": 895,
+        "height": 636
+      },
+      "plotArea": {
+        "x": 554,
+        "y": 493,
+        "width": 307,
+        "height": 129
+      },
+      "axisRow": 622,
+      "confidence": 0.4993,
+      "status": "REVIEW",
+      "evidenceSource": "AXIS_RUN_PROJECTION",
+      "rejectionReason": ""
+    },
+    {
+      "graphIndex": 2,
+      "graphPanel": {
+        "x": 69,
+        "y": 672,
+        "width": 895,
+        "height": 607
+      },
+      "plotArea": {
+        "x": 69,
+        "y": 796,
+        "width": 894,
+        "height": 441
+      },
+      "axisRow": 1237,
+      "confidence": 1.0,
+      "status": "REVIEW",
+      "evidenceSource": "AXIS_RUN_PROJECTION",
+      "rejectionReason": ""
+    }
+  ],
+  "annotationTruthAvailable": true,
+  "graphPanelMeanIou": 0.599931,
+  "plotAreaMeanIou": 0.350875,
+  "plotAreaMeanIouText": "0.351",
+  "annotationPairs": [
+    {
+      "graphIndex": 1,
+      "truthGraphId": "bench_06_graph_1",
+      "graphPanelIou": 0.544271,
+      "plotAreaIou": 0.151439,
+      "truthGraphPanel": {
+        "x": 146,
+        "y": 225,
+        "width": 720,
+        "height": 455
+      },
+      "truthPlotArea": {
+        "x": 188,
+        "y": 280,
+        "width": 674,
+        "height": 388
+      }
+    },
+    {
+      "graphIndex": 2,
+      "truthGraphId": "bench_06_graph_2",
+      "graphPanelIou": 0.655592,
+      "plotAreaIou": 0.550312,
+      "truthGraphPanel": {
+        "x": 144,
+        "y": 680,
+        "width": 742,
+        "height": 480
+      },
+      "truthPlotArea": {
+        "x": 188,
+        "y": 720,
+        "width": 695,
+        "height": 430
+      }
+    }
+  ],
+  "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_06_photo_two_graphs_page_plotarea_layout_overlay.png",
+  "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_06_photo_two_graphs_page_plotarea_layout_detail.json",
+  "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_06_photo_two_graphs_page_graph_discovery_overlay.png",
+  "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+  "elapsedMs": 141.579
+}

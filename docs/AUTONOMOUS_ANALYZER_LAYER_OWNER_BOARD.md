@@ -89,6 +89,7 @@ R2 - Stage 1-3 Shadow Parity Harness
 R3 - Stage 1 Image Preparation Candidate
 R4 - Rust Stage 1 Image Preparation Parity Bridge
 R5 - Stage 2 Graph Discovery Candidate
+R6 - Stage 3 PlotArea And Layout Semantics Candidate
 ```
 
 R1 is now documented in:
@@ -141,15 +142,26 @@ R5 closed as PC/shadow Stage 2 graph discovery only. It reached 8/8 graph-count
 pass across the validation fixtures, but graphPanel localization remains
 candidate-only and REVIEW until Stage 3 plotArea/layout scoring.
 
+R6 is documented in:
+
+- `docs/R6_STAGE3_PLOTAREA_LAYOUT_CANDIDATE_CLOSEOUT.md`;
+- `benchmark/examples/r6_stage3_plotarea_layout_candidate/`;
+- `benchmark/reports/r6_stage3_plotarea_layout_candidate/summary.md`.
+
+R6 closed as PC/shadow Stage 3 plotArea/layout evidence only. It reached 8/8
+layout-class pass and 8/8 graph-count pass, with 4 P0 annotated truth fixtures
+scored at 0.62146 mean plotArea IoU. The stage remains REVIEW because plotArea
+localization is candidate-only and not production-ready.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R6 - Stage 3 PlotArea And Layout Semantics Candidate
+R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 ```
 
-R6 should consume R5 graphPanel candidates, build plotArea/layout candidate
-evidence for all eight validation fixtures, compare graphPanel/plotArea quality
-against benchmark records, and keep production runtime unchanged until parity
-and promotion gates pass.
+R7 should consume R6 plotArea/layout candidates, build axis/frame/grid/scale
+evidence for all eight validation fixtures, compare candidate quality against
+benchmark records, and keep production runtime unchanged until parity and
+promotion gates pass.

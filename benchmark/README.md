@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R2 Stage 1-3 parity record conversion:
+Expected result after R6 Stage 3 plotArea/layout candidate generation:
 
 ```text
-Benchmark schema validation passed: 6 schemas, 133 example documents.
+Benchmark schema validation passed: 6 schemas, 141 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -130,6 +130,22 @@ The R5 summary report, overlays, and graph discovery contact sheet are written
 to:
 
 `benchmark/reports/r5_stage2_graph_discovery_candidate/`
+
+Build the R6 Stage 3 plotArea/layout candidate records:
+
+```powershell
+python tools/benchmark/run_r6_stage3_plotarea_layout_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R6 Stage 3 records are written to:
+
+`benchmark/examples/r6_stage3_plotarea_layout_candidate/`
+
+The R6 summary report, overlays, detail JSON files, and plotArea/layout contact
+sheet are written to:
+
+`benchmark/reports/r6_stage3_plotarea_layout_candidate/`
 
 Create graph/layout annotation workflow records with:
 

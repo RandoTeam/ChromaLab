@@ -1,0 +1,798 @@
+{
+  "schemaVersion": "chromalab.benchmark.r6_stage3_plotarea_layout_candidate_summary.v1",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "overallVerdict": "R6_STAGE3_LAYOUT_READY_PLOTAREA_REVIEW",
+  "recordCount": 8,
+  "fixtureCount": 8,
+  "graphCountPass": 8,
+  "graphCountFail": 0,
+  "layoutClassPass": 8,
+  "layoutClassFail": 0,
+  "annotatedTruthFixtureCount": 4,
+  "annotatedGraphPanelMeanIou": 0.739372,
+  "annotatedPlotAreaMeanIou": 0.62146,
+  "statusCounts": {
+    "REVIEW": 8
+  },
+  "nextRequiredWork": [
+    "Keep R6 plotArea/layout shadow-only until axis/scale evidence is measured.",
+    "Use R6 candidates to drive Stage 4 axis and scale evidence, not Android runtime promotion.",
+    "Improve plotArea localization for photo/page cases before production integration.",
+    "Do not treat layout pass as calibration, trace, peak, or report readiness."
+  ],
+  "records": [
+    {
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_01_mz71_screenshot_page.jpg",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        715,
+        1112
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 12,
+            "y": 0,
+            "width": 952,
+            "height": 757
+          },
+          "plotArea": {
+            "x": 169,
+            "y": 276,
+            "width": 721,
+            "height": 439
+          },
+          "axisRow": 715,
+          "confidence": 0.6125,
+          "status": "REVIEW",
+          "evidenceSource": "X_AXIS_RUN_WITH_PANEL_MARGIN_FALLBACK",
+          "rejectionReason": "Y_AXIS_RUN_NOT_STABLE_ENOUGH_FOR_AUTONOMOUS_PROMOTION"
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 12,
+            "y": 765,
+            "width": 952,
+            "height": 389
+          },
+          "plotArea": {
+            "x": 503,
+            "y": 887,
+            "width": 291,
+            "height": 225
+          },
+          "axisRow": 1112,
+          "confidence": 0.3787,
+          "status": "REVIEW",
+          "evidenceSource": "X_AXIS_RUN_WITH_PANEL_MARGIN_FALLBACK",
+          "rejectionReason": "Y_AXIS_RUN_NOT_STABLE_ENOUGH_FOR_AUTONOMOUS_PROMOTION"
+        }
+      ],
+      "annotationTruthAvailable": true,
+      "graphPanelMeanIou": 0.585363,
+      "plotAreaMeanIou": 0.508259,
+      "plotAreaMeanIouText": "0.508",
+      "annotationPairs": [
+        {
+          "graphIndex": 1,
+          "truthGraphId": "bench_01_graph_1",
+          "graphPanelIou": 0.456655,
+          "plotAreaIou": 0.779858,
+          "truthGraphPanel": {
+            "x": 103,
+            "y": 302,
+            "width": 793,
+            "height": 415
+          },
+          "truthPlotArea": {
+            "x": 202,
+            "y": 330,
+            "width": 680,
+            "height": 363
+          }
+        },
+        {
+          "graphIndex": 2,
+          "truthGraphId": "bench_01_graph_2",
+          "graphPanelIou": 0.714071,
+          "plotAreaIou": 0.236659,
+          "truthGraphPanel": {
+            "x": 116,
+            "y": 715,
+            "width": 784,
+            "height": 423
+          },
+          "truthPlotArea": {
+            "x": 220,
+            "y": 727,
+            "width": 670,
+            "height": 363
+          }
+        }
+      ],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_01_mz71_screenshot_page_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_01_mz71_screenshot_page_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_01_mz71_screenshot_page_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_01_mz71_screenshot_page_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_01_mz71_screenshot_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 183.433
+    },
+    {
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_02_mz92_belyi_tigr.jpg",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        903
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 1,
+            "y": 13,
+            "width": 574,
+            "height": 932
+          },
+          "plotArea": {
+            "x": 1,
+            "y": 204,
+            "width": 573,
+            "height": 699
+          },
+          "axisRow": 903,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": false,
+      "graphPanelMeanIou": null,
+      "plotAreaMeanIou": null,
+      "plotAreaMeanIouText": "-",
+      "annotationPairs": [],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_02_mz92_belyi_tigr_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_02_mz92_belyi_tigr_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_02_mz92_belyi_tigr_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_02_mz92_belyi_tigr_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_02_mz92_belyi_tigr_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 43.737
+    },
+    {
+      "fixtureId": "bench_03_small_tic_export",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+      "predictedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        99
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 381,
+            "height": 132
+          },
+          "plotArea": {
+            "x": 15,
+            "y": 3,
+            "width": 158,
+            "height": 96
+          },
+          "axisRow": 99,
+          "confidence": 0.766,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": false,
+      "graphPanelMeanIou": null,
+      "plotAreaMeanIou": null,
+      "plotAreaMeanIouText": "-",
+      "annotationPairs": [],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_03_small_tic_export_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_03_small_tic_export_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_03_small_tic_export_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_03_small_tic_export_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_03_small_tic_export_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 6.879
+    },
+    {
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "predictedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        226,
+        496,
+        779,
+        1058
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 534,
+            "height": 268
+          },
+          "plotArea": {
+            "x": 21,
+            "y": 25,
+            "width": 505,
+            "height": 201
+          },
+          "axisRow": 226,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 0,
+            "y": 276,
+            "width": 534,
+            "height": 262
+          },
+          "plotArea": {
+            "x": 20,
+            "y": 300,
+            "width": 505,
+            "height": 196
+          },
+          "axisRow": 496,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 3,
+          "graphPanel": {
+            "x": 0,
+            "y": 546,
+            "width": 534,
+            "height": 275
+          },
+          "plotArea": {
+            "x": 20,
+            "y": 573,
+            "width": 505,
+            "height": 206
+          },
+          "axisRow": 779,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 4,
+          "graphPanel": {
+            "x": 0,
+            "y": 829,
+            "width": 534,
+            "height": 271
+          },
+          "plotArea": {
+            "x": 20,
+            "y": 855,
+            "width": 505,
+            "height": 203
+          },
+          "axisRow": 1058,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": true,
+      "graphPanelMeanIou": 0.903253,
+      "plotAreaMeanIou": 0.856036,
+      "plotAreaMeanIouText": "0.856",
+      "annotationPairs": [
+        {
+          "graphIndex": 1,
+          "truthGraphId": "bench_04_graph_1",
+          "graphPanelIou": 0.988806,
+          "plotAreaIou": 0.857193,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 534,
+            "height": 265
+          },
+          "truthPlotArea": {
+            "x": 36,
+            "y": 0,
+            "width": 490,
+            "height": 224
+          }
+        },
+        {
+          "graphIndex": 2,
+          "truthGraphId": "bench_04_graph_2",
+          "graphPanelIou": 0.933579,
+          "plotAreaIou": 0.848958,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 267,
+            "width": 534,
+            "height": 262
+          },
+          "truthPlotArea": {
+            "x": 36,
+            "y": 274,
+            "width": 490,
+            "height": 224
+          }
+        },
+        {
+          "graphIndex": 3,
+          "truthGraphId": "bench_04_graph_3",
+          "graphPanelIou": 0.84375,
+          "plotAreaIou": 0.879573,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 533,
+            "width": 534,
+            "height": 256
+          },
+          "truthPlotArea": {
+            "x": 36,
+            "y": 553,
+            "width": 490,
+            "height": 227
+          }
+        },
+        {
+          "graphIndex": 4,
+          "truthGraphId": "bench_04_graph_4",
+          "graphPanelIou": 0.846875,
+          "plotAreaIou": 0.838418,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 790,
+            "width": 534,
+            "height": 320
+          },
+          "truthPlotArea": {
+            "x": 36,
+            "y": 825,
+            "width": 490,
+            "height": 235
+          }
+        }
+      ],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_04_stacked_xic_resolution_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_04_stacked_xic_resolution_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_04_stacked_xic_resolution_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_04_stacked_xic_resolution_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_04_stacked_xic_resolution_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 53.113
+    },
+    {
+      "fixtureId": "bench_05_tic_plus_ions",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_05_tic_plus_ions.png",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 4,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "predictedLayoutClass": "TIC_PLUS_ION_PANELS",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        362,
+        506,
+        644,
+        783
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 683,
+            "height": 404
+          },
+          "plotArea": {
+            "x": 71,
+            "y": 59,
+            "width": 239,
+            "height": 303
+          },
+          "axisRow": 362,
+          "confidence": 0.7318,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 0,
+            "y": 386,
+            "width": 683,
+            "height": 162
+          },
+          "plotArea": {
+            "x": 74,
+            "y": 444,
+            "width": 599,
+            "height": 62
+          },
+          "axisRow": 506,
+          "confidence": 0.8625,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 3,
+          "graphPanel": {
+            "x": 0,
+            "y": 524,
+            "width": 683,
+            "height": 162
+          },
+          "plotArea": {
+            "x": 72,
+            "y": 582,
+            "width": 601,
+            "height": 62
+          },
+          "axisRow": 644,
+          "confidence": 0.8625,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 4,
+          "graphPanel": {
+            "x": 0,
+            "y": 663,
+            "width": 683,
+            "height": 144
+          },
+          "plotArea": {
+            "x": 72,
+            "y": 720,
+            "width": 597,
+            "height": 63
+          },
+          "axisRow": 783,
+          "confidence": 0.89,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": true,
+      "graphPanelMeanIou": 0.868942,
+      "plotAreaMeanIou": 0.770672,
+      "plotAreaMeanIouText": "0.771",
+      "annotationPairs": [
+        {
+          "graphIndex": 1,
+          "truthGraphId": "bench_05_graph_1",
+          "graphPanelIou": 0.985149,
+          "plotAreaIou": 0.334247,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 0,
+            "width": 683,
+            "height": 398
+          },
+          "truthPlotArea": {
+            "x": 98,
+            "y": 42,
+            "width": 575,
+            "height": 320
+          }
+        },
+        {
+          "graphIndex": 2,
+          "truthGraphId": "bench_05_graph_2",
+          "graphPanelIou": 0.820988,
+          "plotAreaIou": 0.931101,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 399,
+            "width": 683,
+            "height": 133
+          },
+          "truthPlotArea": {
+            "x": 98,
+            "y": 443,
+            "width": 575,
+            "height": 64
+          }
+        },
+        {
+          "graphIndex": 3,
+          "truthGraphId": "bench_05_graph_3",
+          "graphPanelIou": 0.734568,
+          "plotAreaIou": 0.942199,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 533,
+            "width": 683,
+            "height": 119
+          },
+          "truthPlotArea": {
+            "x": 98,
+            "y": 582,
+            "width": 575,
+            "height": 63
+          }
+        },
+        {
+          "graphIndex": 4,
+          "truthGraphId": "bench_05_graph_4",
+          "graphPanelIou": 0.935065,
+          "plotAreaIou": 0.875142,
+          "truthGraphPanel": {
+            "x": 0,
+            "y": 653,
+            "width": 683,
+            "height": 154
+          },
+          "truthPlotArea": {
+            "x": 98,
+            "y": 724,
+            "width": 575,
+            "height": 58
+          }
+        }
+      ],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_05_tic_plus_ions_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_05_tic_plus_ions_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_05_tic_plus_ions_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_05_tic_plus_ions_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_05_tic_plus_ions_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 48.835
+    },
+    {
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "TWO_GRAPH_PAGE",
+      "predictedLayoutClass": "TWO_GRAPH_PAGE",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        622,
+        1237
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 69,
+            "y": 28,
+            "width": 895,
+            "height": 636
+          },
+          "plotArea": {
+            "x": 554,
+            "y": 493,
+            "width": 307,
+            "height": 129
+          },
+          "axisRow": 622,
+          "confidence": 0.4993,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        },
+        {
+          "graphIndex": 2,
+          "graphPanel": {
+            "x": 69,
+            "y": 672,
+            "width": 895,
+            "height": 607
+          },
+          "plotArea": {
+            "x": 69,
+            "y": 796,
+            "width": 894,
+            "height": 441
+          },
+          "axisRow": 1237,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": true,
+      "graphPanelMeanIou": 0.599931,
+      "plotAreaMeanIou": 0.350875,
+      "plotAreaMeanIouText": "0.351",
+      "annotationPairs": [
+        {
+          "graphIndex": 1,
+          "truthGraphId": "bench_06_graph_1",
+          "graphPanelIou": 0.544271,
+          "plotAreaIou": 0.151439,
+          "truthGraphPanel": {
+            "x": 146,
+            "y": 225,
+            "width": 720,
+            "height": 455
+          },
+          "truthPlotArea": {
+            "x": 188,
+            "y": 280,
+            "width": 674,
+            "height": 388
+          }
+        },
+        {
+          "graphIndex": 2,
+          "truthGraphId": "bench_06_graph_2",
+          "graphPanelIou": 0.655592,
+          "plotAreaIou": 0.550312,
+          "truthGraphPanel": {
+            "x": 144,
+            "y": 680,
+            "width": 742,
+            "height": 480
+          },
+          "truthPlotArea": {
+            "x": 188,
+            "y": 720,
+            "width": 695,
+            "height": 430
+          }
+        }
+      ],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_06_photo_two_graphs_page_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_06_photo_two_graphs_page_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_06_photo_two_graphs_page_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 141.579
+    },
+    {
+      "fixtureId": "bench_07_rotated_page_photo",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+      "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        963
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 0,
+            "y": 25,
+            "width": 1276,
+            "height": 939
+          },
+          "plotArea": {
+            "x": 86,
+            "y": 259,
+            "width": 1138,
+            "height": 704
+          },
+          "axisRow": 963,
+          "confidence": 0.3961,
+          "status": "REVIEW",
+          "evidenceSource": "Y_AXIS_WITH_PANEL_MARGIN_FALLBACK",
+          "rejectionReason": "X_AXIS_RUN_NOT_STABLE_ENOUGH_FOR_AUTONOMOUS_PROMOTION"
+        }
+      ],
+      "annotationTruthAvailable": false,
+      "graphPanelMeanIou": null,
+      "plotAreaMeanIou": null,
+      "plotAreaMeanIouText": "-",
+      "annotationPairs": [],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_07_rotated_page_photo_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_07_rotated_page_photo_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_bench_07_rotated_page_photo_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_07_rotated_page_photo_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_07_rotated_page_photo_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 128.435
+    },
+    {
+      "fixtureId": "white_tiger_ion71",
+      "sourceImage": "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "graphCountScore": "PASS",
+      "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+      "layoutClassScore": "PASS",
+      "plotAreaLayoutStatus": "REVIEW",
+      "selectedRows": [
+        838
+      ],
+      "plotAreaCandidates": [
+        {
+          "graphIndex": 1,
+          "graphPanel": {
+            "x": 5,
+            "y": 13,
+            "width": 564,
+            "height": 867
+          },
+          "plotArea": {
+            "x": 5,
+            "y": 188,
+            "width": 563,
+            "height": 650
+          },
+          "axisRow": 838,
+          "confidence": 1.0,
+          "status": "REVIEW",
+          "evidenceSource": "AXIS_RUN_PROJECTION",
+          "rejectionReason": ""
+        }
+      ],
+      "annotationTruthAvailable": false,
+      "graphPanelMeanIou": null,
+      "plotAreaMeanIou": null,
+      "plotAreaMeanIouText": "-",
+      "annotationPairs": [],
+      "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/white_tiger_ion71_plotarea_layout_overlay.png",
+      "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/white_tiger_ion71_plotarea_layout_detail.json",
+      "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_white_tiger_ion71_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+      "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/white_tiger_ion71_graph_discovery_overlay.png",
+      "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_white_tiger_ion71_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+      "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+      "elapsedMs": 50.351
+    }
+  ],
+  "contactSheet": "benchmark/reports/r6_stage3_plotarea_layout_candidate/contact_sheet_plotarea_layout.png"
+}

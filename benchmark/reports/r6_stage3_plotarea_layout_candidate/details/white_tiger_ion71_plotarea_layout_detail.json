@@ -1,0 +1,48 @@
+{
+  "fixtureId": "white_tiger_ion71",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "layoutClassScore": "PASS",
+  "plotAreaLayoutStatus": "REVIEW",
+  "selectedRows": [
+    838
+  ],
+  "plotAreaCandidates": [
+    {
+      "graphIndex": 1,
+      "graphPanel": {
+        "x": 5,
+        "y": 13,
+        "width": 564,
+        "height": 867
+      },
+      "plotArea": {
+        "x": 5,
+        "y": 188,
+        "width": 563,
+        "height": 650
+      },
+      "axisRow": 838,
+      "confidence": 1.0,
+      "status": "REVIEW",
+      "evidenceSource": "AXIS_RUN_PROJECTION",
+      "rejectionReason": ""
+    }
+  ],
+  "annotationTruthAvailable": false,
+  "graphPanelMeanIou": null,
+  "plotAreaMeanIou": null,
+  "plotAreaMeanIouText": "-",
+  "annotationPairs": [],
+  "overlayPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/white_tiger_ion71_plotarea_layout_overlay.png",
+  "detailPath": "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/white_tiger_ion71_plotarea_layout_detail.json",
+  "recordPath": "benchmark/examples/r6_stage3_plotarea_layout_candidate/stage123_white_tiger_ion71_pc_stage3_plotarea_layout_candidate_v1/stage123-parity-record.json",
+  "r5OverlayPath": "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/white_tiger_ion71_graph_discovery_overlay.png",
+  "r5RecordPath": "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_white_tiger_ion71_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json",
+  "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+  "elapsedMs": 50.351
+}

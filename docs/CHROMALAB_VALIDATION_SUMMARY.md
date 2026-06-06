@@ -284,6 +284,42 @@ Interpretation:
   report readiness, or product acceptance.
 - It prepares Stage 3 plotArea/layout candidate work.
 
+## R6 Stage 3 PlotArea And Layout Candidate
+
+R6 adds a PC-side Stage 3 plotArea/layout candidate that consumes R5 graphPanel
+candidates.
+
+It writes:
+
+- `benchmark/examples/r6_stage3_plotarea_layout_candidate/`
+- `benchmark/reports/r6_stage3_plotarea_layout_candidate/summary.json`
+- `benchmark/reports/r6_stage3_plotarea_layout_candidate/summary.md`
+- `benchmark/reports/r6_stage3_plotarea_layout_candidate/contact_sheet_plotarea_layout.png`
+- `benchmark/reports/r6_stage3_plotarea_layout_candidate/details/`
+
+R6 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 3 plotArea/layout records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| P0 annotated truth fixtures | 4 |
+| Annotated graphPanel mean IoU | 0.739372 |
+| Annotated plotArea mean IoU | 0.62146 |
+| Stage evidence status | REVIEW |
+| Schemas validated | 6 |
+| Example documents validated | 141 |
+
+Interpretation:
+
+- R6 is shadow-only Stage 3 plotArea/layout evidence.
+- It does not prove axis scale, calibration, trace, peak, report readiness, or
+  product acceptance.
+- Photo/page plotArea localization remains REVIEW and needs stronger
+  axis/frame/scale evidence before any runtime promotion.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

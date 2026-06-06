@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_06_photo_two_graphs_page_pc_stage3_plotarea_layout_candidate_v1",
+  "fixtureId": "bench_06_photo_two_graphs_page",
+  "mode": "pc_prototype",
+  "sourceId": "r6_stage3_plotarea_layout_candidate_v1",
+  "sourceKind": "PC_STAGE3_PLOTAREA_LAYOUT_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE3_PLOTAREA_LAYOUT_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 2,
+  "detectedGraphCount": 2,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "TWO_GRAPH_PAGE",
+  "predictedLayoutClass": "TWO_GRAPH_PAGE",
+  "layoutClassScore": "PASS",
+  "imagePreparation": {
+    "status": "PASS",
+    "available": true,
+    "summary": "Uses R4 Rust Stage 1 selected preprocessing evidence as the upstream image-preparation input.",
+    "metrics": {
+      "r4SelectedVariantScore": 0.729866,
+      "r4SelectedVariantParity": true,
+      "r4StatusParity": true
+    }
+  },
+  "graphDiscovery": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Detects graph count from deterministic row-axis projection candidates, with rejected giant/title/page bands preserved as evidence.",
+    "metrics": {
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 2,
+      "rowCandidateCount": 5,
+      "selectedRowCount": 2,
+      "rejectedRowCandidateCount": 0,
+      "threshold": 180.0,
+      "contentCropX": 69,
+      "contentCropY": 28,
+      "contentCropWidth": 895,
+      "contentCropHeight": 1219
+    }
+  },
+  "plotAreaLayout": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "Builds deterministic plotArea candidates from R5 graphPanel candidates and axis-run projection, then scores semantic layout class. This remains shadow-only.",
+    "metrics": {
+      "plotAreaCandidateCount": 2,
+      "annotatedTruthAvailable": true,
+      "graphPanelMeanIou": 0.599931,
+      "plotAreaMeanIou": 0.350875,
+      "predictedLayoutMatchesExpected": true,
+      "selectedRowsCount": 2
+    }
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+    "recordSource": "benchmark/reports/r6_stage3_plotarea_layout_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r6_stage3_plotarea_layout_candidate/overlays/bench_06_photo_two_graphs_page_plotarea_layout_overlay.png",
+      "benchmark/reports/r6_stage3_plotarea_layout_candidate/details/bench_06_photo_two_graphs_page_plotarea_layout_detail.json",
+      "benchmark/reports/r5_stage2_graph_discovery_candidate/overlays/bench_06_photo_two_graphs_page_graph_discovery_overlay.png",
+      "benchmark/examples/r5_stage2_graph_discovery_candidate/stage123_bench_06_photo_two_graphs_page_pc_stage2_graph_discovery_candidate_v1/stage123-parity-record.json"
+    ]
+  },
+  "promotionDecision": "STAGE3_CANDIDATE_REQUIRES_AXIS_SCALE_PARITY",
+  "notes": [
+    "Shadow-only R6 Stage 3 plotArea/layout candidate.",
+    "No calibration, trace, peak, report-gate, Android runtime, or CalculationEngine authority.",
+    "plotArea candidates are measured evidence for the next axis/scale stage, not production graph ROI output.",
+    "Manual annotation IoU is only available for the partial P0 annotation set."
+  ]
+}
