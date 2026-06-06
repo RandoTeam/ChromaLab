@@ -6,6 +6,7 @@
 
 pub mod android_bridge;
 mod axis_element_bridge;
+pub mod stage1_image_prep;
 
 pub use axis_element_bridge::{
     AxisElementBridgeError, AxisElementGraphCropBridgeReport,

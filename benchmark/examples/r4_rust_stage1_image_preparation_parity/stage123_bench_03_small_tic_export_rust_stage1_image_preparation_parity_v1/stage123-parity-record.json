@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_03_small_tic_export_rust_stage1_image_preparation_parity_v1",
+  "fixtureId": "bench_03_small_tic_export",
+  "mode": "pc_prototype",
+  "sourceId": "r4_rust_stage1_image_preparation_parity_v1",
+  "sourceKind": "RUST_STAGE1_IMAGE_PREP_PARITY_BRIDGE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "RUST_STAGE1_PARITY_BRIDGE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 0,
+  "graphCountScore": "NOT_SCOREABLE",
+  "expectedLayoutClass": "LOW_RES_EXPORT_GRAPH",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "R4 Rust Stage 1 bridge decoded the image, emitted preprocessing metrics, and compared against the R3 PC candidate.",
+    "metrics": {
+      "rustWidth": 381,
+      "rustHeight": 132,
+      "r3Width": 381,
+      "r3Height": 132,
+      "sourceShaParity": true,
+      "normalizedShaParity": false,
+      "selectedVariantParity": true,
+      "statusParity": true,
+      "warningParity": true,
+      "rustSelectedVariantScore": 0.362928,
+      "r3SelectedVariantScore": 0.362928,
+      "selectedVariantScoreDelta": 0.0,
+      "rustElapsedMs": 191.213,
+      "runnerElapsedMs": 202.683
+    }
+  },
+  "graphDiscovery": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R4 is Stage 1 Rust parity only; graph discovery remains the next replacement layer."
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R4 is Stage 1 Rust parity only; plotArea/layout remains the next replacement layer."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_03_small_tic_export.jpg",
+    "recordSource": "benchmark/reports/r4_rust_stage1_image_preparation_parity/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r4_rust_stage1_image_preparation_parity/rust_reports/bench_03_small_tic_export_rust_stage1_report.json",
+      "benchmark/examples/r3_image_preparation_candidate/stage123_bench_03_small_tic_export_pc_prototype_r3_image_preparation_candidate_v1/stage123-parity-record.json",
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_03_small_tic_export_normalized_source.png",
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_03_small_tic_export_autocontrast.png"
+    ]
+  },
+  "promotionDecision": "STAGE1_CANDIDATE_REQUIRES_STAGE2_PARITY",
+  "notes": [
+    "Shadow-only Rust Stage 1 parity bridge.",
+    "No graphPanel, plotArea, calibration, trace, peak, or report-gate authority.",
+    "NORMALIZED_SHA_MISMATCH"
+  ]
+}

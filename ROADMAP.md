@@ -22,8 +22,9 @@ Current priorities:
    - avoid porting weak heuristics blindly from older Kotlin paths.
    - current progress: R2 added a schema-backed Stage 1-3 shadow parity harness;
      R3 added a shadow-only Stage 1 image-preparation candidate with preview
-     evidence; the next slice is a Rust Stage 1 parity bridge, not a production
-     Rust switch.
+     evidence; R4 added a Rust Stage 1 parity bridge with 8/8 selected-variant
+     parity and 8/8 PASS/REVIEW status parity against R3. The next slice is
+     Stage 2 graph discovery evidence, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

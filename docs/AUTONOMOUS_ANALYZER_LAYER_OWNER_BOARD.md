@@ -87,6 +87,7 @@ Completed:
 R1 - Graph/Layout And Image Preparation Replacement Contract
 R2 - Stage 1-3 Shadow Parity Harness
 R3 - Stage 1 Image Preparation Candidate
+R4 - Rust Stage 1 Image Preparation Parity Bridge
 ```
 
 R1 is now documented in:
@@ -118,14 +119,26 @@ R3 closed as PC/shadow Stage 1 candidate only. It did not change Android runtime
 behavior, validators, chromatographic math, report gates, graph-count metadata,
 model policy, or `CalculationEngine`.
 
+R4 is documented in:
+
+- `docs/R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md`;
+- `benchmark/examples/r4_rust_stage1_image_preparation_parity/`;
+- `benchmark/reports/r4_rust_stage1_image_preparation_parity/summary.md`.
+
+R4 closed as Rust/shadow Stage 1 parity only. It reached 8/8 selected-variant
+parity and 8/8 PASS/REVIEW status parity against R3. It did not change Android
+runtime behavior, validators, chromatographic math, report gates, graph-count
+metadata, model policy, or `CalculationEngine`.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R4 - Rust Stage 1 Image Preparation Parity Bridge
+R5 - Stage 2 Graph Discovery Candidate
 ```
 
-R4 should port or bridge the R3 Stage 1 image-preparation candidate into
-Rust-owned primitives, compare Rust output against the R3 PC records, and keep
-production runtime unchanged until parity and promotion gates pass.
+R5 should consume the Rust Stage 1 selected variant, build graphPanel candidate
+evidence for all eight validation fixtures, compare graph count/layout against
+benchmark records, and keep production runtime unchanged until parity and
+promotion gates pass.

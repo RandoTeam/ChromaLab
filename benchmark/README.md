@@ -48,7 +48,7 @@ python tools/benchmark/validate_benchmark_schemas.py
 Expected result after R2 Stage 1-3 parity record conversion:
 
 ```text
-Benchmark schema validation passed: 6 schemas, 117 example documents.
+Benchmark schema validation passed: 6 schemas, 125 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -98,6 +98,22 @@ The R3 Stage 1 records are written to:
 The R3 summary report and contact sheet are written to:
 
 `benchmark/reports/r3_image_preparation_candidate/`
+
+Build the R4 Rust Stage 1 image-preparation parity records:
+
+```powershell
+.\tools\rust\Install-LocalRustToolchain.ps1
+python tools/benchmark/run_r4_rust_stage1_image_preparation_parity.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R4 Rust Stage 1 records are written to:
+
+`benchmark/examples/r4_rust_stage1_image_preparation_parity/`
+
+The R4 summary report and Rust per-fixture reports are written to:
+
+`benchmark/reports/r4_rust_stage1_image_preparation_parity/`
 
 Create graph/layout annotation workflow records with:
 

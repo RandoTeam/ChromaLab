@@ -124,3 +124,6 @@ R4 - Rust Stage 1 Image Preparation Parity Bridge
 
 R4 should port or bridge the R3 Stage 1 candidate into Rust-owned primitives and
 compare Rust output against the R3 PC records before any production promotion.
+
+Update 2026-06-06: R4 completed this bridge in
+`docs/R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md`.

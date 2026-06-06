@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "chromalab.rust.stage1_image_preparation.v1",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "RUST_STAGE1_PARITY_BRIDGE_NOT_RUNTIME_READY",
+  "decoder": "rust-image-0.25.10-jpeg-png-no-exif-transpose",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+  "sourceSha256": "83b60c45e6d9c66bac5b60a150ee9b283d9bc07e6b5ef4fdf8bd7a107ec3a105",
+  "normalizedSha256": "30679e320fce2d0aa90c9f5123adc6d82609b2dcbff801365fc6930c7485964f",
+  "sourceMetrics": {
+    "width": 1280,
+    "height": 964,
+    "megapixels": 1.2339,
+    "aspectRatio": 1.3278,
+    "luminanceMean": 167.1929,
+    "luminanceStd": 40.8488,
+    "p05": 62.0,
+    "p10": 126.0,
+    "p50": 181.0,
+    "p90": 198.0,
+    "p95": 201.0,
+    "contrastP90P10": 72.0,
+    "darkPixelFraction": 0.099052,
+    "edgeDensity": 0.025779
+  },
+  "variantScores": [
+    {
+      "variantId": "sharpened_autocontrast",
+      "score": 0.538049,
+      "metrics": {
+        "width": 1280,
+        "height": 964,
+        "megapixels": 1.2339,
+        "aspectRatio": 1.3278,
+        "luminanceMean": 180.398,
+        "luminanceStd": 52.6458,
+        "p05": 38.0,
+        "p10": 117.0,
+        "p50": 198.0,
+        "p90": 218.0,
+        "p95": 229.0,
+        "contrastP90P10": 101.0,
+        "darkPixelFraction": 0.099771,
+        "edgeDensity": 0.07377
+      }
+    },
+    {
+      "variantId": "autocontrast",
+      "score": 0.378458,
+      "metrics": {
+        "width": 1280,
+        "height": 964,
+        "megapixels": 1.2339,
+        "aspectRatio": 1.3278,
+        "luminanceMean": 181.4113,
+        "luminanceStd": 45.695,
+        "p05": 64.0,
+        "p10": 135.0,
+        "p50": 197.0,
+        "p90": 216.0,
+        "p95": 219.0,
+        "contrastP90P10": 81.0,
+        "darkPixelFraction": 0.099052,
+        "edgeDensity": 0.028172
+      }
+    },
+    {
+      "variantId": "grayscale",
+      "score": 0.345451,
+      "metrics": {
+        "width": 1280,
+        "height": 964,
+        "megapixels": 1.2339,
+        "aspectRatio": 1.3278,
+        "luminanceMean": 167.1929,
+        "luminanceStd": 40.8488,
+        "p05": 62.0,
+        "p10": 126.0,
+        "p50": 181.0,
+        "p90": 198.0,
+        "p95": 201.0,
+        "contrastP90P10": 72.0,
+        "darkPixelFraction": 0.099052,
+        "edgeDensity": 0.025779
+      }
+    },
+    {
+      "variantId": "source_rgb",
+      "score": 0.345451,
+      "metrics": {
+        "width": 1280,
+        "height": 964,
+        "megapixels": 1.2339,
+        "aspectRatio": 1.3278,
+        "luminanceMean": 167.1929,
+        "luminanceStd": 40.8488,
+        "p05": 62.0,
+        "p10": 126.0,
+        "p50": 181.0,
+        "p90": 198.0,
+        "p95": 201.0,
+        "contrastP90P10": 72.0,
+        "darkPixelFraction": 0.099052,
+        "edgeDensity": 0.025779
+      }
+    },
+    {
+      "variantId": "otsu_binary",
+      "score": 0.04917,
+      "metrics": {
+        "width": 1280,
+        "height": 964,
+        "megapixels": 1.2339,
+        "aspectRatio": 1.3278,
+        "luminanceMean": 231.5972,
+        "luminanceStd": 73.6208,
+        "p05": 0.0,
+        "p10": 255.0,
+        "p50": 255.0,
+        "p90": 255.0,
+        "p95": 255.0,
+        "contrastP90P10": 0.0,
+        "darkPixelFraction": 0.091776,
+        "edgeDensity": 0.01525
+      }
+    }
+  ],
+  "selectedVariantId": "sharpened_autocontrast",
+  "selectedVariantScore": 0.538049,
+  "status": "PASS",
+  "warnings": [],
+  "elapsedMs": 5769.859,
+  "runnerElapsedMs": 5781.413
+}

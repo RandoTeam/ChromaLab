@@ -44,6 +44,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md` | R1 closeout and R2 start decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md` | R2 closeout for Stage 1-3 shadow parity harness. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R3_IMAGE_PREPARATION_CANDIDATE_CLOSEOUT.md` | R3 closeout for the Stage 1 image-preparation candidate. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md` | R4 closeout for the Rust Stage 1 image-preparation parity bridge. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |
@@ -104,14 +105,17 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md` | Stage 1-3 contract closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R2_STAGE123_SHADOW_PARITY_HARNESS_CLOSEOUT.md` | Stage 1-3 shadow parity harness closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R3_IMAGE_PREPARATION_CANDIDATE_CLOSEOUT.md` | Stage 1 image-preparation candidate closeout and next-step decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R4_RUST_STAGE1_IMAGE_PREPARATION_PARITY_CLOSEOUT.md` | Rust Stage 1 image-preparation parity closeout and next-step decision. |
 | `ACTIVE_TEST` | `benchmark/schemas/` | Benchmark record schemas for truth, predictions, metrics, evidence packages, and report claims. |
 | `ACTIVE_TEST` | `benchmark/examples/` | Source-controlled benchmark examples, including Phase 9J-derived records. |
 | `ACTIVE_TEST` | `benchmark/examples/stage123_shadow_parity/` | R2 Stage 1-3 parity example records. |
 | `ACTIVE_TEST` | `benchmark/examples/r3_image_preparation_candidate/` | R3 Stage 1 image-preparation candidate records. |
+| `ACTIVE_TEST` | `benchmark/examples/r4_rust_stage1_image_preparation_parity/` | R4 Rust Stage 1 parity records. |
 | `ACTIVE_TEST` | `benchmark/annotations/` | Graph/layout/OCR annotation records used by research benchmark phases. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/` | Small tracked benchmark summaries and overlays. Update only with benchmark phase intent. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/stage123_shadow_parity/` | R2 Stage 1-3 parity summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r3_image_preparation_candidate/` | R3 Stage 1 image-preparation summary and contact sheet. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r4_rust_stage1_image_preparation_parity/` | R4 Rust Stage 1 parity summary and Rust per-fixture reports. |
 
 ## Active Code Owner Areas
 
@@ -157,6 +161,7 @@ Current completed broad phases:
 R1 - Graph/Layout And Image Preparation Replacement Contract
 R2 - Stage 1-3 Shadow Parity Harness
 R3 - Stage 1 Image Preparation Candidate
+R4 - Rust Stage 1 Image Preparation Parity Bridge
 ```
 
 Decision:
@@ -164,12 +169,14 @@ Decision:
 - R1 created the Stage 1-3 replacement contract and parity plan;
 - R2 created schema-backed Stage 1-3 shadow parity records and summary reports;
 - R3 created a PC-side Stage 1 image-preparation candidate and preview evidence;
-- R1/R2/R3 did not change runtime behavior.
+- R4 created a Rust Stage 1 parity bridge with 8/8 selected-variant parity and
+  8/8 PASS/REVIEW status parity against R3;
+- R1/R2/R3/R4 did not change runtime behavior.
 
 Recommended next broad phase:
 
 ```text
-R4 - Rust Stage 1 Image Preparation Parity Bridge
+R5 - Stage 2 Graph Discovery Candidate
 ```
 
 ## R0 Agent Swarm Summary

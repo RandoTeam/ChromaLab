@@ -61,6 +61,7 @@
       "enum": [
         "ACTIVE_ANDROID_BASELINE",
         "PC_STAGE1_IMAGE_PREP_CANDIDATE",
+        "RUST_STAGE1_IMAGE_PREP_PARITY_BRIDGE",
         "PC_PROTOTYPE",
         "ANNOTATION_UPPER_BOUND"
       ]

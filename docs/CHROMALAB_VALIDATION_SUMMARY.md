@@ -221,6 +221,39 @@ Interpretation:
 - It does not fix graph/layout/calibration blockers.
 - It prepares the next Rust Stage 1 parity bridge.
 
+## R4 Rust Stage 1 Image Preparation Parity
+
+R4 ports the R3 Stage 1 image-preparation candidate into a Rust shadow bridge.
+
+It writes:
+
+- `benchmark/examples/r4_rust_stage1_image_preparation_parity/`
+- `benchmark/reports/r4_rust_stage1_image_preparation_parity/summary.json`
+- `benchmark/reports/r4_rust_stage1_image_preparation_parity/summary.md`
+- `benchmark/reports/r4_rust_stage1_image_preparation_parity/rust_reports/`
+
+R4 result:
+
+| Item | Count / status |
+|---|---:|
+| Rust Stage 1 parity records | 8 |
+| Fixtures represented | 8 |
+| Selected variant parity vs R3 | 8/8 |
+| PASS/REVIEW status parity vs R3 | 8/8 |
+| Source file SHA parity vs R3 | 8/8 |
+| Normalized byte SHA parity vs R3 | 2/8 |
+| Schemas validated | 6 |
+| Example documents validated | 125 |
+
+Interpretation:
+
+- R4 is shadow-only Rust Stage 1 evidence.
+- PNG fixtures match source and normalized byte hashes.
+- JPEG fixtures keep `NORMALIZED_SHA_MISMATCH` review notes because Pillow and
+  Rust decode normalized RGB bytes differently.
+- It does not fix graph/layout/calibration blockers.
+- It prepares Stage 2 graph discovery candidate work.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

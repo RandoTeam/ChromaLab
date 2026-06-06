@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_white_tiger_ion71_rust_stage1_image_preparation_parity_v1",
+  "fixtureId": "white_tiger_ion71",
+  "mode": "pc_prototype",
+  "sourceId": "r4_rust_stage1_image_preparation_parity_v1",
+  "sourceKind": "RUST_STAGE1_IMAGE_PREP_PARITY_BRIDGE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "RUST_STAGE1_PARITY_BRIDGE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 0,
+  "graphCountScore": "NOT_SCOREABLE",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "R4 Rust Stage 1 bridge decoded the image, emitted preprocessing metrics, and compared against the R3 PC candidate.",
+    "metrics": {
+      "rustWidth": 576,
+      "rustHeight": 1280,
+      "r3Width": 576,
+      "r3Height": 1280,
+      "sourceShaParity": true,
+      "normalizedShaParity": false,
+      "selectedVariantParity": true,
+      "statusParity": true,
+      "warningParity": true,
+      "rustSelectedVariantScore": 0.54524,
+      "r3SelectedVariantScore": 0.546418,
+      "selectedVariantScoreDelta": 0.001178,
+      "rustElapsedMs": 2834.208,
+      "runnerElapsedMs": 2846.41
+    }
+  },
+  "graphDiscovery": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R4 is Stage 1 Rust parity only; graph discovery remains the next replacement layer."
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R4 is Stage 1 Rust parity only; plotArea/layout remains the next replacement layer."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg",
+    "recordSource": "benchmark/reports/r4_rust_stage1_image_preparation_parity/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r4_rust_stage1_image_preparation_parity/rust_reports/white_tiger_ion71_rust_stage1_report.json",
+      "benchmark/examples/r3_image_preparation_candidate/stage123_white_tiger_ion71_pc_prototype_r3_image_preparation_candidate_v1/stage123-parity-record.json",
+      "benchmark/reports/r3_image_preparation_candidate/previews/white_tiger_ion71_normalized_source.png",
+      "benchmark/reports/r3_image_preparation_candidate/previews/white_tiger_ion71_sharpened_autocontrast.png"
+    ]
+  },
+  "promotionDecision": "STAGE1_CANDIDATE_REQUIRES_STAGE2_PARITY",
+  "notes": [
+    "Shadow-only Rust Stage 1 parity bridge.",
+    "No graphPanel, plotArea, calibration, trace, peak, or report-gate authority.",
+    "NORMALIZED_SHA_MISMATCH"
+  ]
+}

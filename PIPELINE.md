@@ -84,6 +84,21 @@ It writes records under `benchmark/examples/r3_image_preparation_candidate/`
 and a contact sheet under `benchmark/reports/r3_image_preparation_candidate/`.
 It is still shadow-only and is not used by runtime analysis.
 
+R4 adds a Rust Stage 1 image-preparation parity bridge:
+
+```text
+python tools/benchmark/run_r4_rust_stage1_image_preparation_parity.py --clean
+```
+
+It writes records under
+`benchmark/examples/r4_rust_stage1_image_preparation_parity/` and Rust
+per-fixture reports under
+`benchmark/reports/r4_rust_stage1_image_preparation_parity/`. R4 reached 8/8
+selected-variant parity and 8/8 PASS/REVIEW status parity against R3. JPEG
+fixtures keep `NORMALIZED_SHA_MISMATCH` review notes because Pillow and Rust
+decode normalized RGB bytes differently. R4 remains shadow-only and is not used
+by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

@@ -429,3 +429,21 @@ runtime behavior or acceptance status.
 | Review warnings | `bench_03` low resolution; `bench_04` and `bench_05` low contrast / weak variant score |
 | Runtime impact | NONE: Android runtime, validators, reports, graph counts, and `CalculationEngine` unchanged |
 | Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R3 is Stage 1 shadow evidence only |
+
+## R4 Rust Stage 1 Image Preparation Parity Update
+
+Date: 2026-06-06
+
+R4 adds a Rust Stage 1 image-preparation parity bridge. It does not change
+runtime behavior or acceptance status.
+
+| Area | R4 Result |
+| --- | --- |
+| Benchmark examples | PASS: 8 Rust Stage 1 `stage123-parity-record.json` examples generated |
+| Fixture coverage | PASS: all 8 Android validation fixtures processed |
+| Selected variant parity | PASS: 8/8 match R3 |
+| PASS/REVIEW status parity | PASS: 8/8 match R3 |
+| Source file SHA parity | PASS: 8/8 match R3 |
+| Normalized byte SHA parity | REVIEW: 2/8 match R3; JPEG fixtures differ by Rust/Pillow decoder bytes |
+| Runtime impact | NONE: Android runtime, validators, reports, graph counts, and `CalculationEngine` unchanged |
+| Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R4 is Stage 1 Rust shadow evidence only |
