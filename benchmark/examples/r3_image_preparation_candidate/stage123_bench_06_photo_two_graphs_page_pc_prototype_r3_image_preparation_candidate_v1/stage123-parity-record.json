@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_06_photo_two_graphs_page_pc_prototype_r3_image_preparation_candidate_v1",
+  "fixtureId": "bench_06_photo_two_graphs_page",
+  "mode": "pc_prototype",
+  "sourceId": "r3_image_preparation_candidate_v1",
+  "sourceKind": "PC_STAGE1_IMAGE_PREP_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE1_SHADOW_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 2,
+  "detectedGraphCount": 0,
+  "graphCountScore": "NOT_SCOREABLE",
+  "expectedLayoutClass": "TWO_GRAPH_PAGE",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "PASS",
+    "available": true,
+    "summary": "R3 PC candidate decoded image, applied EXIF transpose, generated preprocessing variants, selected a ranked variant, and wrote preview artifacts.",
+    "metrics": {
+      "sourceWidth": 964,
+      "sourceHeight": 1280,
+      "sourceMegapixels": 1.2339,
+      "sourceContrastP90P10": 127.0,
+      "sourceEdgeDensity": 0.022314,
+      "selectedVariantScore": 0.725589,
+      "variantCount": 5,
+      "elapsedMs": 316.078
+    }
+  },
+  "graphDiscovery": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; graph discovery remains the next replacement layer."
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; plotArea/layout remains the next replacement layer."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_06_photo_two_graphs_page.jpg",
+    "recordSource": "benchmark/reports/r3_image_preparation_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_06_photo_two_graphs_page_normalized_source.png",
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_06_photo_two_graphs_page_sharpened_autocontrast.png"
+    ]
+  },
+  "promotionDecision": "STAGE1_CANDIDATE_REQUIRES_STAGE2_PARITY",
+  "notes": [
+    "Shadow-only PC Stage 1 candidate.",
+    "No graphPanel, plotArea, calibration, trace, peak, or report-gate authority."
+  ]
+}

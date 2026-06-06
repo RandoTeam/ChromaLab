@@ -260,10 +260,13 @@ Completed:
 
 - `R0 - Source-of-Truth And Layer Inventory`;
 - `R1 - Graph/Layout And Image Preparation Replacement Contract`;
-- `R2 - Stage 1-3 Shadow Parity Harness`.
+- `R2 - Stage 1-3 Shadow Parity Harness`;
+- `R3 - Stage 1 Image Preparation Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
-added schema-backed PC shadow parity records and reports.
+added schema-backed PC shadow parity records and reports. R3 added a PC-side
+Stage 1 candidate with normalized-image hashes, preprocessing variant ranking,
+quality metrics, preview artifacts, and schema-backed records.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -277,21 +280,20 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R3 - Stage 1 Image Preparation Candidate
+R4 - Rust Stage 1 Image Preparation Parity Bridge
 ```
 
 Purpose:
 
-- build a real shadow-only image preparation candidate;
-- emit normalized-image dimensions/hash or perceptual hash where practical;
-- record orientation, page/prep status, preprocessing variant ranking, quality
-  metrics, and artifact paths;
-- feed the R2 Stage 1-3 parity record shape without changing production
-  runtime.
+- port or bridge the R3 Stage 1 candidate into Rust-owned primitives;
+- compare Rust output against R3 PC records on all eight validation fixtures;
+- preserve normalized-image hashes, variant scores, quality metrics, warnings,
+  timings, and artifacts;
+- keep production runtime unchanged until promotion gates pass.
 
 Deliverables:
 
-- Stage 1 candidate output;
+- Rust Stage 1 candidate output;
 - updated R2 parity records;
 - source-of-truth docs updated;
 - PC validation command output;

@@ -48,7 +48,7 @@ python tools/benchmark/validate_benchmark_schemas.py
 Expected result after R2 Stage 1-3 parity record conversion:
 
 ```text
-Benchmark schema validation passed: 6 schemas, 109 example documents.
+Benchmark schema validation passed: 6 schemas, 117 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -83,6 +83,21 @@ The R2 Stage 1-3 parity records are written to:
 The R2 summary report is written to:
 
 `benchmark/reports/stage123_shadow_parity/`
+
+Build the R3 Stage 1 image-preparation candidate records:
+
+```powershell
+python tools/benchmark/run_r3_image_preparation_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R3 Stage 1 records are written to:
+
+`benchmark/examples/r3_image_preparation_candidate/`
+
+The R3 summary report and contact sheet are written to:
+
+`benchmark/reports/r3_image_preparation_candidate/`
 
 Create graph/layout annotation workflow records with:
 

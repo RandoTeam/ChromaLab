@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_white_tiger_ion71_pc_prototype_r3_image_preparation_candidate_v1",
+  "fixtureId": "white_tiger_ion71",
+  "mode": "pc_prototype",
+  "sourceId": "r3_image_preparation_candidate_v1",
+  "sourceKind": "PC_STAGE1_IMAGE_PREP_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE1_SHADOW_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 0,
+  "graphCountScore": "NOT_SCOREABLE",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "PASS",
+    "available": true,
+    "summary": "R3 PC candidate decoded image, applied EXIF transpose, generated preprocessing variants, selected a ranked variant, and wrote preview artifacts.",
+    "metrics": {
+      "sourceWidth": 576,
+      "sourceHeight": 1280,
+      "sourceMegapixels": 0.7373,
+      "sourceContrastP90P10": 252.0,
+      "sourceEdgeDensity": 0.028533,
+      "selectedVariantScore": 0.546418,
+      "variantCount": 5,
+      "elapsedMs": 178.252
+    }
+  },
+  "graphDiscovery": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; graph discovery remains the next replacement layer."
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; plotArea/layout remains the next replacement layer."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/white_tiger_ion71_fixture.jpg",
+    "recordSource": "benchmark/reports/r3_image_preparation_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r3_image_preparation_candidate/previews/white_tiger_ion71_normalized_source.png",
+      "benchmark/reports/r3_image_preparation_candidate/previews/white_tiger_ion71_sharpened_autocontrast.png"
+    ]
+  },
+  "promotionDecision": "STAGE1_CANDIDATE_REQUIRES_STAGE2_PARITY",
+  "notes": [
+    "Shadow-only PC Stage 1 candidate.",
+    "No graphPanel, plotArea, calibration, trace, peak, or report-gate authority."
+  ]
+}

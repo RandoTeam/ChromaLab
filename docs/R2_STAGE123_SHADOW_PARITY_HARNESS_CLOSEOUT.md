@@ -114,12 +114,14 @@ Expected validation result:
 Benchmark schema validation passed: 6 schemas, 109 example documents.
 ```
 
-## Next Phase
+## Follow-Up
 
 ```text
 R3 - Stage 1 Image Preparation Candidate
 ```
 
-R3 should add a real Stage 1 candidate that emits normalized-image dimensions,
-orientation, preprocessing variant, quality metrics, and artifact evidence. It
-must remain shadow-only until parity gates pass.
+R3 is now completed as a PC-side shadow candidate. The next phase should be:
+
+```text
+R4 - Rust Stage 1 Image Preparation Parity Bridge
+```

@@ -411,3 +411,21 @@ behavior or acceptance status.
 | PC prototype signal | REVIEW: `label_band_assisted_axis_projection_v1` reaches 4/4 graph-count pass on P0 fixtures but is research-only |
 | Annotation upper bound | REVIEW: page-context/text-role upper bound reaches 4/4 layout pass but is not automatic runtime evidence |
 | Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R2 is measurement only |
+
+## R3 Image Preparation Candidate Update
+
+Date: 2026-06-06
+
+R3 adds a PC-side Stage 1 image-preparation candidate. It does not change
+runtime behavior or acceptance status.
+
+| Area | R3 Result |
+| --- | --- |
+| Benchmark examples | PASS: 8 Stage 1 `stage123-parity-record.json` examples generated |
+| Schema validation | PASS: 6 schemas and 117 example documents validated |
+| Fixture coverage | PASS: all 8 Android validation fixtures processed |
+| Visual evidence | PASS: source/selected preview contact sheet generated |
+| Stage 1 status | PASS: 5 fixtures; REVIEW: 3 fixtures |
+| Review warnings | `bench_03` low resolution; `bench_04` and `bench_05` low contrast / weak variant score |
+| Runtime impact | NONE: Android runtime, validators, reports, graph counts, and `CalculationEngine` unchanged |
+| Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked; R3 is Stage 1 shadow evidence only |

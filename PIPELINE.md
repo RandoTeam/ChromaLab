@@ -74,6 +74,16 @@ selection, plotArea selection, calibration, trace extraction, peak calculations,
 report gates, validators, model policy, or `CalculationEngine`. It exists so a
 future Rust/Kotlin replacement can be measured before promotion.
 
+R3 adds a PC-side Stage 1 image-preparation candidate:
+
+```text
+python tools/benchmark/run_r3_image_preparation_candidate.py --clean
+```
+
+It writes records under `benchmark/examples/r3_image_preparation_candidate/`
+and a contact sheet under `benchmark/reports/r3_image_preparation_candidate/`.
+It is still shadow-only and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

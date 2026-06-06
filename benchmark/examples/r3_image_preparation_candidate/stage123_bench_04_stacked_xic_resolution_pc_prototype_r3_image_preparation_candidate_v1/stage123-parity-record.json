@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "chromalab.benchmark.stage123_parity_record.v1",
+  "recordId": "stage123_bench_04_stacked_xic_resolution_pc_prototype_r3_image_preparation_candidate_v1",
+  "fixtureId": "bench_04_stacked_xic_resolution",
+  "mode": "pc_prototype",
+  "sourceId": "r3_image_preparation_candidate_v1",
+  "sourceKind": "PC_STAGE1_IMAGE_PREP_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "PC_STAGE1_SHADOW_CANDIDATE_NOT_RUNTIME_READY",
+  "expectedGraphCount": 4,
+  "detectedGraphCount": 0,
+  "graphCountScore": "NOT_SCOREABLE",
+  "expectedLayoutClass": "MULTI_PANEL_SEPARATE_AXES",
+  "predictedLayoutClass": "UNKNOWN_REVIEW",
+  "layoutClassScore": "NOT_SCOREABLE",
+  "imagePreparation": {
+    "status": "REVIEW",
+    "available": true,
+    "summary": "R3 PC candidate decoded image, applied EXIF transpose, generated preprocessing variants, selected a ranked variant, and wrote preview artifacts.",
+    "metrics": {
+      "sourceWidth": 534,
+      "sourceHeight": 1110,
+      "sourceMegapixels": 0.5927,
+      "sourceContrastP90P10": 12.0,
+      "sourceEdgeDensity": 0.067761,
+      "selectedVariantScore": 0.291481,
+      "variantCount": 5,
+      "elapsedMs": 145.626
+    }
+  },
+  "graphDiscovery": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; graph discovery remains the next replacement layer."
+  },
+  "plotAreaLayout": {
+    "status": "NOT_SCORED",
+    "available": false,
+    "summary": "R3 is Stage 1 only; plotArea/layout remains the next replacement layer."
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_04_stacked_xic_resolution.png",
+    "recordSource": "benchmark/reports/r3_image_preparation_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_04_stacked_xic_resolution_normalized_source.png",
+      "benchmark/reports/r3_image_preparation_candidate/previews/bench_04_stacked_xic_resolution_autocontrast.png"
+    ]
+  },
+  "promotionDecision": "STAGE1_CANDIDATE_REQUIRES_STAGE2_PARITY",
+  "notes": [
+    "Shadow-only PC Stage 1 candidate.",
+    "No graphPanel, plotArea, calibration, trace, peak, or report-gate authority.",
+    "LOW_CONTRAST_INPUT",
+    "WEAK_PREPROCESSING_VARIANT_SCORE"
+  ]
+}

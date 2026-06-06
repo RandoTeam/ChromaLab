@@ -187,6 +187,40 @@ Interpretation:
   counts, chromatographic math, E2B policy, or `CalculationEngine`.
 - Phase 9 remains blocked for production autonomous acceptance.
 
+## R3 Image Preparation Candidate
+
+R3 adds a PC-side Stage 1 image-preparation candidate.
+
+It writes:
+
+- `benchmark/examples/r3_image_preparation_candidate/`
+- `benchmark/reports/r3_image_preparation_candidate/summary.json`
+- `benchmark/reports/r3_image_preparation_candidate/summary.md`
+- `benchmark/reports/r3_image_preparation_candidate/contact_sheet.png`
+
+R3 result:
+
+| Item | Count / status |
+|---|---:|
+| Stage 1 candidate records | 8 |
+| Fixtures represented | 8 |
+| Stage 1 PASS fixtures | 5 |
+| Stage 1 REVIEW fixtures | 3 |
+| Schemas validated | 6 |
+| Example documents validated | 117 |
+
+Review fixtures:
+
+- `bench_03_small_tic_export`: low-resolution input;
+- `bench_04_stacked_xic_resolution`: low contrast and weak variant score;
+- `bench_05_tic_plus_ions`: low contrast and weak variant score.
+
+Interpretation:
+
+- R3 is shadow-only Stage 1 evidence.
+- It does not fix graph/layout/calibration blockers.
+- It prepares the next Rust Stage 1 parity bridge.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:
