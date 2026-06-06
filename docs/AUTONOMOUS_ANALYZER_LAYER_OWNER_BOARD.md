@@ -2,7 +2,7 @@
 
 Date: 2026-06-06
 
-Status: `R0_LAYER_OWNER_BOARD_READY`
+Status: `R1_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -79,22 +79,31 @@ targets. It does not change runtime behavior.
 | E2B `UNKNOWN_FAILURE` / semantic unavailability appears in summaries. | Model-enabled mode must remain advisory and cannot hide deterministic failures. |
 | Generated Phase 9 artifacts are ignored. | If they are needed for parity, copy/archive them before machine cleanup or regenerate on Android. |
 
-## Next Broad Phase
+## Completed Broad Phase
 
-Recommended:
+Completed:
 
 ```text
 R1 - Graph/Layout And Image Preparation Replacement Contract
 ```
 
-R1 should be broad enough to cover Stage 1-3 together at the contract/parity
-level, but it should still avoid changing peak math or report gates.
+R1 is now documented in:
 
-R1 deliverables should include:
+- `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_REPLACEMENT_CONTRACT.md`;
+- `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_PARITY_PLAN.md`;
+- `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md`.
 
-- source corpus and fixture expectations used for Stage 1-3;
-- active old owner files;
-- target Rust/Kotlin contract for image prep and graph layout;
-- parity metrics;
-- promotion/retirement plan for old graph/layout paths;
-- no permanent duplicate production path.
+R1 closed as contract/planning only. No runtime behavior, validators,
+chromatographic math, report gates, or graph-count metadata changed.
+
+## Next Broad Phase
+
+Recommended:
+
+```text
+R2 - Stage 1-3 Shadow Parity Harness
+```
+
+R2 should implement comparison output for current active Stage 1-3 and the
+replacement candidate path, then run the eight validation fixtures before any
+production promotion.

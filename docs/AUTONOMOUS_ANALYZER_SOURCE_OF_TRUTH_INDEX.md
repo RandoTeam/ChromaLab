@@ -39,6 +39,9 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_ARCHITECTURE_OVERVIEW.md` | Current module and pipeline architecture. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMATOGRAM_AUTONOMOUS_ANALYSIS_STAGE_MAP.md` | Stage 0-12 analyzer map used for replacement planning. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Replacement protocol: inventory, contract, shadow, promote, retire. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_REPLACEMENT_CONTRACT.md` | Current Stage 1-3 replacement contract for image prep, graph discovery, plotArea, and layout. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_PARITY_PLAN.md` | Current Stage 1-3 parity and promotion plan. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md` | R1 closeout and R2 start decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |
@@ -94,6 +97,9 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md` | Ground-truth corpus direction. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/DRB2_PHASE9J_BENCHMARK_RECORDS.md` | Phase 9J truth converted into benchmark records. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/DRB3_BENCHMARK_SCORING_AND_TRUTH_GAPS.md` | Benchmark scoring gaps. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_REPLACEMENT_CONTRACT.md` | Stage 1-3 replacement contract. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_PARITY_PLAN.md` | Stage 1-3 shadow parity plan. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R1_GRAPH_LAYOUT_IMAGE_PREP_CLOSEOUT.md` | Stage 1-3 contract closeout and next-step decision. |
 | `ACTIVE_TEST` | `benchmark/schemas/` | Benchmark record schemas for truth, predictions, metrics, evidence packages, and report claims. |
 | `ACTIVE_TEST` | `benchmark/examples/` | Source-controlled benchmark examples, including Phase 9J-derived records. |
 | `ACTIVE_TEST` | `benchmark/annotations/` | Graph/layout/OCR annotation records used by research benchmark phases. |
@@ -137,19 +143,24 @@ The next phase should use the owner board in
 `docs/AUTONOMOUS_ANALYZER_LAYER_OWNER_BOARD.md` and choose a broad replacement
 slice with a clear promotion/retirement gate.
 
-Recommended next broad phase:
+Current completed broad phase:
 
 ```text
 R1 - Graph/Layout And Image Preparation Replacement Contract
 ```
 
-Reason:
+Decision:
 
-- current product blockers are still graph/layout/calibration evidence;
-- TurboVec is useful for Knowledge retrieval later, but it will not close the
-  blocked analyzer fixtures by itself;
-- image preparation and graph layout are upstream of nearly every downstream
-  failure.
+- R1 created the Stage 1-3 replacement contract and parity plan;
+- R1 did not change runtime behavior;
+- the next phase should build a shadow parity harness before production
+  integration.
+
+Recommended next broad phase:
+
+```text
+R2 - Stage 1-3 Shadow Parity Harness
+```
 
 ## R0 Agent Swarm Summary
 
