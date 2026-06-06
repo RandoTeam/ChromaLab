@@ -19,6 +19,9 @@ phase-history files.
 | [Scientific Product Overview](CHROMALAB_SCIENTIFIC_PRODUCT_OVERVIEW.md) | Product purpose, target users, scientific workflow, and current limitations. |
 | [Architecture Overview](CHROMALAB_ARCHITECTURE_OVERVIEW.md) | How Android/KMP, Rust CV, local AI runtime, reports, evidence packages, and validation fit together. |
 | [Validation Evidence Summary](CHROMALAB_VALIDATION_SUMMARY.md) | What the Android validation suite currently proves and what remains blocked. |
+| [Analyzer Source Of Truth Index](AUTONOMOUS_ANALYZER_SOURCE_OF_TRUTH_INDEX.md) | Current active docs, code-owner areas, and historical archive rules for analyzer replacement work. |
+| [Analyzer Layer Owner Board](AUTONOMOUS_ANALYZER_LAYER_OWNER_BOARD.md) | Stage-by-stage owner map for replacing old analyzer layers without adding permanent duplicate paths. |
+| [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
 | [Public Messaging Guide](CHROMALAB_PUBLIC_MESSAGING_GUIDE.md) | What the repository can claim publicly and what should remain grant/application language. |
@@ -84,6 +87,7 @@ graph, axis, scale, and trace extraction.
 | Document | Use it for |
 |---|---|
 | [Deep Research Wave Plan](CHROMATOGRAM_DEEP_RESEARCH_WAVE_PLAN_20260603.md) | Research wave organization. |
+| [Analyzer Layer Replacement Roadmap](AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md) | Replacement protocol: inventory, contract, shadow/parity, promotion, retirement. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |
