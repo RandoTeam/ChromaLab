@@ -3,8 +3,11 @@ package com.chromalab.feature.processing.debug
 import com.chromalab.feature.knowledge.KnowledgeGroundedVlmOutput
 import com.chromalab.feature.knowledge.KnowledgeUsePolicyValidator
 import com.chromalab.feature.knowledge.KnowledgeUseValidationVerdict
+import com.chromalab.feature.processing.geometry.AxisScaleEvidenceType
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeRow
+import com.chromalab.feature.processing.geometry.TickOcrItemStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
 import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
@@ -156,6 +159,22 @@ data class RuntimeEvidenceKnowledgeRow(
 )
 
 @Serializable
+data class RuntimeEvidenceOcrAnchorBridgeValidationRow(
+    val graphIndex: Int,
+    val runtimeRowId: String,
+    val axis: String,
+    val rawText: String,
+    val parsedNumericValue: Double? = null,
+    val pixelCoordinate: Float? = null,
+    val geometrySource: String? = null,
+    val numericSource: String,
+    val status: String,
+    val sourceCropPath: String? = null,
+    val cropMissingReason: String? = null,
+    val rejectionReason: String? = null,
+)
+
+@Serializable
 data class RuntimeEvidenceGraphValidationSummary(
     val graphIndex: Int,
     val rawDetectedPeaks: Int? = null,
@@ -169,6 +188,7 @@ data class RuntimeEvidenceGraphValidationSummary(
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
     val calibrationStatuses: List<String> = emptyList(),
+    val runtimeOcrAnchorRows: List<RuntimeEvidenceOcrAnchorBridgeValidationRow> = emptyList(),
     val recoveryCandidates: List<RuntimeEvidenceRecoveryCandidateRow> = emptyList(),
 )
 
@@ -185,6 +205,9 @@ data class RuntimeEvidenceGraphFailureValidationSummary(
     val yTickCandidateCount: Int,
     val acceptedXAnchorCount: Int,
     val acceptedYAnchorCount: Int,
+    val runtimeOcrAnchorRowCount: Int = 0,
+    val acceptedRuntimeOcrAnchorRowCount: Int = 0,
+    val rejectedRuntimeOcrAnchorRowCount: Int = 0,
     val xCalibrationStatus: String? = null,
     val yCalibrationStatus: String? = null,
     val selectedXStrategy: String? = null,
@@ -396,14 +419,15 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Graph Failure Packages")
         appendLine()
-            appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | X cal | Y cal | Strategy | Tick subreasons | Scale subreasons | Scale evidence | Missing artifacts |")
-            appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- |")
+            appendLine("| Graph | Failure | Stage | Layout | Panel | Plot | X ticks | Y ticks | X anchors | Y anchors | OCR bridge | X cal | Y cal | Strategy | Tick subreasons | Scale subreasons | Scale evidence | Missing artifacts |")
+            appendLine("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- | --- | --- | --- |")
         summary.graphFailureSummaries.forEach { row ->
             appendLine(
                 "| ${row.graphIndex} | ${row.failureClass} | ${row.failureStage} | ${row.layoutClass ?: "-"} | " +
                     "${row.graphPanelPresent} | " +
                     "${row.plotAreaPresent} | ${row.xTickCandidateCount} | ${row.yTickCandidateCount} | " +
                     "${row.acceptedXAnchorCount} | ${row.acceptedYAnchorCount} | " +
+                    "${row.acceptedRuntimeOcrAnchorRowCount}/${row.runtimeOcrAnchorRowCount} accepted | " +
                     "${row.xCalibrationStatus ?: "-"} | ${row.yCalibrationStatus ?: "-"} | " +
                     "X:${row.selectedXStrategy ?: "-"}<br>Y:${row.selectedYStrategy ?: "-"} | " +
                     "${row.tickSubreasons.joinToString("<br>").ifBlank { "-" }} | " +
@@ -413,7 +437,23 @@ object RuntimeEvidencePackageValidator {
             )
         }
         if (summary.graphFailureSummaries.isEmpty()) {
-            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |")
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |")
+        }
+        appendLine()
+        appendLine("## Runtime OCR Anchor Bridge")
+        appendLine()
+        appendLine("| Graph | Row | Axis | Text | Value | Pixel | Geometry | Numeric source | Status | Crop | Rejection |")
+        appendLine("| --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |")
+        summary.graphSummaries.flatMap { it.runtimeOcrAnchorRows }.forEach { row ->
+            appendLine(
+                "| ${row.graphIndex} | `${row.runtimeRowId}` | ${row.axis} | ${row.rawText} | " +
+                    "${row.parsedNumericValue.formatOrDash()} | ${row.pixelCoordinate ?: "-"} | " +
+                    "${row.geometrySource ?: "-"} | ${row.numericSource} | ${row.status} | " +
+                    "${row.sourceCropPath ?: row.cropMissingReason ?: "-"} | ${row.rejectionReason ?: "-"} |",
+            )
+        }
+        if (summary.graphSummaries.all { it.runtimeOcrAnchorRows.isEmpty() }) {
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Recovery Candidates")
@@ -741,6 +781,13 @@ object RuntimeEvidencePackageValidator {
                     failure.graphIndex,
                 )
             }
+            if (failure.ocrSummary.numericElementCount > 0 && failure.runtimeOcrAnchorRows.isEmpty()) {
+                issues.block(
+                    "graph_failure.runtime_ocr_anchor_bridge_rows_missing",
+                    "Tick/OCR failure package must export runtime OCR anchor bridge rows when numeric OCR evidence exists.",
+                    failure.graphIndex,
+                )
+            }
             val acceptedWithoutPixel = failure.ocrSummary.acceptedAnchors.any { it.tickPixelPosition == null }
             if (acceptedWithoutPixel) {
                 issues.block(
@@ -782,6 +829,12 @@ object RuntimeEvidencePackageValidator {
                 )
             }
         }
+        validateRuntimeOcrAnchorRows(
+            rows = failure.runtimeOcrAnchorRows,
+            graphIndex = failure.graphIndex,
+            fileExists = fileExists,
+            issues = issues,
+        )
         failure.artifactPaths.presentPaths().forEach { path ->
             if (!fileExists(path)) {
                 issues.warn(
@@ -803,6 +856,9 @@ object RuntimeEvidencePackageValidator {
             yTickCandidateCount = failure.tickSummary.yTickCandidateCount,
             acceptedXAnchorCount = failure.ocrSummary.acceptedXAnchorCount,
             acceptedYAnchorCount = failure.ocrSummary.acceptedYAnchorCount,
+            runtimeOcrAnchorRowCount = failure.runtimeOcrAnchorRows.size,
+            acceptedRuntimeOcrAnchorRowCount = failure.runtimeOcrAnchorRows.count { it.status == TickOcrItemStatus.ACCEPTED },
+            rejectedRuntimeOcrAnchorRowCount = failure.runtimeOcrAnchorRows.count { it.status != TickOcrItemStatus.ACCEPTED },
             xCalibrationStatus = failure.calibrationSummary.xStatus?.name,
             yCalibrationStatus = failure.calibrationSummary.yStatus?.name,
             selectedXStrategy = failure.calibrationSummary.selectedXStrategy?.name,
@@ -889,6 +945,12 @@ object RuntimeEvidencePackageValidator {
         }
         validateGeometry(graphPackage, graph?.source?.geometryReportStatus, issues)
         validateCalibration(graphPackage, graph, issues)
+        val runtimeOcrAnchorRows = validateRuntimeOcrAnchorRows(
+            rows = graphPackage.runtimeOcrAnchorRows,
+            graphIndex = graphPackage.graphIndex,
+            fileExists = fileExists,
+            issues = issues,
+        )
         val stageJudgeRows = validateMultimodalEvidence(evidencePackage, graphPackage, fileExists, issues)
         val knowledgeRows = validateKnowledgeOutputs(evidencePackage, graphPackage, issues)
         val peakRows = validatePeakEvidence(graphPackage, issues)
@@ -911,8 +973,151 @@ object RuntimeEvidencePackageValidator {
                 graph?.axisCalibration?.xCalibrationFit?.status?.name,
                 graph?.axisCalibration?.yCalibrationFit?.status?.name,
             ),
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows,
             recoveryCandidates = recoveryRows,
         )
+    }
+
+    private fun validateRuntimeOcrAnchorRows(
+        rows: List<RuntimeOcrAnchorBridgeRow>,
+        graphIndex: Int,
+        fileExists: (String) -> Boolean,
+        issues: MutableList<RuntimeEvidenceValidationIssue>,
+    ): List<RuntimeEvidenceOcrAnchorBridgeValidationRow> {
+        rows.forEach { row ->
+            if (row.runtimeRowId.isBlank()) {
+                issues.block(
+                    "runtime_ocr_anchor.row_id_missing",
+                    "Runtime OCR anchor bridge row id is missing.",
+                    graphIndex,
+                )
+            }
+            if (row.graphIndex != graphIndex) {
+                issues.block(
+                    "runtime_ocr_anchor.graph_index_mismatch",
+                    "Runtime OCR anchor bridge row graphIndex does not match containing graph package.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.graphId.isBlank()) {
+                issues.block(
+                    "runtime_ocr_anchor.graph_id_missing",
+                    "Runtime OCR anchor bridge row graphId is missing.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.rawText.isBlank()) {
+                issues.block(
+                    "runtime_ocr_anchor.raw_text_missing",
+                    "Runtime OCR anchor bridge row raw text is missing.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.numericSource.contains("VLM", ignoreCase = true) && row.status == TickOcrItemStatus.ACCEPTED) {
+                issues.block(
+                    "runtime_ocr_anchor.vlm_numeric_authority",
+                    "VLM/E2B text cannot be accepted as numeric calibration authority.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.status == TickOcrItemStatus.ACCEPTED) {
+                if (row.parsedNumericValue == null) {
+                    issues.block(
+                        "runtime_ocr_anchor.accepted_numeric_value_missing",
+                        "Accepted runtime OCR anchor row must include a parsed numeric value.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+                if (row.pixelCoordinate == null) {
+                    issues.block(
+                        "runtime_ocr_anchor.accepted_pixel_geometry_missing",
+                        "Accepted runtime OCR anchor row must include deterministic pixel geometry.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+                if (row.rejectionReason != null) {
+                    issues.block(
+                        "runtime_ocr_anchor.accepted_has_rejection_reason",
+                        "Accepted runtime OCR anchor row cannot also carry a rejection reason.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+                if (row.rawText.forbiddenScaleLabelReason() != null) {
+                    issues.block(
+                        "runtime_ocr_anchor.forbidden_text_accepted",
+                        "Title, ion, m/z, SIM/channel, or method text cannot be accepted as a scale anchor.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+                if (row.geometrySource == AxisScaleEvidenceType.OCR_VALUE_ONLY_REJECTED ||
+                    row.geometrySource == AxisScaleEvidenceType.SEMANTIC_TEXT_REJECTED
+                ) {
+                    issues.block(
+                        "runtime_ocr_anchor.accepted_rejected_geometry_source",
+                        "Accepted runtime OCR anchor row cannot use rejected/semantic-only geometry evidence.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+                if (row.sourceCropPath.isNullOrBlank() && row.cropMissingReason.isNullOrBlank()) {
+                    issues.block(
+                        "runtime_ocr_anchor.crop_provenance_missing",
+                        "Accepted runtime OCR anchor row must include a crop path or explicit missing-crop reason.",
+                        graphIndex,
+                        row.runtimeRowId,
+                    )
+                }
+            } else if (row.rejectionReason.isNullOrBlank()) {
+                issues.block(
+                    "runtime_ocr_anchor.rejection_reason_missing",
+                    "Rejected or semantic-only runtime OCR anchor row must include a rejection reason.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+
+            if (!row.sourceCropPath.isNullOrBlank() && row.cropFileAvailable && !fileExists(row.sourceCropPath)) {
+                issues.block(
+                    "runtime_ocr_anchor.crop_file_not_found",
+                    "Runtime OCR anchor bridge row marked cropFileAvailable but crop path does not exist.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.sourceCropPath.isNullOrBlank() && !row.cropFileAvailable && row.cropMissingReason.isNullOrBlank()) {
+                issues.block(
+                    "runtime_ocr_anchor.crop_missing_reason_missing",
+                    "Runtime OCR anchor bridge row without a crop file must include a crop missing reason.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+        }
+
+        return rows.map { row ->
+            RuntimeEvidenceOcrAnchorBridgeValidationRow(
+                graphIndex = graphIndex,
+                runtimeRowId = row.runtimeRowId,
+                axis = row.axis.name,
+                rawText = row.rawText,
+                parsedNumericValue = row.parsedNumericValue,
+                pixelCoordinate = row.pixelCoordinate,
+                geometrySource = row.geometrySource?.name,
+                numericSource = row.numericSource,
+                status = row.status.name,
+                sourceCropPath = row.sourceCropPath,
+                cropMissingReason = row.cropMissingReason,
+                rejectionReason = row.rejectionReason,
+            )
+        }
     }
 
     private fun validateKnowledgeOutputs(
@@ -1590,6 +1795,16 @@ private fun MutableList<RuntimeEvidenceValidationIssue>.warn(
     candidateId: String? = null,
 ) {
     add(RuntimeEvidenceValidationIssue(code, message, RuntimeEvidenceValidationIssueSeverity.WARNING, graphIndex, candidateId))
+}
+
+private fun String.forbiddenScaleLabelReason(): String? {
+    val lower = lowercase()
+    return when {
+        "m/z" in lower || "ion" in lower || lower.startsWith("sim") || "scan" in lower ||
+            " to " in lower || "):" in lower ->
+            "title_ion_or_method_text_rejected"
+        else -> null
+    }
 }
 
 private fun StringBuilder.appendIssueSection(

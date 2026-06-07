@@ -41,6 +41,7 @@ import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryStageStatus
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeBuilder
 import com.chromalab.feature.processing.geometry.TickLocalizationPipeline
 import com.chromalab.feature.processing.inference.ChartAnalysisReader
 import com.chromalab.feature.processing.inference.ActiveInferenceModel
@@ -1542,6 +1543,16 @@ private fun buildRuntimeGraphFailurePackages(
     val acceptedAnchors = tickOcr?.acceptedItems.orEmpty()
     val rejectedAnchors = tickOcr?.items.orEmpty()
         .filterNot { it.status == TickOcrItemStatus.ACCEPTED }
+    val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.retargetRows(
+        rows = trace?.runtimeOcrAnchorRows
+            ?.takeIf { it.isNotEmpty() }
+            ?: RuntimeOcrAnchorBridgeBuilder.build(
+                graphIndex = currentGraphIndex + 1,
+                tickOcrResult = tickOcr,
+                axisScaleResolution = scaleResolution,
+            ),
+        graphIndex = currentGraphIndex + 1,
+    )
 
     return listOf(
         RuntimeGraphFailurePackage(
@@ -1617,6 +1628,7 @@ private fun buildRuntimeGraphFailurePackages(
                 },
                 warnings = tickOcr?.warnings.orEmpty() + ocrResult?.warnings.orEmpty(),
             ),
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows,
             calibrationSummary = RuntimeCalibrationFailureSummary(
                 xStatus = xFit?.status,
                 yStatus = yFit?.status,

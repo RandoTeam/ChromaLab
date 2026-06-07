@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R12_LAYER_OWNER_BOARD_UPDATED`
+Status: `R13_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -28,7 +28,7 @@ targets. It does not change runtime behavior.
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
 | 7 Peak detection / integration | `feature/calculation/core/CalculationEngine.kt`, `feature/calculation/algorithm/*`, `processing/peaks`, `reports/PeakEvidenceMapper.kt` | `CalculationCoreTest`, synthetic fixture tests, report/peak evidence tests | `ACTIVE_IMPLEMENTATION_PROTECTED`; math is not the current replacement target. | Do not modify unless an isolated math bug is proven after upstream evidence is stable. |
 | 8 Model / Knowledge assistance | `processing/inference`, `processing/model`, `feature/knowledge`, Android LiteRT/GGUF/model manager files | model policy tests, Knowledge Pack tests, E2B acceptance matrix | `ACTIVE_IMPLEMENTATION`; E2B is advisory baseline; Knowledge retrieval is lexical and safe. | TurboVec may replace retrieval ranking only after benchmark gates; model remains semantic only. |
-| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks for missing evidence/export artifacts and graph failure packages. | Keep strict; expand completeness checks when replacing upstream layers. |
+| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks, R13 OCR-anchor bridge row checks | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks. R13 adds runtime OCR-anchor bridge row provenance and safety validation. | Keep strict; expand completeness checks when replacing upstream layers. |
 | 10 Report generation | `feature/reports`, `processing/report`, `calculation/export` | report renderer, validator, provenance, stored metadata tests | `ACTIVE_IMPLEMENTATION`; reports are evidence-gated but can still be visually clearer. | Do not redesign before analyzer truth improves; keep report gates honest. |
 | 11 Export/privacy | `processing/export`, `processing/storage`, Android `FileSharer`, validation artifact exporter, debug exporter | `ExportEngineTest`, runtime evidence validator, public privacy/security docs | `ACTIVE_IMPLEMENTATION`; artifacts complete in recent truth audit, but `artifacts/` is ignored. | Preserve separation between user reports and diagnostic artifacts. |
 | 12 Acceptance | `docs/PHASE9J_*`, `CHROMALAB_VALIDATION_SUMMARY.md`, regression dataset/matrix | Phase 9J truth audit, fixture assets, bench tests | `ACTIVE_SOURCE_OF_TRUTH`; Phase 9 remains not accepted. | Every replacement phase must update product/scientific/QA acceptance status. |
@@ -230,15 +230,25 @@ blocked runs with graph failure packages, and 0 release-ready runs. It did not
 change Android analyzer behavior, chromatographic math, report gates, or
 `CalculationEngine`.
 
+R13 is documented in:
+
+- `docs/R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md`.
+
+R13 added Android/runtime OCR-anchor bridge rows to geometry traces, runtime
+graph packages, and graph failure packages. Validator coverage now blocks
+accepted anchors without deterministic pixel geometry, forbidden scale text,
+VLM numeric authority, missing crop provenance, and graph-id mismatches. It did
+not promote runtime calibration or modify `CalculationEngine`.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R13 - Android Runtime OCR Anchor Production Bridge
+R14 - Runtime Calibration Promotion Candidate
 ```
 
-R13 should make Android runtime emit safe OCR anchor rows equivalent to the
-R10/R11 benchmark rows, including crop provenance or explicit missing-crop
-reasons. It must keep rows advisory until parity is proven and must not let E2B
-or VLM create pixel geometry, calibration coefficients, metrics, or report gates.
+R14 should feed Android runtime OCR-anchor rows into `CalibrationStrategyEnsemble`
+as a named strategy source, preserve legacy White Tiger fallback, export
+selected/rejected strategy evidence per graph, and prove that E2B cannot alter
+calibration strategy selection, metrics, or report gates.

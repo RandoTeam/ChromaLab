@@ -237,6 +237,20 @@ Regression rule: R12 closes the current evidence/package accountability gap,
 but it cannot upgrade Android blocked/review outcomes and cannot be used as
 runtime calibration, trace, peak, or report-gate evidence.
 
+## R13 Android Runtime OCR Anchor Bridge Addendum
+
+R13 adds runtime OCR-anchor bridge rows to Android/runtime evidence packages and
+graph failure packages. Rows carry graph id, axis, OCR text/value,
+deterministic pixel coordinate when available, crop provenance or an explicit
+missing-crop reason, geometry/numeric source, status, and rejection reason.
+
+Regression rule: accepted runtime OCR-anchor rows must have deterministic pixel
+geometry and parsed numeric values. Title, ion, m/z, SIM/channel, scan, method
+text, VLM numeric authority, rejected/semantic-only geometry sources, and
+missing crop provenance are validator failures. R13 still cannot upgrade
+Android blocked/review outcomes and cannot be used as runtime calibration,
+trace, peak, or report-gate evidence until R14/R19 prove promotion safety.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R12_ROADMAP_UPDATED`
+Status: `R13_ROADMAP_UPDATED`
 
 Scope: roadmap status tracking. This roadmap does not add runtime dependencies,
 does not modify `CalculationEngine`, and does not change chromatographic math,
@@ -300,6 +300,14 @@ None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
 `CalculationEngine`.
 
+## Current Completed Slice
+
+R13 added Android/runtime OCR-anchor bridge rows to runtime evidence packages.
+Rows now carry graph id, axis, OCR text/value, deterministic pixel coordinate,
+crop path or missing-crop reason, geometry/numeric source, status, and rejection
+reason. Validator coverage blocks unsafe accepted rows and VLM numeric
+authority. R13 remains evidence/export work only.
+
 ## Next Phase To Run
 
 The next phase should still not be TurboVec dependency installation and should
@@ -308,24 +316,26 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R13 - Android Runtime OCR Anchor Production Bridge
+R14 - Runtime Calibration Promotion Candidate
 ```
 
 Purpose:
 
-- inventory Android OCR, crop, axis, and calibration evidence export paths;
-- emit Android runtime OCR anchor rows matching the R10 contract;
-- persist crop files or explicit missing-crop reasons;
-- compare Android rows against R10/R11 records for P0 fixtures;
+- feed Android runtime OCR-anchor rows into `CalibrationStrategyEnsemble` as a
+  named strategy source;
+- preserve legacy White Tiger fallback;
+- export selected/rejected calibration strategy evidence per graph;
+- compare Android-selected strategies against R8/R9/R11 shadow records;
 - keep E2B advisory-only and unable to create pixel geometry, calibration
   strategy, trace, peaks, metrics, or report gates;
-- keep anchor rows advisory until runtime parity is proven.
+- keep exact failure subreasons when calibration remains invalid.
 
 Deliverables:
 
-- Android OCR anchor export contract matching R10 bridge fields;
-- crop persistence or missing-crop reason records;
-- P0 fixture comparison against R10/R11 shadow evidence;
+- Android-anchor strategy source in calibration ensemble;
+- selected/rejected runtime strategy tables;
+- White Tiger, bench_03, and bench_07 no-regression witnesses;
+- P0 blocker comparison for `bench_01` and `bench_05`;
 - deterministic vs E2B safety comparison where model-visible behavior is
   touched;
 - source-of-truth docs updated;

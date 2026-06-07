@@ -555,6 +555,35 @@ Interpretation:
 - Phase 9 remains not accepted because no fixture is release-ready and runtime
   analysis correctness is still review/blocked.
 
+## R13 Android Runtime OCR Anchor Production Bridge
+
+R13 adds Android/runtime OCR-anchor bridge rows to runtime evidence packages.
+It does not promote calibration and does not change chromatographic math,
+report gates, model policy, or `CalculationEngine`.
+
+R13 evidence row fields include:
+
+- graph id and graph index;
+- axis;
+- OCR raw text and parsed numeric value;
+- deterministic pixel coordinate when available;
+- crop file path or explicit missing-crop reason;
+- geometry source and numeric source;
+- accepted/rejected/semantic-only status;
+- rejection reason.
+
+Validator coverage now blocks accepted anchors without deterministic pixel
+geometry, accepted forbidden scale text such as m/z or ion labels, VLM/E2B
+numeric authority, missing crop provenance, and graph-index mismatches.
+
+Product interpretation:
+
+- R13 closes the runtime evidence contract gap for OCR anchors.
+- R13 does not make `bench_01` or `bench_05` release-ready.
+- The next runtime step is R14, where Android anchor rows may be fed into
+  `CalibrationStrategyEnsemble` as a named strategy source under strict
+  no-regression gates.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

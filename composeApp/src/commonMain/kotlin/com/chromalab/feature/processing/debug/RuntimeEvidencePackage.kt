@@ -13,6 +13,8 @@ import com.chromalab.feature.processing.geometry.GraphMultiplicityResolution
 import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.geometry.TickLocalizationFailureSubreason
 import com.chromalab.feature.processing.geometry.TickOcrItemStatus
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeBuilder
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeRow
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
 import com.chromalab.feature.processing.multimodal.ModelRuntimeProfile
@@ -83,6 +85,7 @@ data class RuntimeGraphFailurePackage(
     val tickSummary: RuntimeTickFailureSummary = RuntimeTickFailureSummary(),
     val scaleSummary: RuntimeAxisScaleFailureSummary = RuntimeAxisScaleFailureSummary(),
     val ocrSummary: RuntimeTickOcrFailureSummary = RuntimeTickOcrFailureSummary(),
+    val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
     val calibrationSummary: RuntimeCalibrationFailureSummary = RuntimeCalibrationFailureSummary(),
     val artifactPaths: RuntimeGraphFailureArtifactPaths = RuntimeGraphFailureArtifactPaths(),
     val rejectionReasons: List<String> = emptyList(),
@@ -194,6 +197,7 @@ data class RuntimeEvidenceGraphPackage(
     val stageJudgeResults: List<AutonomousStageJudgeResult> = emptyList(),
     val ocrVlmCropResults: List<VlmOcrCropResult> = emptyList(),
     val ocrVlmDisagreements: List<OcrVlmDisagreement> = emptyList(),
+    val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
     val overlayJudgeResults: List<OverlayJudgeResult> = emptyList(),
     val knowledgeGroundedVlmOutputs: List<KnowledgeGroundedVlmOutput> = emptyList(),
     val peakEvidenceTable: List<PeakEvidence> = emptyList(),
@@ -345,6 +349,16 @@ object RuntimeEvidencePackageBuilder {
         val ocrVlmCropResults = recovery.labelEvidence.mapIndexedNotNull { index, evidence ->
             evidence.toCropResult(graph.graphIndex, index)
         }
+        val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.retargetRows(
+            rows = trace?.runtimeOcrAnchorRows
+                ?.takeIf { it.isNotEmpty() }
+                ?: RuntimeOcrAnchorBridgeBuilder.build(
+                    graphIndex = graph.graphIndex,
+                    tickOcrResult = trace?.tickOcrResult,
+                    axisScaleResolution = trace?.axisScaleResolution,
+                ),
+            graphIndex = graph.graphIndex,
+        )
         val overlayJudgeResults = buildOverlayJudgeResults(graph.graphIndex, artifactPaths)
         val stageJudgeResults = buildStageJudgeResults(
             graph = graph,
@@ -358,6 +372,7 @@ object RuntimeEvidencePackageBuilder {
                 artifactPaths = artifactPaths,
                 stageJudgeResults = stageJudgeResults,
                 ocrVlmCropResults = ocrVlmCropResults,
+                runtimeOcrAnchorRows = runtimeOcrAnchorRows,
                 overlayJudgeResults = overlayJudgeResults,
                 peakEvidenceTable = recovery.peakEvidenceTable,
                 peakLabelEvidence = recovery.labelEvidence,

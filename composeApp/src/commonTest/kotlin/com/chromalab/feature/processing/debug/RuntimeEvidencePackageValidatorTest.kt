@@ -16,6 +16,8 @@ import com.chromalab.feature.processing.geometry.GeometryStageTiming
 import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.geometry.GraphPanelBounds
 import com.chromalab.feature.processing.geometry.GeometryCandidateSource
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeRow
+import com.chromalab.feature.processing.geometry.TickOcrItemStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
 import com.chromalab.feature.processing.multimodal.ForbiddenVlmNumericField
@@ -105,7 +107,47 @@ class RuntimeEvidencePackageValidatorTest {
         assertTrue(graph.stageJudgeResults.any { it.taskType == StageJudgeTaskType.PEAK_EVIDENCE_JUDGE })
         assertEquals(1, graph.ocrVlmCropResults.size)
         assertEquals("crop.png", graph.ocrVlmCropResults.single().localCropPath)
+        assertEquals(2, graph.runtimeOcrAnchorRows.size)
+        assertEquals(2, validation.graphSummaries.single().runtimeOcrAnchorRows.size)
         assertTrue(graph.overlayJudgeResults.any { it.overlayImagePath == "selected_trace.png" })
+    }
+
+    @Test
+    fun validatorFailsAcceptedRuntimeOcrAnchorWithoutDeterministicPixel() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = evidencePackage.graphs.single()
+        val brokenRow = graph.runtimeOcrAnchorRows.first().copy(
+            pixelCoordinate = null,
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(
+            evidencePackage.copy(
+                graphs = listOf(graph.copy(runtimeOcrAnchorRows = listOf(brokenRow))),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "runtime_ocr_anchor.accepted_pixel_geometry_missing" })
+    }
+
+    @Test
+    fun validatorFailsAcceptedRuntimeOcrAnchorFromForbiddenScaleText() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = evidencePackage.graphs.single()
+        val brokenRow = graph.runtimeOcrAnchorRows.first().copy(
+            rawText = "m/z 71",
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(
+            evidencePackage.copy(
+                graphs = listOf(graph.copy(runtimeOcrAnchorRows = listOf(brokenRow))),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "runtime_ocr_anchor.forbidden_text_accepted" })
     }
 
     @Test
@@ -865,6 +907,7 @@ class RuntimeEvidencePackageValidatorTest {
             peakLabelCropBoundsOverlayPath = "crop_bounds.png",
             peakLabelTextClassificationOverlayPath = "text_classification.png",
             peakLabelEvidence = listOf(evidence),
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows(),
             xCalibrationFit = AxisCalibrationFit(GeometryAxis.X, status = CalibrationFitStatus.VALID),
             yCalibrationFit = AxisCalibrationFit(GeometryAxis.Y, status = CalibrationFitStatus.VALID),
         )
@@ -1008,6 +1051,7 @@ class RuntimeEvidencePackageValidatorTest {
                     ),
                 ),
             ),
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows(),
             calibrationSummary = RuntimeCalibrationFailureSummary(
                 xStatus = CalibrationFitStatus.REVIEW,
                 yStatus = CalibrationFitStatus.INVALID,
@@ -1034,6 +1078,44 @@ class RuntimeEvidencePackageValidatorTest {
                 ocrCropPaths = listOf("crop.png"),
             ),
             rejectionReasons = listOf("tick_ocr.numeric_value_without_deterministic_tick_position"),
+        )
+
+    private fun runtimeOcrAnchorRows(): List<RuntimeOcrAnchorBridgeRow> =
+        listOf(
+            RuntimeOcrAnchorBridgeRow(
+                runtimeRowId = "runtime-ocr-anchor:1:1",
+                graphId = "graph:1",
+                graphIndex = 1,
+                axis = GeometryAxis.X,
+                rawText = "10.00",
+                parsedNumericValue = 10.0,
+                pixelCoordinate = 20f,
+                sourceCropRef = "crop:crop.png",
+                sourceCropPath = "crop.png",
+                cropFileAvailable = true,
+                confidence = 0.88f,
+                geometrySource = AxisScaleEvidenceType.EXPLICIT_TICK_MARK,
+                numericSource = "LOCAL_TICK_CROP_OCR",
+                status = TickOcrItemStatus.ACCEPTED,
+            ),
+            RuntimeOcrAnchorBridgeRow(
+                runtimeRowId = "runtime-ocr-anchor:1:2",
+                graphId = "graph:1",
+                graphIndex = 1,
+                axis = GeometryAxis.Y,
+                rawText = "71.00",
+                parsedNumericValue = 71.0,
+                pixelCoordinate = null,
+                sourceCropRef = "graph:1:Y:no_pixel",
+                sourceCropPath = null,
+                cropFileAvailable = false,
+                cropMissingReason = "runtime_ocr_anchor.crop_path_missing",
+                confidence = 0.51f,
+                geometrySource = AxisScaleEvidenceType.OCR_VALUE_ONLY_REJECTED,
+                numericSource = "LOCAL_OCR_TEXT",
+                status = TickOcrItemStatus.SEMANTIC_ONLY,
+                rejectionReason = "tick_ocr.numeric_value_without_deterministic_tick_position",
+            ),
         )
 
     private fun runtimeEvidence(): PeakLabelEvidence =

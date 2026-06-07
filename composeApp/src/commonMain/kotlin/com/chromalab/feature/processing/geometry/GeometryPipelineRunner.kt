@@ -174,6 +174,11 @@ class GeometryPipelineRunner(
         val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
         val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
         val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
+        val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.build(
+            graphIndex = 1,
+            tickOcrResult = tickOcr,
+            axisScaleResolution = axisScaleResolution,
+        )
         val overlayArtifacts = timedStage("geometry.overlay_artifacts", timings) {
             geometryOverlayArtifactWriter.writeOverlays(
                 imagePath = imagePath,
@@ -228,6 +233,7 @@ class GeometryPipelineRunner(
             axisGeometry = axisGeometry,
             tickGeometry = tickGeometry,
             tickOcrResult = tickOcr,
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows,
             axisScaleResolution = axisScaleResolution,
             calibrationArbitration = calibrationArbitration,
             xCalibrationFit = xFit,

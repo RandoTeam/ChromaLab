@@ -227,3 +227,23 @@ Report root: `benchmark/reports/r12_runtime_evidence_failure_package_closure/`
 R12 does not accept Phase 9. It closes the current no-export/package
 accountability gap for tracked records, but `bench_01` and `bench_05` remain
 blocked and all other fixtures remain review-only.
+
+## R13 Android Runtime OCR Anchor Dataset Status
+
+R13 adds runtime OCR-anchor bridge rows to Android/runtime evidence packages and
+graph failure packages. It does not change fixture expectations, graph counts,
+calibration math, trace extraction, peak metrics, or report gates.
+
+Dataset implication:
+
+- future Android reruns should expose OCR-anchor rows for every graph or graph
+  failure that reaches tick/OCR/axis-scale evidence;
+- accepted rows must include parsed numeric value plus deterministic pixel
+  coordinate;
+- rejected/semantic-only rows must include a precise rejection reason;
+- crop files should be persisted where feasible, otherwise the row must carry
+  an explicit missing-crop reason;
+- E2B/VLM text can be advisory but cannot become numeric calibration authority.
+
+R13 does not accept Phase 9. It prepares the dataset for R14 runtime calibration
+promotion candidate work.

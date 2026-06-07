@@ -92,13 +92,9 @@ R12 improves trust in the validation process. It does not improve chromatogram
 analysis correctness. Phase 9 is still not accepted, and Phase 10 must not
 start from this result.
 
-## Next Phase
+## Follow-Up
 
-```text
-R13 - Android Runtime OCR Anchor Production Bridge
-```
-
-R13 should produce Android runtime OCR anchor rows equivalent to the R10/R11
-benchmark rows, persist crop files or explicit missing-crop reasons, and prove
-whether `bench_01` and `bench_05` are still blocked by anchor propagation,
-layout, or calibration.
+R13 has now added the Android/runtime OCR-anchor bridge evidence contract and
+validator checks. It remains evidence/export work only and does not promote
+runtime calibration. The next executable phase is R14 runtime calibration
+promotion candidate.

@@ -375,6 +375,28 @@ data class TickOcrResult(
 }
 
 @Serializable
+data class RuntimeOcrAnchorBridgeRow(
+    val runtimeRowId: String,
+    val graphId: String,
+    val graphIndex: Int,
+    val axis: GeometryAxis,
+    val rawText: String,
+    val parsedNumericValue: Double? = null,
+    val pixelCoordinate: Float? = null,
+    val sourceCropRef: String? = null,
+    val sourceCropPath: String? = null,
+    val cropFileAvailable: Boolean = false,
+    val cropMissingReason: String? = null,
+    val confidence: Float = 0f,
+    val geometrySource: AxisScaleEvidenceType? = null,
+    val numericSource: String = "LOCAL_OCR_TEXT",
+    val residualPx: Double? = null,
+    val projectionSource: String? = null,
+    val status: TickOcrItemStatus = TickOcrItemStatus.REJECTED,
+    val rejectionReason: String? = null,
+)
+
+@Serializable
 data class TickLocalizationResult(
     val status: CalibrationFitStatus,
     val subreasons: List<TickLocalizationFailureSubreason> = emptyList(),
@@ -494,6 +516,7 @@ data class GeometryTrace(
     val axisGeometry: AxisGeometry? = null,
     val tickGeometry: TickGeometry? = null,
     val tickOcrResult: TickOcrResult? = null,
+    val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
     val axisScaleResolution: AxisScaleResolutionResult? = null,
     val calibrationArbitration: CalibrationArbitrationResult? = null,
     val xCalibrationFit: AxisCalibrationFit? = null,
