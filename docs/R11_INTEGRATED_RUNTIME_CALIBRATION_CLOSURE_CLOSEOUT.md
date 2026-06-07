@@ -89,11 +89,13 @@ RuntimeEvidencePackage rows with persisted crop files.
 
 ## Next Phase
 
+R12 has now closed as evidence/export package accountability only. It did not
+promote Android runtime calibration.
+
 ```text
-R12 - Runtime Evidence And Failure Package Closure
+R13 - Android Runtime OCR Anchor Production Bridge
 ```
 
-R12 should make Android runtime and failure packages inspectable enough to show
-whether equivalent OCR anchor rows, selected/rejected calibration strategies,
-overlays, manifests, and timeout/no-export protections exist for every fixture
-and mode.
+R13 should make Android runtime emit safe OCR anchor rows equivalent to the
+R10/R11 benchmark rows, with persisted crop files or explicit missing-crop
+reasons. Those rows must remain advisory until parity is proven.

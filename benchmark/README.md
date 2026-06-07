@@ -45,8 +45,7 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R11 integrated runtime calibration closure candidate
-generation:
+Expected result after R12 runtime evidence failure package closure:
 
 ```text
 Benchmark schema validation passed: 11 schemas, 181 example documents.
@@ -227,6 +226,16 @@ The R11 summary report, overlays, detail JSON files, and runtime calibration
 closure contact sheet are written to:
 
 `benchmark/reports/r11_runtime_calibration_closure_candidate/`
+
+Build the R12 runtime evidence/failure package closure audit:
+
+```powershell
+python tools/benchmark/run_r12_runtime_evidence_failure_package_audit.py --clean
+```
+
+The R12 summary report is written to:
+
+`benchmark/reports/r12_runtime_evidence_failure_package_closure/`
 
 Create graph/layout annotation workflow records with:
 

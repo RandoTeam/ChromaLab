@@ -217,6 +217,26 @@ Regression rule: R11 output may guide Android runtime evidence package closure
 in R12, but it cannot upgrade Android Phase 9 blocked/review outcomes and
 cannot be used as runtime calibration, trace, peak, or report-gate evidence.
 
+## R12 Runtime Evidence Failure Package Closure Addendum
+
+R12 adds a runtime evidence/export package closure audit under
+`benchmark/reports/r12_runtime_evidence_failure_package_closure/`.
+
+R12 regression result:
+
+- 16/16 tracked Phase 9J fixture/mode records have core evidence/export
+  artifacts.
+- 0 no-export states remain in the tracked records.
+- 4/4 blocked records include graph failure packages.
+- 0 blocked records are missing first failing stage.
+- 12 records remain `REVIEW_ONLY`.
+- 4 records remain `BLOCKED`.
+- 0 records are `RELEASE_READY`.
+
+Regression rule: R12 closes the current evidence/package accountability gap,
+but it cannot upgrade Android blocked/review outcomes and cannot be used as
+runtime calibration, trace, peak, or report-gate evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

@@ -204,3 +204,26 @@ R11 does not accept Phase 9. It proves that R10 safe bridge rows can feed
 selected/rejected calibration strategy evidence in shadow mode, but Android
 RuntimeEvidencePackage rows and persisted source crop files remain required
 before any runtime promotion.
+
+## R12 Runtime Evidence Failure Package Closure Dataset Status
+
+R12 uses the tracked Phase 9J benchmark records and audits evidence/export
+closure only. It does not change Android runtime behavior or promote
+calibration.
+
+Report root: `benchmark/reports/r12_runtime_evidence_failure_package_closure/`
+
+| Fixture | R12 evidence/package status |
+| --- | --- |
+| `white_tiger_ion71` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+| `bench_01_mz71_screenshot_page` | Deterministic and E2B records remain `BLOCKED` at `Y_CALIBRATION` with `TICK_LOCALIZATION_FAILURE`; graph failure packages are present. |
+| `bench_02_mz92_belyi_tigr` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+| `bench_03_small_tic_export` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+| `bench_04_stacked_xic_resolution` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+| `bench_05_tic_plus_ions` | Deterministic and E2B records remain `BLOCKED` at `Y_CALIBRATION` with `CALIBRATION_FAILURE`; graph failure packages are present. |
+| `bench_06_photo_two_graphs_page` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+| `bench_07_rotated_page_photo` | Deterministic and E2B records are core artifact complete and `REVIEW_ONLY`; no release-ready claim. |
+
+R12 does not accept Phase 9. It closes the current no-export/package
+accountability gap for tracked records, but `bench_01` and `bench_05` remain
+blocked and all other fixtures remain review-only.

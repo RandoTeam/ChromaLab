@@ -91,10 +91,11 @@ R11 - Integrated Runtime Calibration Closure
 
 R11 has now closed in shadow/parity mode. It fed R10 anchor rows into
 calibration strategy candidates, exported selected/rejected strategy evidence,
-and kept Android runtime calibration unpromoted.
+and kept Android runtime calibration unpromoted. R12 has closed
+evidence/export package accountability without accepting Phase 9.
 
 The next executable phase is:
 
 ```text
-R12 - Runtime Evidence And Failure Package Closure
+R13 - Android Runtime OCR Anchor Production Bridge
 ```

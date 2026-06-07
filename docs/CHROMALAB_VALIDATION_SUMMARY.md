@@ -521,6 +521,40 @@ Interpretation:
 - It cannot upgrade Android Phase 9 blocked/review outcomes until Android
   RuntimeEvidencePackage rows and persisted crop files show equivalent evidence.
 
+## R12 Runtime Evidence And Failure Package Closure
+
+R12 audits the tracked Phase 9J benchmark records for runtime evidence/export
+closure. It does not change Android runtime analysis behavior, chromatographic
+math, model policy, report gates, or `CalculationEngine`.
+
+It writes:
+
+- `benchmark/reports/r12_runtime_evidence_failure_package_closure/summary.json`
+- `benchmark/reports/r12_runtime_evidence_failure_package_closure/summary.md`
+
+R12 result:
+
+| Item | Count / status |
+|---|---:|
+| Audited fixture/mode records | 16 |
+| Fixtures represented | 8 |
+| Core artifact complete records | 16/16 |
+| No-export states | 0 |
+| Blocked records | 4 |
+| Blocked records with graph failure package | 4/4 |
+| Blocked records missing first failing stage | 0 |
+| Review-only records | 12 |
+| Release-ready records | 0 |
+
+Interpretation:
+
+- R12 closes the current evidence/package accountability gap for the tracked
+  Phase 9J records.
+- `bench_01_mz71_screenshot_page` and `bench_05_tic_plus_ions` remain blocked
+  in deterministic and E2B modes.
+- Phase 9 remains not accepted because no fixture is release-ready and runtime
+  analysis correctness is still review/blocked.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:
@@ -605,6 +639,9 @@ The current validation proves:
 - E2B did not regress deterministic geometry/calibration/metrics in the audited slice;
 - blocked fixtures are visible with failure classes and next engineering fixes;
 - benchmark schemas can encode the Phase 9J truth audit for future scoring;
+- R12 evidence/package closure checks show 16/16 tracked runs have core
+  artifacts, 0 no-export states, and 4/4 blocked runs with graph failure
+  packages;
 - Rust/runtime-shaped OCR anchor bridge rows can be validated without allowing
   VLM pixel geometry or numeric calibration authority;
 - Rust Android bridge parity can be checked over a corpus.

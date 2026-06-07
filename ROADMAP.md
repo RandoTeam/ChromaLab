@@ -33,8 +33,10 @@ Current priorities:
      OCR anchor bridge contract with 4/4 scoreable fixture parity and 155
      accepted bridge rows; R11 added shadow integrated calibration closure
      records with 12 selected graph calibration fits from 155 accepted bridge
-     anchors. The next slice is runtime evidence and failure package closure,
-     not a production Rust switch.
+     anchors; R12 closed runtime evidence/failure package accountability over
+     16 tracked fixture-mode records with 0 no-export states and 4/4 blocked
+     runs carrying graph failure packages. The next slice is Android runtime OCR
+     anchor production bridge work, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

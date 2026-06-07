@@ -33,7 +33,8 @@ phase-history files.
 | [R8 Stage 5 Calibration Strategy Parity Closeout](R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md) | R8 calibration strategy parity candidate, overlays, scoring, and R9 start decision. |
 | [R9 Stage 6 Automatic OCR Anchor Candidate Closeout](R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md) | R9 automatic OCR anchor candidate, overlays, scoring, and R10 start decision. |
 | [R10 Runtime OCR Anchor Bridge Candidate Closeout](R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md) | R10 Rust/runtime-shaped OCR anchor bridge contract, parity records, and R11 start decision. |
-| [R11 Integrated Runtime Calibration Closure Closeout](R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md) | R11 shadow calibration closure records, selected/rejected strategy evidence, and R12 start decision. |
+| [R11 Integrated Runtime Calibration Closure Closeout](R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md) | R11 shadow calibration closure records and selected/rejected strategy evidence. |
+| [R12 Runtime Evidence Failure Package Closure Closeout](R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md) | R12 evidence/export closure checks, manifest validation, and R13 start decision. |
 | [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
@@ -114,6 +115,7 @@ graph, axis, scale, and trace extraction.
 | [R9 Stage 6 Automatic OCR Anchor Candidate Closeout](R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md) | PC-side automatic OCR anchor records and next runtime/Rust bridge step. |
 | [R10 Runtime OCR Anchor Bridge Candidate Closeout](R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md) | Rust/runtime-shaped OCR anchor bridge records and next integrated calibration step. |
 | [R11 Integrated Runtime Calibration Closure Closeout](R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md) | Shadow calibration strategy closure from R10 bridge rows and next runtime evidence package step. |
+| [R12 Runtime Evidence Failure Package Closure Closeout](R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md) | Runtime evidence/export package closure, manifest checks, and next Android OCR-anchor production bridge step. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |

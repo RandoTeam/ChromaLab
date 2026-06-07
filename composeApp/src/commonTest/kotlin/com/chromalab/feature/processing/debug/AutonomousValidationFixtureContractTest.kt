@@ -149,6 +149,33 @@ class AutonomousValidationFixtureContractTest {
     }
 
     @Test
+    fun suiteRunBlocksWhenFinalReportJsonIsMissing() {
+        val summary = AutonomousValidationSuiteRunSummary(
+            fixtureId = WHITE_TIGER_ION71_FIXTURE_ID,
+            modelMode = AutonomousValidationModelMode.DETERMINISTIC_ONLY,
+            expectedGraphCount = 1,
+            graphCount = 1,
+            reportGate = ReportGateStatus.REVIEW_ONLY,
+            validatorVerdict = "REVIEW",
+            runtimeFailureClass = RuntimeFailureClass.PEAK_EVIDENCE_FAILURE,
+            runtimeEvidencePackageAvailable = true,
+            validatorJsonAvailable = true,
+            validatorMarkdownAvailable = true,
+            finalReportJsonAvailable = false,
+            exportManifestAvailable = true,
+        )
+
+        assertEquals(
+            AutonomousValidationRunDecision.BLOCKED,
+            AutonomousValidationFixtureContracts.evaluateRun(summary),
+        )
+        assertTrue(
+            "final_report_json_missing:$WHITE_TIGER_ION71_FIXTURE_ID:DETERMINISTIC_ONLY" in
+                AutonomousValidationFixtureContracts.validateRunSummary(summary),
+        )
+    }
+
+    @Test
     fun suiteRunBlocksWhenTerminalExportManifestIsMissing() {
         val summary = AutonomousValidationSuiteRunSummary(
             fixtureId = "bench_01_mz71_screenshot_page",
@@ -169,7 +196,12 @@ class AutonomousValidationFixtureContractTest {
             AutonomousValidationRunDecision.BLOCKED,
             AutonomousValidationFixtureContracts.evaluateRun(summary),
         )
-        assertTrue(AutonomousValidationFixtureContracts.validateRunSummary(summary).isEmpty())
+        val issues = AutonomousValidationFixtureContracts.validateRunSummary(summary)
+        assertTrue("runtime_evidence_package_missing:bench_01_mz71_screenshot_page:DETERMINISTIC_ONLY" in issues)
+        assertTrue("validator_json_missing:bench_01_mz71_screenshot_page:DETERMINISTIC_ONLY" in issues)
+        assertTrue("validator_markdown_missing:bench_01_mz71_screenshot_page:DETERMINISTIC_ONLY" in issues)
+        assertTrue("final_report_json_missing:bench_01_mz71_screenshot_page:DETERMINISTIC_ONLY" in issues)
+        assertTrue("export_manifest_missing:bench_01_mz71_screenshot_page:DETERMINISTIC_ONLY" in issues)
     }
 
     @Test
@@ -277,5 +309,80 @@ class AutonomousValidationFixtureContractTest {
         AutonomousValidationFixtureContracts.requiredSupplementalArtifactSlots.forEach { slot ->
             assertTrue(slot in slots, "Missing supplemental artifact slot $slot")
         }
+    }
+
+    @Test
+    fun artifactManifestValidationBlocksMissingRequiredSlots() {
+        val manifest = AutonomousValidationRunArtifactManifest(
+            runId = "bench_01_mz71_screenshot_page_20260526_184458",
+            fixtureId = "bench_01_mz71_screenshot_page",
+            publicArtifactDirectory = "/sdcard/Download/ChromaLab/validation/bench_01_mz71_screenshot_page_20260526_184458",
+            records = listOf(
+                AutonomousValidationArtifactRecord(
+                    slot = "artifact_manifest",
+                    fileName = "artifact_manifest.json",
+                    available = true,
+                    location = "/sdcard/Download/ChromaLab/validation/bench_01_mz71_screenshot_page_20260526_184458/artifact_manifest.json",
+                ),
+            ),
+        )
+
+        val issues = AutonomousValidationFixtureContracts.validateArtifactManifest(
+            manifest = manifest,
+            reportGate = ReportGateStatus.BLOCKED,
+            runtimeFailureClass = RuntimeFailureClass.TICK_LOCALIZATION_FAILURE,
+        )
+
+        assertTrue("manifest_required_slot_missing:runtime_evidence_package" in issues)
+        assertTrue("manifest_required_slot_missing:runtime_evidence_validation_json" in issues)
+        assertTrue("manifest_graph_failure_package_missing" in issues)
+    }
+
+    @Test
+    fun artifactManifestRequiresMissingReasonAndLocation() {
+        val records = AutonomousValidationFixtureContracts.requiredArtifactSlots.map { slot ->
+            AutonomousValidationArtifactRecord(
+                slot = slot,
+                fileName = "$slot.placeholder",
+                available = false,
+                missingReason = if (slot == "trace_overlay") "Trace was not reached." else "Not produced in contract test.",
+            )
+        } + listOf(
+            AutonomousValidationArtifactRecord(
+                slot = "trace_overlay",
+                fileName = "trace_overlay.missing",
+                available = false,
+                missingReason = null,
+            ),
+            AutonomousValidationArtifactRecord(
+                slot = "runtime_evidence_package",
+                fileName = "runtime_evidence_package.json",
+                available = true,
+                location = null,
+            ),
+            AutonomousValidationArtifactRecord(
+                slot = AutonomousValidationFixtureContracts.graphFailurePackageSlot,
+                fileName = "graph_failure_package.json",
+                available = true,
+                location = "/sdcard/Download/ChromaLab/validation/run/graph_failure_package.json",
+            ),
+        )
+        val manifest = AutonomousValidationRunArtifactManifest(
+            runId = "bench_05_tic_plus_ions_20260526_185659",
+            fixtureId = "bench_05_tic_plus_ions",
+            publicArtifactDirectory = "/sdcard/Download/ChromaLab/validation/bench_05_tic_plus_ions_20260526_185659",
+            records = records,
+        )
+
+        val issues = AutonomousValidationFixtureContracts.validateArtifactManifest(
+            manifest = manifest,
+            reportGate = ReportGateStatus.BLOCKED,
+            runtimeFailureClass = RuntimeFailureClass.CALIBRATION_FAILURE,
+        )
+
+        assertTrue("manifest_duplicate_slot:trace_overlay" in issues)
+        assertTrue("manifest_duplicate_slot:runtime_evidence_package" in issues)
+        assertTrue("manifest_missing_reason_required:trace_overlay" in issues)
+        assertTrue("manifest_available_location_missing:runtime_evidence_package" in issues)
     }
 }

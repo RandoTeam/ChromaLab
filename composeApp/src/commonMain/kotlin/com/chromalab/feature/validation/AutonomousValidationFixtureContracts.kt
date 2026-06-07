@@ -124,6 +124,8 @@ data class ValidationArtifactSaveResult(
 )
 
 object AutonomousValidationFixtureContracts {
+    const val graphFailurePackageSlot: String = "graph_failure_package"
+
     val requiredTextArtifactSlots: List<String> = listOf(
         "runtime_evidence_package",
         "runtime_evidence_validation_json",
@@ -148,6 +150,9 @@ object AutonomousValidationFixtureContracts {
     val requiredSupplementalArtifactSlots: List<String> = listOf(
         "final_screen_screenshot",
     )
+
+    val requiredArtifactSlots: List<String> =
+        requiredTextArtifactSlots + requiredOverlayArtifactSlots + requiredSupplementalArtifactSlots
 
     val phase9bFixtureIds: List<String> = PHASE9B_ANDROID_VALIDATION_FIXTURE_IDS
 
@@ -189,6 +194,7 @@ object AutonomousValidationFixtureContracts {
             !summary.runtimeEvidencePackageAvailable ||
                 !summary.validatorJsonAvailable ||
                 !summary.validatorMarkdownAvailable ||
+                !summary.finalReportJsonAvailable ||
                 !summary.exportManifestAvailable -> AutonomousValidationRunDecision.BLOCKED
             summary.graphCount != null && summary.graphCount != summary.expectedGraphCount -> AutonomousValidationRunDecision.FAIL
             summary.validatorVerdict == "FAIL" -> AutonomousValidationRunDecision.FAIL
@@ -203,8 +209,53 @@ object AutonomousValidationFixtureContracts {
         val decision = evaluateRun(summary)
         if (!isSupportedFixture(summary.fixtureId)) add("fixture_id_unsupported:${summary.fixtureId}")
         if (summary.expectedGraphCount <= 0) add("expected_graph_count_invalid")
+        if (!summary.runtimeEvidencePackageAvailable) add("runtime_evidence_package_missing:${summary.fixtureId}:${summary.modelMode}")
+        if (!summary.validatorJsonAvailable) add("validator_json_missing:${summary.fixtureId}:${summary.modelMode}")
+        if (!summary.validatorMarkdownAvailable) add("validator_markdown_missing:${summary.fixtureId}:${summary.modelMode}")
+        if (!summary.finalReportJsonAvailable) add("final_report_json_missing:${summary.fixtureId}:${summary.modelMode}")
+        if (!summary.exportManifestAvailable) add("export_manifest_missing:${summary.fixtureId}:${summary.modelMode}")
         if (decision == AutonomousValidationRunDecision.FAIL || decision == AutonomousValidationRunDecision.BLOCKED) {
             if (summary.runtimeFailureClass == null) add("runtime_failure_class_required:${summary.fixtureId}:${summary.modelMode}")
+        }
+    }
+
+    fun validateArtifactManifest(
+        manifest: AutonomousValidationRunArtifactManifest,
+        reportGate: ReportGateStatus? = null,
+        runtimeFailureClass: RuntimeFailureClass? = null,
+    ): List<String> = buildList {
+        if (manifest.runId.isBlank()) add("manifest_run_id_missing")
+        if (!isSupportedFixture(manifest.fixtureId)) add("manifest_fixture_id_unsupported:${manifest.fixtureId}")
+        if (manifest.publicArtifactDirectory.isBlank()) add("manifest_public_directory_missing")
+
+        val duplicateSlots = manifest.records
+            .map { it.slot }
+            .groupingBy { it }
+            .eachCount()
+            .filterValues { it > 1 }
+            .keys
+        duplicateSlots.forEach { add("manifest_duplicate_slot:$it") }
+
+        val slots = manifest.records.map { it.slot }.toSet()
+        requiredArtifactSlots
+            .filterNot(slots::contains)
+            .forEach { add("manifest_required_slot_missing:$it") }
+
+        val graphFailureRequired = reportGate == ReportGateStatus.BLOCKED ||
+            runtimeFailureClass?.let(graphStageFailureClasses::contains) == true
+        if (graphFailureRequired && graphFailurePackageSlot !in slots) {
+            add("manifest_graph_failure_package_missing")
+        }
+
+        manifest.records.forEach { record ->
+            if (record.slot.isBlank()) add("manifest_record_slot_missing")
+            if (record.fileName.isBlank()) add("manifest_record_file_name_missing:${record.slot}")
+            if (record.expected && !record.available && record.missingReason.isNullOrBlank()) {
+                add("manifest_missing_reason_required:${record.slot}")
+            }
+            if (record.available && record.location.isNullOrBlank()) {
+                add("manifest_available_location_missing:${record.slot}")
+            }
         }
     }
 
@@ -217,6 +268,21 @@ object AutonomousValidationFixtureContracts {
             add("model_enabled_numeric_metric_override:${summary.fixtureId}")
         }
     }
+
+    private val graphStageFailureClasses: Set<RuntimeFailureClass> = setOf(
+        RuntimeFailureClass.GRAPH_PANEL_FAILURE,
+        RuntimeFailureClass.MULTI_GRAPH_SPLIT_FAILURE,
+        RuntimeFailureClass.PLOT_AREA_FAILURE,
+        RuntimeFailureClass.AXIS_DETECTION_FAILURE,
+        RuntimeFailureClass.TICK_LOCALIZATION_FAILURE,
+        RuntimeFailureClass.OCR_TICK_FAILURE,
+        RuntimeFailureClass.CALIBRATION_FAILURE,
+        RuntimeFailureClass.TRACE_EXTRACTION_FAILURE,
+        RuntimeFailureClass.PEAK_DETECTION_FAILURE,
+        RuntimeFailureClass.PEAK_EVIDENCE_FAILURE,
+        RuntimeFailureClass.CV_FALLBACK_GRAPH_PANEL_FAILURE,
+        RuntimeFailureClass.PERFORMANCE_TIMEOUT,
+    )
 }
 
 expect object AutonomousValidationArtifactExporter {

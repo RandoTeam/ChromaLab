@@ -2,11 +2,11 @@
 
 Date: 2026-06-07
 
-Status: `R11_ROADMAP_UPDATED`
+Status: `R12_ROADMAP_UPDATED`
 
-Scope: planning only. This roadmap does not start implementation, does not add
-new runtime dependencies, does not modify `CalculationEngine`, and does not
-change chromatographic math, validators, Android behavior, or report gates.
+Scope: roadmap status tracking. This roadmap does not add runtime dependencies,
+does not modify `CalculationEngine`, and does not change chromatographic math,
+Android analyzer behavior, model policy, or report gates.
 
 ## Core Decision
 
@@ -269,7 +269,8 @@ Completed:
 - `R8 - Stage 5 Calibration Strategy Parity Candidate`;
 - `R9 - Stage 6 Automatic OCR Anchor Candidate`;
 - `R10 - Stage 6 Runtime OCR Anchor Bridge Candidate`;
-- `R11 - Integrated Runtime Calibration Closure`.
+- `R11 - Integrated Runtime Calibration Closure`;
+- `R12 - Runtime Evidence And Failure Package Closure`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -290,7 +291,10 @@ accepted bridge rows, and 20 rejected bridge rows. R10 remains REVIEW because
 the source crop image files are not persisted and Android runtime generation is
 not yet proven. R11 added shadow calibration closure records from R10 bridge
 rows, selected 12 graph calibration fits from 155 accepted bridge anchors, and
-kept the same crop-file/runtime-generation blocker explicit.
+kept the same crop-file/runtime-generation blocker explicit. R12 added
+evidence/export closure checks over 16 Phase 9J-derived Android records,
+recording 16/16 core artifact completeness, 0 no-export states, 4/4 blocked
+runs with graph failure packages, and 0 release-ready runs.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -304,27 +308,26 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R12 - Runtime Evidence And Failure Package Closure
+R13 - Android Runtime OCR Anchor Production Bridge
 ```
 
 Purpose:
 
-- audit Android RuntimeEvidencePackage completeness for all fixtures and modes;
-- ensure graph-stage failures export overlays, selected/rejected anchor tables,
-  manifests, and exact subreasons when reached;
-- close timeout/no-export gaps without hiding `BLOCKED` states;
-- keep E2B advisory-only and unable to change graph count, calibration
+- inventory Android OCR, crop, axis, and calibration evidence export paths;
+- emit Android runtime OCR anchor rows matching the R10 contract;
+- persist crop files or explicit missing-crop reasons;
+- compare Android rows against R10/R11 records for P0 fixtures;
+- keep E2B advisory-only and unable to create pixel geometry, calibration
   strategy, trace, peaks, metrics, or report gates;
-- keep production runtime unchanged until Android evidence packages prove
-  parity with the R11 shadow calibration closure records.
+- keep anchor rows advisory until runtime parity is proven.
 
 Deliverables:
 
-- Android evidence and failure package audit for all eight fixtures;
-- timeout/no-export protection where missing;
-- validator checks for missing graph packages and export manifests;
-- selected/rejected calibration strategy evidence visible in packages when
-  runtime reaches calibration;
+- Android OCR anchor export contract matching R10 bridge fields;
+- crop persistence or missing-crop reason records;
+- P0 fixture comparison against R10/R11 shadow evidence;
+- deterministic vs E2B safety comparison where model-visible behavior is
+  touched;
 - source-of-truth docs updated;
 - PC/Android validation command output when runtime files are touched;
 - focused commit.

@@ -197,6 +197,20 @@ remains shadow-only because the rows still originate from benchmark evidence
 and source crop image files are not persisted. It is not Android runtime
 calibration and is not used by runtime analysis.
 
+R12 adds a runtime evidence and failure package closure audit:
+
+```text
+python tools/benchmark/run_r12_runtime_evidence_failure_package_audit.py --clean
+```
+
+It writes a summary under
+`benchmark/reports/r12_runtime_evidence_failure_package_closure/`. R12 verifies
+that tracked Phase 9J fixture/mode records have core RuntimeEvidencePackage,
+validator, report, and manifest artifacts, and that blocked graph-stage runs
+carry graph failure packages and first failing stages. It does not change
+runtime analysis, report gates, chromatographic math, model policy, or
+`CalculationEngine`.
+
 VLM-assisted stages:
 
 - graph region detection;

@@ -1,0 +1,1312 @@
+{
+  "schemaVersion": "chromalab.benchmark.r12_runtime_evidence_failure_package_closure_summary.v1",
+  "productionImpact": "VALIDATOR_AND_AUDIT_CONTRACT_ONLY",
+  "overallVerdict": "R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSED",
+  "caseCount": 16,
+  "fixtureCount": 8,
+  "coreArtifactCompleteCount": 16,
+  "noExportStateCount": 0,
+  "blockedRunCount": 4,
+  "blockedWithGraphFailurePackageCount": 4,
+  "blockedMissingFailurePackageCount": 0,
+  "blockedMissingFirstFailingStageCount": 0,
+  "reviewOnlyCount": 12,
+  "releaseReadyCount": 0,
+  "localCoreArtifactMissingCount": 0,
+  "closureDecisionCounts": {
+    "EVIDENCE_REVIEW": 4,
+    "EVIDENCE_COMPLETE": 12
+  },
+  "nextRequiredWork": [
+    "Produce Android runtime OCR anchor rows equivalent to R10/R11 benchmark rows.",
+    "Persist or explicitly explain all graph-level crop and overlay artifacts for blocked runs.",
+    "Keep BLOCKED runs blocked until graph/calibration/trace/peak evidence is complete.",
+    "Keep E2B advisory-only and unable to alter graph count, calibration, trace, peaks, metrics, or report gates."
+  ],
+  "records": [
+    {
+      "caseId": "phase9j_bench_01_mz71_screenshot_page_deterministic",
+      "runId": "bench_01_mz71_screenshot_page_20260526_184458",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "mode": "deterministic",
+      "reportGate": "BLOCKED",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+      "firstFailingStage": "Y_CALIBRATION",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "xCalibration": "VALID",
+      "yCalibration": "INVALID",
+      "traceStatus": "MISSING",
+      "peakEvidenceStatus": "MISSING",
+      "peakCount": 0,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/runtime_evidence_package_bench_01_mz71_screenshot_page_20260526_184458.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184458.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184458.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/final_report_contract_bench_01_mz71_screenshot_page_20260526_184458.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/report_bench_01_mz71_screenshot_page_20260526_184458.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/report_bench_01_mz71_screenshot_page_20260526_184458.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/artifact_manifest_bench_01_mz71_screenshot_page_20260526_184458.json",
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/graph_failure_package_bench_01_mz71_screenshot_page_20260526_184458.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": true,
+      "graphFailurePackagePaths": [
+        "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/deterministic/bench_01_mz71_screenshot_page_20260526_184458/graph_failure_package_bench_01_mz71_screenshot_page_20260526_184458.json"
+      ],
+      "missingOverlayTypes": [
+        "axis_tick_overlay",
+        "graph_panel_overlay",
+        "peak_overlay",
+        "plot_area_overlay",
+        "trace_overlay"
+      ],
+      "reportClaimsBlockedReasons": [
+        "TICK_LOCALIZATION_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_REVIEW",
+      "closureReasons": [
+        "optional overlays missing with explicit reasons"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_01_mz71_screenshot_page_model_enabled",
+      "runId": "bench_01_mz71_screenshot_page_20260526_184601",
+      "fixtureId": "bench_01_mz71_screenshot_page",
+      "mode": "E2B",
+      "reportGate": "BLOCKED",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "TICK_LOCALIZATION_FAILURE",
+      "firstFailingStage": "Y_CALIBRATION",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "xCalibration": "VALID",
+      "yCalibration": "INVALID",
+      "traceStatus": "MISSING",
+      "peakEvidenceStatus": "MISSING",
+      "peakCount": 0,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_package_bench_01_mz71_screenshot_page_20260526_184601.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184601.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/runtime_evidence_validation_bench_01_mz71_screenshot_page_20260526_184601.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/final_report_contract_bench_01_mz71_screenshot_page_20260526_184601.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/report_bench_01_mz71_screenshot_page_20260526_184601.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/report_bench_01_mz71_screenshot_page_20260526_184601.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/artifact_manifest_bench_01_mz71_screenshot_page_20260526_184601.json",
+            "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/graph_failure_package_bench_01_mz71_screenshot_page_20260526_184601.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": true,
+      "graphFailurePackagePaths": [
+        "artifacts/phase9i-final-android/bench_01_mz71_screenshot_page/model_enabled/bench_01_mz71_screenshot_page_20260526_184601/graph_failure_package_bench_01_mz71_screenshot_page_20260526_184601.json"
+      ],
+      "missingOverlayTypes": [
+        "axis_tick_overlay",
+        "graph_panel_overlay",
+        "peak_overlay",
+        "plot_area_overlay",
+        "trace_overlay"
+      ],
+      "reportClaimsBlockedReasons": [
+        "TICK_LOCALIZATION_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_REVIEW",
+      "closureReasons": [
+        "optional overlays missing with explicit reasons"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_02_mz92_belyi_tigr_deterministic",
+      "runId": "bench_02_mz92_belyi_tigr_20260526_184704",
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/runtime_evidence_package_run_1779810494490.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/runtime_evidence_validation_run_1779810494490.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/runtime_evidence_validation_run_1779810494490.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/final_report_contract_run_1779810494490.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/report_run_1779810494490.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/report_run_1779810494490.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/deterministic/bench_02_mz92_belyi_tigr_20260526_184704/artifact_manifest_run_1779810494490.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "GRAPH_PANEL_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_02_mz92_belyi_tigr_model_enabled",
+      "runId": "bench_02_mz92_belyi_tigr_20260526_184822",
+      "fixtureId": "bench_02_mz92_belyi_tigr",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "GRAPH_PANEL_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/runtime_evidence_package_run_1779810584892.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/runtime_evidence_validation_run_1779810584892.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/runtime_evidence_validation_run_1779810584892.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/final_report_contract_run_1779810584892.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/report_run_1779810584892.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/report_run_1779810584892.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_02_mz92_belyi_tigr/model_enabled/bench_02_mz92_belyi_tigr_20260526_184822/artifact_manifest_run_1779810584892.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "GRAPH_PANEL_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_03_small_tic_export_deterministic",
+      "runId": "bench_03_small_tic_export_20260526_184951",
+      "fixtureId": "bench_03_small_tic_export",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 3,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/runtime_evidence_package_run_1779810604725.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/runtime_evidence_validation_run_1779810604725.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/runtime_evidence_validation_run_1779810604725.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/final_report_contract_run_1779810604725.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/report_run_1779810604725.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/report_run_1779810604725.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/deterministic/bench_03_small_tic_export_20260526_184951/artifact_manifest_run_1779810604725.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_03_small_tic_export_model_enabled",
+      "runId": "bench_03_small_tic_export_20260526_185008",
+      "fixtureId": "bench_03_small_tic_export",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 3,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/runtime_evidence_package_run_1779810632948.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/runtime_evidence_validation_run_1779810632948.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/runtime_evidence_validation_run_1779810632948.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/final_report_contract_run_1779810632948.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/report_run_1779810632948.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/report_run_1779810632948.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_03_small_tic_export/model_enabled/bench_03_small_tic_export_20260526_185008/artifact_manifest_run_1779810632948.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_04_stacked_xic_resolution_deterministic",
+      "runId": "bench_04_stacked_xic_resolution_20260526_185040",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_package_run_1779810722868.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/runtime_evidence_validation_run_1779810722868.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/final_report_contract_run_1779810722868.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/report_run_1779810722868.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/deterministic/bench_04_stacked_xic_resolution_20260526_185040/artifact_manifest_run_1779810722868.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_04_stacked_xic_resolution_model_enabled",
+      "runId": "bench_04_stacked_xic_resolution_20260526_185209",
+      "fixtureId": "bench_04_stacked_xic_resolution",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "UNKNOWN_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/runtime_evidence_package_run_1779810825697.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/runtime_evidence_validation_run_1779810825697.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/runtime_evidence_validation_run_1779810825697.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/final_report_contract_run_1779810825697.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/report_run_1779810825697.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/report_run_1779810825697.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_04_stacked_xic_resolution/model_enabled/bench_04_stacked_xic_resolution_20260526_185209/artifact_manifest_run_1779810825697.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "UNKNOWN_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_05_tic_plus_ions_deterministic",
+      "runId": "bench_05_tic_plus_ions_20260526_185353",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "mode": "deterministic",
+      "reportGate": "BLOCKED",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "CALIBRATION_FAILURE",
+      "firstFailingStage": "Y_CALIBRATION",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "xCalibration": "VALID",
+      "yCalibration": "REVIEW",
+      "traceStatus": "MISSING",
+      "peakEvidenceStatus": "MISSING",
+      "peakCount": 0,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/runtime_evidence_package_bench_05_tic_plus_ions_20260526_185353.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185353.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185353.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/final_report_contract_bench_05_tic_plus_ions_20260526_185353.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/report_bench_05_tic_plus_ions_20260526_185353.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/report_bench_05_tic_plus_ions_20260526_185353.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/artifact_manifest_bench_05_tic_plus_ions_20260526_185353.json",
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/graph_failure_package_bench_05_tic_plus_ions_20260526_185353.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": true,
+      "graphFailurePackagePaths": [
+        "artifacts/phase9i-final-android/bench_05_tic_plus_ions/deterministic/bench_05_tic_plus_ions_20260526_185353/graph_failure_package_bench_05_tic_plus_ions_20260526_185353.json"
+      ],
+      "missingOverlayTypes": [
+        "axis_tick_overlay",
+        "graph_panel_overlay",
+        "peak_overlay",
+        "plot_area_overlay",
+        "trace_overlay"
+      ],
+      "reportClaimsBlockedReasons": [
+        "CALIBRATION_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_REVIEW",
+      "closureReasons": [
+        "optional overlays missing with explicit reasons"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_05_tic_plus_ions_model_enabled",
+      "runId": "bench_05_tic_plus_ions_20260526_185451",
+      "fixtureId": "bench_05_tic_plus_ions",
+      "mode": "E2B",
+      "reportGate": "BLOCKED",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "CALIBRATION_FAILURE",
+      "firstFailingStage": "Y_CALIBRATION",
+      "expectedGraphCount": 4,
+      "detectedGraphCount": 1,
+      "xCalibration": "VALID",
+      "yCalibration": "REVIEW",
+      "traceStatus": "MISSING",
+      "peakEvidenceStatus": "MISSING",
+      "peakCount": 0,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_package_bench_05_tic_plus_ions_20260526_185451.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/runtime_evidence_validation_bench_05_tic_plus_ions_20260526_185451.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/final_report_contract_bench_05_tic_plus_ions_20260526_185451.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/report_bench_05_tic_plus_ions_20260526_185451.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/artifact_manifest_bench_05_tic_plus_ions_20260526_185451.json",
+            "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/graph_failure_package_bench_05_tic_plus_ions_20260526_185451.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": true,
+      "graphFailurePackagePaths": [
+        "artifacts/phase9i-final-android/bench_05_tic_plus_ions/model_enabled/bench_05_tic_plus_ions_20260526_185451/graph_failure_package_bench_05_tic_plus_ions_20260526_185451.json"
+      ],
+      "missingOverlayTypes": [
+        "axis_tick_overlay",
+        "graph_panel_overlay",
+        "peak_overlay",
+        "plot_area_overlay",
+        "trace_overlay"
+      ],
+      "reportClaimsBlockedReasons": [
+        "CALIBRATION_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_REVIEW",
+      "closureReasons": [
+        "optional overlays missing with explicit reasons"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_06_photo_two_graphs_page_deterministic",
+      "runId": "bench_06_photo_two_graphs_page_20260526_185549",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/runtime_evidence_package_run_1779811067085.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/runtime_evidence_validation_run_1779811067085.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/runtime_evidence_validation_run_1779811067085.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/final_report_contract_run_1779811067085.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/report_run_1779811067085.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/report_run_1779811067085.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/deterministic/bench_06_photo_two_graphs_page_20260526_185549/artifact_manifest_run_1779811067085.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_06_photo_two_graphs_page_model_enabled",
+      "runId": "bench_06_photo_two_graphs_page_20260526_185754",
+      "fixtureId": "bench_06_photo_two_graphs_page",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "UNKNOWN_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 2,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/runtime_evidence_package_run_1779811202522.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/runtime_evidence_validation_run_1779811202522.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/runtime_evidence_validation_run_1779811202522.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/final_report_contract_run_1779811202522.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/report_run_1779811202522.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/report_run_1779811202522.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_06_photo_two_graphs_page/model_enabled/bench_06_photo_two_graphs_page_20260526_185754/artifact_manifest_run_1779811202522.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "UNKNOWN_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_07_rotated_page_photo_deterministic",
+      "runId": "bench_07_rotated_page_photo_20260526_190009",
+      "fixtureId": "bench_07_rotated_page_photo",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "VLM_SEMANTIC_LAYER_UNAVAILABLE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_package_run_1779811255328.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_validation_run_1779811255328.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/runtime_evidence_validation_run_1779811255328.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/final_report_contract_run_1779811255328.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/report_run_1779811255328.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/report_run_1779811255328.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/deterministic/bench_07_rotated_page_photo_20260526_190009/artifact_manifest_run_1779811255328.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "VLM_SEMANTIC_LAYER_UNAVAILABLE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_bench_07_rotated_page_photo_model_enabled",
+      "runId": "bench_07_rotated_page_photo_20260526_190102",
+      "fixtureId": "bench_07_rotated_page_photo",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "UNKNOWN_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 1,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_package_run_1779811320242.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_validation_run_1779811320242.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/runtime_evidence_validation_run_1779811320242.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/final_report_contract_run_1779811320242.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/report_run_1779811320242.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/report_run_1779811320242.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/bench_07_rotated_page_photo/model_enabled/bench_07_rotated_page_photo_20260526_190102/artifact_manifest_run_1779811320242.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "UNKNOWN_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_white_tiger_ion71_deterministic",
+      "runId": "white_tiger_ion71_20260526_184317",
+      "fixtureId": "white_tiger_ion71",
+      "mode": "deterministic",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "REVIEW",
+      "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 12,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_package_run_1779810235097.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/runtime_evidence_validation_run_1779810235097.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/final_report_contract_run_1779810235097.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/report_run_1779810235097.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/report_run_1779810235097.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/deterministic/white_tiger_ion71_20260526_184317/artifact_manifest_run_1779810235097.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    },
+    {
+      "caseId": "phase9j_white_tiger_ion71_model_enabled",
+      "runId": "white_tiger_ion71_20260526_184400",
+      "fixtureId": "white_tiger_ion71",
+      "mode": "E2B",
+      "reportGate": "REVIEW_ONLY",
+      "validatorVerdict": "PASS",
+      "runtimeFailureClass": "PEAK_EVIDENCE_FAILURE",
+      "firstFailingStage": "",
+      "expectedGraphCount": 1,
+      "detectedGraphCount": 1,
+      "xCalibration": "INFERRED",
+      "yCalibration": "INFERRED",
+      "traceStatus": "AVAILABLE",
+      "peakEvidenceStatus": "AVAILABLE",
+      "peakCount": 12,
+      "coreArtifacts": {
+        "runtime_evidence_package": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_package_run_1779810291646.json"
+          ],
+          "localVisible": true
+        },
+        "validator_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.json"
+          ],
+          "localVisible": true
+        },
+        "validator_markdown": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/runtime_evidence_validation_run_1779810291646.md"
+          ],
+          "localVisible": true
+        },
+        "final_report_json": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/final_report_contract_run_1779810291646.json"
+          ],
+          "localVisible": true
+        },
+        "html_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.html"
+          ],
+          "localVisible": true
+        },
+        "markdown_report": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/report_run_1779810291646.md"
+          ],
+          "localVisible": true
+        },
+        "manifest": {
+          "available": true,
+          "paths": [
+            "artifacts/phase9i-final-android/white_tiger_ion71/model_enabled/white_tiger_ion71_20260526_184400/artifact_manifest_run_1779810291646.json"
+          ],
+          "localVisible": true
+        }
+      },
+      "graphFailurePackageAvailable": false,
+      "graphFailurePackagePaths": [],
+      "missingOverlayTypes": [],
+      "reportClaimsBlockedReasons": [
+        "PEAK_EVIDENCE_FAILURE"
+      ],
+      "closureDecision": "EVIDENCE_COMPLETE",
+      "closureReasons": [
+        "core evidence/export artifacts are present"
+      ]
+    }
+  ]
+}
