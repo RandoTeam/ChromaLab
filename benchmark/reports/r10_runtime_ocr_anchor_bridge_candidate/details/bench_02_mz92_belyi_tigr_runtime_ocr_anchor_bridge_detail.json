@@ -1,0 +1,46 @@
+{
+  "fixtureId": "bench_02_mz92_belyi_tigr",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_02_mz92_belyi_tigr.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "predictedLayoutClass": "SINGLE_TRACE_SINGLE_AXIS",
+  "layoutClassScore": "PASS",
+  "runtimeOcrAnchorBridgeStatus": "MISSING",
+  "r9AcceptedAnchorCount": 0,
+  "bridgeAcceptedAnchorCount": 0,
+  "bridgeRejectedAnchorCount": 0,
+  "bridgeGraphCount": 1,
+  "anchorCountParityPass": true,
+  "missingSourceCropFileCount": 0,
+  "bridgeReport": {
+    "fixture_id": "bench_02_mz92_belyi_tigr",
+    "graph_count": 1,
+    "source_anchor_count": 0,
+    "accepted_anchor_count": 0,
+    "rejected_anchor_count": 0,
+    "missing_source_crop_file_count": 0,
+    "graphs": [
+      {
+        "graph_id": "bench_02_mz92_belyi_tigr_graph_1",
+        "graph_index": 1,
+        "source_anchor_count": 0,
+        "accepted_anchor_count": 0,
+        "rejected_anchor_count": 0,
+        "missing_source_crop_file_count": 0,
+        "accepted_anchors": [],
+        "rejected_anchors": []
+      }
+    ]
+  },
+  "overlayPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/overlays/bench_02_mz92_belyi_tigr_runtime_ocr_anchor_bridge_overlay.png",
+  "detailPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/details/bench_02_mz92_belyi_tigr_runtime_ocr_anchor_bridge_detail.json",
+  "bridgeInputPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_inputs/bench_02_mz92_belyi_tigr_runtime_ocr_anchor_bridge_input.json",
+  "bridgeOutputPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_outputs/bench_02_mz92_belyi_tigr_runtime_ocr_anchor_bridge_output.json",
+  "recordPath": "benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/r10_bench_02_mz92_belyi_tigr_runtime_ocr_anchor_bridge_candidate_v1/runtime-ocr-anchor-bridge-record.json",
+  "r9OverlayPath": "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/overlays/bench_02_mz92_belyi_tigr_automatic_ocr_anchor_overlay.png",
+  "r9RecordPath": "benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/stage123456_bench_02_mz92_belyi_tigr_pc_stage6_automatic_ocr_anchor_candidate_v1/stage123456-parity-record.json",
+  "promotionDecision": "RUNTIME_OCR_ANCHOR_BRIDGE_REQUIRES_ANDROID_PARITY",
+  "elapsedMs": 206.634
+}

@@ -174,6 +174,28 @@ Regression rule: R9 output may guide runtime/Rust OCR anchor bridge work, but
 it cannot upgrade Android Phase 9 blocked/review outcomes and cannot be used as
 runtime calibration, trace, peak, or report-gate evidence.
 
+## R10 Runtime OCR Anchor Bridge Benchmark Addendum
+
+R10 adds Rust/runtime-shaped OCR anchor bridge records under
+`benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/` and reports under
+`benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`.
+
+R10 regression result:
+
+- 8/8 fixture graph-count pass.
+- 8/8 fixture layout-class pass.
+- 4/4 scoreable fixtures preserve R9 accepted-anchor count.
+- 155 accepted runtime-shaped OCR bridge rows.
+- 20 rejected bridge rows.
+- 155 accepted rows preserve source crop references but do not yet have
+  persisted source crop image file paths.
+- R10 records remain REVIEW/MISSING because the rows originate from R9
+  benchmark evidence and are not Android runtime OCR generation.
+
+Regression rule: R10 output may guide integrated calibration ensemble shadow
+work in R11, but it cannot upgrade Android Phase 9 blocked/review outcomes and
+cannot be used as runtime calibration, trace, peak, or report-gate evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

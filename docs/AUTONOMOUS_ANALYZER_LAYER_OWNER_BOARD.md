@@ -1,8 +1,8 @@
 # Autonomous Analyzer Layer Owner Board
 
-Date: 2026-06-06
+Date: 2026-06-07
 
-Status: `R1_LAYER_OWNER_BOARD_UPDATED`
+Status: `R10_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -93,6 +93,7 @@ R6 - Stage 3 PlotArea And Layout Semantics Candidate
 R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 R8 - Stage 5 Calibration Strategy Parity Candidate
 R9 - Stage 6 Automatic OCR Anchor Candidate
+R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
 ```
 
 R1 is now documented in:
@@ -191,15 +192,29 @@ decisions, 3 review graph decisions, and 155 accepted OCR anchors. The stage
 remains REVIEW because those anchors are not yet produced by Android or Rust
 runtime code.
 
+R10 is documented in:
+
+- `docs/R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md`;
+- `benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/`;
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/summary.md`.
+
+R10 closed as Rust/runtime-shaped OCR anchor bridge evidence only. It converted
+R9 safe OCR anchor rows into bridge rows, preserved 4/4 scoreable fixture
+accepted-anchor parity, emitted 155 accepted bridge rows and 20 rejected bridge
+rows, and recorded missing source crop image files as a promotion blocker. The
+stage remains REVIEW because it is not Android runtime generation and does not
+feed production calibration.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
+R11 - Integrated Runtime Calibration Closure
 ```
 
-R10 should bridge the R9 safe OCR anchor generation into runtime/Rust parity
-without adding a permanent duplicate production layer. It must prove that
-automatic anchors can be generated with pixel geometry, forbidden-text
-rejection, residuals, and graph-level evidence before any promotion.
+R11 should consume R10 bridge rows inside the calibration ensemble shadow path,
+compare selected/rejected strategies against R8/R9 records, preserve the White
+Tiger legacy fallback, and keep E2B advisory-only. It must not promote runtime
+calibration until Android evidence packages show equivalent graph-level anchor
+provenance.

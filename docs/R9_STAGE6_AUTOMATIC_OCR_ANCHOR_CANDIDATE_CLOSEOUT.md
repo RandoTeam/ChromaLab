@@ -106,6 +106,13 @@ residuals, and exportable failure packages.
 R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
 ```
 
-R10 should bridge the safe OCR anchor generation into the replacement pipeline
-without adding a permanent duplicate layer. Promotion requires Android or Rust
-runtime parity against the R9 per-anchor evidence, not visual similarity.
+R10 has now closed as a Rust/runtime-shaped bridge contract. It preserved 4/4
+scoreable fixture accepted-anchor parity and 155 accepted bridge rows, but it
+remains shadow-only because Android runtime OCR generation and persisted crop
+files are not proven.
+
+The next executable phase is:
+
+```text
+R11 - Integrated Runtime Calibration Closure
+```

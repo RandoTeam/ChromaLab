@@ -164,6 +164,22 @@ OCR anchor overlays, detail JSON files, and a contact sheet under
 and DRE OCR reports and measures PC-side safe OCR anchors against DR-C4 truth.
 It is not Android runtime calibration and is not used by runtime analysis.
 
+R10 adds a Rust/runtime-shaped Stage 6 OCR anchor bridge candidate:
+
+```text
+python tools/benchmark/run_r10_runtime_ocr_anchor_bridge_candidate.py --clean
+```
+
+It writes records under
+`benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/` and bridge
+input/output files, overlays, detail JSON files, and a contact sheet under
+`benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`. R10 converts R9
+safe OCR anchor rows into a deterministic Rust bridge contract that requires
+numeric OCR values, pixel geometry, source crop references, and forbidden-source
+rejection. It remains shadow-only because the rows still originate from R9
+benchmark evidence and source crop image files are not persisted. It is not
+Android runtime calibration and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;

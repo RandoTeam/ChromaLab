@@ -1,0 +1,46 @@
+{
+  "fixtureId": "bench_07_rotated_page_photo",
+  "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "layoutClassScore": "PASS",
+  "runtimeOcrAnchorBridgeStatus": "MISSING",
+  "r9AcceptedAnchorCount": 0,
+  "bridgeAcceptedAnchorCount": 0,
+  "bridgeRejectedAnchorCount": 0,
+  "bridgeGraphCount": 1,
+  "anchorCountParityPass": true,
+  "missingSourceCropFileCount": 0,
+  "bridgeReport": {
+    "fixture_id": "bench_07_rotated_page_photo",
+    "graph_count": 1,
+    "source_anchor_count": 0,
+    "accepted_anchor_count": 0,
+    "rejected_anchor_count": 0,
+    "missing_source_crop_file_count": 0,
+    "graphs": [
+      {
+        "graph_id": "bench_07_rotated_page_photo_graph_1",
+        "graph_index": 1,
+        "source_anchor_count": 0,
+        "accepted_anchor_count": 0,
+        "rejected_anchor_count": 0,
+        "missing_source_crop_file_count": 0,
+        "accepted_anchors": [],
+        "rejected_anchors": []
+      }
+    ]
+  },
+  "overlayPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/overlays/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_overlay.png",
+  "detailPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/details/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_detail.json",
+  "bridgeInputPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_inputs/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_input.json",
+  "bridgeOutputPath": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_outputs/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_output.json",
+  "recordPath": "benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/r10_bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_candidate_v1/runtime-ocr-anchor-bridge-record.json",
+  "r9OverlayPath": "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/overlays/bench_07_rotated_page_photo_automatic_ocr_anchor_overlay.png",
+  "r9RecordPath": "benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/stage123456_bench_07_rotated_page_photo_pc_stage6_automatic_ocr_anchor_candidate_v1/stage123456-parity-record.json",
+  "promotionDecision": "RUNTIME_OCR_ANCHOR_BRIDGE_REQUIRES_ANDROID_PARITY",
+  "elapsedMs": 245.082
+}

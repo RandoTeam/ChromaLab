@@ -1,0 +1,10 @@
+{
+  "fixture_id": "bench_03_small_tic_export",
+  "graphs": [
+    {
+      "graph_id": "bench_03_small_tic_export_graph_1",
+      "graph_index": 1,
+      "anchors": []
+    }
+  ]
+}

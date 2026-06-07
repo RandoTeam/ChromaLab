@@ -438,6 +438,50 @@ Interpretation:
   calibration.
 - It cannot upgrade Android Phase 9 blocked/review outcomes.
 
+## R10 Runtime OCR Anchor Bridge Candidate
+
+R10 adds a Rust/runtime-shaped OCR anchor bridge candidate that consumes R9
+safe OCR anchor evidence and validates the rows through a deterministic Rust
+contract.
+
+It writes:
+
+- `benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/summary.json`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/summary.md`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/contact_sheet_runtime_ocr_anchor_bridge.png`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_inputs/`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_outputs/`
+- `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/details/`
+
+R10 result:
+
+| Item | Count / status |
+|---|---:|
+| Runtime OCR bridge records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| Scoreable fixtures | 4 |
+| Anchor-count parity pass | 4/4 |
+| Bridge accepted anchors | 155 |
+| Bridge rejected anchors | 20 |
+| Missing source crop image files | 155 |
+| Stage evidence status | REVIEW/MISSING |
+| Schemas validated | 10 |
+| Example documents validated | 173 |
+
+Interpretation:
+
+- R10 is shadow-only Rust/runtime OCR anchor bridge evidence.
+- It proves safe anchor rows can be carried with pixel geometry, numeric OCR
+  values, source crop references, confidence, residual/projection fields, and
+  forbidden-source rejection.
+- It does not prove Android runtime OCR generation because the rows still come
+  from R9 benchmark evidence.
+- It cannot upgrade Android Phase 9 blocked/review outcomes until R11 connects
+  the bridge rows to calibration ensemble parity and Android evidence packages.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:
@@ -522,6 +566,8 @@ The current validation proves:
 - E2B did not regress deterministic geometry/calibration/metrics in the audited slice;
 - blocked fixtures are visible with failure classes and next engineering fixes;
 - benchmark schemas can encode the Phase 9J truth audit for future scoring;
+- Rust/runtime-shaped OCR anchor bridge rows can be validated without allowing
+  VLM pixel geometry or numeric calibration authority;
 - Rust Android bridge parity can be checked over a corpus.
 
 ## What The Current Validation Does Not Prove
@@ -533,6 +579,7 @@ The current validation does not prove:
 - 99 percent success rate;
 - fully robust graph layout handling;
 - fully robust axis scale calibration;
+- Android-generated OCR anchor rows feeding runtime calibration;
 - scientific accuracy against vendor/reference peak metrics;
 - universal support for GC/MS, petroleum geochemistry, or analytical chemistry workflows;
 - compound identification capability;

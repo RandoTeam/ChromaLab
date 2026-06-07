@@ -1,0 +1,10 @@
+{
+  "fixture_id": "bench_07_rotated_page_photo",
+  "graphs": [
+    {
+      "graph_id": "bench_07_rotated_page_photo_graph_1",
+      "graph_index": 1,
+      "anchors": []
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "fixture_id": "bench_02_mz92_belyi_tigr",
+  "graph_count": 1,
+  "source_anchor_count": 0,
+  "accepted_anchor_count": 0,
+  "rejected_anchor_count": 0,
+  "missing_source_crop_file_count": 0,
+  "graphs": [
+    {
+      "graph_id": "bench_02_mz92_belyi_tigr_graph_1",
+      "graph_index": 1,
+      "source_anchor_count": 0,
+      "accepted_anchor_count": 0,
+      "rejected_anchor_count": 0,
+      "missing_source_crop_file_count": 0,
+      "accepted_anchors": [],
+      "rejected_anchors": []
+    }
+  ]
+}

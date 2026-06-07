@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "chromalab.benchmark.runtime_ocr_anchor_bridge_record.v1",
+  "recordId": "r10_bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_candidate_v1",
+  "fixtureId": "bench_07_rotated_page_photo",
+  "sourceId": "r10_runtime_ocr_anchor_bridge_candidate_v1",
+  "sourceKind": "RUST_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE",
+  "productionImpact": "NONE_SHADOW_ONLY",
+  "runtimeReadiness": "RUST_BRIDGE_CONTRACT_NOT_ANDROID_RUNTIME_READY",
+  "expectedGraphCount": 1,
+  "detectedGraphCount": 1,
+  "graphCountScore": "PASS",
+  "expectedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "predictedLayoutClass": "ROTATED_PAGE_GRAPH",
+  "layoutClassScore": "PASS",
+  "runtimeOcrAnchorBridge": {
+    "status": "MISSING",
+    "available": false,
+    "summary": "Runs R9 OCR anchor rows through the Rust runtime OCR anchor bridge contract. This is shadow-only and records missing crop files as a promotion blocker.",
+    "metrics": {
+      "r9AcceptedAnchorCount": 0,
+      "bridgeAcceptedAnchorCount": 0,
+      "bridgeRejectedAnchorCount": 0,
+      "bridgeGraphCount": 1,
+      "anchorCountParityPass": true,
+      "missingSourceCropFileCount": 0
+    }
+  },
+  "bridgeReport": {
+    "fixture_id": "bench_07_rotated_page_photo",
+    "graph_count": 1,
+    "source_anchor_count": 0,
+    "accepted_anchor_count": 0,
+    "rejected_anchor_count": 0,
+    "missing_source_crop_file_count": 0,
+    "graphs": [
+      {
+        "graph_id": "bench_07_rotated_page_photo_graph_1",
+        "graph_index": 1,
+        "source_anchor_count": 0,
+        "accepted_anchor_count": 0,
+        "rejected_anchor_count": 0,
+        "missing_source_crop_file_count": 0,
+        "accepted_anchors": [],
+        "rejected_anchors": []
+      }
+    ]
+  },
+  "failureClass": "",
+  "firstFailingStage": "",
+  "evidence": {
+    "sourceImage": "composeApp/src/androidMain/assets/validation/bench_07_rotated_page_photo.jpg",
+    "recordSource": "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/summary.json",
+    "artifactPaths": [
+      "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/overlays/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_overlay.png",
+      "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/details/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_detail.json",
+      "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_inputs/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_input.json",
+      "benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/bridge_outputs/bench_07_rotated_page_photo_runtime_ocr_anchor_bridge_output.json",
+      "benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/overlays/bench_07_rotated_page_photo_automatic_ocr_anchor_overlay.png",
+      "benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/stage123456_bench_07_rotated_page_photo_pc_stage6_automatic_ocr_anchor_candidate_v1/stage123456-parity-record.json"
+    ]
+  },
+  "promotionDecision": "RUNTIME_OCR_ANCHOR_BRIDGE_REQUIRES_ANDROID_PARITY",
+  "notes": [
+    "Shadow-only R10 Rust runtime OCR anchor bridge candidate.",
+    "Accepted rows require OCR numeric values and deterministic pixel geometry.",
+    "VLM geometry and VLM numeric sources are rejected by the Rust bridge contract.",
+    "Source crop references are preserved; source crop image files are still missing and block promotion.",
+    "No Android runtime calibration, trace, peak, report-gate, or CalculationEngine authority."
+  ]
+}

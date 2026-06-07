@@ -159,3 +159,25 @@ Report root: `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`
 R9 does not accept Phase 9. It shows that PC-side OCR anchor recovery is
 promising for the four P0 annotated fixtures, but those anchors must be produced
 by Android or Rust runtime before they can affect calibration/report gates.
+
+## R10 Runtime OCR Anchor Bridge Dataset Status
+
+R10 uses the same eight validation fixtures and remains Rust/runtime-shaped
+shadow benchmark evidence, not Android runtime evidence.
+
+Report root: `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`
+
+| Fixture | R10 runtime OCR bridge status |
+| --- | --- |
+| `white_tiger_ion71` | No R9 OCR anchor truth; bridge row status `MISSING`. |
+| `bench_01_mz71_screenshot_page` | 2 graphs, 25 accepted bridge rows, 1 rejected bridge row, parity pass. |
+| `bench_02_mz92_belyi_tigr` | No R9 OCR anchor truth; bridge row status `MISSING`. |
+| `bench_03_small_tic_export` | No R9 OCR anchor truth; bridge row status `MISSING`. |
+| `bench_04_stacked_xic_resolution` | 4 graphs, 52 accepted bridge rows, parity pass. |
+| `bench_05_tic_plus_ions` | 4 graphs, 40 accepted bridge rows, 10 rejected bridge rows, parity pass. |
+| `bench_06_photo_two_graphs_page` | 2 graphs, 38 accepted bridge rows, 9 rejected bridge rows, parity pass. |
+| `bench_07_rotated_page_photo` | No R9 OCR anchor truth; bridge row status `MISSING`. |
+
+R10 does not accept Phase 9. It proves that safe OCR anchor rows can pass
+through a deterministic Rust bridge contract, but runtime-generated OCR crops
+and calibration ensemble propagation remain R11 work.

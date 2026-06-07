@@ -1,8 +1,8 @@
 # Autonomous Analyzer Layer Replacement Roadmap
 
-Date: 2026-06-06
+Date: 2026-06-07
 
-Status: `PLANNING_READY`
+Status: `R10_ROADMAP_UPDATED`
 
 Scope: planning only. This roadmap does not start implementation, does not add
 new runtime dependencies, does not modify `CalculationEngine`, and does not
@@ -267,7 +267,8 @@ Completed:
 - `R6 - Stage 3 PlotArea And Layout Semantics Candidate`;
 - `R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate`;
 - `R8 - Stage 5 Calibration Strategy Parity Candidate`;
-- `R9 - Stage 6 Automatic OCR Anchor Candidate`.
+- `R9 - Stage 6 Automatic OCR Anchor Candidate`;
+- `R10 - Stage 6 Runtime OCR Anchor Bridge Candidate`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -282,7 +283,11 @@ REVIEW-only axis/frame/scale output. R8 added Stage 5 calibration strategy
 parity with 12 selected manual-review scoring fits and REVIEW-only calibration
 strategy output. R9 added Stage 6 automatic OCR anchor candidate evidence with
 12 automatic OCR candidate graphs, 9 valid graph decisions, 3 review graph
-decisions, and 155 accepted OCR anchors.
+decisions, and 155 accepted OCR anchors. R10 added a Rust/runtime-shaped OCR
+anchor bridge candidate with 8 records, 4/4 scoreable fixture parity, 155
+accepted bridge rows, and 20 rejected bridge rows. R10 remains REVIEW because
+the source crop image files are not persisted and Android runtime generation is
+not yet proven.
 
 None of these phases changed Android runtime behavior, validators,
 chromatographic math, report gates, graph-count metadata, model policy, or
@@ -296,21 +301,25 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
+R11 - Integrated Runtime Calibration Closure
 ```
 
 Purpose:
 
-- consume R9 automatic OCR anchor evidence;
-- produce equivalent anchor rows through Android or Rust runtime/shadow bridge;
-- preserve Stage 1-6 evidence tables and rejection reasons;
-- keep DRC4/DRE6 data as scoring truth only, not runtime calibration;
-- keep production runtime unchanged until promotion gates pass.
+- consume R10 runtime-shaped OCR anchor bridge rows in the calibration ensemble
+  shadow path;
+- compare selected and rejected calibration strategies against R8/R9 benchmark
+  records;
+- preserve the White Tiger legacy calibration fallback;
+- keep E2B advisory-only and unable to change graph count, calibration
+  strategy, trace, peaks, metrics, or report gates;
+- keep production runtime unchanged until Android evidence packages prove parity.
 
 Deliverables:
 
-- runtime/Rust OCR anchor bridge output;
-- updated Stage 1-6 parity/evidence records if the bridge produces comparable evidence;
+- calibration ensemble shadow comparison using R10 bridge rows;
+- selected/rejected strategy evidence per graph;
+- blocker analysis for `bench_01_mz71_screenshot_page` and `bench_05_tic_plus_ions`;
 - source-of-truth docs updated;
 - PC validation command output;
 - focused commit.

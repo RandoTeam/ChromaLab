@@ -32,6 +32,7 @@ phase-history files.
 | [R7 Stage 4 Axis Frame Scale Candidate Closeout](R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md) | R7 axis/frame/scale evidence candidate, overlays, scoring, and R8 start decision. |
 | [R8 Stage 5 Calibration Strategy Parity Closeout](R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md) | R8 calibration strategy parity candidate, overlays, scoring, and R9 start decision. |
 | [R9 Stage 6 Automatic OCR Anchor Candidate Closeout](R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md) | R9 automatic OCR anchor candidate, overlays, scoring, and R10 start decision. |
+| [R10 Runtime OCR Anchor Bridge Candidate Closeout](R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md) | R10 Rust/runtime-shaped OCR anchor bridge contract, parity records, and R11 start decision. |
 | [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
@@ -110,6 +111,7 @@ graph, axis, scale, and trace extraction.
 | [R7 Stage 4 Axis Frame Scale Candidate Closeout](R7_STAGE4_AXIS_FRAME_SCALE_CANDIDATE_CLOSEOUT.md) | PC-side axis/frame/scale evidence records and next calibration parity step. |
 | [R8 Stage 5 Calibration Strategy Parity Closeout](R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md) | PC-side calibration strategy parity records and next automatic OCR anchor step. |
 | [R9 Stage 6 Automatic OCR Anchor Candidate Closeout](R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md) | PC-side automatic OCR anchor records and next runtime/Rust bridge step. |
+| [R10 Runtime OCR Anchor Bridge Candidate Closeout](R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md) | Rust/runtime-shaped OCR anchor bridge records and next integrated calibration step. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |

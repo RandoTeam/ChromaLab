@@ -29,8 +29,10 @@ Current priorities:
      evidence with 12 annotated manual-review scale graphs; R8 added
      REVIEW-only calibration strategy parity with 12 selected manual-review
      scoring fits; R9 added PC-side automatic OCR anchor evidence with 12
-     candidate graphs and 155 accepted OCR anchors. The next slice is
-     runtime/Rust OCR anchor parity, not a production Rust switch.
+     candidate graphs and 155 accepted OCR anchors; R10 added a Rust/runtime
+     OCR anchor bridge contract with 4/4 scoreable fixture parity and 155
+     accepted bridge rows. The next slice is integrated runtime calibration
+     closure in shadow/parity mode, not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

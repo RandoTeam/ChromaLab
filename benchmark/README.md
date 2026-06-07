@@ -45,10 +45,10 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R9 Stage 6 automatic OCR anchor candidate generation:
+Expected result after R10 runtime OCR anchor bridge candidate generation:
 
 ```text
-Benchmark schema validation passed: 9 schemas, 165 example documents.
+Benchmark schema validation passed: 10 schemas, 173 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -194,6 +194,22 @@ The R9 summary report, overlays, detail JSON files, and automatic OCR anchor
 contact sheet are written to:
 
 `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/`
+
+Build the R10 runtime OCR anchor bridge candidate records:
+
+```powershell
+python tools/benchmark/run_r10_runtime_ocr_anchor_bridge_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R10 runtime OCR bridge records are written to:
+
+`benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/`
+
+The R10 summary report, bridge input/output JSON files, overlays, detail JSON
+files, and runtime OCR bridge contact sheet are written to:
+
+`benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`
 
 Create graph/layout annotation workflow records with:
 
