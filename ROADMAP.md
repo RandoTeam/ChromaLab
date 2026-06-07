@@ -31,8 +31,10 @@ Current priorities:
      scoring fits; R9 added PC-side automatic OCR anchor evidence with 12
      candidate graphs and 155 accepted OCR anchors; R10 added a Rust/runtime
      OCR anchor bridge contract with 4/4 scoreable fixture parity and 155
-     accepted bridge rows. The next slice is integrated runtime calibration
-     closure in shadow/parity mode, not a production Rust switch.
+     accepted bridge rows; R11 added shadow integrated calibration closure
+     records with 12 selected graph calibration fits from 155 accepted bridge
+     anchors. The next slice is runtime evidence and failure package closure,
+     not a production Rust switch.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

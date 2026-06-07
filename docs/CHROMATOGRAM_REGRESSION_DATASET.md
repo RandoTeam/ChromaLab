@@ -181,3 +181,26 @@ Report root: `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`
 R10 does not accept Phase 9. It proves that safe OCR anchor rows can pass
 through a deterministic Rust bridge contract, but runtime-generated OCR crops
 and calibration ensemble propagation remain R11 work.
+
+## R11 Integrated Runtime Calibration Closure Dataset Status
+
+R11 uses the same eight validation fixtures and remains shadow benchmark
+evidence, not Android runtime calibration evidence.
+
+Report root: `benchmark/reports/r11_runtime_calibration_closure_candidate/`
+
+| Fixture | R11 runtime calibration closure status |
+| --- | --- |
+| `white_tiger_ion71` | No R9/R10 OCR anchor truth; closure status `MISSING`. Legacy runtime fallback remains protected by Phase 9H evidence. |
+| `bench_01_mz71_screenshot_page` | 2 graphs, 2 selected shadow calibration fits, 25 accepted bridge anchors; Android Y-calibration remains blocked until equivalent runtime rows and crop files are exported. |
+| `bench_02_mz92_belyi_tigr` | No R9/R10 OCR anchor truth; closure status `MISSING`. |
+| `bench_03_small_tic_export` | No R9/R10 OCR anchor truth; closure status `MISSING`. |
+| `bench_04_stacked_xic_resolution` | 4 graphs, 4 selected shadow calibration fits, 52 accepted bridge anchors. |
+| `bench_05_tic_plus_ions` | 4 graphs, 4 selected shadow calibration fits, 40 accepted bridge anchors; Android TIC+ions layout propagation and Y-calibration evidence remain runtime blockers. |
+| `bench_06_photo_two_graphs_page` | 2 graphs, 2 selected shadow calibration fits, 38 accepted bridge anchors. |
+| `bench_07_rotated_page_photo` | No R9/R10 OCR anchor truth; closure status `MISSING`. |
+
+R11 does not accept Phase 9. It proves that R10 safe bridge rows can feed
+selected/rejected calibration strategy evidence in shadow mode, but Android
+RuntimeEvidencePackage rows and persisted source crop files remain required
+before any runtime promotion.

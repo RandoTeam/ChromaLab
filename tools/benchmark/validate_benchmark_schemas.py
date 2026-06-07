@@ -29,6 +29,7 @@ SCHEMA_BY_EXAMPLE_NAME = {
     "stage12345-parity-record.json": "stage12345-parity-record.schema.json",
     "stage123456-parity-record.json": "stage123456-parity-record.schema.json",
     "runtime-ocr-anchor-bridge-record.json": "runtime-ocr-anchor-bridge-record.schema.json",
+    "runtime-calibration-closure-record.json": "runtime-calibration-closure-record.schema.json",
 }
 
 

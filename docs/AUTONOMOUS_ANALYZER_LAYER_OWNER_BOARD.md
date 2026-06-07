@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R10_LAYER_OWNER_BOARD_UPDATED`
+Status: `R11_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -24,7 +24,7 @@ targets. It does not change runtime behavior.
 | 2 Graph discovery | `processing/graph`, `processing/geometry/ScreenshotEmbeddedChartDetector.kt`, `GraphMultiplicityResolver.kt`, `AutoSweepEngine.kt` | `AutoSweepGraphSelectionTest`, `GraphRegionOrderingTest`, `GraphMultiplicityResolverTest`, Android fixture suite | `ACTIVE_IMPLEMENTATION`; still a product blocker for multi-panel and 0-graph cases. | High-priority replacement target after R0: graph candidate generation and multiplicity resolution. |
 | 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GeometryPipelineRunner.kt` | `GraphLayoutClassifierTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; layout classifier exists but report propagation and graph-count semantics remain weak. | Pair with Stage 2 in a broad graph/layout replacement phase. |
 | 4 Axis/grid/OCR labels | `AxisDetector`, `AxisTickGeometryDetector`, `TickLocalizationPipeline`, `TickOcrCropRegions`, `TickOcrMatcher`, `AxisOcrReader` | `TickLocalizationPipelineTest`, `TickOcrMatcherTest`, `TickOcrCropRegionsTest`, `ChartPromptsAxisTickTest` | `ACTIVE_IMPLEMENTATION`; tick/label evidence remains brittle for bench_01 and related classes. | Replace only after graph/plotArea ownership is stable; do not let OCR create geometry. |
-| 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs | `ACTIVE_IMPLEMENTATION`; ensemble fixed White Tiger regression but broader blockers remain. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
+| 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; ensemble fixed White Tiger regression but broader blockers remain. R11 adds shadow selected/rejected strategy evidence from R10 bridge rows, not runtime authority. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
 | 7 Peak detection / integration | `feature/calculation/core/CalculationEngine.kt`, `feature/calculation/algorithm/*`, `processing/peaks`, `reports/PeakEvidenceMapper.kt` | `CalculationCoreTest`, synthetic fixture tests, report/peak evidence tests | `ACTIVE_IMPLEMENTATION_PROTECTED`; math is not the current replacement target. | Do not modify unless an isolated math bug is proven after upstream evidence is stable. |
 | 8 Model / Knowledge assistance | `processing/inference`, `processing/model`, `feature/knowledge`, Android LiteRT/GGUF/model manager files | model policy tests, Knowledge Pack tests, E2B acceptance matrix | `ACTIVE_IMPLEMENTATION`; E2B is advisory baseline; Knowledge retrieval is lexical and safe. | TurboVec may replace retrieval ranking only after benchmark gates; model remains semantic only. |
@@ -94,6 +94,7 @@ R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 R8 - Stage 5 Calibration Strategy Parity Candidate
 R9 - Stage 6 Automatic OCR Anchor Candidate
 R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
+R11 - Integrated Runtime Calibration Closure
 ```
 
 R1 is now documented in:
@@ -205,16 +206,28 @@ rows, and recorded missing source crop image files as a promotion blocker. The
 stage remains REVIEW because it is not Android runtime generation and does not
 feed production calibration.
 
+R11 is documented in:
+
+- `docs/R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md`;
+- `benchmark/examples/r11_runtime_calibration_closure_candidate/`;
+- `benchmark/reports/r11_runtime_calibration_closure_candidate/summary.md`.
+
+R11 closed as shadow integrated calibration closure evidence only. It consumed
+R10 bridge rows into selected/rejected calibration strategy fits, generated
+8 records, selected 12 graph calibration fits from 155 accepted bridge anchors,
+and kept the missing crop-file/runtime-generation blocker explicit. It did not
+promote Android runtime calibration.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R11 - Integrated Runtime Calibration Closure
+R12 - Runtime Evidence And Failure Package Closure
 ```
 
-R11 should consume R10 bridge rows inside the calibration ensemble shadow path,
-compare selected/rejected strategies against R8/R9 records, preserve the White
-Tiger legacy fallback, and keep E2B advisory-only. It must not promote runtime
-calibration until Android evidence packages show equivalent graph-level anchor
-provenance.
+R12 should make Android runtime evidence and failure packages inspectable for
+every fixture/mode, including selected/rejected calibration strategies, missing
+artifact reasons, timeout/no-export protection, overlays, manifests, and
+validator output. It must not promote calibration until Android evidence
+packages show equivalent graph-level anchor provenance.

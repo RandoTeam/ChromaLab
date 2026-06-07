@@ -45,10 +45,11 @@ Run schema and example validation:
 python tools/benchmark/validate_benchmark_schemas.py
 ```
 
-Expected result after R10 runtime OCR anchor bridge candidate generation:
+Expected result after R11 integrated runtime calibration closure candidate
+generation:
 
 ```text
-Benchmark schema validation passed: 10 schemas, 173 example documents.
+Benchmark schema validation passed: 11 schemas, 181 example documents.
 ```
 
 DR-B2 adds generated records under
@@ -210,6 +211,22 @@ The R10 summary report, bridge input/output JSON files, overlays, detail JSON
 files, and runtime OCR bridge contact sheet are written to:
 
 `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/`
+
+Build the R11 integrated runtime calibration closure candidate records:
+
+```powershell
+python tools/benchmark/run_r11_runtime_calibration_closure_candidate.py --clean
+python tools/benchmark/validate_benchmark_schemas.py
+```
+
+The R11 runtime calibration closure records are written to:
+
+`benchmark/examples/r11_runtime_calibration_closure_candidate/`
+
+The R11 summary report, overlays, detail JSON files, and runtime calibration
+closure contact sheet are written to:
+
+`benchmark/reports/r11_runtime_calibration_closure_candidate/`
 
 Create graph/layout annotation workflow records with:
 

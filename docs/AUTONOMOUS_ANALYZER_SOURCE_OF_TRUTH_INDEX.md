@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R10_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R11_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
 Scope: inventory only. No runtime behavior, validators, chromatographic math,
 Android validation results, or report gates were changed.
@@ -51,6 +51,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md` | R8 closeout for the Stage 5 calibration strategy parity candidate. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md` | R9 closeout for the Stage 6 automatic OCR anchor candidate. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md` | R10 closeout for the Rust/runtime-shaped OCR anchor bridge candidate. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md` | R11 closeout for integrated runtime calibration closure in shadow/parity mode. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |
@@ -118,6 +119,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R8_STAGE5_CALIBRATION_STRATEGY_PARITY_CLOSEOUT.md` | Stage 5 calibration strategy parity candidate closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R9_STAGE6_AUTOMATIC_OCR_ANCHOR_CANDIDATE_CLOSEOUT.md` | Stage 6 automatic OCR anchor candidate closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R10_RUNTIME_OCR_ANCHOR_BRIDGE_CANDIDATE_CLOSEOUT.md` | Runtime OCR anchor bridge candidate closeout and next-step decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R11_INTEGRATED_RUNTIME_CALIBRATION_CLOSURE_CLOSEOUT.md` | Integrated runtime calibration closure candidate closeout and next-step decision. |
 | `ACTIVE_TEST` | `benchmark/schemas/` | Benchmark record schemas for truth, predictions, metrics, evidence packages, and report claims. |
 | `ACTIVE_TEST` | `benchmark/examples/` | Source-controlled benchmark examples, including Phase 9J-derived records. |
 | `ACTIVE_TEST` | `benchmark/examples/stage123_shadow_parity/` | R2 Stage 1-3 parity example records. |
@@ -129,6 +131,7 @@ current behavior.
 | `ACTIVE_TEST` | `benchmark/examples/r8_stage5_calibration_strategy_parity_candidate/` | R8 Stage 5 calibration strategy parity candidate records. |
 | `ACTIVE_TEST` | `benchmark/examples/r9_stage6_automatic_ocr_anchor_candidate/` | R9 Stage 6 automatic OCR anchor candidate records. |
 | `ACTIVE_TEST` | `benchmark/examples/r10_runtime_ocr_anchor_bridge_candidate/` | R10 runtime OCR anchor bridge candidate records. |
+| `ACTIVE_TEST` | `benchmark/examples/r11_runtime_calibration_closure_candidate/` | R11 runtime calibration closure candidate records. |
 | `ACTIVE_TEST` | `benchmark/annotations/` | Graph/layout/OCR annotation records used by research benchmark phases. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/` | Small tracked benchmark summaries and overlays. Update only with benchmark phase intent. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/stage123_shadow_parity/` | R2 Stage 1-3 parity summary. |
@@ -140,6 +143,7 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r8_stage5_calibration_strategy_parity_candidate/` | R8 Stage 5 calibration strategy summary, overlays, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r9_stage6_automatic_ocr_anchor_candidate/` | R9 Stage 6 automatic OCR anchor summary, overlays, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/` | R10 runtime OCR anchor bridge summary, overlays, bridge inputs/outputs, details, and contact sheet. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r11_runtime_calibration_closure_candidate/` | R11 runtime calibration closure summary, overlays, details, and contact sheet. |
 
 ## Active Code Owner Areas
 
@@ -192,6 +196,7 @@ R7 - Stage 4 Axis, Frame, And Scale Evidence Candidate
 R8 - Stage 5 Calibration Strategy Parity Candidate
 R9 - Stage 6 Automatic OCR Anchor Candidate
 R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
+R11 - Integrated Runtime Calibration Closure
 ```
 
 Decision:
@@ -215,13 +220,15 @@ Decision:
 - R10 created a Rust/runtime-shaped OCR anchor bridge candidate with 8 records,
   4/4 scoreable fixture parity, 155 accepted bridge rows, and 20 rejected
   bridge rows;
-- R1/R2/R3/R4/R5/R6/R7/R8/R9/R10 did not change Android runtime behavior or
+- R11 created shadow calibration closure records from R10 bridge rows with
+  12 selected calibration graph fits and 155 accepted bridge anchors;
+- R1/R2/R3/R4/R5/R6/R7/R8/R9/R10/R11 did not change Android runtime behavior or
   `CalculationEngine`.
 
 Recommended next broad phase:
 
 ```text
-R11 - Integrated Runtime Calibration Closure
+R12 - Runtime Evidence And Failure Package Closure
 ```
 
 ## R0 Agent Swarm Summary

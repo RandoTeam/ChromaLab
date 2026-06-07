@@ -100,7 +100,7 @@ Phase 9 remains blocked until the runtime replacement pipeline can produce
 equivalent OCR anchors with graph-level evidence, forbidden-text rejection,
 residuals, and exportable failure packages.
 
-## Next Phase
+## Follow-Up
 
 ```text
 R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
@@ -111,8 +111,12 @@ scoreable fixture accepted-anchor parity and 155 accepted bridge rows, but it
 remains shadow-only because Android runtime OCR generation and persisted crop
 files are not proven.
 
+R11 has also closed as shadow integrated calibration closure evidence. It fed
+R10 bridge rows into selected/rejected calibration strategy candidates without
+promoting Android runtime calibration.
+
 The next executable phase is:
 
 ```text
-R11 - Integrated Runtime Calibration Closure
+R12 - Runtime Evidence And Failure Package Closure
 ```

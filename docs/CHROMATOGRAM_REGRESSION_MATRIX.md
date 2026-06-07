@@ -196,6 +196,27 @@ Regression rule: R10 output may guide integrated calibration ensemble shadow
 work in R11, but it cannot upgrade Android Phase 9 blocked/review outcomes and
 cannot be used as runtime calibration, trace, peak, or report-gate evidence.
 
+## R11 Integrated Runtime Calibration Closure Benchmark Addendum
+
+R11 adds shadow runtime calibration closure records under
+`benchmark/examples/r11_runtime_calibration_closure_candidate/` and reports
+under `benchmark/reports/r11_runtime_calibration_closure_candidate/`.
+
+R11 regression result:
+
+- 8/8 fixture graph-count pass.
+- 8/8 fixture layout-class pass.
+- 12 selected shadow calibration graph fits.
+- 155 accepted bridge anchors used in calibration strategy candidates.
+- 20 rejected bridge anchors audited.
+- 155 accepted rows still lack persisted source crop image files.
+- R11 records remain REVIEW/MISSING because the fits originate from R10
+  benchmark bridge rows and are not Android runtime calibration evidence.
+
+Regression rule: R11 output may guide Android runtime evidence package closure
+in R12, but it cannot upgrade Android Phase 9 blocked/review outcomes and
+cannot be used as runtime calibration, trace, peak, or report-gate evidence.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

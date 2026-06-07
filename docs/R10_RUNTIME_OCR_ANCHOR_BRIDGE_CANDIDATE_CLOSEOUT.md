@@ -83,12 +83,18 @@ Phase 9 remains blocked until runtime-generated bridge rows can feed the
 calibration ensemble and the Android evidence package can show graph-level
 anchor provenance.
 
-## Next Phase
+## Follow-Up
 
 ```text
 R11 - Integrated Runtime Calibration Closure
 ```
 
-R11 should feed R10 anchor rows into `CalibrationStrategyEnsemble` in a shadow
-path, compare selected/rejected strategies against R8/R9 records, preserve White
-Tiger legacy calibration fallback, and keep E2B advisory-only.
+R11 has now closed in shadow/parity mode. It fed R10 anchor rows into
+calibration strategy candidates, exported selected/rejected strategy evidence,
+and kept Android runtime calibration unpromoted.
+
+The next executable phase is:
+
+```text
+R12 - Runtime Evidence And Failure Package Closure
+```

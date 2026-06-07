@@ -482,6 +482,45 @@ Interpretation:
 - It cannot upgrade Android Phase 9 blocked/review outcomes until R11 connects
   the bridge rows to calibration ensemble parity and Android evidence packages.
 
+## R11 Integrated Runtime Calibration Closure Candidate
+
+R11 adds shadow calibration closure records that consume R10 runtime-shaped OCR
+anchor bridge rows and fit selected/rejected calibration strategies.
+
+It writes:
+
+- `benchmark/examples/r11_runtime_calibration_closure_candidate/`
+- `benchmark/reports/r11_runtime_calibration_closure_candidate/summary.json`
+- `benchmark/reports/r11_runtime_calibration_closure_candidate/summary.md`
+- `benchmark/reports/r11_runtime_calibration_closure_candidate/contact_sheet_runtime_calibration_closure.png`
+- `benchmark/reports/r11_runtime_calibration_closure_candidate/details/`
+
+R11 result:
+
+| Item | Count / status |
+|---|---:|
+| Runtime calibration closure records | 8 |
+| Fixtures represented | 8 |
+| Graph-count pass | 8/8 |
+| Layout-class pass | 8/8 |
+| Selected calibration graphs | 12 |
+| Accepted bridge anchors used | 155 |
+| Rejected bridge anchors audited | 20 |
+| Missing source crop image files | 155 |
+| Stage evidence status | REVIEW/MISSING |
+| Schemas validated | 11 |
+| Example documents validated | 181 |
+
+Interpretation:
+
+- R11 is shadow-only calibration closure evidence.
+- It shows R10 safe bridge rows can create review-grade calibration strategy
+  fits for the scoreable P0 fixtures.
+- It does not prove Android runtime OCR anchor generation or production
+  calibration.
+- It cannot upgrade Android Phase 9 blocked/review outcomes until Android
+  RuntimeEvidencePackage rows and persisted crop files show equivalent evidence.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

@@ -180,6 +180,23 @@ rejection. It remains shadow-only because the rows still originate from R9
 benchmark evidence and source crop image files are not persisted. It is not
 Android runtime calibration and is not used by runtime analysis.
 
+R11 adds an integrated runtime calibration closure candidate:
+
+```text
+python tools/benchmark/run_r11_runtime_calibration_closure_candidate.py --clean
+```
+
+It writes records under
+`benchmark/examples/r11_runtime_calibration_closure_candidate/` and selected/
+rejected calibration strategy evidence, overlays, detail JSON files, and a
+contact sheet under
+`benchmark/reports/r11_runtime_calibration_closure_candidate/`. R11 consumes
+R10 bridge rows in a shadow calibration strategy path and selects 12
+review-grade graph calibration fits from 155 accepted bridge anchors. It
+remains shadow-only because the rows still originate from benchmark evidence
+and source crop image files are not persisted. It is not Android runtime
+calibration and is not used by runtime analysis.
+
 VLM-assisted stages:
 
 - graph region detection;
