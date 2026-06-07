@@ -249,7 +249,28 @@ geometry and parsed numeric values. Title, ion, m/z, SIM/channel, scan, method
 text, VLM numeric authority, rejected/semantic-only geometry sources, and
 missing crop provenance are validator failures. R13 still cannot upgrade
 Android blocked/review outcomes and cannot be used as runtime calibration,
-trace, peak, or report-gate evidence until R14/R19 prove promotion safety.
+trace, peak, or report-gate evidence until later Android validation proves
+promotion safety.
+
+## R14 Runtime Calibration Promotion Candidate Addendum
+
+R14 adds `ANDROID_RUNTIME_OCR_ANCHOR` as a named
+`CalibrationStrategyEnsemble` strategy source. Runtime OCR-anchor rows now have
+an explicit coordinate frame:
+
+- `PLOT_RELATIVE` rows may be consumed directly;
+- `IMAGE_ABSOLUTE` rows must be converted to plot-relative coordinates through
+  the selected plotArea;
+- missing coordinate frame is invalid evidence.
+
+Regression rule: the Android-runtime-anchor strategy may only consume safe
+accepted rows. Rows with forbidden text, VLM numeric authority, missing numeric
+value, missing pixel coordinate, rejected/semantic geometry, unknown coordinate
+frame, or outside-plot converted coordinates must be rejected before fitting.
+An invalid runtime-anchor strategy cannot override a usable legacy strategy.
+E2B cannot alter selected strategy, calibration coefficients, metrics, or
+report gates. R14 still cannot accept Phase 9 until Android fixture reruns
+prove no regression and no critical blocker remains.
 
 ## Phase 0 Status
 

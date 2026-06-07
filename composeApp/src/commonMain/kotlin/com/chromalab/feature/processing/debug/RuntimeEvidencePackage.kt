@@ -198,6 +198,7 @@ data class RuntimeEvidenceGraphPackage(
     val ocrVlmCropResults: List<VlmOcrCropResult> = emptyList(),
     val ocrVlmDisagreements: List<OcrVlmDisagreement> = emptyList(),
     val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
+    val calibrationSummary: RuntimeCalibrationFailureSummary = RuntimeCalibrationFailureSummary(),
     val overlayJudgeResults: List<OverlayJudgeResult> = emptyList(),
     val knowledgeGroundedVlmOutputs: List<KnowledgeGroundedVlmOutput> = emptyList(),
     val peakEvidenceTable: List<PeakEvidence> = emptyList(),
@@ -373,6 +374,7 @@ object RuntimeEvidencePackageBuilder {
                 stageJudgeResults = stageJudgeResults,
                 ocrVlmCropResults = ocrVlmCropResults,
                 runtimeOcrAnchorRows = runtimeOcrAnchorRows,
+                calibrationSummary = trace.toRuntimeCalibrationSummary(),
                 overlayJudgeResults = overlayJudgeResults,
                 peakEvidenceTable = recovery.peakEvidenceTable,
                 peakLabelEvidence = recovery.labelEvidence,
@@ -401,6 +403,43 @@ object RuntimeEvidencePackageBuilder {
                     recovery.testOnlyRecoveredPeaks.isEmpty(),
             ),
             modelRuntimeProfiles = modelRuntimeProfiles,
+        )
+    }
+
+    private fun com.chromalab.feature.processing.geometry.GeometryTrace?.toRuntimeCalibrationSummary():
+        RuntimeCalibrationFailureSummary {
+        val arbitration = this?.calibrationArbitration
+        val xFit = this?.xCalibrationFit
+        val yFit = this?.yCalibrationFit
+        return RuntimeCalibrationFailureSummary(
+            xStatus = xFit?.status,
+            yStatus = yFit?.status,
+            selectedXStrategy = arbitration?.selectedXStrategy,
+            selectedYStrategy = arbitration?.selectedYStrategy,
+            strategyCount = arbitration?.strategyResults.orEmpty().size,
+            rejectedStrategyIds = arbitration?.strategyResults.orEmpty()
+                .map { it.strategyId }
+                .filterNot {
+                    it == arbitration?.selectedXStrategy ||
+                        it == arbitration?.selectedYStrategy
+                }
+                .distinct(),
+            xAcceptedAnchorCount = xFit?.acceptedAnchors.orEmpty().size,
+            yAcceptedAnchorCount = yFit?.acceptedAnchors.orEmpty().size,
+            xRejectedAnchorCount = xFit?.rejectedAnchors.orEmpty().size,
+            yRejectedAnchorCount = yFit?.rejectedAnchors.orEmpty().size,
+            xMaxResidualPx = xFit?.maxResidualPx,
+            yMaxResidualPx = yFit?.maxResidualPx,
+            xRmsePx = xFit?.rmsePx,
+            yRmsePx = yFit?.rmsePx,
+            xWarnings = xFit?.warnings.orEmpty(),
+            yWarnings = yFit?.warnings.orEmpty(),
+            missingReason = when {
+                this == null -> "geometry trace was missing when graph package was built."
+                arbitration == null || arbitration.strategyResults.isEmpty() ->
+                    "calibration strategy arbitration was unavailable in graph package."
+                else -> null
+            },
         )
     }
 

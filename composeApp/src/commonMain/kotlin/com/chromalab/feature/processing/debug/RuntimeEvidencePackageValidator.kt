@@ -166,6 +166,7 @@ data class RuntimeEvidenceOcrAnchorBridgeValidationRow(
     val rawText: String,
     val parsedNumericValue: Double? = null,
     val pixelCoordinate: Float? = null,
+    val coordinateFrame: String? = null,
     val geometrySource: String? = null,
     val numericSource: String,
     val status: String,
@@ -188,6 +189,9 @@ data class RuntimeEvidenceGraphValidationSummary(
     val productionReportablePeaks: Int? = null,
     val reviewGradePeaks: Int? = null,
     val calibrationStatuses: List<String> = emptyList(),
+    val selectedXStrategy: String? = null,
+    val selectedYStrategy: String? = null,
+    val calibrationStrategyCount: Int = 0,
     val runtimeOcrAnchorRows: List<RuntimeEvidenceOcrAnchorBridgeValidationRow> = emptyList(),
     val recoveryCandidates: List<RuntimeEvidenceRecoveryCandidateRow> = emptyList(),
 )
@@ -442,18 +446,18 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Runtime OCR Anchor Bridge")
         appendLine()
-        appendLine("| Graph | Row | Axis | Text | Value | Pixel | Geometry | Numeric source | Status | Crop | Rejection |")
-        appendLine("| --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |")
+        appendLine("| Graph | Row | Axis | Text | Value | Pixel | Frame | Geometry | Numeric source | Status | Crop | Rejection |")
+        appendLine("| --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- |")
         summary.graphSummaries.flatMap { it.runtimeOcrAnchorRows }.forEach { row ->
             appendLine(
                 "| ${row.graphIndex} | `${row.runtimeRowId}` | ${row.axis} | ${row.rawText} | " +
                     "${row.parsedNumericValue.formatOrDash()} | ${row.pixelCoordinate ?: "-"} | " +
-                    "${row.geometrySource ?: "-"} | ${row.numericSource} | ${row.status} | " +
+                    "${row.coordinateFrame ?: "-"} | ${row.geometrySource ?: "-"} | ${row.numericSource} | ${row.status} | " +
                     "${row.sourceCropPath ?: row.cropMissingReason ?: "-"} | ${row.rejectionReason ?: "-"} |",
             )
         }
         if (summary.graphSummaries.all { it.runtimeOcrAnchorRows.isEmpty() }) {
-            appendLine("| - | - | - | - | - | - | - | - | - | - | - |")
+            appendLine("| - | - | - | - | - | - | - | - | - | - | - | - |")
         }
         appendLine()
         appendLine("## Recovery Candidates")
@@ -521,14 +525,15 @@ object RuntimeEvidencePackageValidator {
         appendLine()
         appendLine("## Graph Counts")
         appendLine()
-        appendLine("| Graph | Raw | Validated | Runtime recovered | Test-only recovered | Rejected recovery | Production reportable | Review-grade | Calibration |")
-        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+        appendLine("| Graph | Raw | Validated | Runtime recovered | Test-only recovered | Rejected recovery | Production reportable | Review-grade | Calibration | Strategy |")
+        appendLine("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
         summary.graphSummaries.forEach { graph ->
             appendLine(
                 "| ${graph.graphIndex} | ${graph.rawDetectedPeaks ?: "-"} | ${graph.validatedPeaks ?: "-"} | " +
                     "${graph.runtimeRecoveredPeaks} | ${graph.testOnlyRecoveredPeaks} | " +
                     "${graph.rejectedRecoveredCandidates} | ${graph.productionReportablePeaks ?: "-"} | " +
-                    "${graph.reviewGradePeaks ?: "-"} | ${graph.calibrationStatuses.joinToString(", ").ifBlank { "-" }} |",
+                    "${graph.reviewGradePeaks ?: "-"} | ${graph.calibrationStatuses.joinToString(", ").ifBlank { "-" }} | " +
+                    "X:${graph.selectedXStrategy ?: "-"}<br>Y:${graph.selectedYStrategy ?: "-"} (${graph.calibrationStrategyCount}) |",
             )
         }
     }
@@ -973,6 +978,9 @@ object RuntimeEvidencePackageValidator {
                 graph?.axisCalibration?.xCalibrationFit?.status?.name,
                 graph?.axisCalibration?.yCalibrationFit?.status?.name,
             ),
+            selectedXStrategy = graphPackage.calibrationSummary.selectedXStrategy?.name,
+            selectedYStrategy = graphPackage.calibrationSummary.selectedYStrategy?.name,
+            calibrationStrategyCount = graphPackage.calibrationSummary.strategyCount,
             runtimeOcrAnchorRows = runtimeOcrAnchorRows,
             recoveryCandidates = recoveryRows,
         )
@@ -1012,6 +1020,14 @@ object RuntimeEvidencePackageValidator {
                 issues.block(
                     "runtime_ocr_anchor.raw_text_missing",
                     "Runtime OCR anchor bridge row raw text is missing.",
+                    graphIndex,
+                    row.runtimeRowId,
+                )
+            }
+            if (row.coordinateFrame == null) {
+                issues.block(
+                    "runtime_ocr_anchor.coordinate_frame_missing",
+                    "Runtime OCR anchor bridge row must state whether pixelCoordinate is plot-relative or image-absolute.",
                     graphIndex,
                     row.runtimeRowId,
                 )
@@ -1110,6 +1126,7 @@ object RuntimeEvidencePackageValidator {
                 rawText = row.rawText,
                 parsedNumericValue = row.parsedNumericValue,
                 pixelCoordinate = row.pixelCoordinate,
+                coordinateFrame = row.coordinateFrame?.name,
                 geometrySource = row.geometrySource?.name,
                 numericSource = row.numericSource,
                 status = row.status.name,

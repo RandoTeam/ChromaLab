@@ -245,5 +245,28 @@ Dataset implication:
   an explicit missing-crop reason;
 - E2B/VLM text can be advisory but cannot become numeric calibration authority.
 
-R13 does not accept Phase 9. It prepares the dataset for R14 runtime calibration
+R13 does not accept Phase 9. It prepares the dataset for runtime calibration
 promotion candidate work.
+
+## R14 Runtime Calibration Promotion Candidate Dataset Status
+
+R14 adds Android/runtime OCR-anchor bridge rows as a named calibration strategy
+candidate. It does not change fixture expectations, graph counts, calibration
+math, trace extraction, peak metrics, report gates, or `CalculationEngine`.
+
+Dataset implication:
+
+- future Android reruns should expose whether runtime OCR-anchor rows were
+  consumed, rejected, or insufficient for calibration;
+- every consumed row must carry an explicit coordinate frame;
+- `IMAGE_ABSOLUTE` rows must be converted through the selected plotArea before
+  fitting;
+- forbidden title, ion, m/z, SIM/channel, scan, method text, missing pixel
+  geometry, VLM numeric authority, and rejected/semantic geometry rows must be
+  rejected before fitting;
+- selected and rejected calibration strategies should be visible per graph in
+  RuntimeEvidencePackage graph packages.
+
+R14 does not accept Phase 9. `bench_01_mz71_screenshot_page` and
+`bench_05_tic_plus_ions` remain primary blocker fixtures until Android reruns
+prove usable runtime anchor propagation and no deterministic/E2B regression.

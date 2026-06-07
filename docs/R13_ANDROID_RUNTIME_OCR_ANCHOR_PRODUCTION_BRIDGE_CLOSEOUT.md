@@ -85,13 +85,9 @@ does not close Phase 9 and does not promote runtime calibration. Existing
 runtime failures remain honest until R14 connects Android anchor rows into the
 calibration ensemble and Android validation reruns prove no regression.
 
-## Next Phase
+## Follow-Up
 
-```text
-R14 - Runtime Calibration Promotion Candidate
-```
-
-R14 should feed Android runtime anchor rows into `CalibrationStrategyEnsemble`
-as a named strategy source, preserve legacy White Tiger fallback, export
-selected/rejected strategy evidence per graph, and prove that E2B cannot alter
-strategy selection or numeric metrics.
+R14 has now added Android runtime OCR-anchor rows as a named calibration
+strategy candidate and exported selected/rejected strategy evidence. It remains
+a promotion candidate only; Android fixture reruns are still required before
+Phase 9 can be accepted.

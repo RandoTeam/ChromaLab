@@ -11,6 +11,7 @@ class CalibrationStrategyEnsemble(
         axisGeometry: AxisGeometry?,
         tickOcrResult: TickOcrResult?,
         axisScaleResolution: AxisScaleResolutionResult?,
+        runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
     ): CalibrationArbitrationResult {
         if (plotRegion == null) {
             val xInvalid = calibrationFitter.fit(GeometryAxis.X, emptyList())
@@ -25,6 +26,7 @@ class CalibrationStrategyEnsemble(
         val results = listOf(
             legacyTickLocalization(plotRegion, axisGeometry, tickOcrResult),
             axisScaleResolver(axisScaleResolution),
+            androidRuntimeOcrAnchor(plotRegion, axisGeometry, runtimeOcrAnchorRows),
             ocrLabelBoxDirectFit(plotRegion, axisGeometry, axisScaleResolution),
             gridFrameProjection(axisGeometry),
             regularSequenceFit(plotRegion, axisGeometry, axisScaleResolution),
@@ -138,6 +140,78 @@ class CalibrationStrategyEnsemble(
             allowedEvidence = setOf(AxisScaleEvidenceType.OCR_LABEL_BOX, AxisScaleEvidenceType.LABEL_PROJECTION),
         )
         return strategyResult(CalibrationStrategyId.OCR_LABEL_BOX_DIRECT_FIT, xFit, yFit)
+    }
+
+    private fun androidRuntimeOcrAnchor(
+        plotRegion: GraphRegion,
+        axisGeometry: AxisGeometry?,
+        runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow>,
+    ): CalibrationStrategyResult {
+        val xFit = runtimeOcrAnchorFit(GeometryAxis.X, plotRegion, axisGeometry, runtimeOcrAnchorRows)
+        val yFit = runtimeOcrAnchorFit(GeometryAxis.Y, plotRegion, axisGeometry, runtimeOcrAnchorRows)
+        return strategyResult(
+            strategyId = CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR,
+            xFit = xFit,
+            yFit = yFit,
+            warnings = buildList {
+                if (runtimeOcrAnchorRows.isEmpty()) {
+                    add("calibration_ensemble.android_runtime_ocr_anchor_rows_missing")
+                }
+            },
+        )
+    }
+
+    private fun runtimeOcrAnchorFit(
+        axis: GeometryAxis,
+        plotRegion: GraphRegion,
+        axisGeometry: AxisGeometry?,
+        rows: List<RuntimeOcrAnchorBridgeRow>,
+    ): AxisCalibrationFit {
+        val rejectedReasons = mutableListOf<String>()
+        val anchors = rows
+            .filter { it.axis == axis }
+            .mapNotNull { row ->
+                val anchor = row.toRuntimeCalibrationAnchor(axis, plotRegion, rejectedReasons)
+                anchor
+            }
+            .distinctBy { "${it.tickPixelPosition}:${it.value}:${it.rawText}" }
+
+        val rawFit = calibrationFitter.fit(
+            axis = axis,
+            anchors = anchors,
+            axisLengthPx = when (axis) {
+                GeometryAxis.X -> plotRegion.width.toFloat()
+                GeometryAxis.Y -> plotRegion.height.toFloat()
+            },
+            geometryCleanliness = axisGeometry?.axisConfidence ?: 0f,
+        )
+        val hasGeometrySupport = anchors.any {
+            it.evidenceType == AxisScaleEvidenceType.EXPLICIT_TICK_MARK ||
+                it.evidenceType == AxisScaleEvidenceType.LABEL_PROJECTION ||
+                it.evidenceType == AxisScaleEvidenceType.GRID_LINE
+        }
+        val strongFit = rawFit.status == CalibrationFitStatus.VALID &&
+            anchors.size >= 3 &&
+            anchors.runtimeAnchorsMonotonicByPixelAndValue() &&
+            hasGeometrySupport &&
+            rawFit.warnings.none { it.contains("residual", ignoreCase = true) }
+        val runtimeWarnings = buildList {
+            if (anchors.isEmpty()) add("calibration_ensemble.android_runtime_ocr_anchor_no_usable_rows")
+            if (anchors.size in 1..1) add("calibration_ensemble.android_runtime_ocr_anchor_insufficient_anchors")
+            if (anchors.size == 2) add("calibration_ensemble.android_runtime_ocr_anchor_two_anchor_review")
+            if (!anchors.runtimeAnchorsMonotonicByPixelAndValue()) add("calibration_ensemble.android_runtime_ocr_anchor_non_monotonic")
+            if (!hasGeometrySupport && anchors.isNotEmpty()) add("calibration_ensemble.android_runtime_ocr_anchor_geometry_support_weak")
+            addAll(rejectedReasons.distinct())
+        }
+        return when {
+            rawFit.status == CalibrationFitStatus.VALID && !strongFit ->
+                rawFit.copy(
+                    status = CalibrationFitStatus.REVIEW,
+                    warnings = rawFit.warnings + runtimeWarnings +
+                        "calibration_ensemble.android_runtime_ocr_anchor_review_only",
+                )
+            else -> rawFit.copy(warnings = rawFit.warnings + runtimeWarnings)
+        }
     }
 
     private fun regularSequenceFit(
@@ -366,6 +440,71 @@ class CalibrationStrategyEnsemble(
             if (status == CalibrationFitStatus.INVALID && isEmpty()) add(CalibrationRejectionReason.STRATEGY_NOT_APPLICABLE)
         }
 
+    private fun RuntimeOcrAnchorBridgeRow.toRuntimeCalibrationAnchor(
+        axis: GeometryAxis,
+        plotRegion: GraphRegion,
+        rejectedReasons: MutableList<String>,
+    ): CalibrationAnchorEvidence? {
+        fun reject(reason: String): Nothing? {
+            rejectedReasons += reason
+            return null
+        }
+        if (status != TickOcrItemStatus.ACCEPTED) {
+            return reject("calibration_ensemble.android_runtime_ocr_anchor_row_not_accepted")
+        }
+        val value = parsedNumericValue
+            ?: return reject("calibration_ensemble.android_runtime_ocr_anchor_numeric_value_missing")
+        val pixel = pixelCoordinate
+            ?: return reject("calibration_ensemble.android_runtime_ocr_anchor_pixel_missing")
+        if (rawText.isForbiddenScaleLabel()) {
+            return reject("calibration_ensemble.android_runtime_ocr_anchor_forbidden_text")
+        }
+        if (numericSource.contains("VLM", ignoreCase = true)) {
+            return reject("calibration_ensemble.android_runtime_ocr_anchor_vlm_numeric_source")
+        }
+        val source = geometrySource
+            ?: return reject("calibration_ensemble.android_runtime_ocr_anchor_geometry_source_missing")
+        if (source == AxisScaleEvidenceType.OCR_VALUE_ONLY_REJECTED ||
+            source == AxisScaleEvidenceType.SEMANTIC_TEXT_REJECTED
+        ) {
+            return reject("calibration_ensemble.android_runtime_ocr_anchor_rejected_geometry_source")
+        }
+        val relativePixel = when (coordinateFrame) {
+            RuntimeOcrAnchorCoordinateFrame.PLOT_RELATIVE -> pixel
+            RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE -> when (axis) {
+                GeometryAxis.X -> pixel - plotRegion.x
+                GeometryAxis.Y -> pixel - plotRegion.y
+            }
+            null -> return reject("calibration_ensemble.android_runtime_ocr_anchor_coordinate_frame_missing")
+        }
+        val axisLength = when (axis) {
+            GeometryAxis.X -> plotRegion.width.toFloat()
+            GeometryAxis.Y -> plotRegion.height.toFloat()
+        }
+        if (relativePixel < 0f || relativePixel > axisLength) {
+            return reject("calibration_ensemble.android_runtime_ocr_anchor_pixel_outside_plot")
+        }
+        return CalibrationAnchorEvidence(
+            axis = axis,
+            tickPixelPosition = relativePixel,
+            value = value,
+            rawText = rawText,
+            localCropPath = sourceCropPath,
+            confidence = confidence,
+            evidenceType = source,
+            evidenceSource = CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR.name.lowercase(),
+            projectionSource = projectionSource ?: coordinateFrame.name.lowercase(),
+        )
+    }
+
+    private fun List<CalibrationAnchorEvidence>.runtimeAnchorsMonotonicByPixelAndValue(): Boolean {
+        if (size < 3) return true
+        val values = sortedBy { it.tickPixelPosition }.map { it.value }
+        val increasing = values.zipWithNext().all { (a, b) -> b > a }
+        val decreasing = values.zipWithNext().all { (a, b) -> b < a }
+        return increasing || decreasing
+    }
+
     private fun invalidFit(axis: GeometryAxis, warning: String): AxisCalibrationFit =
         AxisCalibrationFit(
             axis = axis,
@@ -415,6 +554,7 @@ class CalibrationStrategyEnsemble(
         get() = when (this) {
             CalibrationStrategyId.LEGACY_TICK_LOCALIZATION -> 90f
             CalibrationStrategyId.AXIS_SCALE_RESOLVER -> 78f
+            CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR -> 72f
             CalibrationStrategyId.OCR_LABEL_BOX_DIRECT_FIT -> 62f
             CalibrationStrategyId.REGULAR_SEQUENCE_FIT -> 56f
             CalibrationStrategyId.GRID_FRAME_PROJECTION -> 48f

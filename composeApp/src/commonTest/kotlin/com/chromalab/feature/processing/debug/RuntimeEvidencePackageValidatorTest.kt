@@ -17,6 +17,7 @@ import com.chromalab.feature.processing.geometry.GeometryTrace
 import com.chromalab.feature.processing.geometry.GraphPanelBounds
 import com.chromalab.feature.processing.geometry.GeometryCandidateSource
 import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeRow
+import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorCoordinateFrame
 import com.chromalab.feature.processing.geometry.TickOcrItemStatus
 import com.chromalab.feature.processing.graph.GraphRegion
 import com.chromalab.feature.processing.multimodal.AutonomousStageJudgeResult
@@ -148,6 +149,25 @@ class RuntimeEvidencePackageValidatorTest {
 
         assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
         assertTrue(result.blockingIssues.any { it.code == "runtime_ocr_anchor.forbidden_text_accepted" })
+    }
+
+    @Test
+    fun validatorFailsRuntimeOcrAnchorWithoutCoordinateFrame() {
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
+        val graph = evidencePackage.graphs.single()
+        val brokenRow = graph.runtimeOcrAnchorRows.first().copy(
+            coordinateFrame = null,
+        )
+
+        val result = RuntimeEvidencePackageValidator.validate(
+            evidencePackage.copy(
+                graphs = listOf(graph.copy(runtimeOcrAnchorRows = listOf(brokenRow))),
+            ),
+            existingPaths::contains,
+        )
+
+        assertEquals(RuntimeEvidenceValidationVerdict.FAIL, result.verdict)
+        assertTrue(result.blockingIssues.any { it.code == "runtime_ocr_anchor.coordinate_frame_missing" })
     }
 
     @Test
@@ -1090,6 +1110,7 @@ class RuntimeEvidencePackageValidatorTest {
                 rawText = "10.00",
                 parsedNumericValue = 10.0,
                 pixelCoordinate = 20f,
+                coordinateFrame = RuntimeOcrAnchorCoordinateFrame.PLOT_RELATIVE,
                 sourceCropRef = "crop:crop.png",
                 sourceCropPath = "crop.png",
                 cropFileAvailable = true,
@@ -1106,6 +1127,7 @@ class RuntimeEvidencePackageValidatorTest {
                 rawText = "71.00",
                 parsedNumericValue = 71.0,
                 pixelCoordinate = null,
+                coordinateFrame = RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE,
                 sourceCropRef = "graph:1:Y:no_pixel",
                 sourceCropPath = null,
                 cropFileAvailable = false,

@@ -73,6 +73,7 @@ object RuntimeOcrAnchorBridgeBuilder {
             rawText = rawText ?: numericValue?.toString() ?: "unparsed-axis-label",
             parsedNumericValue = numericValue,
             pixelCoordinate = pixelCoordinate,
+            coordinateFrame = RuntimeOcrAnchorCoordinateFrame.PLOT_RELATIVE,
             sourceCropRef = cropPath?.let { "crop:$it" }
                 ?: "graph:$graphIndex:${axis.name}:${pixelCoordinate}",
             sourceCropPath = cropPath,
@@ -119,6 +120,7 @@ object RuntimeOcrAnchorBridgeBuilder {
             rawText = rawText,
             parsedNumericValue = parsedNumericValue,
             pixelCoordinate = tickPixelPosition,
+            coordinateFrame = RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE,
             sourceCropRef = localCropPath?.let { "crop:$it" }
                 ?: "graph:$graphIndex:${axis.name}:${tickPixelPosition ?: "no_pixel"}",
             sourceCropPath = localCropPath,
@@ -142,6 +144,7 @@ object RuntimeOcrAnchorBridgeBuilder {
             rawText.trim(),
             parsedNumericValue?.toString().orEmpty(),
             pixelCoordinate?.toString().orEmpty(),
+            coordinateFrame?.name.orEmpty(),
             geometrySource?.name.orEmpty(),
             status.name,
             rejectionReason.orEmpty(),

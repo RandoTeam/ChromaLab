@@ -65,6 +65,12 @@ enum class TickOcrItemStatus {
 }
 
 @Serializable
+enum class RuntimeOcrAnchorCoordinateFrame {
+    PLOT_RELATIVE,
+    IMAGE_ABSOLUTE,
+}
+
+@Serializable
 enum class CalibrationFitStatus {
     VALID,
     REVIEW,
@@ -121,6 +127,7 @@ enum class AxisScaleFailureSubreason {
 enum class CalibrationStrategyId {
     LEGACY_TICK_LOCALIZATION,
     AXIS_SCALE_RESOLVER,
+    ANDROID_RUNTIME_OCR_ANCHOR,
     OCR_LABEL_BOX_DIRECT_FIT,
     GRID_FRAME_PROJECTION,
     REGULAR_SEQUENCE_FIT,
@@ -383,6 +390,7 @@ data class RuntimeOcrAnchorBridgeRow(
     val rawText: String,
     val parsedNumericValue: Double? = null,
     val pixelCoordinate: Float? = null,
+    val coordinateFrame: RuntimeOcrAnchorCoordinateFrame? = null,
     val sourceCropRef: String? = null,
     val sourceCropPath: String? = null,
     val cropFileAvailable: Boolean = false,

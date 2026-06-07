@@ -580,9 +580,39 @@ Product interpretation:
 
 - R13 closes the runtime evidence contract gap for OCR anchors.
 - R13 does not make `bench_01` or `bench_05` release-ready.
-- The next runtime step is R14, where Android anchor rows may be fed into
-  `CalibrationStrategyEnsemble` as a named strategy source under strict
-  no-regression gates.
+- R13 prepared the runtime evidence needed for R14 calibration strategy
+  candidate work.
+
+## R14 Runtime Calibration Promotion Candidate
+
+R14 feeds Android/runtime OCR-anchor bridge rows into
+`CalibrationStrategyEnsemble` as a named strategy source:
+
+```text
+ANDROID_RUNTIME_OCR_ANCHOR
+```
+
+R14 adds coordinate-frame safety to runtime OCR-anchor rows:
+
+- AxisScaleResolver-derived rows are plot-relative;
+- fallback tick-OCR rows are image-absolute and must be converted through the
+  selected plotArea;
+- rows without coordinate frame are invalid.
+
+The strategy consumes only safe accepted rows. It rejects missing numeric
+values, missing deterministic pixel coordinates, forbidden title/ion/m/z/SIM
+text, VLM/E2B numeric authority, rejected or semantic-only geometry sources,
+and rows outside the selected plot frame after coordinate conversion.
+
+Product interpretation:
+
+- R14 improves calibration evidence plumbing and arbitration visibility.
+- R14 does not change `CalculationEngine`, graph detection, trace extraction,
+  peak metrics, report gates, graph-count metadata, or E2B authority.
+- R14 does not accept Phase 9; Android fixture reruns still need to prove that
+  `bench_01` and `bench_05` improve without regressing White Tiger, `bench_03`,
+  `bench_07`, deterministic/E2B parity, or evidence completeness.
+- The next runtime step is R15 graph layout and multi-panel runtime closure.
 
 ## Benchmark Scoring Result
 

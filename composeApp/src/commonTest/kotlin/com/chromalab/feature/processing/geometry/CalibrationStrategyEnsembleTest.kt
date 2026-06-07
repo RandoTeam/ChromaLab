@@ -155,6 +155,99 @@ class CalibrationStrategyEnsembleTest {
         assertNotEquals(CalibrationStrategyId.FRAME_ENDPOINT_REVIEW_FALLBACK, result.selectedYStrategy)
     }
 
+    @Test
+    fun selectsAndroidRuntimeAnchorStrategyWhenSafeRowsAreOnlyUsableCalibrationEvidence() {
+        val result = ensemble.arbitrate(
+            plotRegion = plot,
+            axisGeometry = axes,
+            tickOcrResult = TickOcrResult(timestamp = 1L),
+            axisScaleResolution = AxisScaleResolutionResult(status = CalibrationFitStatus.INVALID),
+            runtimeOcrAnchorRows = runtimeRows(RuntimeOcrAnchorCoordinateFrame.PLOT_RELATIVE),
+        )
+
+        assertEquals(CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR, result.selectedXStrategy)
+        assertEquals(CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR, result.selectedYStrategy)
+        assertEquals(CalibrationFitStatus.VALID, result.xFit.status)
+        assertEquals(CalibrationFitStatus.VALID, result.yFit.status)
+    }
+
+    @Test
+    fun convertsAbsoluteRuntimeAnchorRowsToPlotRelativeCalibrationAnchors() {
+        val result = ensemble.arbitrate(
+            plotRegion = plot,
+            axisGeometry = axes,
+            tickOcrResult = TickOcrResult(timestamp = 1L),
+            axisScaleResolution = AxisScaleResolutionResult(status = CalibrationFitStatus.INVALID),
+            runtimeOcrAnchorRows = runtimeRows(RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE),
+        )
+
+        val androidResult = result.strategyResults.single {
+            it.strategyId == CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR
+        }
+        assertEquals(listOf(0f, 200f, 400f), androidResult.xCandidate.fit.acceptedAnchors.map { it.tickPixelPosition })
+        assertEquals(listOf(0f, 150f, 300f), androidResult.yCandidate.fit.acceptedAnchors.map { it.tickPixelPosition })
+        assertEquals(CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR, result.selectedXStrategy)
+    }
+
+    @Test
+    fun rejectsUnsafeRuntimeAnchorRowsBeforeCalibrationFit() {
+        val unsafeRows = listOf(
+            runtimeRow(GeometryAxis.X, 0f, 0.0, rawText = "m/z 71"),
+            runtimeRow(GeometryAxis.X, 200f, 10.0, numericSource = "VLM_TEXT_ADVISORY_REJECTED"),
+            runtimeRow(GeometryAxis.X, null, 20.0),
+            runtimeRow(GeometryAxis.X, 400f, 30.0, geometrySource = AxisScaleEvidenceType.OCR_VALUE_ONLY_REJECTED),
+            runtimeRow(GeometryAxis.Y, 0f, 300.0).copy(coordinateFrame = null),
+        )
+
+        val result = ensemble.arbitrate(
+            plotRegion = plot,
+            axisGeometry = axes,
+            tickOcrResult = TickOcrResult(timestamp = 1L),
+            axisScaleResolution = AxisScaleResolutionResult(status = CalibrationFitStatus.INVALID),
+            runtimeOcrAnchorRows = unsafeRows,
+        )
+        val androidResult = result.strategyResults.single {
+            it.strategyId == CalibrationStrategyId.ANDROID_RUNTIME_OCR_ANCHOR
+        }
+
+        assertEquals(CalibrationFitStatus.INVALID, androidResult.xCandidate.fit.status)
+        assertTrue(androidResult.xCandidate.fit.warnings.any { it.contains("forbidden_text") })
+        assertTrue(androidResult.xCandidate.fit.warnings.any { it.contains("vlm_numeric_source") })
+        assertTrue(androidResult.xCandidate.fit.warnings.any { it.contains("pixel_missing") })
+        assertTrue(androidResult.xCandidate.fit.warnings.any { it.contains("rejected_geometry_source") })
+        assertTrue(androidResult.yCandidate.fit.warnings.any { it.contains("coordinate_frame_missing") })
+    }
+
+    @Test
+    fun keepsLegacyFallbackWhenRuntimeAnchorStrategyIsInvalid() {
+        val legacy = TickOcrResult(
+            items = listOf(
+                tick(GeometryAxis.X, 140f, 0.0),
+                tick(GeometryAxis.X, 260f, 10.0),
+                tick(GeometryAxis.X, 380f, 20.0),
+                tick(GeometryAxis.Y, 230f, 300.0),
+                tick(GeometryAxis.Y, 350f, 150.0),
+                tick(GeometryAxis.Y, 470f, 0.0),
+            ),
+            timestamp = 1L,
+        )
+
+        val result = ensemble.arbitrate(
+            plotRegion = plot,
+            axisGeometry = axes,
+            tickOcrResult = legacy,
+            axisScaleResolution = AxisScaleResolutionResult(status = CalibrationFitStatus.INVALID),
+            runtimeOcrAnchorRows = listOf(
+                runtimeRow(GeometryAxis.X, 0f, 0.0, rawText = "Ion 71"),
+                runtimeRow(GeometryAxis.Y, null, 300.0),
+            ),
+        )
+
+        assertEquals(CalibrationStrategyId.LEGACY_TICK_LOCALIZATION, result.selectedXStrategy)
+        assertEquals(CalibrationStrategyId.LEGACY_TICK_LOCALIZATION, result.selectedYStrategy)
+        assertTrue(result.selectionReasons.contains(CalibrationSelectionReason.LEGACY_REGRESSION_SHIELD))
+    }
+
     private fun tick(
         axis: GeometryAxis,
         absolutePixel: Float,
@@ -167,6 +260,50 @@ class CalibrationStrategyEnsembleTest {
             rawText = rawText,
             parsedNumericValue = value,
             confidence = 0.82f,
+            status = TickOcrItemStatus.ACCEPTED,
+        )
+
+    private fun runtimeRows(frame: RuntimeOcrAnchorCoordinateFrame): List<RuntimeOcrAnchorBridgeRow> {
+        fun xPixel(plotRelative: Float): Float =
+            if (frame == RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE) plot.x + plotRelative else plotRelative
+
+        fun yPixel(plotRelative: Float): Float =
+            if (frame == RuntimeOcrAnchorCoordinateFrame.IMAGE_ABSOLUTE) plot.y + plotRelative else plotRelative
+
+        return listOf(
+            runtimeRow(GeometryAxis.X, xPixel(0f), 0.0, frame = frame),
+            runtimeRow(GeometryAxis.X, xPixel(200f), 10.0, frame = frame),
+            runtimeRow(GeometryAxis.X, xPixel(400f), 20.0, frame = frame),
+            runtimeRow(GeometryAxis.Y, yPixel(0f), 300.0, frame = frame),
+            runtimeRow(GeometryAxis.Y, yPixel(150f), 150.0, frame = frame),
+            runtimeRow(GeometryAxis.Y, yPixel(300f), 0.0, frame = frame),
+        )
+    }
+
+    private fun runtimeRow(
+        axis: GeometryAxis,
+        pixel: Float?,
+        value: Double,
+        rawText: String = value.toString(),
+        frame: RuntimeOcrAnchorCoordinateFrame? = RuntimeOcrAnchorCoordinateFrame.PLOT_RELATIVE,
+        numericSource: String = "LOCAL_TICK_CROP_OCR",
+        geometrySource: AxisScaleEvidenceType? = AxisScaleEvidenceType.EXPLICIT_TICK_MARK,
+    ): RuntimeOcrAnchorBridgeRow =
+        RuntimeOcrAnchorBridgeRow(
+            runtimeRowId = "runtime-ocr-anchor:test:${axis.name}:$rawText",
+            graphId = "graph:1",
+            graphIndex = 1,
+            axis = axis,
+            rawText = rawText,
+            parsedNumericValue = value,
+            pixelCoordinate = pixel,
+            coordinateFrame = frame,
+            sourceCropRef = "crop:tick.png",
+            sourceCropPath = "tick.png",
+            cropFileAvailable = true,
+            confidence = 0.91f,
+            geometrySource = geometrySource,
+            numericSource = numericSource,
             status = TickOcrItemStatus.ACCEPTED,
         )
 

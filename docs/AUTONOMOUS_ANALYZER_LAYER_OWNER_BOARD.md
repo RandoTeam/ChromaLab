@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R13_LAYER_OWNER_BOARD_UPDATED`
+Status: `R14_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -24,11 +24,11 @@ targets. It does not change runtime behavior.
 | 2 Graph discovery | `processing/graph`, `processing/geometry/ScreenshotEmbeddedChartDetector.kt`, `GraphMultiplicityResolver.kt`, `AutoSweepEngine.kt` | `AutoSweepGraphSelectionTest`, `GraphRegionOrderingTest`, `GraphMultiplicityResolverTest`, Android fixture suite | `ACTIVE_IMPLEMENTATION`; still a product blocker for multi-panel and 0-graph cases. | High-priority replacement target after R0: graph candidate generation and multiplicity resolution. |
 | 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GeometryPipelineRunner.kt` | `GraphLayoutClassifierTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; layout classifier exists but report propagation and graph-count semantics remain weak. | Pair with Stage 2 in a broad graph/layout replacement phase. |
 | 4 Axis/grid/OCR labels | `AxisDetector`, `AxisTickGeometryDetector`, `TickLocalizationPipeline`, `TickOcrCropRegions`, `TickOcrMatcher`, `AxisOcrReader` | `TickLocalizationPipelineTest`, `TickOcrMatcherTest`, `TickOcrCropRegionsTest`, `ChartPromptsAxisTickTest` | `ACTIVE_IMPLEMENTATION`; tick/label evidence remains brittle for bench_01 and related classes. | Replace only after graph/plotArea ownership is stable; do not let OCR create geometry. |
-| 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; ensemble fixed White Tiger regression but broader blockers remain. R11 adds shadow selected/rejected strategy evidence from R10 bridge rows, not runtime authority. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
+| 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; R14 adds `ANDROID_RUNTIME_OCR_ANCHOR` as a named strategy candidate while preserving legacy fallback and AxisScaleResolver. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
 | 7 Peak detection / integration | `feature/calculation/core/CalculationEngine.kt`, `feature/calculation/algorithm/*`, `processing/peaks`, `reports/PeakEvidenceMapper.kt` | `CalculationCoreTest`, synthetic fixture tests, report/peak evidence tests | `ACTIVE_IMPLEMENTATION_PROTECTED`; math is not the current replacement target. | Do not modify unless an isolated math bug is proven after upstream evidence is stable. |
 | 8 Model / Knowledge assistance | `processing/inference`, `processing/model`, `feature/knowledge`, Android LiteRT/GGUF/model manager files | model policy tests, Knowledge Pack tests, E2B acceptance matrix | `ACTIVE_IMPLEMENTATION`; E2B is advisory baseline; Knowledge retrieval is lexical and safe. | TurboVec may replace retrieval ranking only after benchmark gates; model remains semantic only. |
-| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks, R13 OCR-anchor bridge row checks | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks. R13 adds runtime OCR-anchor bridge row provenance and safety validation. | Keep strict; expand completeness checks when replacing upstream layers. |
+| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks, R13 OCR-anchor bridge row checks, R14 calibration strategy summary checks | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks. R13 adds runtime OCR-anchor bridge row provenance and safety validation. R14 adds selected/rejected calibration strategy summaries. | Keep strict; expand completeness checks when replacing upstream layers. |
 | 10 Report generation | `feature/reports`, `processing/report`, `calculation/export` | report renderer, validator, provenance, stored metadata tests | `ACTIVE_IMPLEMENTATION`; reports are evidence-gated but can still be visually clearer. | Do not redesign before analyzer truth improves; keep report gates honest. |
 | 11 Export/privacy | `processing/export`, `processing/storage`, Android `FileSharer`, validation artifact exporter, debug exporter | `ExportEngineTest`, runtime evidence validator, public privacy/security docs | `ACTIVE_IMPLEMENTATION`; artifacts complete in recent truth audit, but `artifacts/` is ignored. | Preserve separation between user reports and diagnostic artifacts. |
 | 12 Acceptance | `docs/PHASE9J_*`, `CHROMALAB_VALIDATION_SUMMARY.md`, regression dataset/matrix | Phase 9J truth audit, fixture assets, bench tests | `ACTIVE_SOURCE_OF_TRUTH`; Phase 9 remains not accepted. | Every replacement phase must update product/scientific/QA acceptance status. |
@@ -96,6 +96,8 @@ R9 - Stage 6 Automatic OCR Anchor Candidate
 R10 - Stage 6 Runtime OCR Anchor Bridge Candidate
 R11 - Integrated Runtime Calibration Closure
 R12 - Runtime Evidence And Failure Package Closure
+R13 - Android Runtime OCR Anchor Production Bridge
+R14 - Runtime Calibration Promotion Candidate
 ```
 
 R1 is now documented in:
@@ -240,15 +242,24 @@ accepted anchors without deterministic pixel geometry, forbidden scale text,
 VLM numeric authority, missing crop provenance, and graph-id mismatches. It did
 not promote runtime calibration or modify `CalculationEngine`.
 
+R14 is documented in:
+
+- `docs/R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md`.
+
+R14 added Android runtime OCR-anchor rows as a named calibration strategy
+candidate, explicit row coordinate frames, image-absolute to plot-relative
+conversion, and graph-package calibration strategy summaries. It preserves
+legacy fallback, does not change chromatographic math, and does not accept
+Phase 9.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R14 - Runtime Calibration Promotion Candidate
+R15 - Graph Layout And Multi-Panel Runtime Closure
 ```
 
-R14 should feed Android runtime OCR-anchor rows into `CalibrationStrategyEnsemble`
-as a named strategy source, preserve legacy White Tiger fallback, export
-selected/rejected strategy evidence per graph, and prove that E2B cannot alter
-calibration strategy selection, metrics, or report gates.
+R15 should re-audit `bench_04`, `bench_05`, and `bench_06`, confirm graph-count
+semantics with Product/QA/Scientific roles, and ensure layout classification
+propagates into report graph sections without fixture-specific coordinates.

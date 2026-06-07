@@ -170,15 +170,16 @@ class GeometryPipelineRunner(
             timestamp = System.currentTimeMillis(),
         )
         val axisScaleResolution = selectedEvaluation?.axisScaleResolution
+        val runtimeOcrAnchorRows = selectedEvaluation?.runtimeOcrAnchorRows
+            ?: RuntimeOcrAnchorBridgeBuilder.build(
+                graphIndex = 1,
+                tickOcrResult = tickOcr,
+                axisScaleResolution = axisScaleResolution,
+            )
         val calibrationArbitration = selectedEvaluation?.calibrationArbitration
         val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
         val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
         val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
-        val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.build(
-            graphIndex = 1,
-            tickOcrResult = tickOcr,
-            axisScaleResolution = axisScaleResolution,
-        )
         val overlayArtifacts = timedStage("geometry.overlay_artifacts", timings) {
             geometryOverlayArtifactWriter.writeOverlays(
                 imagePath = imagePath,
@@ -364,11 +365,17 @@ class GeometryPipelineRunner(
             tickOcrResult = tickOcr,
             axisLabelOcrResult = axisLabelOcr,
         )
+        val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.build(
+            graphIndex = 1,
+            tickOcrResult = tickOcr,
+            axisScaleResolution = axisScaleResolution,
+        )
         val calibrationArbitration = calibrationStrategyEnsemble.arbitrate(
             plotRegion = plot?.region,
             axisGeometry = axisGeometry,
             tickOcrResult = tickOcr,
             axisScaleResolution = axisScaleResolution,
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows,
         )
         val xFit = calibrationArbitration.xFit
         val yFit = calibrationArbitration.yFit
@@ -391,6 +398,7 @@ class GeometryPipelineRunner(
             tickOcr = tickOcr,
             axisScaleResolution = axisScaleResolution,
             calibrationArbitration = calibrationArbitration,
+            runtimeOcrAnchorRows = runtimeOcrAnchorRows,
             tickCropArtifacts = tickCropArtifacts,
             peakLabelEvidence = peakLabelEvidence.labels,
             peakLabelCropPaths = peakLabelEvidence.cropPaths,
@@ -507,6 +515,7 @@ private data class GeometryCandidateEvaluation(
     val tickOcr: TickOcrResult,
     val axisScaleResolution: AxisScaleResolutionResult,
     val calibrationArbitration: CalibrationArbitrationResult,
+    val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow>,
     val tickCropArtifacts: List<TickOcrCropArtifact>,
     val peakLabelEvidence: List<PeakLabelEvidence>,
     val peakLabelCropPaths: List<String>,
