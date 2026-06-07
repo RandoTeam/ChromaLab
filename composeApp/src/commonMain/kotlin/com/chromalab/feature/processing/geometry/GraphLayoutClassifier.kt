@@ -8,6 +8,7 @@ class GraphLayoutClassifier {
         rejectedDuplicatePanels: List<RejectedGraphPanelCandidate> = emptyList(),
         rejectedNestedPanels: List<RejectedGraphPanelCandidate> = emptyList(),
         rejectedSubregions: List<RejectedGraphPanelCandidate> = emptyList(),
+        deterministicTextHints: List<String> = emptyList(),
         imageWidth: Int,
         imageHeight: Int,
     ): GraphLayoutClassification {
@@ -50,7 +51,9 @@ class GraphLayoutClassifier {
         }
 
         if (sharedHorizontalFrame) {
+            val hasTicIonText = deterministicTextHints.hasTicIonPanelText()
             val className = when {
+                panels.size >= 3 && hasTicIonText -> GraphLayoutClass.TIC_PLUS_ION_PANELS
                 panels.size == 2 -> GraphLayoutClass.TWO_GRAPH_PAGE
                 panels.size >= 3 -> GraphLayoutClass.STACKED_TRACES_SHARED_AXIS
                 else -> GraphLayoutClass.UNKNOWN_REVIEW
@@ -67,7 +70,10 @@ class GraphLayoutClassifier {
                     )
                 },
                 confidence = 0.82f,
-                reviewReasons = listOf("layout.vertical_panel_stack"),
+                reviewReasons = buildList {
+                    add("layout.vertical_panel_stack")
+                    if (hasTicIonText) add("layout.tic_ion_semantic_hint")
+                },
             )
         }
 
@@ -152,4 +158,15 @@ class GraphLayoutClassifier {
             .map { (a, b) -> a.region.horizontalOverlapRatio(b.region) }
             .minOrNull()
             ?: 0f
+
+    private fun List<String>.hasTicIonPanelText(): Boolean {
+        val normalized = joinToString(" ").uppercase()
+        val hasTic = "TIC" in normalized || "TOTAL ION" in normalized
+        val hasSeparateIonChannel = "M/Z" in normalized ||
+            "SIM" in normalized ||
+            Regex("""\bXIC\b""").containsMatchIn(normalized) ||
+            Regex("""\bION\s*\d""").containsMatchIn(normalized) ||
+            "EXTRACTED ION" in normalized
+        return hasTic && hasSeparateIonChannel
+    }
 }

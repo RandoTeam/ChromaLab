@@ -16,6 +16,7 @@ import com.chromalab.feature.reports.PixelRect
 import com.chromalab.feature.reports.ProcessingMode
 import com.chromalab.feature.reports.ReportAxisCalibration
 import com.chromalab.feature.reports.ReportStageTiming
+import com.chromalab.feature.reports.ReportSeverity
 import com.chromalab.feature.reports.ReportWarning
 import com.chromalab.feature.reports.StoredGraphReportMetadata
 import com.chromalab.feature.reports.StoredReportMetadata
@@ -176,6 +177,20 @@ fun buildProcessingStoredReportMetadata(
         stageTimings = modelStageTimings,
         graphIndex = graphIndex.coerceAtLeast(1),
     )
+    val reportGraphIndex = graphIndex.coerceAtLeast(1)
+    val multiPanelAggregationWarnings = if (detectedGraphCount > 1) {
+        listOf(
+            ReportWarning(
+                code = "multi_panel_report_aggregation_unsupported",
+                message = "Runtime detected $detectedGraphCount physical graph panels, but this stored report section covers graph $reportGraphIndex only. Combined multi-graph report aggregation remains unsupported.",
+                severity = ReportSeverity.SERIOUS,
+                stage = "report_generation",
+                graphIndex = reportGraphIndex,
+            ),
+        )
+    } else {
+        emptyList()
+    }
 
     return StoredReportMetadata(
         inputSourceType = sourceType.toReportInputSourceType(),
@@ -192,13 +207,19 @@ fun buildProcessingStoredReportMetadata(
         deviceName = deviceName?.takeIf { it.isNotBlank() },
         processingMode = processingMode,
         stageTimings = modelStageTimings,
-        warnings = modelWarnings,
+        warnings = (modelWarnings + multiPanelAggregationWarnings).distinctBy { warning ->
+            listOf(
+                warning.code,
+                warning.stage.orEmpty(),
+                warning.graphIndex?.toString().orEmpty(),
+            ).joinToString("|")
+        },
         graphs = listOf(
             StoredGraphReportMetadata(
-                graphIndex = graphIndex.coerceAtLeast(1),
+                graphIndex = reportGraphIndex,
                 geometryReportStatus = geometryReportStatus,
                 geometryTrace = geometryTrace,
-                warnings = graphWarnings.toStoredGraphWarnings(graphIndex.coerceAtLeast(1)),
+                warnings = graphWarnings.toStoredGraphWarnings(reportGraphIndex),
                 identification = ocrExtraction.identification,
                 axisCalibration = axisCalibration,
                 source = GraphSourceMetadata(

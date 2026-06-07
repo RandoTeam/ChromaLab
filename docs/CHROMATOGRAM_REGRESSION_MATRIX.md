@@ -272,6 +272,30 @@ E2B cannot alter selected strategy, calibration coefficients, metrics, or
 report gates. R14 still cannot accept Phase 9 until Android fixture reruns
 prove no regression and no critical blocker remains.
 
+## R15 Graph Layout And Multi-Panel Runtime Closure Addendum
+
+R15 adds per-graph runtime geometry results and makes runtime multi-panel
+processing use `GraphMultiplicityResolution.resolvedGraphPanels` as the source
+of physical graph units.
+
+Regression rules:
+
+- `bench_04_stacked_xic_resolution` remains 4 graph units.
+- `bench_05_tic_plus_ions` remains 4 graph units.
+- `bench_06_photo_two_graphs_page` remains 2 graph units.
+- Raw overlapping/nested pseudo-panel lists must not drive report graph count.
+- TIC+ion text hints can name the semantic class only after separated panels
+  already exist.
+- E2B/VLM graph-count hints remain advisory and cannot increase or decrease
+  deterministic physical graph count.
+- If a stored report section covers only one graph while multiple panels were
+  detected, it must carry `multi_panel_report_aggregation_unsupported` instead
+  of silently claiming complete multi-graph aggregation.
+
+R15 still cannot accept Phase 9 until Android fixture reruns prove no
+multi-panel report/evidence blocker remains and no deterministic/E2B regression
+appears.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

@@ -614,6 +614,29 @@ Product interpretation:
   `bench_07`, deterministic/E2B parity, or evidence completeness.
 - The next runtime step is R15 graph layout and multi-panel runtime closure.
 
+## R15 Graph Layout And Multi-Panel Runtime Closure
+
+R15 adds runtime propagation for multi-panel graph truth. It keeps expected
+fixture graph counts unchanged:
+
+| Fixture | Expected graph units | R15 propagation rule |
+|---|---:|---|
+| `bench_04_stacked_xic_resolution` | 4 | Preserve four resolved physical graph units. |
+| `bench_05_tic_plus_ions` | 4 | Preserve four graph units; TIC+ion naming requires deterministic text support. |
+| `bench_06_photo_two_graphs_page` | 2 | Preserve two resolved physical graph units. |
+
+Product interpretation:
+
+- R15 makes runtime graph iteration use resolved physical panels rather than raw
+  pseudo-panel candidates.
+- R15 adds per-graph geometry result evidence, stable graph indexes, and an
+  explicit `multi_panel_report_aggregation_unsupported` warning when a stored
+  report section covers only one graph from a multi-panel run.
+- R15 does not change `CalculationEngine`, chromatographic math, trace
+  extraction, peak metrics, validators, or E2B authority.
+- R15 does not accept Phase 9; Android fixture reruns still need to prove that
+  multi-panel evidence and reports are complete without regression.
+
 ## Benchmark Scoring Result
 
 DR-B3 scoring result:

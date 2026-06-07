@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R14_LAYER_OWNER_BOARD_UPDATED`
+Status: `R15_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -22,14 +22,14 @@ targets. It does not change runtime behavior.
 | 0 Input/provenance | `feature/capture`, `processing/pipeline`, `feature/validation/AutonomousValidationFixtureContracts.kt`, Android `FileImportBridge`, validation runner/exporter | `AutonomousValidationFixtureAssetTest`, `AutonomousValidationFixtureContractTest`; Android assets under `composeApp/src/androidMain/assets/validation/` | `ACTIVE_IMPLEMENTATION`; provenance exists but source-of-truth is spread across capture, validation, and runtime evidence. | Consolidate input provenance contract before changing image preparation. |
 | 1 Image preparation | `processing/normalize`, `processing/preprocess`, `processing/quality`, `processing/document`, `processing/perspective`; Android adapters for ML Kit scanner, normalizer, preprocessor, warper | `QualityCalculatorTest`; indirect coverage through bench/Android fixtures | `ACTIVE_IMPLEMENTATION`; likely heavy and variant-rich, not yet a clean Rust owner. | Replace with Rust/Kotlin contract after parity inventory; keep old path only as shadow during comparison. |
 | 2 Graph discovery | `processing/graph`, `processing/geometry/ScreenshotEmbeddedChartDetector.kt`, `GraphMultiplicityResolver.kt`, `AutoSweepEngine.kt` | `AutoSweepGraphSelectionTest`, `GraphRegionOrderingTest`, `GraphMultiplicityResolverTest`, Android fixture suite | `ACTIVE_IMPLEMENTATION`; still a product blocker for multi-panel and 0-graph cases. | High-priority replacement target after R0: graph candidate generation and multiplicity resolution. |
-| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GeometryPipelineRunner.kt` | `GraphLayoutClassifierTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; layout classifier exists but report propagation and graph-count semantics remain weak. | Pair with Stage 2 in a broad graph/layout replacement phase. |
+| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GraphMultiplicityResolver.kt`, `GeometryPipelineRunner.kt`, `ProcessingFlowScreen.kt` | `GraphLayoutClassifierTest`, `GraphMultiplicityResolverTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; R15 preserves resolved physical graph panels and graph results through runtime processing. Combined multi-graph report aggregation still needs Android rerun proof. | Pair with Stage 2 in a broad graph/layout replacement phase; do not use raw pseudo-panel lists as physical graph count. |
 | 4 Axis/grid/OCR labels | `AxisDetector`, `AxisTickGeometryDetector`, `TickLocalizationPipeline`, `TickOcrCropRegions`, `TickOcrMatcher`, `AxisOcrReader` | `TickLocalizationPipelineTest`, `TickOcrMatcherTest`, `TickOcrCropRegionsTest`, `ChartPromptsAxisTickTest` | `ACTIVE_IMPLEMENTATION`; tick/label evidence remains brittle for bench_01 and related classes. | Replace only after graph/plotArea ownership is stable; do not let OCR create geometry. |
 | 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; R14 adds `ANDROID_RUNTIME_OCR_ANCHOR` as a named strategy candidate while preserving legacy fallback and AxisScaleResolver. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
 | 7 Peak detection / integration | `feature/calculation/core/CalculationEngine.kt`, `feature/calculation/algorithm/*`, `processing/peaks`, `reports/PeakEvidenceMapper.kt` | `CalculationCoreTest`, synthetic fixture tests, report/peak evidence tests | `ACTIVE_IMPLEMENTATION_PROTECTED`; math is not the current replacement target. | Do not modify unless an isolated math bug is proven after upstream evidence is stable. |
 | 8 Model / Knowledge assistance | `processing/inference`, `processing/model`, `feature/knowledge`, Android LiteRT/GGUF/model manager files | model policy tests, Knowledge Pack tests, E2B acceptance matrix | `ACTIVE_IMPLEMENTATION`; E2B is advisory baseline; Knowledge retrieval is lexical and safe. | TurboVec may replace retrieval ranking only after benchmark gates; model remains semantic only. |
-| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks, R13 OCR-anchor bridge row checks, R14 calibration strategy summary checks | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks. R13 adds runtime OCR-anchor bridge row provenance and safety validation. R14 adds selected/rejected calibration strategy summaries. | Keep strict; expand completeness checks when replacing upstream layers. |
-| 10 Report generation | `feature/reports`, `processing/report`, `calculation/export` | report renderer, validator, provenance, stored metadata tests | `ACTIVE_IMPLEMENTATION`; reports are evidence-gated but can still be visually clearer. | Do not redesign before analyzer truth improves; keep report gates honest. |
+| 9 Runtime evidence validation | `processing/debug/RuntimeEvidencePackage.kt`, `RuntimeEvidencePackageValidator.kt`, `feature/validation` terminal/export files | `RuntimeEvidencePackageValidatorTest`, structured diagnostic tests, Phase 9J truth audit, R12 manifest/no-export checks, R13 OCR-anchor bridge row checks, R14 calibration strategy summary checks, R15 graph-package cardinality test | `ACTIVE_IMPLEMENTATION`; this is the current truth gate. R12 adds run-summary and manifest checks. R13 adds runtime OCR-anchor bridge row provenance and safety validation. R14 adds selected/rejected calibration strategy summaries. R15 verifies one evidence graph package per report graph. | Keep strict; expand completeness checks when replacing upstream layers. |
+| 10 Report generation | `feature/reports`, `processing/report`, `calculation/export` | report renderer, validator, provenance, stored metadata tests, `ProcessingReportMetadataBuilderTest` | `ACTIVE_IMPLEMENTATION`; R15 marks unsupported combined multi-panel report aggregation explicitly instead of silently storing one graph section as complete. | Do not redesign before analyzer truth improves; keep report gates honest. |
 | 11 Export/privacy | `processing/export`, `processing/storage`, Android `FileSharer`, validation artifact exporter, debug exporter | `ExportEngineTest`, runtime evidence validator, public privacy/security docs | `ACTIVE_IMPLEMENTATION`; artifacts complete in recent truth audit, but `artifacts/` is ignored. | Preserve separation between user reports and diagnostic artifacts. |
 | 12 Acceptance | `docs/PHASE9J_*`, `CHROMALAB_VALIDATION_SUMMARY.md`, regression dataset/matrix | Phase 9J truth audit, fixture assets, bench tests | `ACTIVE_SOURCE_OF_TRUTH`; Phase 9 remains not accepted. | Every replacement phase must update product/scientific/QA acceptance status. |
 
@@ -98,6 +98,7 @@ R11 - Integrated Runtime Calibration Closure
 R12 - Runtime Evidence And Failure Package Closure
 R13 - Android Runtime OCR Anchor Production Bridge
 R14 - Runtime Calibration Promotion Candidate
+R15 - Graph Layout And Multi-Panel Runtime Closure
 ```
 
 R1 is now documented in:
@@ -252,14 +253,24 @@ conversion, and graph-package calibration strategy summaries. It preserves
 legacy fallback, does not change chromatographic math, and does not accept
 Phase 9.
 
+R15 is documented in:
+
+- `docs/R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md`.
+
+R15 added per-graph runtime geometry results, made runtime graph iteration use
+`GraphMultiplicityResolution.resolvedGraphPanels`, preserved stable 1-based
+graph indexes, kept TIC+ion text hints semantic-only, and added an explicit
+`multi_panel_report_aggregation_unsupported` report warning when a stored report
+section covers only one graph from a multi-panel run.
+
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R15 - Graph Layout And Multi-Panel Runtime Closure
+R16 - Trace Extraction Evidence Candidate
 ```
 
-R15 should re-audit `bench_04`, `bench_05`, and `bench_06`, confirm graph-count
-semantics with Product/QA/Scientific roles, and ensure layout classification
-propagates into report graph sections without fixture-specific coordinates.
+Run R16 only if Android reruns prove R15 multi-panel report/evidence propagation
+is complete. If the rerun exposes continued one-section report aggregation,
+close that blocker before R16.

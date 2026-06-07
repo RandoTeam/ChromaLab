@@ -16,6 +16,7 @@ class GraphMultiplicityResolver(
         imageWidth: Int,
         imageHeight: Int,
         vlmGraphCountHint: Int? = null,
+        deterministicTextHints: List<String> = emptyList(),
     ): GraphMultiplicityResolution {
         if (candidates.isEmpty()) {
             return GraphMultiplicityResolution(
@@ -55,6 +56,7 @@ class GraphMultiplicityResolver(
             rejectedDuplicatePanels = duplicate,
             rejectedNestedPanels = nested,
             rejectedSubregions = subregion,
+            deterministicTextHints = deterministicTextHints,
             imageWidth = imageWidth,
             imageHeight = imageHeight,
         )

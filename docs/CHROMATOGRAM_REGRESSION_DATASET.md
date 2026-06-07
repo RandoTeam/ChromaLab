@@ -270,3 +270,27 @@ Dataset implication:
 R14 does not accept Phase 9. `bench_01_mz71_screenshot_page` and
 `bench_05_tic_plus_ions` remain primary blocker fixtures until Android reruns
 prove usable runtime anchor propagation and no deterministic/E2B regression.
+
+## R15 Graph Layout Multi-Panel Runtime Closure Dataset Status
+
+R15 keeps fixture graph-count expectations unchanged and improves runtime
+propagation of resolved physical graph panels.
+
+| Fixture | Expected graph units | R15 dataset expectation |
+| --- | ---: | --- |
+| `bench_04_stacked_xic_resolution` | 4 | Runtime must preserve four resolved physical graph units and per-graph evidence sections. |
+| `bench_05_tic_plus_ions` | 4 | Runtime must preserve four physical graph units; TIC+ion naming requires deterministic text support and does not create count. |
+| `bench_06_photo_two_graphs_page` | 2 | Runtime must preserve two resolved physical graph units in reading order. |
+
+Dataset implication:
+
+- graph iteration must use resolved physical panels, not raw pseudo-panel
+  candidates;
+- duplicate/nested panels must remain rejected evidence;
+- E2B cannot change physical graph count, panel grouping, calibration, metrics,
+  or report gate;
+- one-section stored reports for multi-panel runs must carry
+  `multi_panel_report_aggregation_unsupported`.
+
+R15 does not accept Phase 9. Android reruns are still required to prove
+multi-panel report/evidence propagation on device.

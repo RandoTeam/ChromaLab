@@ -105,7 +105,9 @@ class ProcessingReportMetadataBuilderTest {
         assertEquals(4, metadata.stageTimings.size)
         assertEquals(450L, metadata.stageTimings.single { it.stageId == "OCR_SUGGESTION" }.durationMillis)
         assertEquals(450L, metadata.stageTimings.single { it.stageId == "model.title_ion_axis" }.durationMillis)
-        assertEquals(emptyList(), metadata.warnings)
+        assertEquals("multi_panel_report_aggregation_unsupported", metadata.warnings.single().code)
+        assertEquals(ReportSeverity.SERIOUS, metadata.warnings.single().severity)
+        assertEquals(2, metadata.warnings.single().graphIndex)
 
         val graph = metadata.graphs.single()
         assertEquals(2, graph.graphIndex)
@@ -129,6 +131,34 @@ class ProcessingReportMetadataBuilderTest {
         assertTrue(
             graph.source?.preprocessingSteps.orEmpty()
                 .contains("Auto-sweep selected config: high_contrast"),
+        )
+    }
+
+    @Test
+    fun processingMetadataMarksUnsupportedAggregateMultiPanelReport() {
+        val config = buildProcessingReportMetadataConfig(
+            sourcePath = """C:\input\raw_photo.jpg""",
+            processedPath = """C:\input\graph_4.png""",
+            sourceType = SourceType.PHOTO,
+            graphIndex = 4,
+            detectedGraphCount = 4,
+            signalPointCount = 128,
+            analysisStartedAtEpochMillis = 1_000L,
+            analysisCompletedAtEpochMillis = 2_000L,
+        )
+
+        val metadata = StoredReportMetadataCodec.decodeOrNull(config)
+
+        assertNotNull(metadata)
+        assertEquals(4, metadata.detectedGraphCount)
+        assertEquals(1, metadata.graphs.size)
+        assertEquals(4, metadata.graphs.single().graphIndex)
+        assertTrue(
+            metadata.warnings.any {
+                it.code == "multi_panel_report_aggregation_unsupported" &&
+                    it.graphIndex == 4 &&
+                    it.severity == ReportSeverity.SERIOUS
+            },
         )
     }
 

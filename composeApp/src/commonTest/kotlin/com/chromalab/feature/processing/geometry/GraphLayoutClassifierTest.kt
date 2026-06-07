@@ -51,6 +51,33 @@ class GraphLayoutClassifierTest {
     }
 
     @Test
+    fun ticIonTextHintNamesLayoutButDoesNotCreateGraphUnits() {
+        val panels = listOf(
+            panel(20, 10, 560, 120),
+            panel(20, 155, 560, 120),
+            panel(20, 300, 560, 120),
+            panel(20, 445, 560, 120),
+        )
+        val classification = classifier.classify(
+            resolvedPanels = panels,
+            imageWidth = 640,
+            imageHeight = 700,
+            deterministicTextHints = listOf("TIC", "Ion 71", "Ion 92"),
+        )
+        val singlePanelClassification = classifier.classify(
+            resolvedPanels = listOf(panel(20, 10, 560, 560)),
+            imageWidth = 640,
+            imageHeight = 700,
+            deterministicTextHints = listOf("TIC", "Ion 71", "Ion 92"),
+        )
+
+        assertEquals(GraphLayoutClass.TIC_PLUS_ION_PANELS, classification.layoutClass)
+        assertEquals(4, classification.physicalGraphCount)
+        assertTrue("layout.tic_ion_semantic_hint" in classification.reviewReasons)
+        assertEquals(1, singlePanelClassification.physicalGraphCount)
+    }
+
+    @Test
     fun twoGraphPhotoPageKeepsTwoPanels() {
         val panels = listOf(
             panel(30, 120, 540, 260),

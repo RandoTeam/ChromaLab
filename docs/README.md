@@ -37,6 +37,7 @@ phase-history files.
 | [R12 Runtime Evidence Failure Package Closure Closeout](R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md) | R12 evidence/export closure checks, manifest validation, and R13 start decision. |
 | [R13 Android Runtime OCR Anchor Production Bridge Closeout](R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md) | Android/runtime OCR-anchor row evidence contract, validator checks, and R14 start decision. |
 | [R14 Runtime Calibration Promotion Candidate Closeout](R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md) | Runtime OCR-anchor calibration strategy candidate, coordinate-frame safety, and R15 start decision. |
+| [R15 Graph Layout Multi-Panel Runtime Closure Closeout](R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md) | Runtime graph-results propagation, resolved physical panel iteration, and multi-panel report aggregation warning. |
 | [Analyzer Stale File Audit](AUTONOMOUS_ANALYZER_STALE_FILE_AUDIT.md) | Which docs, artifacts, generated outputs, and secrets are active, historical, ignored, or local-only. |
 | [Local AI Runtime](CHROMALAB_LOCAL_AI_RUNTIME.md) | LiteRT-LM, Gemma, E2B baseline, GGUF, llama.cpp, MTP, model safety, and privacy boundaries. |
 | [Report Experience Concept](CHROMALAB_REPORT_EXPERIENCE_CONCEPT.md) | Target design for the future professional report, without fake screenshots or fake metrics. |
@@ -120,6 +121,7 @@ graph, axis, scale, and trace extraction.
 | [R12 Runtime Evidence Failure Package Closure Closeout](R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md) | Runtime evidence/export package closure, manifest checks, and next Android OCR-anchor production bridge step. |
 | [R13 Android Runtime OCR Anchor Production Bridge Closeout](R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md) | Runtime OCR-anchor bridge rows in Android evidence packages and next calibration promotion candidate step. |
 | [R14 Runtime Calibration Promotion Candidate Closeout](R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md) | Android runtime OCR-anchor rows inside calibration arbitration and next graph layout/multi-panel step. |
+| [R15 Graph Layout Multi-Panel Runtime Closure Closeout](R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md) | Runtime graph-results propagation and explicit unsupported aggregate multi-panel report state. |
 | [End-To-End Gap Audit](CHROMATOGRAM_END_TO_END_GAP_AUDIT_20260603.md) | Full pipeline gaps from image to report. |
 | [Graph Layout And Axis Scale Research Handoff](DR1_GRAPH_LAYOUT_AXIS_SCALE_RESEARCH_HANDOFF.md) | Research handoff for graph/layout/axis scale work. |
 | [Ground Truth Corpus And Metrics](DRB_GROUND_TRUTH_CORPUS_AND_METRICS.md) | Benchmark and ground-truth direction. |

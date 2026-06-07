@@ -556,9 +556,27 @@ data class GeometryTrace(
 )
 
 @Serializable
+data class GeometryGraphResult(
+    val graphIndex: Int,
+    val graphPanelBounds: GraphPanelBounds? = null,
+    val plotAreaBounds: PlotAreaBounds? = null,
+    val axisGeometry: AxisGeometry? = null,
+    val tickGeometry: TickGeometry? = null,
+    val tickOcrResult: TickOcrResult? = null,
+    val runtimeOcrAnchorRows: List<RuntimeOcrAnchorBridgeRow> = emptyList(),
+    val axisScaleResolution: AxisScaleResolutionResult? = null,
+    val calibrationArbitration: CalibrationArbitrationResult? = null,
+    val xCalibrationFit: AxisCalibrationFit? = null,
+    val yCalibrationFit: AxisCalibrationFit? = null,
+    val reportStatus: GeometryReportStatus = GeometryReportStatus.DIAGNOSTIC_ONLY,
+    val warnings: List<String> = emptyList(),
+)
+
+@Serializable
 data class GeometryPipelineResult(
     val trace: GeometryTrace,
     val reportStatus: GeometryReportStatus,
+    val graphResults: List<GeometryGraphResult> = emptyList(),
     val graphPanelBounds: GraphPanelBounds? = null,
     val plotAreaBounds: PlotAreaBounds? = null,
     val axisGeometry: AxisGeometry? = null,

@@ -39,6 +39,7 @@ import com.chromalab.feature.processing.graph.GraphSelectionScreen
 import com.chromalab.feature.processing.geometry.AxisCalibrationFit
 import com.chromalab.feature.processing.geometry.CalibrationFitStatus
 import com.chromalab.feature.processing.geometry.GeometryPipelineResult
+import com.chromalab.feature.processing.geometry.GraphPanelBounds
 import com.chromalab.feature.processing.geometry.GeometryReportStatus
 import com.chromalab.feature.processing.geometry.GeometryStageStatus
 import com.chromalab.feature.processing.geometry.RuntimeOcrAnchorBridgeBuilder
@@ -213,6 +214,7 @@ fun ProcessingFlowScreen(
 
     // Multi-graph support
     var currentGraphIndex by remember { mutableIntStateOf(0) }
+    var resolvedGraphRegions by remember { mutableStateOf<List<GraphRegion>>(emptyList()) }
     val processedGraphs = remember { mutableStateListOf<ProcessedGraphSnapshot>() }
 
     // VLM model loading status (25.2B: lazy loading)
@@ -380,7 +382,9 @@ fun ProcessingFlowScreen(
                         // === AUTO-SWEEP: try all preprocessing configs, pick best ===
                         if (!sweepCompleted) {
                             val isSubsequentGraph = currentGraphIndex > 0
-                            val totalRegions = graphResult?.filteredRegions?.size ?: 0
+                            val totalRegions = resolvedGraphRegions
+                                .ifEmpty { graphResult?.filteredRegions.orEmpty() }
+                                .size
                             println("PIPELINE[SWEEP] Starting sweep for graph ${currentGraphIndex + 1}/${maxOf(totalRegions, 1)}, configs=${sweepEngine.configs.size}")
                             val w = imageWidth.takeIf { it > 0 }
                                 ?: error("Normalized image width is required before graph detection.")
@@ -420,14 +424,17 @@ fun ProcessingFlowScreen(
                                 // Only update graphResult on first graph
                                 if (!isSubsequentGraph) {
                                     graphResult = best.graphResult
-                                    selectedRegion = best.selectedRegion
+                                    resolvedGraphRegions = best.geometryResult?.resolvedPhysicalGraphRegions()
+                                        ?.takeIf { it.isNotEmpty() }
+                                        ?: best.graphResult?.filteredRegions.orEmpty()
+                                    selectedRegion = resolvedGraphRegions.firstOrNull() ?: requireNotNull(best.selectedRegion)
                                 }
                                 ocrResult = best.ocrResult
                                 axesResult = best.axesResult
                                 curveExtractionResult = best.curveResult
                                 curvePoints = best.curveResult?.points ?: emptyList()
 
-                                val allRegions = graphResult?.filteredRegions ?: emptyList()
+                                val allRegions = resolvedGraphRegions.ifEmpty { graphResult?.filteredRegions.orEmpty() }
                                 if (!isSubsequentGraph) {
                                     println("PIPELINE[GRAPH] regions=${allRegions.size}, confidence=${graphResult?.confidence}")
                                     allRegions.forEachIndexed { idx, r ->
@@ -531,7 +538,9 @@ fun ProcessingFlowScreen(
                             ) ?: failAutomaticAxisCalibration("confirmed X and Y calibration are required before signal conversion")
 
                             val validationModelCanLoadNow = if (sourceType == SourceType.VALIDATION_FIXTURE) {
-                                val candidateRegions = graphResult?.filteredRegions.orEmpty()
+                                val candidateRegions = resolvedGraphRegions.ifEmpty {
+                                    graphResult?.filteredRegions.orEmpty()
+                                }
                                 val completedRegions = buildList {
                                     addAll(processedGraphs.map { it.selectedRegion })
                                     add(selectedRegion)
@@ -753,7 +762,9 @@ fun ProcessingFlowScreen(
                 if (currentStep == ProcessingStep.QUALITY_REPORT) {
                     // Multi-graph: check for more regions before advancing to EXPORT
                     captureCurrentGraphSnapshot()
-                    val candidateRegions = graphResult?.filteredRegions.orEmpty()
+                    val candidateRegions = resolvedGraphRegions.ifEmpty {
+                        graphResult?.filteredRegions.orEmpty()
+                    }
                     val nextGraphIndex = nextUnprocessedGraphRegionIndex(
                         candidateRegions = candidateRegions,
                         currentIndex = currentGraphIndex,
@@ -920,7 +931,9 @@ fun ProcessingFlowScreen(
         if (step == ProcessingStep.QUALITY_REPORT) {
             // Save current signal to the batch
             captureCurrentGraphSnapshot()
-            val candidateRegions = graphResult?.filteredRegions.orEmpty()
+            val candidateRegions = resolvedGraphRegions.ifEmpty {
+                graphResult?.filteredRegions.orEmpty()
+            }
             val nextGraphIndex = nextUnprocessedGraphRegionIndex(
                 candidateRegions = candidateRegions,
                 currentIndex = currentGraphIndex,
@@ -1090,7 +1103,10 @@ fun ProcessingFlowScreen(
                     sweepProgress = sweepProgress,
                     bestSweepConfig = bestSweepConfig,
                     currentGraphIndex = currentGraphIndex,
-                    totalGraphs = graphResult?.filteredRegions?.size ?: 1,
+                    totalGraphs = resolvedGraphRegions
+                        .ifEmpty { graphResult?.filteredRegions.orEmpty() }
+                        .size
+                        .coerceAtLeast(1),
                     vlmLoadingStatus = vlmLoadingStatus,
                     elapsedSeconds = elapsedSeconds,
                 )
@@ -1919,6 +1935,18 @@ private fun GeometryPipelineResult?.toReportWarnings(graphIndex: Int): List<Repo
             )
         }
 }
+
+private fun GeometryPipelineResult.resolvedPhysicalGraphRegions(): List<GraphRegion> =
+    graphResults
+        .sortedBy { it.graphIndex }
+        .mapNotNull { it.graphPanelBounds?.region }
+        .ifEmpty {
+            trace.multiplicityResolution
+                ?.resolvedGraphPanels
+                ?.sortedWith(compareBy<GraphPanelBounds> { it.region.y }.thenBy { it.region.x })
+                ?.map { it.region }
+                .orEmpty()
+        }
 
 private fun StageQuality.toReportWarnings(stageId: String, graphIndex: Int): List<ReportWarning> =
     warnings.mapIndexed { index, message ->

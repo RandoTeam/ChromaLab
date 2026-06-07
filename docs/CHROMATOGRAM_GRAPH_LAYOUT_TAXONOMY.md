@@ -21,3 +21,22 @@ Phase 9E makes graph layout a deterministic evidence layer before graph count fi
 - Same-axis duplicate/subregion candidates may be collapsed only by deterministic overlap/nesting evidence.
 - Stacked and multi-panel fixtures require graph-count evidence; missing panels remain blockers unless Product, QA, and Scientific sign off.
 - E2B/VLM cannot override `layoutClass`, graph count, graphPanel bounds, plotArea, tick pixels, anchors, or numeric chromatographic metrics.
+
+## R15 Runtime Propagation Rules
+
+- Runtime multi-panel processing must use
+  `GraphMultiplicityResolution.resolvedGraphPanels` as the physical-panel source,
+  not raw graph detector pseudo-panel lists.
+- `GeometryPipelineResult.graphResults` preserves per-graph geometry, axis,
+  OCR, calibration strategy, report status, and warnings in stable 1-based
+  reading order.
+- Deterministic text hints may name `TIC_PLUS_ION_PANELS` only after separated
+  panels already exist; text hints cannot create graph count.
+- `bench_04_stacked_xic_resolution` remains a 4-graph-unit fixture,
+  `bench_05_tic_plus_ions` remains a 4-graph-unit fixture, and
+  `bench_06_photo_two_graphs_page` remains a 2-graph-unit fixture unless
+  Product, QA, and Scientific sign off on a metadata change.
+- If a stored report section covers only one graph while runtime detected
+  multiple physical panels, the report must carry
+  `multi_panel_report_aggregation_unsupported` instead of silently presenting
+  itself as a complete combined report.

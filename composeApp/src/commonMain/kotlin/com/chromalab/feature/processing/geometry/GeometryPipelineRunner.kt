@@ -143,13 +143,21 @@ class GeometryPipelineRunner(
                 vlmGraphCountHint = vlmHintResult?.regions?.size,
             )
         }
-        val candidates = multiplicityResolution.retryGraphPanelCandidatesForSinglePhysicalGraph(allCandidates)
+        val isMultiPhysicalGraph = multiplicityResolution.layoutClassification?.physicalGraphCount
+            ?.let { it > 1 }
+            ?: false
+        val candidates = if (isMultiPhysicalGraph) {
+            multiplicityResolution.resolvedGraphPanels.ifEmpty { allCandidates }
+        } else {
+            multiplicityResolution.retryGraphPanelCandidatesForSinglePhysicalGraph(allCandidates)
+        }
         val evaluatedCandidates = timedStage("graph_panel.candidate_evaluation", timings) {
             candidates.take(MAX_GEOMETRY_RETRY_CANDIDATES).mapIndexed { retryIndex, candidate ->
                 evaluateCandidate(
                     imagePath = imagePath,
                     imageWidth = imageWidth,
                     imageHeight = imageHeight,
+                    graphIndex = if (isMultiPhysicalGraph) retryIndex + 1 else 1,
                     candidate = candidate,
                     retryIndex = retryIndex,
                     runTickOcr = runTickOcr,
@@ -157,10 +165,19 @@ class GeometryPipelineRunner(
                 )
             }
         }
-        val selectedEvaluation = evaluatedCandidates.maxWithOrNull(
-            compareBy<GeometryCandidateEvaluation> { it.reportStatus.selectionPriority }
-                .thenBy { it.selectionScore },
-        )
+        val selectedEvaluation = if (isMultiPhysicalGraph) {
+            evaluatedCandidates.minByOrNull { it.graphIndex }
+        } else {
+            evaluatedCandidates.maxWithOrNull(
+                compareBy<GeometryCandidateEvaluation> { it.reportStatus.selectionPriority }
+                    .thenBy { it.selectionScore },
+            )
+        }
+        val graphResults = if (isMultiPhysicalGraph) {
+            evaluatedCandidates.sortedBy { it.graphIndex }.map { it.toGraphResult() }
+        } else {
+            selectedEvaluation?.toGraphResult()?.let(::listOf).orEmpty()
+        }
         val selected = selectedEvaluation?.panel
         val selectedPlot = selectedEvaluation?.plot
         val axisGeometry = selectedEvaluation?.axisGeometry ?: (null as AxesResult?).toAxisGeometry(null)
@@ -179,7 +196,7 @@ class GeometryPipelineRunner(
         val calibrationArbitration = selectedEvaluation?.calibrationArbitration
         val xFit = selectedEvaluation?.xFit ?: calibrationFitter.fit(GeometryAxis.X, emptyList())
         val yFit = selectedEvaluation?.yFit ?: calibrationFitter.fit(GeometryAxis.Y, emptyList())
-        val reportStatus = selectedEvaluation?.reportStatus ?: GeometryReportStatus.DIAGNOSTIC_ONLY
+        val reportStatus = graphResults.aggregateReportStatus(selectedEvaluation?.reportStatus)
         val overlayArtifacts = timedStage("geometry.overlay_artifacts", timings) {
             geometryOverlayArtifactWriter.writeOverlays(
                 imagePath = imagePath,
@@ -263,6 +280,7 @@ class GeometryPipelineRunner(
         return GeometryPipelineResult(
             trace = trace,
             reportStatus = reportStatus,
+            graphResults = graphResults,
             graphPanelBounds = selected,
             plotAreaBounds = selectedPlot,
             axisGeometry = axisGeometry,
@@ -278,6 +296,7 @@ class GeometryPipelineRunner(
         imagePath: String,
         imageWidth: Int,
         imageHeight: Int,
+        graphIndex: Int,
         candidate: GraphPanelBounds,
         retryIndex: Int,
         runTickOcr: Boolean,
@@ -299,7 +318,7 @@ class GeometryPipelineRunner(
         val axisTick = runCatching {
             axisTickGeometryDetector.detect(
                 imagePath = imagePath,
-                graphIndex = 1,
+                graphIndex = graphIndex,
                 panelRegion = candidate.region,
                 plotRegion = plot?.region,
             )
@@ -366,7 +385,7 @@ class GeometryPipelineRunner(
             axisLabelOcrResult = axisLabelOcr,
         )
         val runtimeOcrAnchorRows = RuntimeOcrAnchorBridgeBuilder.build(
-            graphIndex = 1,
+            graphIndex = graphIndex,
             tickOcrResult = tickOcr,
             axisScaleResolution = axisScaleResolution,
         )
@@ -391,6 +410,7 @@ class GeometryPipelineRunner(
         val tickScore = (tickGeometry.xTicks.size.coerceAtMost(8) + tickGeometry.yTicks.size.coerceAtMost(8)) * 1.5f
         val incompletenessPenalty = candidate.incompletePanelSelectionPenalty(imageWidth, imageHeight)
         return GeometryCandidateEvaluation(
+            graphIndex = graphIndex,
             panel = candidate,
             plot = plot,
             axisGeometry = axisGeometry,
@@ -508,6 +528,7 @@ private data class RawRoiCandidate(
 )
 
 private data class GeometryCandidateEvaluation(
+    val graphIndex: Int,
     val panel: GraphPanelBounds,
     val plot: PlotAreaBounds?,
     val axisGeometry: AxisGeometry,
@@ -527,6 +548,44 @@ private data class GeometryCandidateEvaluation(
     val retryIndex: Int,
     val selectionScore: Float,
 )
+
+private fun GeometryCandidateEvaluation.toGraphResult(): GeometryGraphResult =
+    GeometryGraphResult(
+        graphIndex = graphIndex,
+        graphPanelBounds = panel,
+        plotAreaBounds = plot,
+        axisGeometry = axisGeometry,
+        tickGeometry = tickGeometry,
+        tickOcrResult = tickOcr,
+        runtimeOcrAnchorRows = runtimeOcrAnchorRows,
+        axisScaleResolution = axisScaleResolution,
+        calibrationArbitration = calibrationArbitration,
+        xCalibrationFit = xFit,
+        yCalibrationFit = yFit,
+        reportStatus = reportStatus,
+        warnings = buildList {
+            addAll(panel.warnings)
+            addAll(plot?.warnings.orEmpty())
+            addAll(axisGeometry.warnings)
+            addAll(tickGeometry.warnings)
+            addAll(tickOcr.warnings)
+            addAll(axisScaleResolution.warnings)
+            addAll(calibrationArbitration.warnings)
+            addAll(xFit.warnings)
+            addAll(yFit.warnings)
+        }.distinct(),
+    )
+
+private fun List<GeometryGraphResult>.aggregateReportStatus(
+    fallback: GeometryReportStatus?,
+): GeometryReportStatus {
+    if (isEmpty()) return fallback ?: GeometryReportStatus.DIAGNOSTIC_ONLY
+    return when {
+        any { it.reportStatus == GeometryReportStatus.DIAGNOSTIC_ONLY } -> GeometryReportStatus.DIAGNOSTIC_ONLY
+        all { it.reportStatus == GeometryReportStatus.SCIENTIFIC_READY } -> GeometryReportStatus.SCIENTIFIC_READY
+        else -> GeometryReportStatus.REVIEW_READY
+    }
+}
 
 private const val MAX_GEOMETRY_RETRY_CANDIDATES = 6
 private const val VLM_ROI_HINT_TIMEOUT_MS = 8_000L

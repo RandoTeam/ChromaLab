@@ -53,6 +53,44 @@ class GraphMultiplicityResolverTest {
     }
 
     @Test
+    fun ticIonSemanticHintPreservesResolvedFourPanelCount() {
+        val resolution = resolver.resolve(
+            candidates = listOf(
+                panel(40, 20, 460, 110, 82f, "tic"),
+                panel(40, 155, 460, 110, 81f, "ion 71"),
+                panel(40, 290, 460, 110, 80f, "ion 92"),
+                panel(40, 425, 460, 110, 79f, "ion 105"),
+            ),
+            imageWidth = 560,
+            imageHeight = 560,
+            deterministicTextHints = listOf("TIC", "Ion 71", "SIM"),
+        )
+
+        assertEquals(GraphMultiplicityStatus.MULTI_GRAPH_VALID, resolution.multiplicityStatus)
+        assertEquals(4, resolution.resolvedGraphPanels.size)
+        assertEquals(GraphLayoutClass.TIC_PLUS_ION_PANELS, resolution.layoutClassification?.layoutClass)
+        assertEquals(4, resolution.layoutClassification?.physicalGraphCount)
+    }
+
+    @Test
+    fun vlmGraphCountHintCannotIncreaseDeterministicPhysicalGraphCount() {
+        val resolution = resolver.resolve(
+            candidates = listOf(
+                panel(40, 40, 460, 180, 82f, "top graph"),
+                panel(42, 300, 458, 185, 80f, "bottom graph"),
+            ),
+            imageWidth = 560,
+            imageHeight = 560,
+            vlmGraphCountHint = 5,
+        )
+
+        assertEquals(GraphMultiplicityStatus.MULTI_GRAPH_VALID, resolution.multiplicityStatus)
+        assertEquals(2, resolution.resolvedGraphPanels.size)
+        assertEquals(2, resolution.layoutClassification?.physicalGraphCount)
+        assertTrue(resolution.warnings.any { it.startsWith("multiplicity.vlm_count_advisory_reduced") })
+    }
+
+    @Test
     fun densePeakSubregionIsRejectedAsSameAxisSystem() {
         val resolution = resolver.resolve(
             candidates = listOf(

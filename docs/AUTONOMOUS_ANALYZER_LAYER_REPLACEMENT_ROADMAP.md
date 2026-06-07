@@ -2,7 +2,7 @@
 
 Date: 2026-06-07
 
-Status: `R14_ROADMAP_UPDATED`
+Status: `R15_ROADMAP_UPDATED`
 
 Scope: roadmap status tracking. This roadmap does not add runtime dependencies,
 does not modify `CalculationEngine`, and does not change chromatographic math,
@@ -272,7 +272,8 @@ Completed:
 - `R11 - Integrated Runtime Calibration Closure`;
 - `R12 - Runtime Evidence And Failure Package Closure`;
 - `R13 - Android Runtime OCR Anchor Production Bridge`;
-- `R14 - Runtime Calibration Promotion Candidate`.
+- `R14 - Runtime Calibration Promotion Candidate`;
+- `R15 - Graph Layout And Multi-Panel Runtime Closure`.
 
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
@@ -316,6 +317,13 @@ frames, converts image-absolute rows to plot-relative coordinates, rejects
 unsafe rows before fitting, and exports selected/rejected strategy summaries in
 runtime evidence. R14 remains a promotion candidate and does not accept Phase 9.
 
+R15 added runtime multi-panel graph propagation. `GeometryPipelineResult` now
+has per-graph `graphResults`; multi-panel runs use
+`GraphMultiplicityResolution.resolvedGraphPanels` as the source of physical
+graph units; TIC+ion text hints are semantic-only; and stored per-graph reports
+emit `multi_panel_report_aggregation_unsupported` when a combined multi-graph
+report is not represented.
+
 ## Next Phase To Run
 
 The next phase should still not be TurboVec dependency installation and should
@@ -324,27 +332,25 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R15 - Graph Layout And Multi-Panel Runtime Closure
+R16 - Trace Extraction Evidence Candidate
 ```
 
 Purpose:
 
-- re-audit `bench_04_stacked_xic_resolution`, `bench_05_tic_plus_ions`, and
-  `bench_06_photo_two_graphs_page`;
-- confirm graph-count semantics with Product, QA, and Scientific roles;
-- propagate layout classification into report graph sections;
-- distinguish stacked shared-axis traces, TIC+ion panels, true two-graph pages,
-  and dense single-axis plots;
-- keep E2B advisory-only and unable to create graph count, calibration,
-  strategy, trace, peaks, metrics, or report gates.
+- define trace mask/centerline evidence after upstream graph layout and
+  calibration evidence are stable enough;
+- compare trace overlays across sparse, dense, stacked, and multi-panel cases;
+- keep `CalculationEngine` untouched.
 
 Deliverables:
 
-- graph-count signoff for multi-panel fixtures;
-- layout-to-report propagation checks;
-- graph-count regression tests;
+- trace evidence contract;
+- shadow trace candidate and overlays;
+- trace failure reasons for unsupported cases;
 - no fixture-specific coordinate hardcoding;
-- deterministic vs E2B safety comparison if model-visible behavior is touched;
 - source-of-truth docs updated;
 - PC/Android validation command output when runtime files are touched;
 - focused commit.
+
+If Android rerun evidence shows R15 still leaves a critical combined multi-graph
+report aggregation gap, close that R15 blocker before starting R16.

@@ -2,11 +2,11 @@
 
 Date: 2026-06-07
 
-Status: `R14_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
-Scope: source-of-truth plus R14 runtime OCR-anchor calibration strategy
-candidate tracking. No chromatographic math, Android fixture outcomes, model
-policy, report gates, or `CalculationEngine` behavior were changed.
+Scope: source-of-truth plus R15 graph layout and multi-panel runtime propagation
+tracking. No chromatographic math, Android fixture outcomes, model policy,
+validators, or `CalculationEngine` behavior were changed.
 
 ## Purpose
 
@@ -56,6 +56,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md` | R12 closeout for runtime evidence/export package closure and manifest validation. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md` | R13 closeout for Android/runtime OCR-anchor bridge row evidence and validator safety checks. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md` | R14 closeout for Android runtime OCR-anchor calibration strategy candidate and coordinate-frame safety. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md` | R15 closeout for runtime graph-results and multi-panel layout/report propagation. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |
@@ -127,6 +128,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R12_RUNTIME_EVIDENCE_FAILURE_PACKAGE_CLOSURE_CLOSEOUT.md` | Runtime evidence failure-package closure closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md` | Android/runtime OCR-anchor production bridge closeout and next-step decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md` | Runtime OCR-anchor calibration strategy candidate closeout and next-step decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md` | Graph layout and multi-panel runtime propagation closeout and next-step decision. |
 | `ACTIVE_TEST` | `benchmark/schemas/` | Benchmark record schemas for truth, predictions, metrics, evidence packages, and report claims. |
 | `ACTIVE_TEST` | `benchmark/examples/` | Source-controlled benchmark examples, including Phase 9J-derived records. |
 | `ACTIVE_TEST` | `benchmark/examples/stage123_shadow_parity/` | R2 Stage 1-3 parity example records. |
@@ -208,6 +210,7 @@ R11 - Integrated Runtime Calibration Closure
 R12 - Runtime Evidence And Failure Package Closure
 R13 - Android Runtime OCR Anchor Production Bridge
 R14 - Runtime Calibration Promotion Candidate
+R15 - Graph Layout And Multi-Panel Runtime Closure
 ```
 
 Decision:
@@ -242,13 +245,16 @@ Decision:
 - R14 added `ANDROID_RUNTIME_OCR_ANCHOR` as a named calibration strategy
   candidate, coordinate-frame handling for bridge rows, safety rejection before
   fitting, and selected/rejected strategy evidence in runtime graph packages;
-- R1/R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13/R14 did not change Android analyzer
-  math or `CalculationEngine`.
+- R15 added per-graph geometry results, resolved physical-panel iteration, and
+  explicit multi-panel report aggregation warnings for unsupported one-section
+  stored reports;
+- R1/R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13/R14/R15 did not change Android
+  analyzer math, validators, model authority, or `CalculationEngine`.
 
 Recommended next broad phase:
 
 ```text
-R15 - Graph Layout And Multi-Panel Runtime Closure
+R16 - Trace Extraction Evidence Candidate
 ```
 
 ## R0 Agent Swarm Summary

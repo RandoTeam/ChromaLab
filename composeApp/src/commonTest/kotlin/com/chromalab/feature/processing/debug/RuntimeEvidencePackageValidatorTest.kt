@@ -114,6 +114,24 @@ class RuntimeEvidencePackageValidatorTest {
     }
 
     @Test
+    fun builderPreservesOneEvidenceGraphPackagePerReportGraph() {
+        val singleGraphReport = reportWithRecovery(runtimeEvidence())
+        val graphOne = singleGraphReport.graphs.single()
+        val graphTwo = graphOne.copy(graphIndex = 2)
+        val report = singleGraphReport.copy(
+            metadata = singleGraphReport.metadata.copy(detectedGraphCount = 2),
+            graphs = listOf(graphOne, graphTwo),
+        )
+
+        val evidencePackage = RuntimeEvidencePackageBuilder.build(report)
+        val validation = RuntimeEvidencePackageValidator.validate(evidencePackage, existingPaths::contains)
+
+        assertEquals(2, evidencePackage.graphs.size)
+        assertEquals(listOf(1, 2), evidencePackage.graphs.map { it.graphIndex })
+        assertEquals(RuntimeEvidenceValidationVerdict.PASS, validation.verdict)
+    }
+
+    @Test
     fun validatorFailsAcceptedRuntimeOcrAnchorWithoutDeterministicPixel() {
         val evidencePackage = RuntimeEvidencePackageBuilder.build(reportWithRecovery(runtimeEvidence()))
         val graph = evidencePackage.graphs.single()

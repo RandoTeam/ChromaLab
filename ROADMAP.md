@@ -38,8 +38,10 @@ Current priorities:
      runs carrying graph failure packages; R13 added Android/runtime OCR-anchor
      bridge rows and validator safety checks; R14 added a named runtime
      OCR-anchor calibration strategy candidate with coordinate-frame safety and
-     selected/rejected strategy evidence. The next slice is graph layout and
-     multi-panel runtime closure, not a production Rust switch.
+     selected/rejected strategy evidence; R15 added per-graph runtime geometry
+     results, resolved physical-panel iteration, and explicit unsupported
+     aggregate multi-panel report warnings. The next slice is trace extraction
+     evidence only after Android reruns prove multi-panel propagation is stable.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;
