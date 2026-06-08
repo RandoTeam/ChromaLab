@@ -142,3 +142,13 @@ TV-4 adds the Kotlin-side policy candidate:
 The candidate can fuse lexical and optional dense retrieval contexts, but the
 default retrieval owner remains lexical. Without supplied dense contexts, the
 candidate is lexical-compatible and disableable.
+
+TV-5 dense-provider gate work is documented in
+`docs/TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md`.
+
+TV-5 defers Android/runtime dense-provider promotion. The active product
+retrieval owner remains `LexicalKnowledgeRetrievalBackend`; the hybrid policy
+remains a candidate; and `TurboVecKnowledgeRetrievalBackend` remains
+fail-closed until Android native packaging, index loading, storage, memory,
+latency, and citation-safety behavior are proven. TurboVec stays PC/dev-only
+for now.

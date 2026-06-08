@@ -2,10 +2,10 @@
 
 Date: 2026-06-08
 
-Status: `R15A_PLUS_TV4_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_PLUS_TV5_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
 Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking and
-TV-4 Knowledge retrieval backend promotion candidate tracking. No chromatographic
+TV-5 Knowledge dense-provider gate tracking. No chromatographic
 math, Android fixture outcomes, model policy, validators, or
 `CalculationEngine` behavior were changed.
 
@@ -102,6 +102,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md` | PC-only TurboVec Knowledge Pack v2 index build, MiniLM/BGE benchmark result, and TV-3 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md` | PC-only lexical/dense/hybrid retrieval arbitration result and TV-4 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md` | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md` | Dense-provider gate decision keeping TurboVec PC/dev-only and lexical as the active product retrieval owner. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -162,6 +163,7 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r12_runtime_evidence_failure_package_closure/` | R12 runtime evidence/export closure summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv2_turbovec_knowledge/` | TV-2 compact lexical vs TurboVec MiniLM/BGE Knowledge retrieval benchmark summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv3_retrieval_ab_arbitration/` | TV-3 compact retrieval policy arbitration benchmark summary. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv5_dense_provider_gate/` | TV-5 compact dense-provider promotion/defer decision summary. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv2-turbovec-knowledge/` | TV-2 local venv, downloaded models, TurboVec `.tvim` indexes, sidecars, build manifests, and ignored heavy artifacts. |
 
 ## Active Code Owner Areas
@@ -260,10 +262,10 @@ Decision:
 - R1/R2/R3/R4/R5/R6/R7/R8/R9/R10/R11/R12/R13/R14/R15 did not change Android
   analyzer math, validators, model authority, or `CalculationEngine`.
 
-Recommended next broad phase:
+Recommended next Android analyzer gate:
 
 ```text
-R16 - Trace Extraction Evidence Candidate
+R15A retry - Multi-Panel Android Evidence Gate
 ```
 
 Current TurboVec/Knowledge track:
@@ -281,10 +283,12 @@ TV-3 - Retrieval A/B Evaluation And Arbitration Policy
 
 TV-3 selected `HYBRID_UNION_RRF` as the benchmark target. TV-4 is now complete
 and added a Kotlin-side promotion candidate without changing the active default
-owner. The next Knowledge retrieval phase is:
+owner. TV-5 is now complete and deferred runtime dense-provider promotion. The
+active Knowledge retrieval owner remains `LexicalKnowledgeRetrievalBackend`.
+The next Knowledge retrieval phase is:
 
 ```text
-TV-5 - Dense Provider Promotion Or Rejection Gate
+TV-6 - Android Native Feasibility Spike
 ```
 
 This does not change Android analyzer phase order. TurboVec remains Knowledge

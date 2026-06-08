@@ -2,7 +2,7 @@
 
 Date: 2026-06-08
 
-Status: `TV4_BACKEND_PROMOTION_CANDIDATE_READY`
+Status: `TV5_RUNTIME_PROMOTION_DEFERRED_LEXICAL_ACTIVE`
 
 ## Summary
 
@@ -180,12 +180,22 @@ exact-rule queries. No dense runtime provider or Android dependency was added.
 
 ### TV-5: Promotion or rejection
 
+Status: complete. Closeout:
+`docs/TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md`.
+
 After benchmark proof:
 
 - promote TurboVec-backed ranking as the single active retrieval owner; or
 - reject it, remove runtime references, and keep lexical retrieval active.
 
 Exit gate: one active retrieval owner remains.
+
+Exit gate result: PASS as a decision gate. TV-5 defers Android/runtime dense
+provider promotion. The active retrieval owner remains
+`LexicalKnowledgeRetrievalBackend`; `HYBRID_UNION_RRF_CANDIDATE` remains a
+candidate policy; and `TurboVecKnowledgeRetrievalBackend` remains fail-closed as
+`SHADOW_UNAVAILABLE`. TurboVec is not rejected as a research tool, but it stays
+PC/dev-only until Android native feasibility is proven.
 
 ### TV-6: Android feasibility review
 
@@ -231,9 +241,11 @@ Adopt TurboVec as a replacement-gated candidate for local Knowledge Pack dense
 retrieval. TV-0/TV-1 separated the active lexical backend from the facade and
 added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexes
 can be built and benchmarked for Knowledge Pack v2. TV-3 selected
-`HYBRID_UNION_RRF` as the next benchmark target. Do not integrate TurboVec into
-Android runtime or chromatogram analysis calculations until TV-5 dense-provider
-decision and later packaging gates pass.
+`HYBRID_UNION_RRF` as the next benchmark target. TV-4 added a Kotlin-side
+hybrid policy candidate. TV-5 deferred runtime promotion because Android/native
+provider feasibility is not proven. Do not integrate TurboVec into Android
+runtime or chromatogram analysis calculations until TV-6 native feasibility and
+later packaging gates pass.
 
 ## Deep Audit Follow-Up
 

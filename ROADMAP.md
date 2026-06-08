@@ -81,9 +81,11 @@ Current priorities:
      semantic rankings, and preserved safety-critical exact-rule behavior;
    - TV-4 added the Kotlin-side `HYBRID_UNION_RRF_CANDIDATE` policy with
      lexical top-1 pinning for safety-critical exact-rule queries;
+   - TV-5 deferred dense-provider runtime promotion and kept lexical as the
+     active product retrieval owner because Android native packaging, index
+     loading, storage, memory, latency, and citation safety are not yet proven;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-5 dense provider promotion or rejection
-     gate;
+   - next Knowledge retrieval step: TV-6 Android native feasibility spike;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

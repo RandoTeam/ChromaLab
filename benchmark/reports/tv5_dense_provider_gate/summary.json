@@ -1,0 +1,29 @@
+{
+  "phase": "TV-5",
+  "date": "2026-06-08",
+  "status": "TV5_RUNTIME_PROMOTION_DEFERRED_LEXICAL_ACTIVE",
+  "scope": "Knowledge retrieval decision gate only",
+  "decision": {
+    "active_runtime_owner": "LexicalKnowledgeRetrievalBackend",
+    "candidate_policy": "HybridUnionRrfKnowledgeRetrievalBackend",
+    "dense_runtime_backend": "TurboVecKnowledgeRetrievalBackend",
+    "dense_runtime_status": "SHADOW_UNAVAILABLE",
+    "android_runtime_dependency_added": false,
+    "chromatogram_runtime_changed": false,
+    "calculation_engine_changed": false,
+    "next_turbovec_phase": "TV-6 - Android Native Feasibility Spike"
+  },
+  "promotion_blockers": [
+    "No Kotlin/Rust provider currently loads TurboVec indexes in product runtime.",
+    "Android native packaging has not been proven.",
+    "Embedding model storage, import/delete, memory, and latency are not validated on Android.",
+    "TurboVec PC tooling remains research/dev-only.",
+    "Analyzer Phase 9 remains blocked, so retrieval must not add duplicate active runtime layers."
+  ],
+  "safety_boundaries": [
+    "Knowledge retrieval cannot create chromatogram numeric evidence.",
+    "Vector similarity cannot override graph geometry, calibration, trace, peak metrics, report gates, or compound identity.",
+    "used_entry_ids and Knowledge policy validation remain mandatory.",
+    "E2B remains semantic/advisory only."
+  ]
+}

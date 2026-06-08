@@ -2,7 +2,7 @@
 
 Date: 2026-06-06
 
-Status: `TV4_BACKEND_PROMOTION_CANDIDATE_READY`
+Status: `TV5_RUNTIME_PROMOTION_DEFERRED_LEXICAL_ACTIVE`
 
 Scope: product architecture and integration planning only. This document does
 not change `CalculationEngine`, chromatographic math, Android runtime behavior,
@@ -299,6 +299,29 @@ Work:
 - export retrieval backend diagnostics;
 - ensure report behavior is identical when dense backend is unavailable.
 
+### Phase TV-E: Dense provider promotion or rejection gate
+
+Status: complete through TV-5. See
+`docs/TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md`.
+
+Goal: decide whether the TV-4 hybrid policy gets a real Android/runtime dense
+provider now, stays PC/dev-only, or is rejected as an active product path.
+
+Decision:
+
+- keep `LexicalKnowledgeRetrievalBackend` as the active product owner;
+- keep `HybridUnionRrfKnowledgeRetrievalBackend` as a candidate policy;
+- keep `TurboVecKnowledgeRetrievalBackend` fail-closed;
+- do not add TurboVec as an Android runtime dependency yet.
+
+Reason:
+
+- no product runtime provider loads TurboVec indexes;
+- Android native packaging and storage/delete/import behavior are not proven;
+- embedding model memory and latency are not validated on Android;
+- Phase 9 analyzer acceptance remains blocked, so Knowledge retrieval must not
+  add another active runtime owner.
+
 Exit criteria:
 
 - tests prove dense retrieval cannot affect numeric gates;
@@ -402,8 +425,8 @@ modernization path.
 ## Current Next TurboVec Step
 
 Do not integrate TurboVec into Android yet, and do not install it as a runtime
-dependency before the TV-5 dense-provider decision and later Android packaging
-gates pass.
+dependency before TV-6 Android native feasibility and later packaging gates
+pass.
 
 This plan is now subordinate to the replacement roadmap in
 `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
@@ -415,16 +438,19 @@ TV-0/TV-1 - TurboVec Knowledge Replacement Foundation
 TV-2 - PC-only Knowledge Pack TurboVec prototype
 TV-3 - Retrieval A/B Evaluation And Arbitration Policy
 TV-4 - Knowledge Retrieval Backend Promotion Candidate
+TV-5 - Dense Provider Promotion Or Rejection Gate
 ```
 
 The next TurboVec-specific work slice is:
 
 ```text
-TV-5 - Dense Provider Promotion Or Rejection Gate
+TV-6 - Android Native Feasibility Spike
 ```
 
-TV-5 must decide whether the selected hybrid policy gets a real local dense
-provider, remains PC/dev-only, or is rejected as an active product runtime path.
+TV-5 decided that the selected hybrid policy remains a candidate and does not
+get a real product runtime dense provider yet. TV-6 must prove Android native
+packaging, local index loading, storage/import/delete behavior, memory, latency,
+and citation safety before runtime promotion can reopen.
 
 In parallel, the main chromatogram analyzer remains blocked at the R15A Android
 evidence gate. TurboVec can help retrieve research and failure context, but it is

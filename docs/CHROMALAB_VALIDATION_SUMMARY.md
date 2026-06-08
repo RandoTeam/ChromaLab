@@ -38,6 +38,12 @@ Source: [Phase 9J Autonomous Analysis Truth Audit](PHASE9J_AUTONOMOUS_ANALYSIS_T
 
 Latest gate attempt: [R15A Multi-Panel Android Evidence Gate](R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md).
 
+Latest Knowledge retrieval gate:
+[TV-5 Dense Provider Promotion/Rejection Gate](TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md).
+TV-5 did not change Android analysis validation. It keeps lexical retrieval as
+the active product owner and defers TurboVec runtime promotion until Android
+native feasibility is proven.
+
 ## Report Gates
 
 ChromaLab validates reports through gates rather than visual appearance.
@@ -870,8 +876,31 @@ Interpretation:
 
 - TV-4 passes as an implementation proof for the selected policy shape.
 - Lexical retrieval remains the active default owner.
-- The next Knowledge retrieval phase is TV-5 dense provider promotion or
-  rejection gate.
+- TV-5 dense provider promotion/rejection gate is complete.
+- Runtime dense-provider promotion is deferred; TurboVec remains PC/dev-only and
+  lexical remains the active product retrieval owner.
+- The next Knowledge retrieval phase is TV-6 Android native feasibility spike.
+
+## TV-5 Dense Provider Promotion/Rejection Gate
+
+TV-5 decided not to promote TurboVec or another dense provider into ChromaLab
+Android/product runtime yet.
+
+Result:
+
+- active runtime owner remains `LexicalKnowledgeRetrievalBackend`;
+- `HYBRID_UNION_RRF_CANDIDATE` remains a candidate policy;
+- `TurboVecKnowledgeRetrievalBackend` remains fail-closed as
+  `SHADOW_UNAVAILABLE`;
+- no Android dependency, chromatogram analyzer behavior, report gate, validator,
+  model authority, or `CalculationEngine` behavior changed.
+
+Interpretation:
+
+- TurboVec remains useful for PC/dev Knowledge retrieval research.
+- Android/runtime promotion needs a separate TV-6 native feasibility spike.
+- Knowledge retrieval modernization does not alter Phase 9 Android analyzer
+  acceptance.
 
 ## Current Engineering Blockers
 
