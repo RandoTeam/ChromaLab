@@ -2,10 +2,10 @@
 
 Date: 2026-06-08
 
-Status: `R15A_PLUS_TV2_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_PLUS_TV3_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
 Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking and
-TV-2 PC-only TurboVec Knowledge index prototype tracking. No chromatographic
+TV-3 PC-only TurboVec retrieval arbitration tracking. No chromatographic
 math, Android fixture outcomes, model policy, validators, or
 `CalculationEngine` behavior were changed.
 
@@ -100,6 +100,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TURBOVEC_DEEP_AUDIT_AND_MODERNIZATION_PLAN.md` | TurboVec/Rust modernization planning. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md` | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md` | PC-only TurboVec Knowledge Pack v2 index build, MiniLM/BGE benchmark result, and TV-3 decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md` | PC-only lexical/dense/hybrid retrieval arbitration result and TV-4 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -159,6 +160,7 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r11_runtime_calibration_closure_candidate/` | R11 runtime calibration closure summary, overlays, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r12_runtime_evidence_failure_package_closure/` | R12 runtime evidence/export closure summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv2_turbovec_knowledge/` | TV-2 compact lexical vs TurboVec MiniLM/BGE Knowledge retrieval benchmark summary. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv3_retrieval_ab_arbitration/` | TV-3 compact retrieval policy arbitration benchmark summary. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv2-turbovec-knowledge/` | TV-2 local venv, downloaded models, TurboVec `.tvim` indexes, sidecars, build manifests, and ignored heavy artifacts. |
 
 ## Active Code Owner Areas
@@ -274,6 +276,13 @@ TV-2 passes as a PC-only prototype and the next Knowledge retrieval phase is:
 
 ```text
 TV-3 - Retrieval A/B Evaluation And Arbitration Policy
+```
+
+TV-3 is now complete. It selected `HYBRID_UNION_RRF` as the next benchmark
+target and the next Knowledge retrieval phase is:
+
+```text
+TV-4 - Knowledge Retrieval Backend Promotion Candidate
 ```
 
 This does not change Android analyzer phase order. TurboVec remains Knowledge

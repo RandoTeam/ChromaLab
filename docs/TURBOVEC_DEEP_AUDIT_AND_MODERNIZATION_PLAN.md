@@ -2,7 +2,7 @@
 
 Date: 2026-06-06
 
-Status: `TV2_PC_INDEX_PROTOTYPE_COMPLETE`
+Status: `TV3_RETRIEVAL_ARBITRATION_COMPLETE`
 
 Scope: product architecture and integration planning only. This document does
 not change `CalculationEngine`, chromatographic math, Android runtime behavior,
@@ -251,8 +251,12 @@ Result:
 
 ### Phase TV-C: Hybrid lexical + dense benchmark
 
-Status: next TurboVec phase. TV-2 benchmark data shows dense retrieval is useful
-but not yet a complete replacement for lexical/rule-like retrieval.
+Status: complete through TV-3. See
+`docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md`.
+
+TV-2 benchmark data showed dense retrieval is useful but not a complete
+replacement for lexical/rule-like retrieval. TV-3 evaluated explicit policy
+candidates and selected `HYBRID_UNION_RRF` as the next benchmark target.
 
 Goal: prove dense retrieval improves real ChromaLab tasks.
 
@@ -272,7 +276,18 @@ Exit criteria:
 - no missing-citation regression;
 - lexical-only fallback remains valid.
 
+Result:
+
+- `HYBRID_UNION_RRF` reached 10/10 expected-entry hits and 9/10 top-1 hits;
+- it recovered the lexical miss for the natural-language photo-only
+  compound-identification caveat;
+- it preserved safety-critical exact-rule top-1 behavior;
+- dense-only MiniLM and BGE remain rejected as promotion targets.
+
 ### Phase TV-D: Rust/Kotlin retrieval abstraction
+
+Status: next TurboVec phase, now named TV-4 Knowledge Retrieval Backend
+Promotion Candidate.
 
 Goal: make backend choice explicit without changing scientific behavior.
 

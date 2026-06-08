@@ -42,61 +42,111 @@ GOLDEN_QUERIES: tuple[dict[str, Any], ...] = (
         "query_id": "sn_signal_to_noise",
         "query": "S/N signal to noise",
         "expected_entry_ids": ["kp2-term-sn"],
+        "required_entry_ids": ["kp2-term-sn"],
+        "forbidden_entry_ids": [],
         "category": "glossary",
+        "query_class": "exact_rule",
+        "safety_critical": False,
     },
     {
         "query_id": "ion71_title_channel",
         "query": "Ion 71.00 (70.70 to 71.70) text classification",
         "expected_entry_ids": ["kp2-rule-ion-title-not-peak"],
+        "required_entry_ids": ["kp2-rule-ion-title-not-peak"],
+        "forbidden_entry_ids": [],
         "category": "text_classification",
+        "query_class": "exact_rule",
+        "safety_critical": True,
     },
     {
         "query_id": "sim_channel",
         "query": "SIM selected ion monitoring channel",
         "expected_entry_ids": ["kp2-ms-sim", "kp2-ms-selected-ion-monitoring"],
+        "required_entry_ids": ["kp2-ms-sim"],
+        "forbidden_entry_ids": [],
         "category": "mass_spectrometry",
+        "query_class": "exact_rule",
+        "safety_critical": False,
     },
     {
         "query_id": "peak_label_signal_verification",
         "query": "peak label requires signal verification",
         "expected_entry_ids": ["kp2-rule-peak-annotation-signal-verified"],
+        "required_entry_ids": ["kp2-rule-peak-annotation-signal-verified"],
+        "forbidden_entry_ids": [],
         "category": "text_classification",
+        "query_class": "exact_rule",
+        "safety_critical": True,
     },
     {
         "query_id": "kovats_without_reference",
         "query": "Kovats without reference series",
         "expected_entry_ids": ["kp2-caveat-no-kovats-without-reference"],
+        "required_entry_ids": ["kp2-caveat-no-kovats-without-reference"],
+        "forbidden_entry_ids": [],
         "category": "report_caveat",
+        "query_class": "safety_boundary",
+        "safety_critical": True,
     },
     {
         "query_id": "compound_without_evidence",
         "query": "compound assignment without explicit evidence",
         "expected_entry_ids": ["kp2-caveat-no-compound-assignment"],
+        "required_entry_ids": ["kp2-caveat-no-compound-assignment"],
+        "forbidden_entry_ids": [
+            "kp2-compound-stub-n-c12-alkane",
+            "kp2-compound-stub-n-c24-alkane",
+            "kp2-compound-stub-n-c27-alkane",
+            "kp2-compound-stub-n-c28-alkane",
+        ],
         "category": "report_caveat",
+        "query_class": "safety_boundary",
+        "safety_critical": True,
     },
     {
         "query_id": "knowledge_cannot_create_metrics",
         "query": "knowledge cannot create numeric metrics",
         "expected_entry_ids": ["kp2-safety-knowledge-cannot-measure"],
+        "required_entry_ids": ["kp2-safety-knowledge-cannot-measure"],
+        "forbidden_entry_ids": [],
         "category": "safety",
+        "query_class": "safety_boundary",
+        "safety_critical": True,
     },
     {
         "query_id": "calibration_warning",
         "query": "calibration invalid warning missing anchors residual checks",
         "expected_entry_ids": ["kp2-snippet-calibration-invalid-warning", "kp2-caveat-calibration-required"],
+        "required_entry_ids": ["kp2-snippet-calibration-invalid-warning"],
+        "forbidden_entry_ids": [],
         "category": "warning_explanation",
+        "query_class": "warning_explanation",
+        "safety_critical": True,
     },
     {
         "query_id": "ocr_ambiguity_warning",
         "query": "ambiguous OCR crop provenance uncertain text into metrics",
         "expected_entry_ids": ["kp2-snippet-ocr-ambiguity-warning"],
+        "required_entry_ids": ["kp2-snippet-ocr-ambiguity-warning"],
+        "forbidden_entry_ids": [],
         "category": "warning_explanation",
+        "query_class": "warning_explanation",
+        "safety_critical": True,
     },
     {
         "query_id": "photo_alone_cannot_identify_compound",
         "query": "Can the app identify a compound from a chromatogram photo alone?",
         "expected_entry_ids": ["kp2-caveat-no-compound-assignment"],
+        "required_entry_ids": ["kp2-caveat-no-compound-assignment"],
+        "forbidden_entry_ids": [
+            "kp2-compound-stub-n-c12-alkane",
+            "kp2-compound-stub-n-c24-alkane",
+            "kp2-compound-stub-n-c27-alkane",
+            "kp2-compound-stub-n-c28-alkane",
+        ],
         "category": "semantic_caveat",
+        "query_class": "natural_language",
+        "safety_critical": True,
     },
 )
 
@@ -245,18 +295,36 @@ def normalize(text: str) -> str:
     return " ".join(tokenize(text))
 
 
-def evaluate_results(results: list[dict[str, Any]], expected_entry_ids: list[str]) -> dict[str, Any]:
+def evaluate_results(
+    results: list[dict[str, Any]],
+    expected_entry_ids: list[str],
+    required_entry_ids: list[str] | None = None,
+    forbidden_entry_ids: list[str] | None = None,
+) -> dict[str, Any]:
     top_ids = [result["entry_id"] for result in results]
     expected_set = set(expected_entry_ids)
+    required_set = set(required_entry_ids if required_entry_ids is not None else expected_entry_ids)
+    forbidden_set = set(forbidden_entry_ids or [])
     first_hit_rank = next(
         (index + 1 for index, entry_id in enumerate(top_ids) if entry_id in expected_set),
         None,
     )
+    required_ranks = {
+        entry_id: (top_ids.index(entry_id) + 1 if entry_id in top_ids else None)
+        for entry_id in required_set
+    }
+    forbidden_present = [entry_id for entry_id in top_ids if entry_id in forbidden_set]
     return {
         "top_ids": top_ids,
         "hit": first_hit_rank is not None,
         "first_hit_rank": first_hit_rank,
         "top1_hit": bool(top_ids and top_ids[0] in expected_set),
+        "required_entry_ids": sorted(required_set),
+        "missing_required_entry_ids": sorted(entry_id for entry_id, rank in required_ranks.items() if rank is None),
+        "required_entry_ranks": required_ranks,
+        "forbidden_entry_ids": sorted(forbidden_set),
+        "forbidden_entry_ids_present": forbidden_present,
+        "forbidden_entry_present": bool(forbidden_present),
     }
 
 

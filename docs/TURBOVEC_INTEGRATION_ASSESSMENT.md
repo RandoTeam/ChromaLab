@@ -2,7 +2,7 @@
 
 Date: 2026-06-08
 
-Status: `TV2_PC_INDEX_PROTOTYPE_COMPLETE`
+Status: `TV3_RETRIEVAL_ARBITRATION_COMPLETE`
 
 ## Summary
 
@@ -118,6 +118,9 @@ not active runtime promotion.
 
 ### TV-3: Retrieval A/B benchmark
 
+Status: complete. Closeout:
+`docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md`.
+
 Compare the current lexical engine with TurboVec-assisted retrieval on reviewed
 queries:
 
@@ -138,8 +141,12 @@ Metrics:
 - rebuild time;
 - unsupported claim rate when used in model prompts.
 
-Exit gate: dense retrieval improves at least one reviewed semantic task without
-increasing forbidden-use or missing-citation failures.
+Exit gate result: PASS. TV-3 evaluated lexical-only, dense-only MiniLM,
+dense-only BGE, guarded hybrid policies, and reciprocal-rank fusion. Dense-only
+policies remain rejected as promotion targets because they regress
+safety-critical exact-rule ranking. The selected benchmark policy is
+`HYBRID_UNION_RRF`, which recovers the lexical natural-language compound-caveat
+miss, improves selected semantic rankings, and records 0 safety regressions.
 
 ### TV-4: Kotlin/Rust abstraction
 
@@ -215,9 +222,10 @@ Any TurboVec-backed retrieval must preserve the existing Knowledge Pack contract
 Adopt TurboVec as a replacement-gated candidate for local Knowledge Pack dense
 retrieval. TV-0/TV-1 separated the active lexical backend from the facade and
 added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexes
-can be built and benchmarked for Knowledge Pack v2. Do not integrate TurboVec
-into Android runtime or chromatogram analysis calculations until TV-3 retrieval
-policy and later packaging gates pass.
+can be built and benchmarked for Knowledge Pack v2. TV-3 selected
+`HYBRID_UNION_RRF` as the next benchmark target. Do not integrate TurboVec into
+Android runtime or chromatogram analysis calculations until TV-4 implementation
+and later packaging gates pass.
 
 ## Deep Audit Follow-Up
 

@@ -115,3 +115,15 @@ exact/rule-like tasks. The active runtime owner therefore remains
 `LexicalKnowledgeRetrievalBackend` until TV-3 defines and validates a retrieval
 A/B or arbitration policy. TurboVec remains PC-only and is not part of Android
 analysis runtime.
+
+TV-3 arbitration work is documented in
+`docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md`.
+
+TV-3 selected `HYBRID_UNION_RRF` as the next benchmark target:
+
+- lexical, MiniLM, and BGE rankings are fused through reciprocal-rank fusion;
+- lexical top-1 is pinned for safety-critical exact-rule queries;
+- dense-only backends are not promotion targets because they regress
+  safety-critical exact-rule ranking;
+- the selected policy is still not active runtime behavior until a later TV-4
+  implementation gate proves Kotlin facade compatibility and safety.

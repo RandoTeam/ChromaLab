@@ -76,9 +76,11 @@ Current priorities:
    - TV-2 built PC-only TurboVec indexes for Knowledge Pack v2 with MiniLM and
      BGE, found useful semantic/caveat improvements, and recorded 0 safety
      regressions;
-   - do not promote TurboVec yet because TV-2 also found non-safety rank
-     regressions on exact/rule-like queries;
-   - next Knowledge retrieval step: TV-3 A/B evaluation and arbitration policy;
+   - TV-3 selected `HYBRID_UNION_RRF` as the safe benchmark target because it
+     recovered the natural-language compound-caveat miss, improved selected
+     semantic rankings, and preserved safety-critical exact-rule behavior;
+   - dense-only MiniLM/BGE remain rejected as promotion targets;
+   - next Knowledge retrieval step: TV-4 backend promotion candidate;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

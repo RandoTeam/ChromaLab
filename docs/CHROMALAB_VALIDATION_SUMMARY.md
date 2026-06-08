@@ -817,6 +817,39 @@ Interpretation:
   under `artifacts/tv2-turbovec-knowledge/`; compact summaries are tracked under
   `benchmark/reports/tv2_turbovec_knowledge/`.
 
+## TV-3 TurboVec Retrieval A/B Arbitration
+
+TV-3 compared lexical retrieval, TurboVec MiniLM, TurboVec BGE, and fixed hybrid
+arbitration policies. It remained PC-only and did not change Android runtime
+behavior, chromatogram analysis, validators, report gates, or
+`CalculationEngine`.
+
+Selected policy:
+
+```text
+HYBRID_UNION_RRF
+```
+
+Policy benchmark:
+
+| Policy | Status | Hits | Top-1 | Improvements | Regressions | Semantic miss recoveries | Safety misses | Safety regressions |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `LEXICAL_ONLY` | PASS | 9/10 | 7/10 | 0 | 0 | 0 | 1 | 0 |
+| `MINILM_ONLY` | REVIEW | 9/10 | 7/10 | 2 | 2 | 0 | 1 | 2 |
+| `BGE_ONLY` | REVIEW | 10/10 | 6/10 | 2 | 2 | 1 | 0 | 1 |
+| `HYBRID_LEXICAL_GUARD_BGE` | PASS | 10/10 | 7/10 | 1 | 0 | 1 | 0 | 0 |
+| `HYBRID_LEXICAL_GUARD_MINILM` | PASS | 9/10 | 7/10 | 0 | 0 | 0 | 1 | 0 |
+| `HYBRID_UNION_RRF` | PASS | 10/10 | 9/10 | 3 | 0 | 1 | 0 | 0 |
+
+Interpretation:
+
+- `HYBRID_UNION_RRF` recovered the lexical natural-language compound-caveat
+  miss and improved selected semantic rankings.
+- Dense-only profiles remain rejected as promotion targets because they regress
+  safety-critical exact-rule ranking.
+- The next Knowledge retrieval phase is TV-4 backend promotion candidate.
+- Lexical retrieval remains the active owner until TV-4 passes.
+
 ## Current Engineering Blockers
 
 Highest-priority blockers:
