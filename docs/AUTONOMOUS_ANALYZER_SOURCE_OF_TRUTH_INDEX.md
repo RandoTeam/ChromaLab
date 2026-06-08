@@ -2,11 +2,12 @@
 
 Date: 2026-06-08
 
-Status: `R15A_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_PLUS_TV0_TV1_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
-Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking. No
-chromatographic math, Android fixture outcomes, model policy, validators, or
-`CalculationEngine` behavior were changed.
+Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking and
+TV-0/TV-1 Knowledge retrieval backend foundation. No chromatographic math,
+Android fixture outcomes, model policy, validators, or `CalculationEngine`
+behavior were changed.
 
 ## Purpose
 
@@ -97,6 +98,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_KNOWLEDGE_PACK_ARCHITECTURE.md` | Knowledge Pack rules, retrieval, provenance, TurboVec candidate note. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TURBOVEC_INTEGRATION_ASSESSMENT.md` | TurboVec role and boundaries. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TURBOVEC_DEEP_AUDIT_AND_MODERNIZATION_PLAN.md` | TurboVec/Rust modernization planning. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md` | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources

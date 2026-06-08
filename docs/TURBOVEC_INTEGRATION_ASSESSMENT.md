@@ -1,8 +1,8 @@
 # TurboVec Integration Assessment
 
-Date: 2026-06-06
+Date: 2026-06-08
 
-Status: `RESEARCH_CANDIDATE`
+Status: `TV0_TV1_FOUNDATION_COMPLETE`
 
 ## Summary
 
@@ -31,7 +31,7 @@ The right integration path is replacement-gated, not permanently additive:
 | [RyanCodrai/turbovec](https://github.com/RyanCodrai/turbovec) | Rust vector index with Python bindings, MIT license, local search, SIMD kernels, LangChain/LlamaIndex/Haystack/Agno integrations. | Useful as a local dense retrieval candidate, not as a numeric chromatogram pipeline component. |
 | [TurboVec API reference](https://github.com/RyanCodrai/turbovec/blob/main/docs/api.md) | `TurboQuantIndex`, `IdMapIndex`, `allowlist`, `.tv`, `.tvim`, stable external ids. | `IdMapIndex` maps well to ChromaLab `KnowledgeEntry.entryId` if we prototype dense retrieval. |
 | [TurboVec PyPI](https://pypi.org/project/turbovec/) | `turbovec 0.7.0`, released 2026-05-30, Python >= 3.9, alpha classifier, optional framework extras. | Good for PC-side prototype; alpha status blocks immediate production Android adoption. |
-| [TurboVec crates.io](https://crates.io/crates/turbovec) | Rust crate availability; latest crate version observed as 0.8.0 on 2026-06-06. | Rust path may become more relevant for our Rust CV/tooling direction than Python-only app integration. |
+| [TurboVec docs.rs](https://docs.rs/turbovec/latest/turbovec/) | Rust crate documentation observed as `turbovec 0.8.0`; exports `TurboQuantIndex` and `IdMapIndex`. | Rust path may become more relevant for our Rust tooling direction than Python-only integration, but still requires local benchmark proof. |
 | [Google Research TurboQuant blog](https://research.google/blog/turboquant-redefining-ai-efficiency-with-extreme-compression/) | TurboQuant targets vector quantization for vector search and KV cache compression. | Confirms the underlying algorithm is relevant to retrieval/memory, not chromatogram measurement. |
 | [TurboQuant arXiv paper](https://arxiv.org/abs/2504.19874) | Online vector quantization with near-optimal distortion rate and nearest-neighbor search claims. | Supports a research prototype, but ChromaLab still needs local benchmark proof before adoption. |
 
@@ -58,37 +58,44 @@ ChromaLab already has a local/offline-first Knowledge Pack:
 
 - runtime contracts: `KnowledgeEntry`, `KnowledgeSearchQuery`,
   `KnowledgeSearchResult`, `KnowledgeRetrievalContext`;
-- current search: lexical BM25-style ranking in `KnowledgeRetrievalEngine`;
+- current facade: `KnowledgeRetrievalEngine`;
+- current active ranking backend: `LexicalKnowledgeRetrievalBackend`;
+- current dense candidate: fail-closed `TurboVecKnowledgeRetrievalBackend`;
 - safety contract: retrieved entries may ground OCR/semantic/warning/report
   explanations, but they cannot create numeric chromatographic evidence.
 
-TurboVec can fit as an optional backend behind a retrieval abstraction:
+TurboVec can fit only as a replacement-gated backend behind the retrieval
+facade:
 
 ```text
 KnowledgeSearchQuery
-    -> lexical candidate filter (existing KnowledgeRetrievalEngine)
-    -> optional dense rerank (TurboVec IdMapIndex)
+    -> KnowledgeRetrievalEngine facade
+    -> active backend: LexicalKnowledgeRetrievalBackend
+    -> future candidate: TurboVec-backed retrieval/ranking after benchmark pass
     -> KnowledgeRetrievalContext with used entry ids
     -> bounded snippets for E2B/E4B semantic prompts
 ```
 
-The lexical engine should remain in the path even if TurboVec is enabled. It
-provides deterministic filters for entry type, allowed use, language, exact
-aliases, and safety boundaries. TurboVec can rerank or expand candidates, but it
-must not bypass `KnowledgeUsePolicyValidator`.
+Lexical and dense ranking may run side by side only during benchmark/shadow
+evaluation. If TurboVec passes, it must become the single active ranking/storage
+owner and the old lexical ranking path must be retired or demoted to exact
+filter/policy support. TurboVec must never bypass `KnowledgeUsePolicyValidator`.
 
 ## Proposed Integration Phases
 
-### TV-0: No-runtime adoption decision
+### TV-0/TV-1: Backend foundation and benchmark guardrails
 
 - Do not add TurboVec to Android/KMP runtime yet.
 - Do not add Python runtime dependencies to the Android app.
-- Do not replace `KnowledgeRetrievalEngine`.
-- Record TurboVec as a research candidate only.
+- Keep `KnowledgeRetrievalEngine` as facade.
+- Move lexical ranking behind `LexicalKnowledgeRetrievalBackend`.
+- Add fail-closed `TurboVecKnowledgeRetrievalBackend` contract.
+- Add retrieval diagnostics and first citation benchmark goldens.
 
-Exit gate: this document exists and the product boundary is clear.
+Exit gate: backend separation exists, lexical behavior still passes, and the
+TurboVec candidate cannot return results until a local benchmark/index exists.
 
-### TV-1: Desktop prototype indexer
+### TV-2: Desktop prototype indexer
 
 Build a local script/tool outside Android runtime that:
 
@@ -101,7 +108,7 @@ Build a local script/tool outside Android runtime that:
 
 Exit gate: index builds repeatably on PC and can be deleted/rebuilt.
 
-### TV-2: Retrieval A/B benchmark
+### TV-3: Retrieval A/B benchmark
 
 Compare the current lexical engine with TurboVec-assisted retrieval on reviewed
 queries:
@@ -126,7 +133,7 @@ Metrics:
 Exit gate: dense retrieval improves at least one reviewed semantic task without
 increasing forbidden-use or missing-citation failures.
 
-### TV-3: Kotlin/Rust abstraction
+### TV-4: Kotlin/Rust abstraction
 
 If TV-2 passes, add a backend interface around retrieval:
 
@@ -148,7 +155,16 @@ Required behavior:
 Exit gate: tests prove dense retrieval cannot produce forbidden numeric evidence
 or uncited model explanations.
 
-### TV-4: Android feasibility review
+### TV-5: Promotion or rejection
+
+After benchmark proof:
+
+- promote TurboVec-backed ranking as the single active retrieval owner; or
+- reject it, remove runtime references, and keep lexical retrieval active.
+
+Exit gate: one active retrieval owner remains.
+
+### TV-6: Android feasibility review
 
 Only after desktop A/B proof, evaluate Android packaging:
 
@@ -188,8 +204,9 @@ Any TurboVec-backed retrieval must preserve the existing Knowledge Pack contract
 
 ## Decision
 
-Adopt TurboVec as a research candidate for local Knowledge Pack dense retrieval,
-starting with a PC-side prototype and benchmark. Do not integrate it into Android
+Adopt TurboVec as a replacement-gated candidate for local Knowledge Pack dense
+retrieval. TV-0/TV-1 has separated the active lexical backend from the facade and
+added fail-closed TurboVec diagnostics. Do not integrate TurboVec into Android
 runtime or chromatogram analysis calculations until benchmark and packaging gates
 pass.
 

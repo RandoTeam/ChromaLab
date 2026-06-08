@@ -82,12 +82,18 @@ Compact retrieval cards are optimized for Gemma E4B/E2B semantic prompts and inc
 TurboVec is tracked as a research candidate for optional local dense retrieval,
 documented in `docs/TURBOVEC_INTEGRATION_ASSESSMENT.md`.
 
-The current decision is conservative:
+The current decision is replacement-gated:
 
-- keep `KnowledgeRetrievalEngine` as the default lexical and safety baseline;
+- keep `KnowledgeRetrievalEngine` as a backwards-compatible retrieval facade;
+- keep `LexicalKnowledgeRetrievalBackend` as the current active ranking owner;
+- keep `TurboVecKnowledgeRetrievalBackend` fail-closed as a shadow-unavailable
+  candidate until a local index and benchmark pass;
 - prototype TurboVec only as a PC-side dense reranker over curated Knowledge Pack
   entries;
 - require local embeddings, stable entry-id mapping, retrieval benchmarks, and
   citation-safety tests before any Android runtime dependency is considered;
 - never let vector similarity create or override graph geometry, calibration,
   trace data, peak metrics, report gates, or compound identity.
+
+TV-0/TV-1 foundation work is documented in
+`docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md`.

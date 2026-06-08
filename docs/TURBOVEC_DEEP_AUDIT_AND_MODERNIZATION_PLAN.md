@@ -361,37 +361,35 @@ modernization path.
 - REVIEW/DIAGNOSTIC must still be useful and visually clear;
 - no hidden BLOCKED state behind polished HTML.
 
-## Immediate Next Step
+## Current Next TurboVec Step
 
 Do not integrate TurboVec into Android yet, and do not install it as a runtime
-dependency before the replacement-control phase exists.
+dependency before PC retrieval benchmarks pass.
 
 This plan is now subordinate to the replacement roadmap in
 `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
 
-The corrected next safe work slice is:
+Completed foundation:
 
 ```text
-R0 - Source-of-Truth And Layer Inventory
+TV-0/TV-1 - TurboVec Knowledge Replacement Foundation
 ```
 
-R0 must identify active owner docs, implementation files, tests, generated
-artifacts, stale historical documents, and replacement gates for every analyzer
-stage. This prevents ChromaLab from accumulating extra parallel layers and old
-references.
+TV-0/TV-1 separated `KnowledgeRetrievalEngine` from the active lexical ranking
+backend, added fail-closed TurboVec diagnostics, and added the first citation
+goldens. It did not add a dense index or Android runtime dependency.
 
-After R0, TurboVec work may proceed only as:
+The next TurboVec-specific work slice is:
 
 ```text
-TV-A: Dependency/license gate + local prototype design
+TV-2: PC-only Knowledge Pack TurboVec prototype
 ```
 
-Then, if TV-A passes:
+TV-2 must choose a local embedding model, build a `.tvim` index plus stable
+`u64 -> entryId` sidecar, and compare top-k retrieval against the lexical
+goldens. If it fails, the TurboVec path should be rejected or kept PC-only
+without adding stale Android runtime references.
 
-```text
-TV-B: PC-only Knowledge Pack TurboVec prototype
-```
-
-In parallel, the main chromatogram analyzer should continue with a separate Rust
-CV audit phase. TurboVec can help retrieve research and failure context, but it
-is not the replacement for deterministic geometry and calibration work.
+In parallel, the main chromatogram analyzer remains blocked at the R15A Android
+evidence gate. TurboVec can help retrieve research and failure context, but it is
+not the replacement for deterministic geometry and calibration work.

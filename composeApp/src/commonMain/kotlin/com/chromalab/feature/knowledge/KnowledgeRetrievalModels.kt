@@ -166,6 +166,53 @@ data class KnowledgeSearchQuery(
 )
 
 @Serializable
+enum class KnowledgeRetrievalBackendId {
+    LEXICAL_BM25,
+    TURBOVEC_DENSE_SHADOW,
+}
+
+@Serializable
+enum class KnowledgeRetrievalSafetyStatus {
+    POLICY_READY,
+    SHADOW_UNAVAILABLE,
+    SHADOW_REJECTED,
+}
+
+@Serializable
+data class KnowledgeEmbeddingModelManifest(
+    val modelId: String,
+    val version: String,
+    val dimension: Int,
+    val localOnly: Boolean = true,
+    val notes: List<String> = emptyList(),
+)
+
+@Serializable
+data class KnowledgeDenseIndexManifest(
+    val backendId: KnowledgeRetrievalBackendId,
+    val indexVersion: String,
+    val entryCount: Int,
+    val embeddingModel: KnowledgeEmbeddingModelManifest,
+    val bitWidth: Int,
+    val indexPath: String? = null,
+    val idMapPath: String? = null,
+    val license: String? = null,
+    val status: KnowledgeRetrievalSafetyStatus = KnowledgeRetrievalSafetyStatus.SHADOW_UNAVAILABLE,
+)
+
+@Serializable
+data class KnowledgeRetrievalDiagnostics(
+    val backendId: KnowledgeRetrievalBackendId = KnowledgeRetrievalBackendId.LEXICAL_BM25,
+    val indexVersion: String = "lexical-bm25",
+    val retrievalStage: String = "lexical_rank",
+    val safetyStatus: KnowledgeRetrievalSafetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
+    val denseIndexManifest: KnowledgeDenseIndexManifest? = null,
+    val latencyMs: Long? = null,
+    val memoryBytes: Long? = null,
+    val notes: List<String> = emptyList(),
+)
+
+@Serializable
 data class KnowledgeSearchResult(
     val entryId: String,
     val entry: KnowledgeEntry,
@@ -173,6 +220,10 @@ data class KnowledgeSearchResult(
     val matchedTerms: List<String> = emptyList(),
     val sourceRefs: List<KnowledgeSourceRef> = emptyList(),
     val forbiddenUse: List<String> = entry.policy.forbiddenUse,
+    val backendId: KnowledgeRetrievalBackendId = KnowledgeRetrievalBackendId.LEXICAL_BM25,
+    val indexVersion: String = "lexical-bm25",
+    val retrievalStage: String = "lexical_rank",
+    val safetyStatus: KnowledgeRetrievalSafetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
 )
 
 @Serializable
@@ -181,6 +232,9 @@ data class KnowledgeRetrievalContext(
     val knowledgePackVersion: String,
     val query: KnowledgeSearchQuery,
     val results: List<KnowledgeSearchResult>,
+    val backendId: KnowledgeRetrievalBackendId = KnowledgeRetrievalBackendId.LEXICAL_BM25,
+    val diagnostics: KnowledgeRetrievalDiagnostics = KnowledgeRetrievalDiagnostics(backendId = backendId),
+    val usedEntryIds: List<String> = results.map { it.entryId },
 )
 
 @Serializable

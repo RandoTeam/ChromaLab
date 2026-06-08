@@ -30,6 +30,59 @@ class KnowledgeRetrievalLayerTest {
     }
 
     @Test
+    fun lexicalBackendExposesDiagnosticsAndUsedEntryIds() {
+        val context = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = KnowledgeSearchQuery("What does S/N mean in a chromatogram?"),
+        )
+
+        assertEquals(KnowledgeRetrievalBackendId.LEXICAL_BM25, context.backendId)
+        assertEquals(KnowledgeRetrievalBackendId.LEXICAL_BM25, context.diagnostics.backendId)
+        assertEquals(KnowledgeRetrievalSafetyStatus.POLICY_READY, context.diagnostics.safetyStatus)
+        assertEquals(context.results.map { it.entryId }, context.usedEntryIds)
+        assertTrue(context.results.all { it.backendId == KnowledgeRetrievalBackendId.LEXICAL_BM25 })
+    }
+
+    @Test
+    fun turbovecBackendIsShadowUnavailableUntilBenchmarkPasses() {
+        val context = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = KnowledgeSearchQuery("calibration invalid warning"),
+            backend = TurboVecKnowledgeRetrievalBackend,
+        )
+
+        assertEquals(KnowledgeRetrievalBackendId.TURBOVEC_DENSE_SHADOW, context.backendId)
+        assertEquals(KnowledgeRetrievalSafetyStatus.SHADOW_UNAVAILABLE, context.diagnostics.safetyStatus)
+        assertTrue(context.results.isEmpty())
+        assertTrue(context.usedEntryIds.isEmpty())
+    }
+
+    @Test
+    fun benchmarkGoldensPreserveExpectedScientificCitations() {
+        val goldens = listOf(
+            "S/N signal to noise" to "kp2-term-sn",
+            "Ion 71.00 (70.70 to 71.70) text classification" to "kp2-rule-ion-title-not-peak",
+            "SIM selected ion monitoring channel" to "kp2-ms-sim",
+            "peak label requires signal verification" to "kp2-rule-peak-annotation-signal-verified",
+            "Kovats without reference series" to "kp2-caveat-no-kovats-without-reference",
+            "compound assignment without explicit evidence" to "kp2-caveat-no-compound-assignment",
+            "knowledge cannot create numeric metrics" to "kp2-safety-knowledge-cannot-measure",
+        )
+
+        goldens.forEach { (query, expectedEntryId) ->
+            val context = KnowledgeRetrievalEngine.search(
+                pack = ChromaLabKnowledgeSeedV2.pack,
+                query = KnowledgeSearchQuery(query),
+            )
+
+            assertTrue(
+                context.usedEntryIds.contains(expectedEntryId),
+                "$query should retrieve $expectedEntryId, got ${context.usedEntryIds}.",
+            )
+        }
+    }
+
+    @Test
     fun ionRangeRetrievesTitleOrChannelRule() {
         val context = KnowledgeRetrievalEngine.search(
             query = KnowledgeSearchQuery("Ion 71.00 (70.70 to 71.70) text classification"),

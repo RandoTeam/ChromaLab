@@ -69,6 +69,15 @@ Current priorities:
    - add more real graph classes only when expected outcomes are documented;
    - keep Product/QA/Scientific acceptance separate from visual polish.
 
+7. **Knowledge retrieval replacement / TurboVec gate**
+   - keep Knowledge retrieval local/offline and citation-gated;
+   - current implementation now separates `KnowledgeRetrievalEngine` facade from
+     the active `LexicalKnowledgeRetrievalBackend`;
+   - keep `TurboVecKnowledgeRetrievalBackend` fail-closed until a PC-only dense
+     index benchmark proves better semantic retrieval without safety regressions;
+   - do not add TurboVec to Android runtime until benchmark and native packaging
+     gates pass.
+
 ## Historical Alpha Track
 
 This roadmap tracks the current product direction after alpha 2. ChromaLab is becoming a modular offline AI analysis app, with chromatography as the first serious domain module.

@@ -96,6 +96,7 @@ These documents explain how models are used without becoming numeric authority.
 | [Android On-Device Model Budget](ANDROID_ON_DEVICE_MODEL_BUDGET.md) | Android memory, performance, and model budget notes. |
 | [Desktop Model Runtime Architecture](DESKTOP_MODEL_RUNTIME_ARCHITECTURE.md) | Desktop/local runtime direction. |
 | [Knowledge Pack Architecture](CHROMALAB_KNOWLEDGE_PACK_ARCHITECTURE.md) | Local grounded explanation layer. |
+| [TV-0/TV-1 TurboVec Knowledge Replacement Foundation](TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md) | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
 
 ## Rust CV And Deep Research
 

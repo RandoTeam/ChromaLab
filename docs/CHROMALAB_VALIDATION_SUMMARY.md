@@ -765,6 +765,24 @@ Interpretation:
 - The next executable action is an R15A retry after device and toolchain
   readiness, not R16.
 
+## TV-0/TV-1 TurboVec Knowledge Replacement Foundation
+
+TV-0/TV-1 started the Knowledge retrieval replacement track without changing
+Android analysis behavior. `KnowledgeRetrievalEngine` is now a facade,
+`LexicalKnowledgeRetrievalBackend` is the active ranking owner, and
+`TurboVecKnowledgeRetrievalBackend` is fail-closed as `SHADOW_UNAVAILABLE` until
+a PC benchmark/index exists.
+
+Interpretation:
+
+- TurboVec is not part of graph detection, calibration, trace extraction, peak
+  metrics, report gates, or `CalculationEngine`.
+- Current Knowledge retrieval behavior remains lexical and local/offline.
+- First benchmark goldens now verify expected citations and safety boundaries
+  before any dense index promotion.
+- Android runtime promotion remains blocked until later TurboVec benchmark and
+  native packaging gates.
+
 ## Current Engineering Blockers
 
 Highest-priority blockers:
