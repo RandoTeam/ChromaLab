@@ -2,12 +2,12 @@
 
 Date: 2026-06-08
 
-Status: `R15A_PLUS_TV0_TV1_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_PLUS_TV2_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
 Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking and
-TV-0/TV-1 Knowledge retrieval backend foundation. No chromatographic math,
-Android fixture outcomes, model policy, validators, or `CalculationEngine`
-behavior were changed.
+TV-2 PC-only TurboVec Knowledge index prototype tracking. No chromatographic
+math, Android fixture outcomes, model policy, validators, or
+`CalculationEngine` behavior were changed.
 
 ## Purpose
 
@@ -99,6 +99,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TURBOVEC_INTEGRATION_ASSESSMENT.md` | TurboVec role and boundaries. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TURBOVEC_DEEP_AUDIT_AND_MODERNIZATION_PLAN.md` | TurboVec/Rust modernization planning. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md` | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md` | PC-only TurboVec Knowledge Pack v2 index build, MiniLM/BGE benchmark result, and TV-3 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -157,6 +158,8 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r10_runtime_ocr_anchor_bridge_candidate/` | R10 runtime OCR anchor bridge summary, overlays, bridge inputs/outputs, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r11_runtime_calibration_closure_candidate/` | R11 runtime calibration closure summary, overlays, details, and contact sheet. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/r12_runtime_evidence_failure_package_closure/` | R12 runtime evidence/export closure summary. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv2_turbovec_knowledge/` | TV-2 compact lexical vs TurboVec MiniLM/BGE Knowledge retrieval benchmark summary. |
+| `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv2-turbovec-knowledge/` | TV-2 local venv, downloaded models, TurboVec `.tvim` indexes, sidecars, build manifests, and ignored heavy artifacts. |
 
 ## Active Code Owner Areas
 
@@ -171,7 +174,7 @@ current behavior.
 | Trace extraction | `processing/curve/`, `processing/signal/` |
 | Peak evidence and calculations | `feature/calculation/`, `processing/peaks/`, `feature/reports/PeakEvidenceMapper.kt` |
 | Model/VLM/GGUF/LiteRT | `processing/inference/`, `processing/model/`, Android model manager files |
-| Knowledge Pack | `feature/knowledge/`, `docs/knowledge/`, `tools/knowledge-builder/` |
+| Knowledge Pack | `feature/knowledge/`, `docs/knowledge/`, `tools/knowledge-builder/`, `tools/knowledge-retrieval/` |
 | Evidence validation | `processing/debug/`, `feature/validation/` |
 | Reports/export | `feature/reports/`, `processing/export/`, `calculation/export/` |
 | Rust CV | `rust/chromalab-cv-core/`, `composeApp/src/androidMain/kotlin/com/chromalab/feature/processing/rust/`, `tools/rust/` |
@@ -189,8 +192,8 @@ current behavior.
 
 ## Current Replacement Direction
 
-The next implementation phase should not install TurboVec or port another Rust
-algorithm immediately.
+The next Android analyzer implementation phase should not install TurboVec or
+port another Rust algorithm immediately.
 
 The next phase should use the owner board in
 `docs/AUTONOMOUS_ANALYZER_LAYER_OWNER_BOARD.md` and choose a broad replacement
@@ -259,6 +262,23 @@ Recommended next broad phase:
 ```text
 R16 - Trace Extraction Evidence Candidate
 ```
+
+Current TurboVec/Knowledge track:
+
+```text
+TV-0/TV-1 - Knowledge retrieval backend foundation
+TV-2 - PC-only TurboVec Knowledge index prototype
+```
+
+TV-2 passes as a PC-only prototype and the next Knowledge retrieval phase is:
+
+```text
+TV-3 - Retrieval A/B Evaluation And Arbitration Policy
+```
+
+This does not change Android analyzer phase order. TurboVec remains Knowledge
+retrieval only and must not become chromatogram geometry, calibration, trace,
+peak, or report-gate authority.
 
 ## R0 Agent Swarm Summary
 

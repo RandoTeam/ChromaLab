@@ -1,0 +1,783 @@
+{
+  "phase": "TV-2",
+  "pack_path": "docs/knowledge/chromalab_knowledge_seed_v2.json",
+  "pack_version": "chromalab-knowledge-v2",
+  "k": 8,
+  "lexical": {
+    "backend": "lexical_bm25_python_parity",
+    "elapsed_ms": 96,
+    "hit_count": 9,
+    "top1_hit_count": 7,
+    "case_count": 10,
+    "cases": [
+      {
+        "query_id": "sn_signal_to_noise",
+        "query": "S/N signal to noise",
+        "expected_entry_ids": [
+          "kp2-term-sn"
+        ],
+        "category": "glossary",
+        "top_ids": [
+          "kp2-term-noise",
+          "kp2-term-sn",
+          "kp2-term-rms-noise",
+          "kp2-term-intensity",
+          "kp2-ion-channel",
+          "kp2-rule-peak-annotation-signal-verified",
+          "kp2-caveat-calibration-required",
+          "kp2-safety-knowledge-cannot-measure"
+        ],
+        "hit": true,
+        "first_hit_rank": 2,
+        "top1_hit": false
+      },
+      {
+        "query_id": "ion71_title_channel",
+        "query": "Ion 71.00 (70.70 to 71.70) text classification",
+        "expected_entry_ids": [
+          "kp2-rule-ion-title-not-peak"
+        ],
+        "category": "text_classification",
+        "top_ids": [
+          "kp2-rule-ion-title-not-peak",
+          "kp2-ion-channel",
+          "kp2-ion-mass-range",
+          "kp2-rule-mass-range-not-peak-rt",
+          "kp2-ion-ion",
+          "kp2-rule-tick-label-geometry",
+          "kp2-rule-legend-not-peak",
+          "kp2-rule-title-header-not-peak"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "sim_channel",
+        "query": "SIM selected ion monitoring channel",
+        "expected_entry_ids": [
+          "kp2-ms-sim",
+          "kp2-ms-selected-ion-monitoring"
+        ],
+        "category": "mass_spectrometry",
+        "top_ids": [
+          "kp2-ms-selected-ion-monitoring",
+          "kp2-ms-sim",
+          "kp2-ion-channel",
+          "kp2-ion-ion",
+          "kp2-ms-eic",
+          "kp2-ion-mass-range",
+          "kp2-ms-tic",
+          "kp2-ms-extracted-ion-chromatogram"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "peak_label_signal_verification",
+        "query": "peak label requires signal verification",
+        "expected_entry_ids": [
+          "kp2-rule-peak-annotation-signal-verified"
+        ],
+        "category": "text_classification",
+        "top_ids": [
+          "kp2-rule-peak-annotation-signal-verified",
+          "kp2-axis-axis-label",
+          "kp2-rule-title-header-not-peak",
+          "kp2-rule-tick-label-geometry",
+          "kp2-rule-axis-label-not-peak",
+          "kp2-term-sn",
+          "kp2-term-shoulder-peak",
+          "kp2-axis-legend"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "kovats_without_reference",
+        "query": "Kovats without reference series",
+        "expected_entry_ids": [
+          "kp2-caveat-no-kovats-without-reference"
+        ],
+        "category": "report_caveat",
+        "top_ids": [
+          "kp2-caveat-no-kovats-without-reference",
+          "kp2-ri-n-alkane-reference",
+          "kp2-ri-kovats-index",
+          "kp2-ri-retention-index",
+          "kp2-axis-legend",
+          "kp2-ri-missing-reference-caveat",
+          "kp2-safety-knowledge-cannot-measure",
+          "kp2-class-alkane"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "compound_without_evidence",
+        "query": "compound assignment without explicit evidence",
+        "expected_entry_ids": [
+          "kp2-caveat-no-compound-assignment"
+        ],
+        "category": "report_caveat",
+        "top_ids": [
+          "kp2-caveat-no-compound-assignment",
+          "kp2-class-compound-class",
+          "kp2-class-alkane",
+          "kp2-class-biomarker",
+          "kp2-class-hydrocarbon",
+          "kp2-class-n-alkane",
+          "kp2-class-pah",
+          "kp2-class-sterane"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "knowledge_cannot_create_metrics",
+        "query": "knowledge cannot create numeric metrics",
+        "expected_entry_ids": [
+          "kp2-safety-knowledge-cannot-measure"
+        ],
+        "category": "safety",
+        "top_ids": [
+          "kp2-safety-knowledge-cannot-measure",
+          "kp2-caveat-trace-required",
+          "kp2-term-peak-area",
+          "kp2-ri-kovats-index",
+          "kp2-rule-legend-not-peak",
+          "kp2-rule-ion-title-not-peak",
+          "kp2-snippet-roi-warning",
+          "kp2-snippet-calibration-invalid-warning"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "calibration_warning",
+        "query": "calibration invalid warning missing anchors residual checks",
+        "expected_entry_ids": [
+          "kp2-snippet-calibration-invalid-warning",
+          "kp2-caveat-calibration-required"
+        ],
+        "category": "warning_explanation",
+        "top_ids": [
+          "kp2-snippet-calibration-invalid-warning",
+          "kp2-ri-missing-reference-caveat",
+          "kp2-snippet-roi-warning",
+          "kp2-snippet-ocr-ambiguity-warning",
+          "kp2-snippet-peak-overlap-warning",
+          "kp2-snippet-shoulder-peak-warning",
+          "kp2-snippet-sparse-trace-warning",
+          "kp2-snippet-vlm-disagreement-warning"
+        ],
+        "hit": true,
+        "first_hit_rank": 1,
+        "top1_hit": true
+      },
+      {
+        "query_id": "ocr_ambiguity_warning",
+        "query": "ambiguous OCR crop provenance uncertain text into metrics",
+        "expected_entry_ids": [
+          "kp2-snippet-ocr-ambiguity-warning"
+        ],
+        "category": "warning_explanation",
+        "top_ids": [
+          "kp2-rule-legend-not-peak",
+          "kp2-snippet-ocr-ambiguity-warning",
+          "kp2-rule-ion-title-not-peak",
+          "kp2-rule-tick-label-geometry",
+          "kp2-rule-title-header-not-peak",
+          "kp2-rule-peak-annotation-signal-verified",
+          "kp2-rule-axis-label-not-peak",
+          "kp2-rule-mass-range-not-peak-rt"
+        ],
+        "hit": true,
+        "first_hit_rank": 2,
+        "top1_hit": false
+      },
+      {
+        "query_id": "photo_alone_cannot_identify_compound",
+        "query": "Can the app identify a compound from a chromatogram photo alone?",
+        "expected_entry_ids": [
+          "kp2-caveat-no-compound-assignment"
+        ],
+        "category": "semantic_caveat",
+        "top_ids": [
+          "kp2-ms-eic",
+          "kp2-ms-extracted-ion-chromatogram",
+          "kp2-ri-n-alkane-reference",
+          "kp2-term-chromatogram",
+          "kp2-ms-tic",
+          "kp2-class-compound-class",
+          "kp2-ms-selected-ion-monitoring",
+          "kp2-term-coelution"
+        ],
+        "hit": false,
+        "first_hit_rank": null,
+        "top1_hit": false
+      }
+    ]
+  },
+  "dense_profiles": [
+    {
+      "profile_key": "minilm",
+      "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+      "status": "PASS",
+      "dimension": 384,
+      "license": "Apache-2.0",
+      "index_path": "artifacts/tv2-turbovec-knowledge/minilm/chromalab_knowledge_v2_minilm.tvim",
+      "sidecar_path": "artifacts/tv2-turbovec-knowledge/minilm/chromalab_knowledge_v2_minilm_sidecar.json",
+      "index_size_bytes": 25938,
+      "elapsed_ms": 6078,
+      "hit_count": 9,
+      "top1_hit_count": 7,
+      "case_count": 10,
+      "improvement_count": 2,
+      "regression_count": 2,
+      "safety_regression_count": 0,
+      "invalid_result_count": 0,
+      "cases": [
+        {
+          "query_id": "sn_signal_to_noise",
+          "query": "S/N signal to noise",
+          "expected_entry_ids": [
+            "kp2-term-sn"
+          ],
+          "category": "glossary",
+          "top_ids": [
+            "kp2-term-sn",
+            "kp2-term-noise",
+            "kp2-term-rms-noise",
+            "kp2-snippet-sparse-trace-warning",
+            "kp2-term-peak",
+            "kp2-compound-stub-n-c28-alkane",
+            "kp2-ms-sim",
+            "kp2-axis-title"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": true,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 2
+        },
+        {
+          "query_id": "ion71_title_channel",
+          "query": "Ion 71.00 (70.70 to 71.70) text classification",
+          "expected_entry_ids": [
+            "kp2-rule-ion-title-not-peak"
+          ],
+          "category": "text_classification",
+          "top_ids": [
+            "kp2-ion-channel",
+            "kp2-rule-ion-title-not-peak",
+            "kp2-ion-ion",
+            "kp2-rule-mass-range-not-peak-rt",
+            "kp2-ion-mass-range",
+            "kp2-ms-mz",
+            "kp2-rule-mz-not-rt",
+            "kp2-ms-tic"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": true,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "sim_channel",
+          "query": "SIM selected ion monitoring channel",
+          "expected_entry_ids": [
+            "kp2-ms-sim",
+            "kp2-ms-selected-ion-monitoring"
+          ],
+          "category": "mass_spectrometry",
+          "top_ids": [
+            "kp2-ms-sim",
+            "kp2-ms-selected-ion-monitoring",
+            "kp2-ion-channel",
+            "kp2-ion-ion",
+            "kp2-rule-ion-title-not-peak",
+            "kp2-ion-mass-range",
+            "kp2-ms-extracted-ion-chromatogram",
+            "kp2-ms-eic"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "peak_label_signal_verification",
+          "query": "peak label requires signal verification",
+          "expected_entry_ids": [
+            "kp2-rule-peak-annotation-signal-verified"
+          ],
+          "category": "text_classification",
+          "top_ids": [
+            "kp2-rule-peak-annotation-signal-verified",
+            "kp2-rule-axis-label-not-peak",
+            "kp2-axis-axis-label",
+            "kp2-rule-legend-not-peak",
+            "kp2-rule-title-header-not-peak",
+            "kp2-axis-legend",
+            "kp2-term-peak",
+            "kp2-class-biomarker"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "kovats_without_reference",
+          "query": "Kovats without reference series",
+          "expected_entry_ids": [
+            "kp2-caveat-no-kovats-without-reference"
+          ],
+          "category": "report_caveat",
+          "top_ids": [
+            "kp2-caveat-no-kovats-without-reference",
+            "kp2-ri-missing-reference-caveat",
+            "kp2-ri-kovats-index",
+            "kp2-ri-n-alkane-reference",
+            "kp2-ri-retention-index",
+            "kp2-compound-stub-n-c28-alkane",
+            "kp2-compound-stub-n-c27-alkane",
+            "kp2-compound-stub-n-c24-alkane"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "compound_without_evidence",
+          "query": "compound assignment without explicit evidence",
+          "expected_entry_ids": [
+            "kp2-caveat-no-compound-assignment"
+          ],
+          "category": "report_caveat",
+          "top_ids": [
+            "kp2-caveat-no-compound-assignment",
+            "kp2-term-abundance",
+            "kp2-class-compound-class",
+            "kp2-term-coelution",
+            "kp2-term-tailing-asymmetry",
+            "kp2-class-unresolved-complex-mixture",
+            "kp2-class-terpane",
+            "kp2-compound-stub-n-c12-alkane"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "knowledge_cannot_create_metrics",
+          "query": "knowledge cannot create numeric metrics",
+          "expected_entry_ids": [
+            "kp2-safety-knowledge-cannot-measure"
+          ],
+          "category": "safety",
+          "top_ids": [
+            "kp2-safety-knowledge-cannot-measure",
+            "kp2-caveat-trace-required",
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-snippet-vlm-disagreement-warning",
+            "kp2-snippet-roi-warning",
+            "kp2-term-peak-area",
+            "kp2-ri-kovats-index",
+            "kp2-snippet-ocr-ambiguity-warning"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "calibration_warning",
+          "query": "calibration invalid warning missing anchors residual checks",
+          "expected_entry_ids": [
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-caveat-calibration-required"
+          ],
+          "category": "warning_explanation",
+          "top_ids": [
+            "kp2-axis-calibration-anchor",
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-rule-tick-label-geometry",
+            "kp2-axis-tick-label",
+            "kp2-caveat-calibration-required",
+            "kp2-snippet-sparse-trace-warning",
+            "kp2-ri-interpolation-caveat",
+            "kp2-snippet-shoulder-peak-warning"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": true,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "ocr_ambiguity_warning",
+          "query": "ambiguous OCR crop provenance uncertain text into metrics",
+          "expected_entry_ids": [
+            "kp2-snippet-ocr-ambiguity-warning"
+          ],
+          "category": "warning_explanation",
+          "top_ids": [
+            "kp2-snippet-ocr-ambiguity-warning",
+            "kp2-axis-calibration-anchor",
+            "kp2-caveat-image-uncertainty",
+            "kp2-term-abundance",
+            "kp2-rule-axis-label-not-peak",
+            "kp2-term-resolution",
+            "kp2-term-intensity",
+            "kp2-ms-scan"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": true,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 2
+        },
+        {
+          "query_id": "photo_alone_cannot_identify_compound",
+          "query": "Can the app identify a compound from a chromatogram photo alone?",
+          "expected_entry_ids": [
+            "kp2-caveat-no-compound-assignment"
+          ],
+          "category": "semantic_caveat",
+          "top_ids": [
+            "kp2-caveat-image-uncertainty",
+            "kp2-term-chromatogram",
+            "kp2-ms-extracted-ion-chromatogram",
+            "kp2-ms-eic",
+            "kp2-term-abundance",
+            "kp2-term-peak",
+            "kp2-term-coelution",
+            "kp2-term-resolution"
+          ],
+          "hit": false,
+          "first_hit_rank": null,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": null
+        }
+      ]
+    },
+    {
+      "profile_key": "bge_base",
+      "model_id": "BAAI/bge-base-en-v1.5",
+      "status": "PASS",
+      "dimension": 768,
+      "license": "MIT",
+      "index_path": "artifacts/tv2-turbovec-knowledge/bge_base/chromalab_knowledge_v2_bge_base.tvim",
+      "sidecar_path": "artifacts/tv2-turbovec-knowledge/bge_base/chromalab_knowledge_v2_bge_base_sidecar.json",
+      "index_size_bytes": 50514,
+      "elapsed_ms": 5843,
+      "hit_count": 10,
+      "top1_hit_count": 6,
+      "case_count": 10,
+      "improvement_count": 2,
+      "regression_count": 2,
+      "safety_regression_count": 0,
+      "invalid_result_count": 0,
+      "cases": [
+        {
+          "query_id": "sn_signal_to_noise",
+          "query": "S/N signal to noise",
+          "expected_entry_ids": [
+            "kp2-term-sn"
+          ],
+          "category": "glossary",
+          "top_ids": [
+            "kp2-term-sn",
+            "kp2-term-noise",
+            "kp2-term-rms-noise",
+            "kp2-rule-peak-annotation-signal-verified",
+            "kp2-ion-channel",
+            "kp2-snippet-roi-warning",
+            "kp2-snippet-sparse-trace-warning",
+            "kp2-snippet-peak-overlap-warning"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": true,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 2
+        },
+        {
+          "query_id": "ion71_title_channel",
+          "query": "Ion 71.00 (70.70 to 71.70) text classification",
+          "expected_entry_ids": [
+            "kp2-rule-ion-title-not-peak"
+          ],
+          "category": "text_classification",
+          "top_ids": [
+            "kp2-ion-channel",
+            "kp2-rule-ion-title-not-peak",
+            "kp2-rule-mass-range-not-peak-rt",
+            "kp2-ion-mass-range",
+            "kp2-ion-ion",
+            "kp2-rule-legend-not-peak",
+            "kp2-rule-mz-not-rt",
+            "kp2-rule-title-header-not-peak"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": true,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "sim_channel",
+          "query": "SIM selected ion monitoring channel",
+          "expected_entry_ids": [
+            "kp2-ms-sim",
+            "kp2-ms-selected-ion-monitoring"
+          ],
+          "category": "mass_spectrometry",
+          "top_ids": [
+            "kp2-ms-sim",
+            "kp2-ms-selected-ion-monitoring",
+            "kp2-ms-extracted-ion-chromatogram",
+            "kp2-ion-channel",
+            "kp2-ion-ion",
+            "kp2-ms-eic",
+            "kp2-ms-tic",
+            "kp2-rule-ion-title-not-peak"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "peak_label_signal_verification",
+          "query": "peak label requires signal verification",
+          "expected_entry_ids": [
+            "kp2-rule-peak-annotation-signal-verified"
+          ],
+          "category": "text_classification",
+          "top_ids": [
+            "kp2-rule-peak-annotation-signal-verified",
+            "kp2-term-peak",
+            "kp2-caveat-review-grade-peaks",
+            "kp2-rule-axis-label-not-peak",
+            "kp2-rule-legend-not-peak",
+            "kp2-term-overlap",
+            "kp2-rule-ion-title-not-peak",
+            "kp2-rule-title-header-not-peak"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "kovats_without_reference",
+          "query": "Kovats without reference series",
+          "expected_entry_ids": [
+            "kp2-caveat-no-kovats-without-reference"
+          ],
+          "category": "report_caveat",
+          "top_ids": [
+            "kp2-caveat-no-kovats-without-reference",
+            "kp2-ri-kovats-index",
+            "kp2-ri-missing-reference-caveat",
+            "kp2-ri-n-alkane-reference",
+            "kp2-ri-retention-index",
+            "kp2-caveat-no-compound-assignment",
+            "kp2-axis-title",
+            "kp2-axis-legend"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "compound_without_evidence",
+          "query": "compound assignment without explicit evidence",
+          "expected_entry_ids": [
+            "kp2-caveat-no-compound-assignment"
+          ],
+          "category": "report_caveat",
+          "top_ids": [
+            "kp2-caveat-no-compound-assignment",
+            "kp2-class-compound-class",
+            "kp2-snippet-ocr-ambiguity-warning",
+            "kp2-snippet-diagnostic-only-report-explanation",
+            "kp2-class-unresolved-complex-mixture",
+            "kp2-snippet-sparse-trace-warning",
+            "kp2-axis-title",
+            "kp2-snippet-roi-warning"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "knowledge_cannot_create_metrics",
+          "query": "knowledge cannot create numeric metrics",
+          "expected_entry_ids": [
+            "kp2-safety-knowledge-cannot-measure"
+          ],
+          "category": "safety",
+          "top_ids": [
+            "kp2-safety-knowledge-cannot-measure",
+            "kp2-caveat-vlm-semantic-only",
+            "kp2-snippet-vlm-disagreement-warning",
+            "kp2-caveat-trace-required",
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-ri-kovats-index",
+            "kp2-rule-legend-not-peak",
+            "kp2-snippet-roi-warning"
+          ],
+          "hit": true,
+          "first_hit_rank": 1,
+          "top1_hit": true,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "calibration_warning",
+          "query": "calibration invalid warning missing anchors residual checks",
+          "expected_entry_ids": [
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-caveat-calibration-required"
+          ],
+          "category": "warning_explanation",
+          "top_ids": [
+            "kp2-axis-calibration-anchor",
+            "kp2-snippet-calibration-invalid-warning",
+            "kp2-caveat-calibration-required",
+            "kp2-ri-missing-reference-caveat",
+            "kp2-rule-tick-label-geometry",
+            "kp2-caveat-no-kovats-without-reference",
+            "kp2-caveat-image-uncertainty",
+            "kp2-axis-tick-label"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": true,
+          "lexical_first_hit_rank": 1
+        },
+        {
+          "query_id": "ocr_ambiguity_warning",
+          "query": "ambiguous OCR crop provenance uncertain text into metrics",
+          "expected_entry_ids": [
+            "kp2-snippet-ocr-ambiguity-warning"
+          ],
+          "category": "warning_explanation",
+          "top_ids": [
+            "kp2-caveat-image-uncertainty",
+            "kp2-snippet-ocr-ambiguity-warning",
+            "kp2-rule-peak-annotation-signal-verified",
+            "kp2-rule-legend-not-peak",
+            "kp2-caveat-vlm-semantic-only",
+            "kp2-rule-title-header-not-peak",
+            "kp2-axis-title",
+            "kp2-axis-calibration-anchor"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": false,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": 2
+        },
+        {
+          "query_id": "photo_alone_cannot_identify_compound",
+          "query": "Can the app identify a compound from a chromatogram photo alone?",
+          "expected_entry_ids": [
+            "kp2-caveat-no-compound-assignment"
+          ],
+          "category": "semantic_caveat",
+          "top_ids": [
+            "kp2-ms-extracted-ion-chromatogram",
+            "kp2-caveat-no-compound-assignment",
+            "kp2-ms-sim",
+            "kp2-term-abundance",
+            "kp2-caveat-image-uncertainty",
+            "kp2-term-chromatogram",
+            "kp2-class-compound-class",
+            "kp2-rule-peak-annotation-signal-verified"
+          ],
+          "hit": true,
+          "first_hit_rank": 2,
+          "top1_hit": false,
+          "all_results_valid": true,
+          "improved_vs_lexical": true,
+          "regressed_vs_lexical": false,
+          "lexical_first_hit_rank": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "verdict": "TV2_READY_FOR_TV3_AB_EVALUATION",
+    "usable_profile_keys": [
+      "minilm",
+      "bge_base"
+    ],
+    "total_improvement_count": 4,
+    "total_safety_regression_count": 0,
+    "next_step": "Proceed to TV-3 A/B evaluation with the passing dense profile(s)."
+  }
+}

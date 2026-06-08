@@ -97,3 +97,21 @@ The current decision is replacement-gated:
 
 TV-0/TV-1 foundation work is documented in
 `docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md`.
+
+TV-2 PC prototype work is documented in
+`docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md`.
+
+TV-2 built repeatable local TurboVec indexes for Knowledge Pack v2 with:
+
+- `sentence-transformers/all-MiniLM-L6-v2`;
+- `BAAI/bge-base-en-v1.5`;
+- stable collision-free `u64 -> entryId` sidecars;
+- compact benchmark summaries under
+  `benchmark/reports/tv2_turbovec_knowledge/`.
+
+TV-2 found useful dense-retrieval improvements for semantic/caveat queries and
+0 safety regressions, but it also found non-safety rank regressions on
+exact/rule-like tasks. The active runtime owner therefore remains
+`LexicalKnowledgeRetrievalBackend` until TV-3 defines and validates a retrieval
+A/B or arbitration policy. TurboVec remains PC-only and is not part of Android
+analysis runtime.

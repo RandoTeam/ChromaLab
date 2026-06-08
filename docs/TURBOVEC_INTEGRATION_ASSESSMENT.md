@@ -2,7 +2,7 @@
 
 Date: 2026-06-08
 
-Status: `TV0_TV1_FOUNDATION_COMPLETE`
+Status: `TV2_PC_INDEX_PROTOTYPE_COMPLETE`
 
 ## Summary
 
@@ -97,6 +97,9 @@ TurboVec candidate cannot return results until a local benchmark/index exists.
 
 ### TV-2: Desktop prototype indexer
 
+Status: complete. Closeout:
+`docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md`.
+
 Build a local script/tool outside Android runtime that:
 
 - reads `docs/knowledge/chromalab_knowledge_seed_v2.json`;
@@ -106,7 +109,12 @@ Build a local script/tool outside Android runtime that:
 - writes a JSON sidecar mapping `u64 -> entryId`;
 - never sends private chromatogram images, logs, or reports to a cloud service.
 
-Exit gate: index builds repeatably on PC and can be deleted/rebuilt.
+Exit gate result: PASS. Both `sentence-transformers/all-MiniLM-L6-v2` and
+`BAAI/bge-base-en-v1.5` built repeatable PC-only TurboVec indexes with stable
+sidecars and no id collisions. Dense retrieval produced semantic/caveat
+improvements and 0 safety regressions, but also had non-safety rank regressions
+on exact/rule-like tasks. Therefore TurboVec is ready for TV-3 A/B evaluation,
+not active runtime promotion.
 
 ### TV-3: Retrieval A/B benchmark
 
@@ -205,10 +213,11 @@ Any TurboVec-backed retrieval must preserve the existing Knowledge Pack contract
 ## Decision
 
 Adopt TurboVec as a replacement-gated candidate for local Knowledge Pack dense
-retrieval. TV-0/TV-1 has separated the active lexical backend from the facade and
-added fail-closed TurboVec diagnostics. Do not integrate TurboVec into Android
-runtime or chromatogram analysis calculations until benchmark and packaging gates
-pass.
+retrieval. TV-0/TV-1 separated the active lexical backend from the facade and
+added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexes
+can be built and benchmarked for Knowledge Pack v2. Do not integrate TurboVec
+into Android runtime or chromatogram analysis calculations until TV-3 retrieval
+policy and later packaging gates pass.
 
 ## Deep Audit Follow-Up
 

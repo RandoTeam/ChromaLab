@@ -783,6 +783,40 @@ Interpretation:
 - Android runtime promotion remains blocked until later TurboVec benchmark and
   native packaging gates.
 
+## TV-2 PC TurboVec Knowledge Index Prototype
+
+TV-2 built PC-only TurboVec indexes for
+`docs/knowledge/chromalab_knowledge_seed_v2.json` and compared dense retrieval
+against the lexical baseline. It did not change Android runtime behavior,
+chromatogram analysis, validators, report gates, or `CalculationEngine`.
+
+Build result:
+
+| Profile | Model | Status | Dimension | Index size | Build time |
+|---|---|---:|---:|---:|---:|
+| `minilm` | `sentence-transformers/all-MiniLM-L6-v2` | PASS | 384 | 25,938 bytes | 25,073 ms |
+| `bge_base` | `BAAI/bge-base-en-v1.5` | PASS | 768 | 50,514 bytes | 46,538 ms |
+
+Retrieval benchmark:
+
+| Backend | Status | Expected-entry hits | Top-1 hits | Improvements | Regressions | Safety regressions |
+|---|---|---:|---:|---:|---:|---:|
+| `lexical_bm25` | PASS | 9/10 | 7/10 | 0 | 0 | 0 |
+| `minilm` | PASS | 9/10 | 7/10 | 2 | 2 | 0 |
+| `bge_base` | PASS | 10/10 | 6/10 | 2 | 2 | 0 |
+
+Interpretation:
+
+- TurboVec dense retrieval improved selected semantic/caveat queries, including
+  S/N lookup, OCR ambiguity warning, and a photo-only compound-ID caveat.
+- Dense retrieval also produced non-safety rank regressions on some exact/rule
+  queries, so it is not promoted as the active retrieval owner in TV-2.
+- The next Knowledge retrieval phase is TV-3 A/B evaluation and arbitration
+  policy. Lexical retrieval remains the active owner until TV-3 passes.
+- Heavy indexes, sidecars, downloaded models, and the local venv remain ignored
+  under `artifacts/tv2-turbovec-knowledge/`; compact summaries are tracked under
+  `benchmark/reports/tv2_turbovec_knowledge/`.
+
 ## Current Engineering Blockers
 
 Highest-priority blockers:

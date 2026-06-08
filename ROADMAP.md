@@ -73,8 +73,12 @@ Current priorities:
    - keep Knowledge retrieval local/offline and citation-gated;
    - current implementation now separates `KnowledgeRetrievalEngine` facade from
      the active `LexicalKnowledgeRetrievalBackend`;
-   - keep `TurboVecKnowledgeRetrievalBackend` fail-closed until a PC-only dense
-     index benchmark proves better semantic retrieval without safety regressions;
+   - TV-2 built PC-only TurboVec indexes for Knowledge Pack v2 with MiniLM and
+     BGE, found useful semantic/caveat improvements, and recorded 0 safety
+     regressions;
+   - do not promote TurboVec yet because TV-2 also found non-safety rank
+     regressions on exact/rule-like queries;
+   - next Knowledge retrieval step: TV-3 A/B evaluation and arbitration policy;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

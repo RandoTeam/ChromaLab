@@ -2,7 +2,7 @@
 
 Date: 2026-06-06
 
-Status: `AUDIT_PLAN_READY`
+Status: `TV2_PC_INDEX_PROTOTYPE_COMPLETE`
 
 Scope: product architecture and integration planning only. This document does
 not change `CalculationEngine`, chromatographic math, Android runtime behavior,
@@ -218,6 +218,9 @@ Exit criteria:
 
 ### Phase TV-B: Local knowledge index prototype
 
+Status: complete through TV-2. See
+`docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md`.
+
 Goal: prove TurboVec can index ChromaLab knowledge without touching Android.
 
 Work:
@@ -237,7 +240,19 @@ Exit criteria:
 - no cloud upload;
 - no Android runtime changes.
 
+Result:
+
+- both MiniLM and BGE profiles built repeatable local TurboVec `.tvim` indexes;
+- stable `u64 -> entryId` sidecars were generated without collisions;
+- generated index artifacts remain under ignored
+  `artifacts/tv2-turbovec-knowledge/`;
+- compact benchmark summaries are tracked under
+  `benchmark/reports/tv2_turbovec_knowledge/`.
+
 ### Phase TV-C: Hybrid lexical + dense benchmark
+
+Status: next TurboVec phase. TV-2 benchmark data shows dense retrieval is useful
+but not yet a complete replacement for lexical/rule-like retrieval.
 
 Goal: prove dense retrieval improves real ChromaLab tasks.
 
