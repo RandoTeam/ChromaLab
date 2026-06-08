@@ -163,12 +163,14 @@ data class KnowledgeSearchQuery(
     val allowedUses: List<String> = emptyList(),
     val exactAliasOnly: Boolean = false,
     val maxResults: Int = 8,
+    val arbitrationHint: KnowledgeRetrievalArbitrationHint = KnowledgeRetrievalArbitrationHint(),
 )
 
 @Serializable
 enum class KnowledgeRetrievalBackendId {
     LEXICAL_BM25,
     TURBOVEC_DENSE_SHADOW,
+    HYBRID_UNION_RRF_CANDIDATE,
 }
 
 @Serializable
@@ -177,6 +179,22 @@ enum class KnowledgeRetrievalSafetyStatus {
     SHADOW_UNAVAILABLE,
     SHADOW_REJECTED,
 }
+
+@Serializable
+enum class KnowledgeRetrievalQueryClass {
+    UNSPECIFIED,
+    EXACT_RULE,
+    SEMANTIC_CAVEAT,
+    WARNING_EXPLANATION,
+    SAFETY_BOUNDARY,
+    NATURAL_LANGUAGE,
+}
+
+@Serializable
+data class KnowledgeRetrievalArbitrationHint(
+    val queryClass: KnowledgeRetrievalQueryClass = KnowledgeRetrievalQueryClass.UNSPECIFIED,
+    val safetyCritical: Boolean = false,
+)
 
 @Serializable
 data class KnowledgeEmbeddingModelManifest(

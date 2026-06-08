@@ -2,7 +2,7 @@
 
 Date: 2026-06-06
 
-Status: `TV3_RETRIEVAL_ARBITRATION_COMPLETE`
+Status: `TV4_BACKEND_PROMOTION_CANDIDATE_READY`
 
 Scope: product architecture and integration planning only. This document does
 not change `CalculationEngine`, chromatographic math, Android runtime behavior,
@@ -286,8 +286,8 @@ Result:
 
 ### Phase TV-D: Rust/Kotlin retrieval abstraction
 
-Status: next TurboVec phase, now named TV-4 Knowledge Retrieval Backend
-Promotion Candidate.
+Status: complete through TV-4. See
+`docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md`.
 
 Goal: make backend choice explicit without changing scientific behavior.
 
@@ -304,6 +304,14 @@ Exit criteria:
 - tests prove dense retrieval cannot affect numeric gates;
 - report validators remain strict;
 - no CalculationEngine changes.
+
+Result:
+
+- `HYBRID_UNION_RRF_CANDIDATE` was added as an explicit backend id;
+- `KnowledgeRetrievalArbitrationHint` and `KnowledgeRetrievalQueryClass` were
+  added to make safety-critical exact-rule pinning explicit;
+- the hybrid candidate is lexical-compatible when no dense context is supplied;
+- policy validation still rejects forbidden numeric metric use.
 
 ### Phase TV-E: Android feasibility spike
 
@@ -394,7 +402,8 @@ modernization path.
 ## Current Next TurboVec Step
 
 Do not integrate TurboVec into Android yet, and do not install it as a runtime
-dependency before PC retrieval benchmarks pass.
+dependency before the TV-5 dense-provider decision and later Android packaging
+gates pass.
 
 This plan is now subordinate to the replacement roadmap in
 `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
@@ -403,22 +412,19 @@ Completed foundation:
 
 ```text
 TV-0/TV-1 - TurboVec Knowledge Replacement Foundation
+TV-2 - PC-only Knowledge Pack TurboVec prototype
+TV-3 - Retrieval A/B Evaluation And Arbitration Policy
+TV-4 - Knowledge Retrieval Backend Promotion Candidate
 ```
-
-TV-0/TV-1 separated `KnowledgeRetrievalEngine` from the active lexical ranking
-backend, added fail-closed TurboVec diagnostics, and added the first citation
-goldens. It did not add a dense index or Android runtime dependency.
 
 The next TurboVec-specific work slice is:
 
 ```text
-TV-2: PC-only Knowledge Pack TurboVec prototype
+TV-5 - Dense Provider Promotion Or Rejection Gate
 ```
 
-TV-2 must choose a local embedding model, build a `.tvim` index plus stable
-`u64 -> entryId` sidecar, and compare top-k retrieval against the lexical
-goldens. If it fails, the TurboVec path should be rejected or kept PC-only
-without adding stale Android runtime references.
+TV-5 must decide whether the selected hybrid policy gets a real local dense
+provider, remains PC/dev-only, or is rejected as an active product runtime path.
 
 In parallel, the main chromatogram analyzer remains blocked at the R15A Android
 evidence gate. TurboVec can help retrieve research and failure context, but it is

@@ -847,8 +847,31 @@ Interpretation:
   miss and improved selected semantic rankings.
 - Dense-only profiles remain rejected as promotion targets because they regress
   safety-critical exact-rule ranking.
-- The next Knowledge retrieval phase is TV-4 backend promotion candidate.
-- Lexical retrieval remains the active owner until TV-4 passes.
+- TV-4 backend promotion candidate is complete.
+- Lexical retrieval remains the active owner until a dense-provider promotion
+  gate passes.
+
+## TV-4 Knowledge Retrieval Backend Promotion Candidate
+
+TV-4 moved the selected TV-3 hybrid policy into Kotlin as an explicit promotion
+candidate. It did not add TurboVec, Python, embeddings, or dense index loading
+to Android/KMP runtime.
+
+Result:
+
+- `HYBRID_UNION_RRF_CANDIDATE` backend id added;
+- arbitration hints added for query class and safety-critical behavior;
+- hybrid policy can combine lexical and optional dense contexts;
+- lexical top-1 is pinned for safety-critical exact-rule queries;
+- candidate backend is lexical-compatible when no dense context is supplied;
+- `KnowledgeUsePolicyValidator` still rejects forbidden numeric metric use.
+
+Interpretation:
+
+- TV-4 passes as an implementation proof for the selected policy shape.
+- Lexical retrieval remains the active default owner.
+- The next Knowledge retrieval phase is TV-5 dense provider promotion or
+  rejection gate.
 
 ## Current Engineering Blockers
 

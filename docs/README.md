@@ -99,6 +99,7 @@ These documents explain how models are used without becoming numeric authority.
 | [TV-0/TV-1 TurboVec Knowledge Replacement Foundation](TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md) | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
 | [TV-2 TurboVec Knowledge Index Prototype Closeout](TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md) | PC-only TurboVec MiniLM/BGE index build, lexical-vs-dense benchmark, and TV-3 decision. |
 | [TV-3 Retrieval A/B Arbitration Policy Closeout](TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md) | PC-only lexical/dense/hybrid policy benchmark and TV-4 decision. |
+| [TV-4 Knowledge Retrieval Backend Promotion Candidate Closeout](TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md) | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
 
 ## Rust CV And Deep Research
 

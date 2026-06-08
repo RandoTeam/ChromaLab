@@ -125,5 +125,20 @@ TV-3 selected `HYBRID_UNION_RRF` as the next benchmark target:
 - lexical top-1 is pinned for safety-critical exact-rule queries;
 - dense-only backends are not promotion targets because they regress
   safety-critical exact-rule ranking;
-- the selected policy is still not active runtime behavior until a later TV-4
-  implementation gate proves Kotlin facade compatibility and safety.
+- the selected policy is still not active runtime behavior until a later
+  dense-provider gate proves Kotlin/Rust runtime compatibility and safety.
+
+TV-4 backend promotion candidate work is documented in
+`docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md`.
+
+TV-4 adds the Kotlin-side policy candidate:
+
+- `KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE`;
+- `KnowledgeRetrievalQueryClass`;
+- `KnowledgeRetrievalArbitrationHint`;
+- `HybridUnionRrfKnowledgeRetrievalPolicy`;
+- `HybridUnionRrfKnowledgeRetrievalBackend`.
+
+The candidate can fuse lexical and optional dense retrieval contexts, but the
+default retrieval owner remains lexical. Without supplied dense contexts, the
+candidate is lexical-compatible and disableable.

@@ -79,8 +79,11 @@ Current priorities:
    - TV-3 selected `HYBRID_UNION_RRF` as the safe benchmark target because it
      recovered the natural-language compound-caveat miss, improved selected
      semantic rankings, and preserved safety-critical exact-rule behavior;
+   - TV-4 added the Kotlin-side `HYBRID_UNION_RRF_CANDIDATE` policy with
+     lexical top-1 pinning for safety-critical exact-rule queries;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-4 backend promotion candidate;
+   - next Knowledge retrieval step: TV-5 dense provider promotion or rejection
+     gate;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

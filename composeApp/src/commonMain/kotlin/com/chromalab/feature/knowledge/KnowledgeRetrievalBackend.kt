@@ -163,3 +163,115 @@ object TurboVecKnowledgeRetrievalBackend : KnowledgeRetrievalBackend {
             ),
         )
 }
+
+object HybridUnionRrfKnowledgeRetrievalBackend : KnowledgeRetrievalBackend {
+    override val backendId: KnowledgeRetrievalBackendId = KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE
+
+    override fun search(
+        pack: KnowledgePackVersion,
+        query: KnowledgeSearchQuery,
+        retrievalId: String,
+    ): KnowledgeRetrievalContext {
+        val lexicalContext = LexicalKnowledgeRetrievalBackend.search(
+            pack = pack,
+            query = query,
+            retrievalId = "$retrievalId:lexical",
+        )
+        return HybridUnionRrfKnowledgeRetrievalPolicy.arbitrate(
+            pack = pack,
+            query = query,
+            retrievalId = retrievalId,
+            lexicalContext = lexicalContext,
+            denseContexts = emptyList(),
+        )
+    }
+}
+
+object HybridUnionRrfKnowledgeRetrievalPolicy {
+    private const val INDEX_VERSION = "hybrid-union-rrf-candidate:${CHROMALAB_KNOWLEDGE_PACK_SCHEMA_VERSION}"
+    private const val RRF_K = 60.0
+
+    fun arbitrate(
+        pack: KnowledgePackVersion,
+        query: KnowledgeSearchQuery,
+        retrievalId: String,
+        lexicalContext: KnowledgeRetrievalContext,
+        denseContexts: List<KnowledgeRetrievalContext>,
+    ): KnowledgeRetrievalContext {
+        val maxResults = query.maxResults.coerceAtLeast(1)
+        val sourceRefs = pack.sourceRefs.associateBy { it.sourceId }
+        val entriesById = pack.entries.associateBy { it.entryId }
+        val allContexts = listOf(lexicalContext) + denseContexts
+        val scores = linkedMapOf<String, Double>()
+        val matchedTerms = mutableMapOf<String, List<String>>()
+        val sourceBackendIds = mutableMapOf<String, MutableSet<KnowledgeRetrievalBackendId>>()
+        allContexts.forEach { context ->
+            context.results.forEachIndexed { index, result ->
+                if (result.entryId in entriesById) {
+                    scores[result.entryId] = (scores[result.entryId] ?: 0.0) + 1.0 / (RRF_K + index + 1)
+                    matchedTerms.putIfAbsent(result.entryId, result.matchedTerms)
+                    sourceBackendIds.getOrPut(result.entryId) { linkedSetOf() }.add(result.backendId)
+                }
+            }
+        }
+        val orderedIds = scores.keys.sortedWith(
+            compareByDescending<String> { scores.getValue(it) }
+                .thenBy { it },
+        ).toMutableList()
+        if (shouldPinLexicalTop1(query)) {
+            lexicalContext.results.firstOrNull()?.entryId?.let { pinned ->
+                if (pinned in orderedIds) {
+                    orderedIds.remove(pinned)
+                    orderedIds.add(0, pinned)
+                }
+            }
+        }
+        val results = orderedIds.take(maxResults).mapNotNull { entryId ->
+            val entry = entriesById[entryId] ?: return@mapNotNull null
+            KnowledgeSearchResult(
+                entryId = entryId,
+                entry = entry,
+                score = scores.getValue(entryId),
+                matchedTerms = matchedTerms[entryId].orEmpty(),
+                sourceRefs = entry.sourceRefIds.mapNotNull(sourceRefs::get),
+                backendId = KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE,
+                indexVersion = INDEX_VERSION,
+                retrievalStage = "hybrid_union_rrf",
+                safetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
+            )
+        }
+        val denseBackendIds = denseContexts.map { it.backendId }.distinct()
+        return KnowledgeRetrievalContext(
+            retrievalId = retrievalId,
+            knowledgePackVersion = pack.version,
+            query = query,
+            results = results,
+            backendId = KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE,
+            diagnostics = KnowledgeRetrievalDiagnostics(
+                backendId = KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE,
+                indexVersion = INDEX_VERSION,
+                retrievalStage = "hybrid_union_rrf",
+                safetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
+                denseIndexManifest = denseContexts.firstNotNullOfOrNull { it.diagnostics.denseIndexManifest },
+                notes = buildList {
+                    add("TV-4 candidate policy: reciprocal-rank fusion over lexical and optional dense contexts.")
+                    add("Lexical retrieval remains the default active owner.")
+                    if (denseContexts.isEmpty()) {
+                        add("No dense runtime context was supplied; result is lexical-compatible and disableable.")
+                    } else {
+                        add("Dense backend ids: ${denseBackendIds.joinToString()}.")
+                    }
+                    if (shouldPinLexicalTop1(query)) {
+                        add("Safety-critical exact-rule query: lexical top-1 pinned before final truncation.")
+                    }
+                    val sourceIds = sourceBackendIds.mapValues { (_, ids) -> ids.joinToString() }
+                    add("Source backend ids by entry: $sourceIds.")
+                },
+            ),
+        )
+    }
+
+    private fun shouldPinLexicalTop1(query: KnowledgeSearchQuery): Boolean =
+        query.arbitrationHint.safetyCritical &&
+            query.arbitrationHint.queryClass == KnowledgeRetrievalQueryClass.EXACT_RULE
+}

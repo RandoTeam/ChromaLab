@@ -2,7 +2,7 @@
 
 Date: 2026-06-08
 
-Status: `TV3_RETRIEVAL_ARBITRATION_COMPLETE`
+Status: `TV4_BACKEND_PROMOTION_CANDIDATE_READY`
 
 ## Summary
 
@@ -150,6 +150,9 @@ miss, improves selected semantic rankings, and records 0 safety regressions.
 
 ### TV-4: Kotlin/Rust abstraction
 
+Status: complete. Closeout:
+`docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md`.
+
 If TV-2 passes, add a backend interface around retrieval:
 
 ```text
@@ -169,6 +172,11 @@ Required behavior:
 
 Exit gate: tests prove dense retrieval cannot produce forbidden numeric evidence
 or uncited model explanations.
+
+Exit gate result: PASS. TV-4 added the `HYBRID_UNION_RRF_CANDIDATE` backend id,
+arbitration hints, and a Kotlin policy candidate that can fuse lexical and
+optional dense contexts while preserving lexical top-1 for safety-critical
+exact-rule queries. No dense runtime provider or Android dependency was added.
 
 ### TV-5: Promotion or rejection
 
@@ -224,8 +232,8 @@ retrieval. TV-0/TV-1 separated the active lexical backend from the facade and
 added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexes
 can be built and benchmarked for Knowledge Pack v2. TV-3 selected
 `HYBRID_UNION_RRF` as the next benchmark target. Do not integrate TurboVec into
-Android runtime or chromatogram analysis calculations until TV-4 implementation
-and later packaging gates pass.
+Android runtime or chromatogram analysis calculations until TV-5 dense-provider
+decision and later packaging gates pass.
 
 ## Deep Audit Follow-Up
 

@@ -2,10 +2,10 @@
 
 Date: 2026-06-08
 
-Status: `R15A_PLUS_TV3_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_PLUS_TV4_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
 Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking and
-TV-3 PC-only TurboVec retrieval arbitration tracking. No chromatographic
+TV-4 Knowledge retrieval backend promotion candidate tracking. No chromatographic
 math, Android fixture outcomes, model policy, validators, or
 `CalculationEngine` behavior were changed.
 
@@ -101,6 +101,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV0_TV1_TURBOVEC_KNOWLEDGE_REPLACEMENT_FOUNDATION.md` | Knowledge retrieval backend separation, TurboVec fail-closed candidate contract, and benchmark guardrails. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV2_TURBOVEC_KNOWLEDGE_INDEX_PROTOTYPE_CLOSEOUT.md` | PC-only TurboVec Knowledge Pack v2 index build, MiniLM/BGE benchmark result, and TV-3 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md` | PC-only lexical/dense/hybrid retrieval arbitration result and TV-4 decision. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md` | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -278,11 +279,12 @@ TV-2 passes as a PC-only prototype and the next Knowledge retrieval phase is:
 TV-3 - Retrieval A/B Evaluation And Arbitration Policy
 ```
 
-TV-3 is now complete. It selected `HYBRID_UNION_RRF` as the next benchmark
-target and the next Knowledge retrieval phase is:
+TV-3 selected `HYBRID_UNION_RRF` as the benchmark target. TV-4 is now complete
+and added a Kotlin-side promotion candidate without changing the active default
+owner. The next Knowledge retrieval phase is:
 
 ```text
-TV-4 - Knowledge Retrieval Backend Promotion Candidate
+TV-5 - Dense Provider Promotion Or Rejection Gate
 ```
 
 This does not change Android analyzer phase order. TurboVec remains Knowledge

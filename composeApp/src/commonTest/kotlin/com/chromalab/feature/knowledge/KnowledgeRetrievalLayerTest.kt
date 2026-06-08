@@ -58,6 +58,132 @@ class KnowledgeRetrievalLayerTest {
     }
 
     @Test
+    fun hybridUnionRrfCandidateIsLexicalCompatibleWithoutDenseContext() {
+        val query = KnowledgeSearchQuery("What does S/N mean in a chromatogram?")
+        val lexical = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+        )
+        val hybrid = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+            backend = HybridUnionRrfKnowledgeRetrievalBackend,
+        )
+
+        assertEquals(KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE, hybrid.backendId)
+        assertEquals(KnowledgeRetrievalSafetyStatus.POLICY_READY, hybrid.diagnostics.safetyStatus)
+        assertEquals(lexical.usedEntryIds, hybrid.usedEntryIds)
+    }
+
+    @Test
+    fun hybridUnionRrfRecoversDenseSemanticCaveatWithoutLosingCitations() {
+        val query = KnowledgeSearchQuery(
+            rawQuery = "Can the app identify a compound from a chromatogram photo alone?",
+            arbitrationHint = KnowledgeRetrievalArbitrationHint(
+                queryClass = KnowledgeRetrievalQueryClass.NATURAL_LANGUAGE,
+                safetyCritical = true,
+            ),
+        )
+        val lexical = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+        )
+        val dense = denseContext(
+            retrievalId = "dense:bge:compound-photo",
+            ids = listOf(
+                "kp2-ms-extracted-ion-chromatogram",
+                "kp2-caveat-no-compound-assignment",
+                "kp2-ms-sim",
+                "kp2-term-abundance",
+            ),
+        )
+
+        val hybrid = HybridUnionRrfKnowledgeRetrievalPolicy.arbitrate(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+            retrievalId = "hybrid:compound-photo",
+            lexicalContext = lexical,
+            denseContexts = listOf(dense),
+        )
+
+        assertTrue("kp2-caveat-no-compound-assignment" in hybrid.usedEntryIds)
+        assertTrue(hybrid.results.all { it.backendId == KnowledgeRetrievalBackendId.HYBRID_UNION_RRF_CANDIDATE })
+        assertEquals(hybrid.results.map { it.entryId }, hybrid.usedEntryIds)
+    }
+
+    @Test
+    fun hybridUnionRrfPinsLexicalTop1ForSafetyCriticalExactRule() {
+        val query = KnowledgeSearchQuery(
+            rawQuery = "Ion 71.00 (70.70 to 71.70) text classification",
+            arbitrationHint = KnowledgeRetrievalArbitrationHint(
+                queryClass = KnowledgeRetrievalQueryClass.EXACT_RULE,
+                safetyCritical = true,
+            ),
+        )
+        val lexical = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+        )
+        val dense = denseContext(
+            retrievalId = "dense:bge:ion71",
+            ids = listOf(
+                "kp2-ion-channel",
+                "kp2-rule-ion-title-not-peak",
+                "kp2-rule-mass-range-not-peak-rt",
+            ),
+        )
+
+        val hybrid = HybridUnionRrfKnowledgeRetrievalPolicy.arbitrate(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+            retrievalId = "hybrid:ion71",
+            lexicalContext = lexical,
+            denseContexts = listOf(dense),
+        )
+
+        assertEquals("kp2-rule-ion-title-not-peak", lexical.usedEntryIds.first())
+        assertEquals("kp2-rule-ion-title-not-peak", hybrid.usedEntryIds.first())
+    }
+
+    @Test
+    fun hybridUnionRrfContextStillRejectsForbiddenNumericUse() {
+        val query = KnowledgeSearchQuery(
+            rawQuery = "knowledge cannot create numeric metrics",
+            arbitrationHint = KnowledgeRetrievalArbitrationHint(
+                queryClass = KnowledgeRetrievalQueryClass.SAFETY_BOUNDARY,
+                safetyCritical = true,
+            ),
+        )
+        val lexical = KnowledgeRetrievalEngine.search(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+        )
+        val hybrid = HybridUnionRrfKnowledgeRetrievalPolicy.arbitrate(
+            pack = ChromaLabKnowledgeSeedV2.pack,
+            query = query,
+            retrievalId = "hybrid:safety",
+            lexicalContext = lexical,
+            denseContexts = emptyList(),
+        )
+        val result = KnowledgeUsePolicyValidator.validateOutput(
+            output = KnowledgeGroundedVlmOutput(
+                outputId = "knowledge-output:hybrid-safety",
+                taskId = "report-warning:hybrid-safety",
+                usedEntryIds = listOf("kp2-safety-knowledge-cannot-measure"),
+                decision = "reject_metric",
+                confidence = 0.98f,
+                explanation = "Knowledge cannot create peak area.",
+                attemptedUses = listOf("create_numeric_peak_metric"),
+                createdNumericPeakMetric = true,
+            ),
+            retrievalContexts = listOf(hybrid),
+        )
+
+        assertEquals(KnowledgeUseValidationVerdict.REJECTED, result.verdict)
+        assertTrue(result.issues.any { it.code == "knowledge.created_numeric_peak_metric" })
+    }
+
+    @Test
     fun benchmarkGoldensPreserveExpectedScientificCitations() {
         val goldens = listOf(
             "S/N signal to noise" to "kp2-term-sn",
@@ -199,6 +325,40 @@ class KnowledgeRetrievalLayerTest {
         val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
+        }
+
+        fun denseContext(
+            retrievalId: String,
+            ids: List<String>,
+        ): KnowledgeRetrievalContext {
+            val sourceRefs = ChromaLabKnowledgeSeedV2.pack.sourceRefs.associateBy { it.sourceId }
+            val entries = ChromaLabKnowledgeSeedV2.pack.entries.associateBy { it.entryId }
+            val results = ids.mapIndexed { index, id ->
+                val entry = requireNotNull(entries[id]) { "Missing Knowledge entry $id" }
+                KnowledgeSearchResult(
+                    entryId = id,
+                    entry = entry,
+                    score = 1.0 / (index + 1),
+                    sourceRefs = entry.sourceRefIds.mapNotNull(sourceRefs::get),
+                    backendId = KnowledgeRetrievalBackendId.TURBOVEC_DENSE_SHADOW,
+                    indexVersion = "test-dense",
+                    retrievalStage = "dense_test",
+                    safetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
+                )
+            }
+            return KnowledgeRetrievalContext(
+                retrievalId = retrievalId,
+                knowledgePackVersion = ChromaLabKnowledgeSeedV2.pack.version,
+                query = KnowledgeSearchQuery("test dense context"),
+                results = results,
+                backendId = KnowledgeRetrievalBackendId.TURBOVEC_DENSE_SHADOW,
+                diagnostics = KnowledgeRetrievalDiagnostics(
+                    backendId = KnowledgeRetrievalBackendId.TURBOVEC_DENSE_SHADOW,
+                    indexVersion = "test-dense",
+                    retrievalStage = "dense_test",
+                    safetyStatus = KnowledgeRetrievalSafetyStatus.POLICY_READY,
+                ),
+            )
         }
     }
 }
