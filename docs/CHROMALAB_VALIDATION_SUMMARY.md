@@ -10,6 +10,9 @@ Current state:
 
 - Phase 9 is not accepted as production autonomous validation.
 - Phase 10 must not be presented as started or approved by validation evidence.
+- R15A multi-panel Android evidence gate has not produced new Android fixture
+  evidence yet because no adb target was connected and the fresh validation APK
+  build failed in the native llama/Vulkan shader-generator host toolchain step.
 - The Android validation suite has real artifact coverage across 8 fixtures and 2 modes.
 - No fixture is currently `RELEASE_READY`.
 - Most successful-looking outputs are `REVIEW_ONLY`, not final scientific proof.
@@ -32,6 +35,8 @@ The current product truth is:
 | HTML/Markdown report present | 16 |
 
 Source: [Phase 9J Autonomous Analysis Truth Audit](PHASE9J_AUTONOMOUS_ANALYSIS_TRUTH_AUDIT.md).
+
+Latest gate attempt: [R15A Multi-Panel Android Evidence Gate](R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md).
 
 ## Report Gates
 
@@ -743,6 +748,23 @@ The current validation does not prove:
 - compound identification capability;
 - security-audited storage/export behavior.
 
+## R15A Multi-Panel Android Evidence Gate
+
+R15A attempted to verify R15 on Android for `bench_04`, `bench_05`,
+`bench_06`, and regression witnesses. The gate did not produce new Android
+artifacts because adb reported no connected device or emulator. A fresh
+validation APK build also failed in the native llama/Vulkan shader-generator
+host build because the Windows host linker libraries were unavailable.
+
+Interpretation:
+
+- R15A did not prove R15 multi-panel propagation on Android.
+- R15A did not prove an E2B regression or no-regression result.
+- The current product truth remains Phase 9J/R12 plus R15 implementation
+  status.
+- The next executable action is an R15A retry after device and toolchain
+  readiness, not R16.
+
 ## Current Engineering Blockers
 
 Highest-priority blockers:
@@ -750,10 +772,12 @@ Highest-priority blockers:
 1. `bench_01_mz71_screenshot_page`: Y calibration blocked by insufficient usable anchors after OCR/tick pairing.
 2. `bench_05_tic_plus_ions`: TIC+ions layout propagation and Y calibration direction remain blocked.
 3. Multi-panel graph semantics need stronger truth and report propagation.
-4. Axis scale and label evidence need ground truth for method comparisons.
-5. Trace and peak evidence need reference metrics before release-quality accuracy can be claimed.
-6. Public documentation still needs later real screenshots only when they show current app output honestly.
-7. Security/privacy/export review remains a public roadmap item.
+4. R15A Android evidence gate requires a connected adb target and a validation
+   APK build environment with working native host shader-generator tooling.
+5. Axis scale and label evidence need ground truth for method comparisons.
+6. Trace and peak evidence need reference metrics before release-quality accuracy can be claimed.
+7. Public documentation still needs later real screenshots only when they show current app output honestly.
+8. Security/privacy/export review remains a public roadmap item.
 
 ## Reviewer Takeaway
 

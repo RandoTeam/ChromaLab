@@ -296,6 +296,23 @@ R15 still cannot accept Phase 9 until Android fixture reruns prove no
 multi-panel report/evidence blocker remains and no deterministic/E2B regression
 appears.
 
+## R15A Multi-Panel Android Evidence Gate Addendum
+
+R15A attempted to run the required Android evidence gate for R15 but did not
+produce new fixture results.
+
+| Area | R15A Result |
+| --- | --- |
+| Repository head | PASS: `6537f2c75bedec7a66d1db4df2776a8366dd4b8d` |
+| adb target | BLOCKED: no connected device or emulator reported by `adb devices -l` |
+| Validation APK build | BLOCKED: native llama/Vulkan shader-generator host toolchain cannot link Windows host libraries |
+| Android fixture reruns | NOT RUN: no R15A deterministic/E2B fixture evidence produced |
+| Product acceptance | FAIL/UNCHANGED: Phase 9 remains blocked on validation coverage |
+
+Regression rule: R16 trace extraction evidence must not start until an R15A
+retry either proves multi-panel report/evidence propagation on Android or
+identifies a precise R15B report aggregation blocker.
+
 ## Phase 0 Status
 
 This matrix is accepted as the baseline. It does not imply that every row currently passes release gates; it defines how future work must prove or diagnose each class.

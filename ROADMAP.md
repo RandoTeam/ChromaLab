@@ -40,8 +40,11 @@ Current priorities:
      OCR-anchor calibration strategy candidate with coordinate-frame safety and
      selected/rejected strategy evidence; R15 added per-graph runtime geometry
      results, resolved physical-panel iteration, and explicit unsupported
-     aggregate multi-panel report warnings. The next slice is trace extraction
-     evidence only after Android reruns prove multi-panel propagation is stable.
+     aggregate multi-panel report warnings. R15A attempted the Android evidence
+     gate but produced no fixture truth because no adb target was connected and
+     the fresh validation APK build failed in the native host shader-generator
+     toolchain step. The next slice is an R15A retry; trace extraction evidence
+     starts only after Android reruns prove multi-panel propagation is stable.
 
 3. **E2B baseline validation**
    - keep Gemma E2B as the FAST/weaker-device baseline where supported;

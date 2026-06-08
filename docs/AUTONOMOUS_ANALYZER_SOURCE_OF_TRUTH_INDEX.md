@@ -1,12 +1,12 @@
 # Autonomous Analyzer Source Of Truth Index
 
-Date: 2026-06-07
+Date: 2026-06-08
 
-Status: `R15_SOURCE_OF_TRUTH_INDEX_UPDATED`
+Status: `R15A_SOURCE_OF_TRUTH_INDEX_UPDATED`
 
-Scope: source-of-truth plus R15 graph layout and multi-panel runtime propagation
-tracking. No chromatographic math, Android fixture outcomes, model policy,
-validators, or `CalculationEngine` behavior were changed.
+Scope: source-of-truth plus R15A multi-panel Android evidence gate tracking. No
+chromatographic math, Android fixture outcomes, model policy, validators, or
+`CalculationEngine` behavior were changed.
 
 ## Purpose
 
@@ -57,6 +57,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R13_ANDROID_RUNTIME_OCR_ANCHOR_PRODUCTION_BRIDGE_CLOSEOUT.md` | R13 closeout for Android/runtime OCR-anchor bridge row evidence and validator safety checks. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R14_RUNTIME_CALIBRATION_PROMOTION_CANDIDATE_CLOSEOUT.md` | R14 closeout for Android runtime OCR-anchor calibration strategy candidate and coordinate-frame safety. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md` | R15 closeout for runtime graph-results and multi-panel layout/report propagation. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md` | R15A Android evidence gate attempt; records no-device and validation APK build blockers before R16. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYSIS_EVIDENCE_GATES.md` | Evidence-gate policy for graph, calibration, trace, peak, model, export. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_PRODUCTION_ARCHITECTURE.md` | Product target and numeric-authority boundary. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/CHROMALAB_VALIDATION_SUMMARY.md` | Public validation summary and current blocked/review status. |

@@ -1,8 +1,8 @@
 # Autonomous Analyzer Layer Owner Board
 
-Date: 2026-06-07
+Date: 2026-06-08
 
-Status: `R15_LAYER_OWNER_BOARD_UPDATED`
+Status: `R15A_LAYER_OWNER_BOARD_UPDATED`
 
 Scope: inventory only. This board identifies active owners and replacement
 targets. It does not change runtime behavior.
@@ -22,7 +22,7 @@ targets. It does not change runtime behavior.
 | 0 Input/provenance | `feature/capture`, `processing/pipeline`, `feature/validation/AutonomousValidationFixtureContracts.kt`, Android `FileImportBridge`, validation runner/exporter | `AutonomousValidationFixtureAssetTest`, `AutonomousValidationFixtureContractTest`; Android assets under `composeApp/src/androidMain/assets/validation/` | `ACTIVE_IMPLEMENTATION`; provenance exists but source-of-truth is spread across capture, validation, and runtime evidence. | Consolidate input provenance contract before changing image preparation. |
 | 1 Image preparation | `processing/normalize`, `processing/preprocess`, `processing/quality`, `processing/document`, `processing/perspective`; Android adapters for ML Kit scanner, normalizer, preprocessor, warper | `QualityCalculatorTest`; indirect coverage through bench/Android fixtures | `ACTIVE_IMPLEMENTATION`; likely heavy and variant-rich, not yet a clean Rust owner. | Replace with Rust/Kotlin contract after parity inventory; keep old path only as shadow during comparison. |
 | 2 Graph discovery | `processing/graph`, `processing/geometry/ScreenshotEmbeddedChartDetector.kt`, `GraphMultiplicityResolver.kt`, `AutoSweepEngine.kt` | `AutoSweepGraphSelectionTest`, `GraphRegionOrderingTest`, `GraphMultiplicityResolverTest`, Android fixture suite | `ACTIVE_IMPLEMENTATION`; still a product blocker for multi-panel and 0-graph cases. | High-priority replacement target after R0: graph candidate generation and multiplicity resolution. |
-| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GraphMultiplicityResolver.kt`, `GeometryPipelineRunner.kt`, `ProcessingFlowScreen.kt` | `GraphLayoutClassifierTest`, `GraphMultiplicityResolverTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; R15 preserves resolved physical graph panels and graph results through runtime processing. Combined multi-graph report aggregation still needs Android rerun proof. | Pair with Stage 2 in a broad graph/layout replacement phase; do not use raw pseudo-panel lists as physical graph count. |
+| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GraphMultiplicityResolver.kt`, `GeometryPipelineRunner.kt`, `ProcessingFlowScreen.kt` | `GraphLayoutClassifierTest`, `GraphMultiplicityResolverTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; R15 preserves resolved physical graph panels and graph results through runtime processing. R15A did not produce Android proof because no adb target was connected and the fresh validation APK build failed in the native host shader-generator step. | Retry R15A after device/toolchain readiness before starting R16; do not use raw pseudo-panel lists as physical graph count. |
 | 4 Axis/grid/OCR labels | `AxisDetector`, `AxisTickGeometryDetector`, `TickLocalizationPipeline`, `TickOcrCropRegions`, `TickOcrMatcher`, `AxisOcrReader` | `TickLocalizationPipelineTest`, `TickOcrMatcherTest`, `TickOcrCropRegionsTest`, `ChartPromptsAxisTickTest` | `ACTIVE_IMPLEMENTATION`; tick/label evidence remains brittle for bench_01 and related classes. | Replace only after graph/plotArea ownership is stable; do not let OCR create geometry. |
 | 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; R14 adds `ANDROID_RUNTIME_OCR_ANCHOR` as a named strategy candidate while preserving legacy fallback and AxisScaleResolver. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
@@ -99,6 +99,7 @@ R12 - Runtime Evidence And Failure Package Closure
 R13 - Android Runtime OCR Anchor Production Bridge
 R14 - Runtime Calibration Promotion Candidate
 R15 - Graph Layout And Multi-Panel Runtime Closure
+R15A - Multi-Panel Android Evidence Gate
 ```
 
 R1 is now documented in:
@@ -258,19 +259,28 @@ R15 is documented in:
 - `docs/R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_CLOSEOUT.md`.
 
 R15 added per-graph runtime geometry results, made runtime graph iteration use
-`GraphMultiplicityResolution.resolvedGraphPanels`, preserved stable 1-based
-graph indexes, kept TIC+ion text hints semantic-only, and added an explicit
-`multi_panel_report_aggregation_unsupported` report warning when a stored report
-section covers only one graph from a multi-panel run.
+`GraphMultiplicityResolution.resolvedGraphPanels` as the source of physical
+graph units, and marked unsupported one-section aggregate multi-panel reports
+explicitly.
+
+R15A is documented in:
+
+- `docs/R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md`.
+
+R15A attempted the Android evidence gate for R15 but produced no new fixture
+truth because no adb target was connected and the fresh validation APK build
+failed in the native host shader-generator toolchain step. The next executable
+action is an R15A retry after device/toolchain readiness.
 
 ## Next Broad Phase
 
 Recommended:
 
 ```text
-R16 - Trace Extraction Evidence Candidate
+R15A - Multi-Panel Android Evidence Gate Retry
 ```
 
+Retry R15A once adb and the validation APK native host toolchain are ready.
 Run R16 only if Android reruns prove R15 multi-panel report/evidence propagation
 is complete. If the rerun exposes continued one-section report aggregation,
-close that blocker before R16.
+close that blocker as R15B before R16.

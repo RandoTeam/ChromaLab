@@ -294,3 +294,24 @@ Dataset implication:
 
 R15 does not accept Phase 9. Android reruns are still required to prove
 multi-panel report/evidence propagation on device.
+
+## R15A Multi-Panel Android Evidence Gate Dataset Status
+
+R15A did not generate new Android dataset evidence.
+
+| Fixture | R15A status |
+| --- | --- |
+| `bench_04_stacked_xic_resolution` | Not run: no adb target connected. |
+| `bench_05_tic_plus_ions` | Not run: no adb target connected. |
+| `bench_06_photo_two_graphs_page` | Not run: no adb target connected. |
+| `white_tiger_ion71` | Regression witness not run: no adb target connected. |
+| `bench_03_small_tic_export` | Regression witness not run: no adb target connected. |
+| `bench_07_rotated_page_photo` | Regression witness not run: no adb target connected. |
+
+Dataset implication:
+
+- no new RuntimeEvidencePackage, report, validator, overlay, or graph package
+  evidence exists for R15A;
+- deterministic vs E2B parity was not measured for R15A;
+- existing Phase 9J/R12 artifact truth remains current until an Android rerun
+  is completed.

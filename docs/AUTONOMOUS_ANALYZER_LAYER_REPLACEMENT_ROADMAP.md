@@ -275,6 +275,11 @@ Completed:
 - `R14 - Runtime Calibration Promotion Candidate`;
 - `R15 - Graph Layout And Multi-Panel Runtime Closure`.
 
+R15A is an attempted Android evidence gate, not a production implementation
+phase. It did not produce new Android fixture evidence because no adb target was
+connected and the fresh validation APK build failed in the native host
+shader-generator toolchain step.
+
 R0 established source-of-truth control. R1 defined the Stage 1-3 contract. R2
 added schema-backed PC shadow parity records and reports. R3 added a PC-side
 Stage 1 candidate with normalized-image hashes, preprocessing variant ranking,
@@ -324,6 +329,9 @@ graph units; TIC+ion text hints are semantic-only; and stored per-graph reports
 emit `multi_panel_report_aggregation_unsupported` when a combined multi-graph
 report is not represented.
 
+R15A did not prove this on Android yet. The next work item is still the R15A
+Android evidence-gate retry after device/toolchain readiness.
+
 ## Next Phase To Run
 
 The next phase should still not be TurboVec dependency installation and should
@@ -332,25 +340,35 @@ not directly switch production to Rust.
 The next phase should be:
 
 ```text
-R16 - Trace Extraction Evidence Candidate
+R15A - Multi-Panel Android Evidence Gate Retry
 ```
 
 Purpose:
 
-- define trace mask/centerline evidence after upstream graph layout and
-  calibration evidence are stable enough;
-- compare trace overlays across sparse, dense, stacked, and multi-panel cases;
-- keep `CalculationEngine` untouched.
+- prove R15 multi-panel graph/evidence/report propagation on Android for
+  `bench_04`, `bench_05`, and `bench_06`;
+- rerun regression witnesses `white_tiger_ion71`, `bench_03`, and `bench_07`;
+- compare deterministic and E2B modes;
+- decide whether R16 can start or whether R15B report aggregation closure is
+  required.
 
 Deliverables:
 
-- trace evidence contract;
-- shadow trace candidate and overlays;
-- trace failure reasons for unsupported cases;
+- validation APK build result;
+- deterministic/E2B Android artifacts when a device is available;
+- per-fixture report/evidence graph count audit;
+- explicit pass/block decision for R15 multi-panel propagation;
 - no fixture-specific coordinate hardcoding;
 - source-of-truth docs updated;
-- PC/Android validation command output when runtime files are touched;
 - focused commit.
 
-If Android rerun evidence shows R15 still leaves a critical combined multi-graph
-report aggregation gap, close that R15 blocker before starting R16.
+If Android rerun evidence proves R15 multi-panel propagation is stable, the next
+implementation phase becomes:
+
+```text
+R16 - Trace Extraction Evidence Candidate
+```
+
+If Android rerun evidence shows R15 still leaves a critical combined
+multi-graph report aggregation gap, close that R15 blocker as R15B before
+starting R16.

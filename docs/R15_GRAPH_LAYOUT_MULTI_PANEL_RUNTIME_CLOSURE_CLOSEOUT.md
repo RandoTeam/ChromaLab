@@ -6,6 +6,12 @@ Status: `R15_GRAPH_LAYOUT_MULTI_PANEL_RUNTIME_CLOSURE_IMPLEMENTED`
 
 Verdict: `PHASE_9_REMAINS_BLOCKED_PENDING_ANDROID_RERUN`
 
+R15A update: the first multi-panel Android evidence gate attempt on 2026-06-08
+did not produce fixture evidence because no adb target was connected. A fresh
+validation APK build also failed in the native llama/Vulkan shader-generator
+host toolchain step because the Windows host linker libraries were unavailable.
+See `docs/R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md`.
+
 ## Scope
 
 R15 updates runtime/evidence/report propagation for multi-panel chromatogram
@@ -93,6 +99,9 @@ Android fixture reruns were not completed in this slice because `adb devices`
 reported no connected device or emulator.
 
 ## Next Phase
+
+The immediate next action remains an R15A Android evidence-gate retry once the
+device and validation APK build environment are ready.
 
 If Android reruns show multi-panel reports still cannot aggregate complete
 sections for `bench_04`, `bench_05`, or `bench_06`, the next slice should close
