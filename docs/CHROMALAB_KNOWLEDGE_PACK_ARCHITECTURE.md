@@ -169,5 +169,13 @@ TV-6B proves that a minimal `aarch64-linux-android` Rust binary linked against
 TurboVec `0.8.1` can run on a connected Android target, create an `IdMapIndex`,
 persist a `.tvim` index under `/data/local/tmp`, reload it, and return stable
 top-k ids. This remains a shell-level feasibility result, not an app runtime
-promotion. App-private storage, lifecycle, bundled/imported Knowledge indexes,
-weak-device memory, and citation-policy wiring remain TV-7+ work.
+promotion.
+
+TV-7 app-private provider work is documented in
+`docs/TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md`.
+
+TV-7 proves that a debug-only ChromaLab Android diagnostics path can create,
+persist, load, query, and delete a tiny TurboVec `.tvim` index in app-private
+storage. It still does not promote TurboVec into active product retrieval.
+Bundled/imported real Knowledge indexes, local query embeddings, weak-device
+memory, and citation-policy wiring remain TV-8+ work.

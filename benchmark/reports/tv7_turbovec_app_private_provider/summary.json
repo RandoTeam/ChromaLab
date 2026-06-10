@@ -1,0 +1,49 @@
+{
+  "phase": "TV-7",
+  "title": "App-Private TurboVec Provider Prototype",
+  "status": "TV7_APP_PRIVATE_PROVIDER_SMOKE_PASSED_RUNTIME_NOT_PROMOTED",
+  "generatedAt": "2026-06-10",
+  "device": {
+    "model": "I2407",
+    "abi": "arm64-v8a",
+    "packageName": "com.chromalab.app.validation"
+  },
+  "run": {
+    "runId": "turbovec_app_private_1781085239882",
+    "decision": "PASS",
+    "ffiContract": "TV7_TURBOVEC_APP_PRIVATE_PROVIDER_V1",
+    "backendId": "TURBOVEC_DENSE_SHADOW",
+    "pathClass": "APP_PRIVATE",
+    "indexRelativePath": "chromalab_tv7_turbovec/chromalab_tv7_probe.tvim",
+    "dim": 64,
+    "bitWidth": 4,
+    "vectorCount": 4,
+    "indexBytes": 706,
+    "buildMs": 1077,
+    "writeMs": 0,
+    "loadMs": 0,
+    "queryMs": 1088,
+    "rssBeforeKb": 246008,
+    "rssAfterKb": 255256,
+    "topIds": [1002, 1001, 1003],
+    "topEntryIds": ["kp2-term-retention-time", "kp2-term-chromatogram", "kp2-term-peak"],
+    "top1Expected": 1002,
+    "top1Ok": true,
+    "allIdsValid": true,
+    "allEntryIdsValid": true,
+    "queryTimedOut": false,
+    "cleanupRequested": true,
+    "cleanupResult": "deleted",
+    "indexExistsAfterCleanup": false,
+    "runtimePromotion": false,
+    "activeRetrievalOwnerUnchanged": true
+  },
+  "boundaries": {
+    "activeRetrievalOwner": "LexicalKnowledgeRetrievalBackend",
+    "turboVecBackendState": "provider smoke only",
+    "calculationEngineTouched": false,
+    "chromatogramAnalyzerBehaviorChanged": false,
+    "reportGateBehaviorChanged": false
+  },
+  "nextPhase": "TV-8 - Real Knowledge Index And Local Query Embedding Gate"
+}

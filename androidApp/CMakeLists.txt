@@ -32,9 +32,9 @@ if (DEFINED ENV{W64DEVKIT_HOME})
 endif()
 if (CMAKE_HOST_WIN32 AND DEFINED ENV{USERPROFILE})
     list(APPEND CHROMALAB_HOST_COMPILER_HINTS
+        "C:/w64devkit/bin"
         "$ENV{USERPROFILE}/.chromalab/toolchains/w64devkit/bin"
         "$ENV{USERPROFILE}/w64devkit/bin"
-        "C:/w64devkit/bin"
     )
 endif()
 

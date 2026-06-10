@@ -91,11 +91,14 @@ Current priorities:
      Android target with stable `.tvim` index persistence and top-k id mapping,
      but did not yet prove app-private storage or product runtime provider
      integration;
+   - TV-7 proved debug-only app-private TurboVec provider load/query/cleanup
+     inside the ChromaLab Android app process, while keeping lexical as the
+     active product retrieval owner;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-7 app-private TurboVec provider
-     prototype;
-   - do not add TurboVec to Android runtime until benchmark and native packaging
-     gates pass.
+   - next Knowledge retrieval step: TV-8 real Knowledge index and local query
+     embedding gate;
+   - do not promote TurboVec to active Android retrieval until real index,
+     local embedding, citation-safety, memory, and latency gates pass.
 
 ## Historical Alpha Track
 

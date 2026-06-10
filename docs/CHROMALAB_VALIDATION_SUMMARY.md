@@ -45,10 +45,11 @@ the active product owner and defers TurboVec runtime promotion until Android
 native feasibility is proven.
 
 Latest TurboVec native gate:
-[TV-6B On-Device TurboVec Load And Query Probe](TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md).
-TV-6B proved shell-level load/query behavior for a small TurboVec `.tvim` index
-on a connected `arm64-v8a` Android target, but did not promote runtime behavior
-because app-private storage and product provider integration are still unproven.
+[TV-7 App-Private TurboVec Provider Prototype](TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md).
+TV-7 proved debug-only app-private TurboVec `.tvim` load/query/cleanup behavior
+inside the ChromaLab Android app process on a connected `arm64-v8a` target. It
+did not promote TurboVec into active product retrieval because real Knowledge
+Pack indexing and local query embeddings remain unproven.
 
 ## Report Gates
 
@@ -956,10 +957,41 @@ Result:
 Interpretation:
 
 - on-device shell load/query feasibility is positive;
-- app-private storage, provider lifecycle, real Knowledge index size, weak-device
-  memory, and citation-policy wiring are not proven;
+- TV-7 has since proven debug-only app-private provider load/query/cleanup
+  feasibility inside the ChromaLab Android app process;
+- real Knowledge index size, local query embedding, weak-device memory, and
+  citation-policy wiring are not proven;
 - lexical retrieval remains the active product owner;
-- the next TurboVec step is TV-7 app-private TurboVec provider prototype.
+- the next TurboVec step is TV-8 real Knowledge index and local query embedding
+  gate.
+
+## TV-7 App-Private TurboVec Provider Prototype
+
+TV-7 tested whether TurboVec can run from inside the ChromaLab Android app
+process using app-private storage rather than `/data/local/tmp`.
+
+Result:
+
+- connected target: `I2407`, ABI `arm64-v8a`;
+- package: `com.chromalab.app.validation`;
+- Rust/JNI contract: `TV7_TURBOVEC_APP_PRIVATE_PROVIDER_V1`;
+- run id: `turbovec_app_private_1781085239882`;
+- 64-dimensional, 4-vector `IdMapIndex`;
+- 706-byte `.tvim` index persisted under app-private storage;
+- top-k query returned `1002, 1001, 1003`;
+- returned ids mapped to valid Knowledge Pack v2 entries:
+  `kp2-term-retention-time`, `kp2-term-chromatogram`, `kp2-term-peak`;
+- expected top-1 id `1002` passed;
+- load/query did not time out;
+- cleanup deleted the app-private probe index;
+- active product retrieval owner remained unchanged.
+
+Interpretation:
+
+- app-private provider feasibility is positive for a tiny fixture;
+- TurboVec is still not active product retrieval;
+- TV-8 must prove a real Knowledge Pack index and local/offline query embedding
+  path before any promotion candidate can proceed.
 
 ## Current Engineering Blockers
 
@@ -968,8 +1000,9 @@ Highest-priority blockers:
 1. `bench_01_mz71_screenshot_page`: Y calibration blocked by insufficient usable anchors after OCR/tick pairing.
 2. `bench_05_tic_plus_ions`: TIC+ions layout propagation and Y calibration direction remain blocked.
 3. Multi-panel graph semantics need stronger truth and report propagation.
-4. R15A Android evidence gate requires a connected adb target and a validation
-   APK build environment with working native host shader-generator tooling.
+4. R15A Android evidence gate still needs fixture reruns; TV-7 repaired the
+   validation APK host shader-generator build environment and confirmed adb
+   device access for a TurboVec smoke probe.
 5. Axis scale and label evidence need ground truth for method comparisons.
 6. Trace and peak evidence need reference metrics before release-quality accuracy can be claimed.
 7. Public documentation still needs later real screenshots only when they show current app output honestly.

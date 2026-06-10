@@ -230,6 +230,16 @@ storage, lifecycle, real Knowledge index size, weak-device memory, and
 citation-policy wiring remain unproven. The next step is
 `TV-7 - App-Private TurboVec Provider Prototype`, not runtime promotion.
 
+TV-7 closeout: `docs/TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md`.
+
+TV-7 proved debug-only app-private provider execution from the ChromaLab Android
+app process. The validation package created a 706-byte app-private `.tvim`
+index, loaded it, queried top-k ids `1002, 1001, 1003`, verified expected top-1
+id `1002`, and deleted the probe index after the run. This is still not runtime
+promotion because real Knowledge Pack indexing, local query embeddings,
+weak-device memory, and citation-policy wiring remain unproven. The next step is
+`TV-8 - Real Knowledge Index And Local Query Embedding Gate`.
+
 ## What Not To Do
 
 - Do not use TurboVec for graph detection.
@@ -261,9 +271,10 @@ added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexe
 can be built and benchmarked for Knowledge Pack v2. TV-3 selected
 `HYBRID_UNION_RRF` as the next benchmark target. TV-4 added a Kotlin-side
 hybrid policy candidate. TV-5 deferred runtime promotion. TV-6 proved native
-compile feasibility. TV-6B proved on-device shell load/query behavior. Do not
-integrate TurboVec into Android product retrieval or chromatogram analysis
-calculations until TV-7 app-private provider and later packaging/citation gates
+compile feasibility. TV-6B proved on-device shell load/query behavior. TV-7
+proved debug-only app-private provider load/query/cleanup. Do not integrate
+TurboVec into Android product retrieval or chromatogram analysis calculations
+until TV-8 real Knowledge indexing, local embeddings, and later citation gates
 pass.
 
 ## Deep Audit Follow-Up

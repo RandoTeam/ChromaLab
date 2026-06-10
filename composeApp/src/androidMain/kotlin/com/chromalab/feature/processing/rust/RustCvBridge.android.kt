@@ -23,6 +23,14 @@ object RustCvBridge {
         )
     }
 
+    fun turboVecAppPrivateProbeJson(
+        appPrivateRoot: String,
+        cleanup: Boolean,
+    ): String {
+        loadResult.getOrThrow()
+        return nativeTurboVecAppPrivateProbeJson(appPrivateRoot, cleanup)
+    }
+
     fun loadError(): Throwable? = loadResult.exceptionOrNull()
 
     private external fun nativeProbeJson(): String
@@ -31,5 +39,10 @@ object RustCvBridge {
         imageWidth: Int,
         imageHeight: Int,
         axisElementGraphJson: String,
+    ): String
+
+    private external fun nativeTurboVecAppPrivateProbeJson(
+        appPrivateRoot: String,
+        cleanup: Boolean,
     ): String
 }

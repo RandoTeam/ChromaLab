@@ -425,8 +425,8 @@ modernization path.
 ## Current Next TurboVec Step
 
 Do not integrate TurboVec into Android product runtime yet, and do not install
-it as an active runtime dependency before TV-7 app-private provider and later
-packaging/citation gates pass.
+it as the active retrieval owner before TV-8 real Knowledge indexing, local
+embedding, and later packaging/citation gates pass.
 
 This plan is now subordinate to the replacement roadmap in
 `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
@@ -441,21 +441,23 @@ TV-4 - Knowledge Retrieval Backend Promotion Candidate
 TV-5 - Dense Provider Promotion Or Rejection Gate
 TV-6 - Android Native Feasibility Spike
 TV-6B - On-Device TurboVec Load And Query Probe
+TV-7 - App-Private TurboVec Provider Prototype
 ```
 
 The next TurboVec-specific work slice is:
 
 ```text
-TV-7 - App-Private TurboVec Provider Prototype
+TV-8 - Real Knowledge Index And Local Query Embedding Gate
 ```
 
 TV-5 decided that the selected hybrid policy remains a candidate and does not
 get a real product runtime dense provider yet. TV-6 proved compile-level Android
 native feasibility for TurboVec `0.8.1`. TV-6B proved shell-level on-device
-load/query with a tiny `.tvim` index. Storage/import/delete behavior in
-app-private directories, real Knowledge index memory, provider lifecycle,
-latency under app startup constraints, and citation safety remain unproven.
-TV-7 must prove those before runtime promotion can reopen.
+load/query with a tiny `.tvim` index. TV-7 proved debug-only app-private
+load/query/cleanup inside the ChromaLab Android app process. Real Knowledge
+index memory, local query embeddings, provider lifecycle for user retrieval,
+latency under real startup constraints, and citation safety remain unproven.
+TV-8 must prove those before runtime promotion can reopen.
 
 In parallel, the main chromatogram analyzer remains blocked at the R15A Android
 evidence gate. TurboVec can help retrieve research and failure context, but it is

@@ -103,6 +103,7 @@ These documents explain how models are used without becoming numeric authority.
 | [TV-5 Dense Provider Promotion/Rejection Gate Closeout](TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md) | Decision gate keeping TurboVec PC/dev-only and lexical as the active runtime retrieval owner. |
 | [TV-6 Android Native Feasibility Spike Closeout](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md) | Android Rust target compile feasibility for TurboVec and next on-device load/query gate. |
 | [TV-6B On-Device TurboVec Load And Query Probe Closeout](TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md) | Android shell load/query proof for TurboVec `.tvim` indexes and next app-private provider gate. |
+| [TV-7 App-Private TurboVec Provider Prototype Closeout](TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md) | Debug-only Android app-private TurboVec load/query/cleanup proof and next real Knowledge index gate. |
 
 ## Rust CV And Deep Research
 

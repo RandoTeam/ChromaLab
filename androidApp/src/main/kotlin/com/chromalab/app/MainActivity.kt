@@ -23,6 +23,7 @@ import com.chromalab.feature.processing.inference.MtpAbDiagnostics
 import com.chromalab.feature.processing.debug.RustAxisElementCropSmokeDiagnostics
 import com.chromalab.feature.processing.debug.RustAxisElementCropCorpusDiagnostics
 import com.chromalab.feature.processing.debug.RustCvBridgeSmokeDiagnostics
+import com.chromalab.feature.processing.debug.TurboVecAppPrivateSmokeDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.settings.ModelManagerController
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
             "com.chromalab.app.DEBUG_RUST_AXIS_ELEMENT_CROPS"
         private const val ACTION_DEBUG_RUST_AXIS_ELEMENT_CORPUS =
             "com.chromalab.app.DEBUG_RUST_AXIS_ELEMENT_CORPUS"
+        private const val ACTION_DEBUG_TURBOVEC_APP_PRIVATE =
+            "com.chromalab.app.DEBUG_TURBOVEC_APP_PRIVATE"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
         private const val EXTRA_MODEL_MODE = "modelMode"
@@ -54,6 +57,11 @@ class MainActivity : ComponentActivity() {
         FileSharer.contextProvider = { applicationContext }
         AutonomousValidationArtifactExporter.contextProvider = { applicationContext }
         AutonomousValidationArtifactExporter.validationRunIdProvider = { activeValidationRunId }
+
+        if (intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE) {
+            handleDebugIntent(intent)
+            return
+        }
 
         // Initialize ModelManagerController for VLM lazy loading (25.2B)
         // This must happen at startup so the pipeline can auto-load models
@@ -143,6 +151,10 @@ class MainActivity : ComponentActivity() {
         }
         if (intent?.action == ACTION_DEBUG_RUST_AXIS_ELEMENT_CORPUS) {
             handleRustAxisElementCorpusDebugIntent()
+            return
+        }
+        if (intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE) {
+            handleTurboVecAppPrivateDebugIntent()
             return
         }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
@@ -299,6 +311,24 @@ class MainActivity : ComponentActivity() {
                 "Rust axis element corpus result runId=${summary.runId} " +
                     "decision=${summary.decision} items=${summary.itemCount} " +
                     "pass=${summary.passCount} fail=${summary.failCount} " +
+                    "artifacts=${summary.artifactDirectory}",
+            )
+        }
+    }
+
+    private fun handleTurboVecAppPrivateDebugIntent() {
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring TurboVec app-private diagnostics intent in non-debug build")
+            return
+        }
+
+        lifecycleScope.launch {
+            val summary = TurboVecAppPrivateSmokeDiagnostics(applicationContext).run()
+            Log.i(
+                TAG,
+                "TurboVec app-private smoke result runId=${summary.runId} " +
+                    "decision=${summary.decision} status=${summary.status} " +
+                    "topIds=${summary.topIds.joinToString()} " +
                     "artifacts=${summary.artifactDirectory}",
             )
         }
