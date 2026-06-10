@@ -152,3 +152,12 @@ remains a candidate; and `TurboVecKnowledgeRetrievalBackend` remains
 fail-closed until Android native packaging, index loading, storage, memory,
 latency, and citation-safety behavior are proven. TurboVec stays PC/dev-only
 for now.
+
+TV-6 native feasibility work is documented in
+`docs/TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md`.
+
+TV-6 proves that TurboVec `0.8.1` can compile for Android Rust targets in an
+isolated probe (`aarch64-linux-android` and `x86_64-linux-android`), but it does
+not promote TurboVec into product runtime. No Android device was connected, so
+on-device index loading and query execution remain unproven. The next retrieval
+step is a TV-6B on-device load/query probe with lexical still active.

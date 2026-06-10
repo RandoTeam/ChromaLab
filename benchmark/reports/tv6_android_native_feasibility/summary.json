@@ -1,0 +1,52 @@
+{
+  "phase": "TV-6",
+  "date": "2026-06-10",
+  "status": "TV6_NATIVE_COMPILE_FEASIBLE_RUNTIME_NOT_PROVEN",
+  "scope": "Knowledge retrieval Android native feasibility only",
+  "crate": {
+    "name": "turbovec",
+    "cargo_search_version": "0.8.1",
+    "probe_dependency": "0.8.1"
+  },
+  "environment": {
+    "rustc": "1.96.0",
+    "cargo": "1.96.0",
+    "android_ndk": "27.3.13750724",
+    "min_sdk": 26,
+    "adb_devices": "none"
+  },
+  "checks": [
+    {
+      "id": "existing_chromalab_rust_aarch64_check",
+      "target": "aarch64-linux-android",
+      "result": "PASS"
+    },
+    {
+      "id": "turbovec_probe_aarch64_check",
+      "target": "aarch64-linux-android",
+      "result": "PASS"
+    },
+    {
+      "id": "turbovec_probe_x86_64_check",
+      "target": "x86_64-linux-android",
+      "result": "PASS_AFTER_TARGET_INSTALL"
+    },
+    {
+      "id": "on_device_load_query",
+      "result": "NOT_RUN_NO_ADB_TARGET"
+    }
+  ],
+  "decision": {
+    "runtime_promoted": false,
+    "active_product_owner": "LexicalKnowledgeRetrievalBackend",
+    "candidate_policy": "HybridUnionRrfKnowledgeRetrievalBackend",
+    "turbovec_backend_state": "fail_closed_shadow",
+    "next_phase": "TV-6B - On-Device TurboVec Load And Query Probe"
+  },
+  "artifacts": {
+    "ignored_local_root": "artifacts/tv6-turbovec-android-feasibility/",
+    "aarch64_log": "artifacts/tv6-turbovec-android-feasibility/cargo-check-aarch64-with-local-toolchain.log",
+    "x86_64_log": "artifacts/tv6-turbovec-android-feasibility/cargo-check-x86_64-with-local-toolchain.log",
+    "dependency_tree": "artifacts/tv6-turbovec-android-feasibility/cargo-tree-aarch64.txt"
+  }
+}

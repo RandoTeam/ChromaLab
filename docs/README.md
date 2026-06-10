@@ -101,6 +101,7 @@ These documents explain how models are used without becoming numeric authority.
 | [TV-3 Retrieval A/B Arbitration Policy Closeout](TV3_RETRIEVAL_AB_ARBITRATION_POLICY_CLOSEOUT.md) | PC-only lexical/dense/hybrid policy benchmark and TV-4 decision. |
 | [TV-4 Knowledge Retrieval Backend Promotion Candidate Closeout](TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md) | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
 | [TV-5 Dense Provider Promotion/Rejection Gate Closeout](TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md) | Decision gate keeping TurboVec PC/dev-only and lexical as the active runtime retrieval owner. |
+| [TV-6 Android Native Feasibility Spike Closeout](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md) | Android Rust target compile feasibility for TurboVec and next on-device load/query gate. |
 
 ## Rust CV And Deep Research
 

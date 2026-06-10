@@ -44,6 +44,12 @@ TV-5 did not change Android analysis validation. It keeps lexical retrieval as
 the active product owner and defers TurboVec runtime promotion until Android
 native feasibility is proven.
 
+Latest TurboVec native gate:
+[TV-6 Android Native Feasibility Spike](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md).
+TV-6 proved compile-level feasibility for TurboVec on Android Rust targets, but
+did not promote runtime behavior because no Android target was connected for
+index load/query testing.
+
 ## Report Gates
 
 ChromaLab validates reports through gates rather than visual appearance.
@@ -879,7 +885,8 @@ Interpretation:
 - TV-5 dense provider promotion/rejection gate is complete.
 - Runtime dense-provider promotion is deferred; TurboVec remains PC/dev-only and
   lexical remains the active product retrieval owner.
-- The next Knowledge retrieval phase is TV-6 Android native feasibility spike.
+- TV-6 Android native feasibility spike is complete at compile level.
+- The next Knowledge retrieval phase is TV-6B on-device load/query probe.
 
 ## TV-5 Dense Provider Promotion/Rejection Gate
 
@@ -898,9 +905,32 @@ Result:
 Interpretation:
 
 - TurboVec remains useful for PC/dev Knowledge retrieval research.
-- Android/runtime promotion needs a separate TV-6 native feasibility spike.
+- Android/runtime promotion needs on-device load/query proof after TV-6 native
+  compile feasibility.
 - Knowledge retrieval modernization does not alter Phase 9 Android analyzer
   acceptance.
+
+## TV-6 Android Native Feasibility Spike
+
+TV-6 tested whether TurboVec can pass Android Rust target compilation in an
+isolated native probe.
+
+Result:
+
+- `cargo search` reports `turbovec = "0.8.1"`;
+- existing ChromaLab Rust CV core checks for `aarch64-linux-android`;
+- isolated TurboVec probe checks for `aarch64-linux-android`;
+- isolated TurboVec probe checks for `x86_64-linux-android` after installing
+  that target for pinned Rust `1.96.0`;
+- `adb devices` reported no connected Android target, so runtime proof was not
+  collected.
+
+Interpretation:
+
+- compile feasibility is positive;
+- on-device index loading, query execution, memory, and latency are not proven;
+- lexical retrieval remains the active product owner;
+- the next TurboVec step is TV-6B on-device load/query probe.
 
 ## Current Engineering Blockers
 

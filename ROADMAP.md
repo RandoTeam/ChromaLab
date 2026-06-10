@@ -84,8 +84,11 @@ Current priorities:
    - TV-5 deferred dense-provider runtime promotion and kept lexical as the
      active product retrieval owner because Android native packaging, index
      loading, storage, memory, latency, and citation safety are not yet proven;
+   - TV-6 proved compile-level feasibility for TurboVec `0.8.1` on Android Rust
+     targets (`aarch64-linux-android` and `x86_64-linux-android`) in an isolated
+     probe, but no device was connected for index load/query proof;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-6 Android native feasibility spike;
+   - next Knowledge retrieval step: TV-6B on-device TurboVec load/query probe;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

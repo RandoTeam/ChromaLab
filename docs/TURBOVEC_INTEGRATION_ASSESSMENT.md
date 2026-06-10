@@ -199,6 +199,9 @@ PC/dev-only until Android native feasibility is proven.
 
 ### TV-6: Android feasibility review
 
+Status: partial complete through TV-6. Closeout:
+`docs/TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md`.
+
 Only after desktop A/B proof, evaluate Android packaging:
 
 - Rust crate compatibility with Android NDK targets;
@@ -211,6 +214,13 @@ Only after desktop A/B proof, evaluate Android packaging:
 
 Exit gate: Android native proof-of-concept loads an index from app-private
 storage, executes deterministic queries, and preserves existing report gates.
+
+TV-6 result: native compile feasibility passed, runtime proof remains open.
+TurboVec `0.8.1` checks successfully in an isolated Rust probe for
+`aarch64-linux-android` and `x86_64-linux-android`. No Android device was
+connected, so `.tvim` loading, app-private storage, query execution, memory, and
+latency were not measured. The next step is `TV-6B - On-Device TurboVec Load And
+Query Probe`, not runtime promotion.
 
 ## What Not To Do
 
@@ -242,10 +252,10 @@ retrieval. TV-0/TV-1 separated the active lexical backend from the facade and
 added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexes
 can be built and benchmarked for Knowledge Pack v2. TV-3 selected
 `HYBRID_UNION_RRF` as the next benchmark target. TV-4 added a Kotlin-side
-hybrid policy candidate. TV-5 deferred runtime promotion because Android/native
-provider feasibility is not proven. Do not integrate TurboVec into Android
-runtime or chromatogram analysis calculations until TV-6 native feasibility and
-later packaging gates pass.
+hybrid policy candidate. TV-5 deferred runtime promotion. TV-6 proved native
+compile feasibility but did not prove on-device runtime behavior. Do not
+integrate TurboVec into Android runtime or chromatogram analysis calculations
+until TV-6B on-device load/query and later packaging gates pass.
 
 ## Deep Audit Follow-Up
 

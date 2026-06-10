@@ -424,9 +424,9 @@ modernization path.
 
 ## Current Next TurboVec Step
 
-Do not integrate TurboVec into Android yet, and do not install it as a runtime
-dependency before TV-6 Android native feasibility and later packaging gates
-pass.
+Do not integrate TurboVec into Android product runtime yet, and do not install
+it as an active runtime dependency before TV-6B on-device load/query and later
+packaging gates pass.
 
 This plan is now subordinate to the replacement roadmap in
 `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md`.
@@ -439,18 +439,21 @@ TV-2 - PC-only Knowledge Pack TurboVec prototype
 TV-3 - Retrieval A/B Evaluation And Arbitration Policy
 TV-4 - Knowledge Retrieval Backend Promotion Candidate
 TV-5 - Dense Provider Promotion Or Rejection Gate
+TV-6 - Android Native Feasibility Spike
 ```
 
 The next TurboVec-specific work slice is:
 
 ```text
-TV-6 - Android Native Feasibility Spike
+TV-6B - On-Device TurboVec Load And Query Probe
 ```
 
 TV-5 decided that the selected hybrid policy remains a candidate and does not
-get a real product runtime dense provider yet. TV-6 must prove Android native
-packaging, local index loading, storage/import/delete behavior, memory, latency,
-and citation safety before runtime promotion can reopen.
+get a real product runtime dense provider yet. TV-6 proved compile-level Android
+native feasibility for TurboVec `0.8.1`, but no Android target was connected, so
+local index loading, storage/import/delete behavior, memory, latency, and
+citation safety remain unproven. TV-6B must prove those on device before runtime
+promotion can reopen.
 
 In parallel, the main chromatogram analyzer remains blocked at the R15A Android
 evidence gate. TurboVec can help retrieve research and failure context, but it is
