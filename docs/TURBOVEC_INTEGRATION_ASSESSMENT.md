@@ -217,10 +217,18 @@ storage, executes deterministic queries, and preserves existing report gates.
 
 TV-6 result: native compile feasibility passed, runtime proof remains open.
 TurboVec `0.8.1` checks successfully in an isolated Rust probe for
-`aarch64-linux-android` and `x86_64-linux-android`. No Android device was
-connected, so `.tvim` loading, app-private storage, query execution, memory, and
-latency were not measured. The next step is `TV-6B - On-Device TurboVec Load And
-Query Probe`, not runtime promotion.
+`aarch64-linux-android` and `x86_64-linux-android`.
+
+TV-6B closeout: `docs/TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md`.
+
+TV-6B proved shell-level Android execution on a connected `arm64-v8a` device:
+the probe created a tiny `IdMapIndex`, wrote and reloaded a `.tvim` file, and
+returned stable top-k ids over three runs. This is enough to move from native
+compile feasibility to app-private runtime-provider feasibility. It is not
+enough to promote TurboVec into Android product retrieval because app-private
+storage, lifecycle, real Knowledge index size, weak-device memory, and
+citation-policy wiring remain unproven. The next step is
+`TV-7 - App-Private TurboVec Provider Prototype`, not runtime promotion.
 
 ## What Not To Do
 
@@ -253,9 +261,10 @@ added fail-closed TurboVec diagnostics. TV-2 proved that PC-only TurboVec indexe
 can be built and benchmarked for Knowledge Pack v2. TV-3 selected
 `HYBRID_UNION_RRF` as the next benchmark target. TV-4 added a Kotlin-side
 hybrid policy candidate. TV-5 deferred runtime promotion. TV-6 proved native
-compile feasibility but did not prove on-device runtime behavior. Do not
-integrate TurboVec into Android runtime or chromatogram analysis calculations
-until TV-6B on-device load/query and later packaging gates pass.
+compile feasibility. TV-6B proved on-device shell load/query behavior. Do not
+integrate TurboVec into Android product retrieval or chromatogram analysis
+calculations until TV-7 app-private provider and later packaging/citation gates
+pass.
 
 ## Deep Audit Follow-Up
 

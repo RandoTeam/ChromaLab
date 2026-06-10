@@ -1,0 +1,81 @@
+{
+  "phase": "TV-6B",
+  "date": "2026-06-10",
+  "status": "TV6B_ON_DEVICE_SHELL_LOAD_QUERY_PASSED_RUNTIME_NOT_PROMOTED",
+  "scope": "Android on-device TurboVec shell load/query probe only",
+  "device": {
+    "model": "I2407",
+    "abi": "arm64-v8a",
+    "sdk": 36,
+    "serial_redacted": true
+  },
+  "probe": {
+    "crate": "turbovec",
+    "version": "0.8.1",
+    "binary": "tv6b_turbovec_probe",
+    "target": "aarch64-linux-android",
+    "device_binary_path": "/data/local/tmp/tv6b_turbovec_probe",
+    "device_index_path": "/data/local/tmp/chromalab_tv6b_probe.tvim",
+    "dimension": 64,
+    "bit_width": 4,
+    "vector_count": 4,
+    "expected_top1": 1002
+  },
+  "runs": [
+    {
+      "run": 1,
+      "status": "PASS",
+      "index_bytes": 706,
+      "build_ms": 166,
+      "write_ms": 0,
+      "load_ms": 0,
+      "query_ms": 159,
+      "rss_before_kb": 3916,
+      "rss_after_kb": 4948,
+      "top_ids": [1002, 1001, 1003],
+      "scores": [16.012125, 0.028488, -0.113486],
+      "top1_ok": true,
+      "all_ids_valid": true
+    },
+    {
+      "run": 2,
+      "status": "PASS",
+      "index_bytes": 706,
+      "build_ms": 163,
+      "write_ms": 0,
+      "load_ms": 0,
+      "query_ms": 158,
+      "rss_before_kb": 3692,
+      "rss_after_kb": 4980,
+      "top_ids": [1002, 1001, 1003],
+      "scores": [16.012125, 0.028488, -0.113486],
+      "top1_ok": true,
+      "all_ids_valid": true
+    },
+    {
+      "run": 3,
+      "status": "PASS",
+      "index_bytes": 706,
+      "build_ms": 183,
+      "write_ms": 0,
+      "load_ms": 0,
+      "query_ms": 158,
+      "rss_before_kb": 3688,
+      "rss_after_kb": 5036,
+      "top_ids": [1002, 1001, 1003],
+      "scores": [16.012125, 0.028488, -0.113486],
+      "top1_ok": true,
+      "all_ids_valid": true
+    }
+  ],
+  "decision": {
+    "runtime_promoted": false,
+    "active_product_owner": "LexicalKnowledgeRetrievalBackend",
+    "candidate_policy": "HybridUnionRrfKnowledgeRetrievalBackend",
+    "next_phase": "TV-7 - App-Private TurboVec Provider Prototype"
+  },
+  "artifacts": {
+    "ignored_local_root": "artifacts/tv6b-turbovec-android-load-query/",
+    "cleanup": "temporary device executable and index removed after run"
+  }
+}

@@ -86,9 +86,14 @@ Current priorities:
      loading, storage, memory, latency, and citation safety are not yet proven;
    - TV-6 proved compile-level feasibility for TurboVec `0.8.1` on Android Rust
      targets (`aarch64-linux-android` and `x86_64-linux-android`) in an isolated
-     probe, but no device was connected for index load/query proof;
+     probe;
+   - TV-6B proved real on-device shell load/query behavior on an `arm64-v8a`
+     Android target with stable `.tvim` index persistence and top-k id mapping,
+     but did not yet prove app-private storage or product runtime provider
+     integration;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-6B on-device TurboVec load/query probe;
+   - next Knowledge retrieval step: TV-7 app-private TurboVec provider
+     prototype;
    - do not add TurboVec to Android runtime until benchmark and native packaging
      gates pass.
 

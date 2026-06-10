@@ -104,6 +104,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md` | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md` | Dense-provider gate decision keeping TurboVec PC/dev-only and lexical as the active product retrieval owner. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md` | Android Rust target compile feasibility for TurboVec and remaining on-device load/query blocker. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md` | On-device Android shell load/query proof for TurboVec `.tvim` indexes and remaining app-private runtime provider blocker. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -166,8 +167,10 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv3_retrieval_ab_arbitration/` | TV-3 compact retrieval policy arbitration benchmark summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv5_dense_provider_gate/` | TV-5 compact dense-provider promotion/defer decision summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv6_android_native_feasibility/` | TV-6 compact Android native compile-feasibility summary. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv6b_turbovec_android_load_query/` | TV-6B compact on-device TurboVec shell load/query summary. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv2-turbovec-knowledge/` | TV-2 local venv, downloaded models, TurboVec `.tvim` indexes, sidecars, build manifests, and ignored heavy artifacts. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv6-turbovec-android-feasibility/` | TV-6 local TurboVec Android compile probe crate, logs, cargo tree, and target build output. |
+| `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv6b-turbovec-android-load-query/` | TV-6B local Android shell probe crate, build logs, device logs, and ignored native artifacts. |
 
 ## Active Code Owner Areas
 
@@ -288,12 +291,12 @@ TV-3 selected `HYBRID_UNION_RRF` as the benchmark target. TV-4 is complete and
 added a Kotlin-side promotion candidate without changing the active default
 owner. TV-5 is complete and deferred runtime dense-provider promotion. TV-6 is
 complete as compile feasibility and proved TurboVec `0.8.1` checks for Android
-Rust targets, but no device was connected for runtime proof. The active
-Knowledge retrieval owner remains `LexicalKnowledgeRetrievalBackend`. The next
-Knowledge retrieval phase is:
+Rust targets. TV-6B is complete as an on-device shell load/query probe on an
+`arm64-v8a` Android target. The active Knowledge retrieval owner remains
+`LexicalKnowledgeRetrievalBackend`. The next Knowledge retrieval phase is:
 
 ```text
-TV-6B - On-Device TurboVec Load And Query Probe
+TV-7 - App-Private TurboVec Provider Prototype
 ```
 
 This does not change Android analyzer phase order. TurboVec remains Knowledge

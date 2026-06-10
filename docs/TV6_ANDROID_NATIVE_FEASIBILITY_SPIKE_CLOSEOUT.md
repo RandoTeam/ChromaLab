@@ -123,8 +123,12 @@ TV-6B should run only with an Android device/emulator connected. It should:
 If TV-6B passes, the following phase can design a real runtime provider and
 lexical-retirement path. If TV-6B fails, TurboVec remains PC/dev-only.
 
+TV-6B has since passed as an on-device shell-level load/query probe. See
+`docs/TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md`. The follow-up is
+`TV-7 - App-Private TurboVec Provider Prototype`; TV-6B did not promote
+TurboVec into product runtime.
+
 ## Validation
 
 TV-6 validation is compile/feasibility validation only. Android fixture analysis
 and Phase 9 acceptance are unchanged.
-

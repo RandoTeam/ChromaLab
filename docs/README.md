@@ -102,6 +102,7 @@ These documents explain how models are used without becoming numeric authority.
 | [TV-4 Knowledge Retrieval Backend Promotion Candidate Closeout](TV4_KNOWLEDGE_RETRIEVAL_BACKEND_PROMOTION_CANDIDATE_CLOSEOUT.md) | Kotlin-side hybrid retrieval policy candidate and TV-5 decision. |
 | [TV-5 Dense Provider Promotion/Rejection Gate Closeout](TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md) | Decision gate keeping TurboVec PC/dev-only and lexical as the active runtime retrieval owner. |
 | [TV-6 Android Native Feasibility Spike Closeout](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md) | Android Rust target compile feasibility for TurboVec and next on-device load/query gate. |
+| [TV-6B On-Device TurboVec Load And Query Probe Closeout](TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md) | Android shell load/query proof for TurboVec `.tvim` indexes and next app-private provider gate. |
 
 ## Rust CV And Deep Research
 

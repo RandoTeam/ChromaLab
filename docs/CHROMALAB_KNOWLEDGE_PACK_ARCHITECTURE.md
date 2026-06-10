@@ -161,3 +161,13 @@ isolated probe (`aarch64-linux-android` and `x86_64-linux-android`), but it does
 not promote TurboVec into product runtime. No Android device was connected, so
 on-device index loading and query execution remain unproven. The next retrieval
 step is a TV-6B on-device load/query probe with lexical still active.
+
+TV-6B on-device shell probe work is documented in
+`docs/TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md`.
+
+TV-6B proves that a minimal `aarch64-linux-android` Rust binary linked against
+TurboVec `0.8.1` can run on a connected Android target, create an `IdMapIndex`,
+persist a `.tvim` index under `/data/local/tmp`, reload it, and return stable
+top-k ids. This remains a shell-level feasibility result, not an app runtime
+promotion. App-private storage, lifecycle, bundled/imported Knowledge indexes,
+weak-device memory, and citation-policy wiring remain TV-7+ work.

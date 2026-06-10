@@ -45,10 +45,10 @@ the active product owner and defers TurboVec runtime promotion until Android
 native feasibility is proven.
 
 Latest TurboVec native gate:
-[TV-6 Android Native Feasibility Spike](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md).
-TV-6 proved compile-level feasibility for TurboVec on Android Rust targets, but
-did not promote runtime behavior because no Android target was connected for
-index load/query testing.
+[TV-6B On-Device TurboVec Load And Query Probe](TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md).
+TV-6B proved shell-level load/query behavior for a small TurboVec `.tvim` index
+on a connected `arm64-v8a` Android target, but did not promote runtime behavior
+because app-private storage and product provider integration are still unproven.
 
 ## Report Gates
 
@@ -886,7 +886,9 @@ Interpretation:
 - Runtime dense-provider promotion is deferred; TurboVec remains PC/dev-only and
   lexical remains the active product retrieval owner.
 - TV-6 Android native feasibility spike is complete at compile level.
-- The next Knowledge retrieval phase is TV-6B on-device load/query probe.
+- TV-6B on-device shell load/query probe is complete.
+- The next Knowledge retrieval phase is TV-7 app-private TurboVec provider
+  prototype.
 
 ## TV-5 Dense Provider Promotion/Rejection Gate
 
@@ -930,7 +932,34 @@ Interpretation:
 - compile feasibility is positive;
 - on-device index loading, query execution, memory, and latency are not proven;
 - lexical retrieval remains the active product owner;
-- the next TurboVec step is TV-6B on-device load/query probe.
+- at TV-6 closeout, the next TurboVec step was TV-6B on-device load/query
+  probe; TV-6B is now complete and TV-7 is the next provider gate.
+
+## TV-6B On-Device TurboVec Load And Query Probe
+
+TV-6B tested whether a minimal TurboVec Rust binary can run on the connected
+Android target and perform real index persistence plus search.
+
+Result:
+
+- connected target: `I2407`, ABI `arm64-v8a`, SDK `36`;
+- TurboVec crate: `0.8.1`;
+- probe target: `aarch64-linux-android`;
+- three on-device shell runs passed;
+- each run created a 64-dimensional, 4-vector `IdMapIndex`, wrote a 706-byte
+  `.tvim` file, reloaded it, queried top-k, and returned the expected top-1 id
+  `1002`;
+- measured query time was 158-159 ms in the tiny shell probe;
+- RSS increased by roughly 1.0-1.3 MB in the tiny probe process;
+- `/data/local/tmp` probe binary and index were removed after the run.
+
+Interpretation:
+
+- on-device shell load/query feasibility is positive;
+- app-private storage, provider lifecycle, real Knowledge index size, weak-device
+  memory, and citation-policy wiring are not proven;
+- lexical retrieval remains the active product owner;
+- the next TurboVec step is TV-7 app-private TurboVec provider prototype.
 
 ## Current Engineering Blockers
 
