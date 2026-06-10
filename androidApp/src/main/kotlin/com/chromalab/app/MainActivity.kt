@@ -3,8 +3,15 @@ package com.chromalab.app
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.ActivityInfo
+import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
+import android.view.Gravity
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.MutableState
@@ -65,7 +72,7 @@ class MainActivity : ComponentActivity() {
             intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE ||
             intent?.action == ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE
         ) {
-            handleDebugIntent(intent)
+            showTurboVecDebugDiagnostics(intent)
             return
         }
 
@@ -108,6 +115,13 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (
+            intent.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE ||
+            intent.action == ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE
+        ) {
+            showTurboVecDebugDiagnostics(intent)
+            return
+        }
         pendingProcessingRequestState?.value = validationFixtureRequestFromIntent(intent)
         handleDebugIntent(intent)
     }
@@ -362,6 +376,156 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    private fun showTurboVecDebugDiagnostics(intent: Intent) {
+        val isKnowledgeGate = intent.action == ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE
+        val title = if (isKnowledgeGate) {
+            "TurboVec Knowledge Gate"
+        } else {
+            "TurboVec App-Private Probe"
+        }
+        val views = createDebugDiagnosticsView(title)
+        setContentView(views.root)
+
+        if (!isDebuggable()) {
+            views.progress.visibility = ProgressBar.GONE
+            views.status.text = "Ignored"
+            views.detail.text = "This diagnostics action is available only in debuggable builds."
+            return
+        }
+
+        lifecycleScope.launch {
+            views.status.text = "Running"
+            views.detail.text = "Collecting local diagnostics. The main app UI is not active during this probe."
+            runCatching {
+                if (isKnowledgeGate) {
+                    val summary = TurboVecKnowledgeIndexGateDiagnostics(applicationContext).run()
+                    Log.i(
+                        TAG,
+                        "TurboVec Knowledge index gate result runId=${summary.runId} " +
+                            "decision=${summary.decision} status=${summary.status} " +
+                            "realIndex=${summary.realIndexGatePassed} " +
+                            "localEmbedding=${summary.localAndroidEmbeddingAvailable} " +
+                            "artifacts=${summary.artifactDirectory}",
+                    )
+                    "Run ID: ${summary.runId}\n" +
+                        "Decision: ${summary.decision}\n" +
+                        "Status: ${summary.status}\n" +
+                        "Real index gate: ${summary.realIndexGatePassed}\n" +
+                        "Local Android embedding: ${summary.localAndroidEmbeddingAvailable}\n" +
+                        "Artifacts: ${summary.artifactDirectory}"
+                } else {
+                    val summary = TurboVecAppPrivateSmokeDiagnostics(applicationContext).run()
+                    Log.i(
+                        TAG,
+                        "TurboVec app-private smoke result runId=${summary.runId} " +
+                            "decision=${summary.decision} status=${summary.status} " +
+                            "topIds=${summary.topIds.joinToString()} " +
+                            "artifacts=${summary.artifactDirectory}",
+                    )
+                    "Run ID: ${summary.runId}\n" +
+                        "Decision: ${summary.decision}\n" +
+                        "Status: ${summary.status}\n" +
+                        "Top IDs: ${summary.topIds.joinToString()}\n" +
+                        "Artifacts: ${summary.artifactDirectory}"
+                }
+            }.onSuccess { detail ->
+                views.progress.visibility = ProgressBar.GONE
+                views.status.text = "Finished"
+                views.detail.text = detail
+            }.onFailure { error ->
+                Log.e(TAG, "TurboVec diagnostics failed", error)
+                views.progress.visibility = ProgressBar.GONE
+                views.status.text = "Failed"
+                views.detail.text = error.message ?: error::class.java.name
+            }
+        }
+    }
+
+    private data class DebugDiagnosticsViews(
+        val root: LinearLayout,
+        val progress: ProgressBar,
+        val status: TextView,
+        val detail: TextView,
+    )
+
+    private fun createDebugDiagnosticsView(title: String): DebugDiagnosticsViews {
+        val padding = dp(24)
+        val gap = dp(14)
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(padding, padding, padding, padding)
+            setBackgroundColor(0xFF0B0F14.toInt())
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+        }
+        val titleView = TextView(this).apply {
+            text = title
+            setTextColor(0xFFF2F7F6.toInt())
+            textSize = 24f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val subtitleView = TextView(this).apply {
+            text = "Debug diagnostics"
+            setTextColor(0xFF8EA3A0.toInt())
+            textSize = 14f
+        }
+        val progress = ProgressBar(this).apply {
+            isIndeterminate = true
+        }
+        val status = TextView(this).apply {
+            text = "Starting"
+            setTextColor(0xFF68E0C2.toInt())
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+        }
+        val detail = TextView(this).apply {
+            text = "Preparing diagnostics..."
+            setTextColor(0xFFD7E2E0.toInt())
+            textSize = 14f
+            setLineSpacing(0f, 1.12f)
+        }
+        val closeButton = Button(this).apply {
+            text = "Open ChromaLab"
+            setOnClickListener {
+                startActivity(
+                    Intent(this@MainActivity, MainActivity::class.java)
+                        .setAction(Intent.ACTION_MAIN)
+                        .addCategory(Intent.CATEGORY_LAUNCHER)
+                        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                )
+                finish()
+            }
+        }
+        root.addView(titleView, fullWidthParams())
+        root.addView(subtitleView, fullWidthParams())
+        root.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(28)
+            },
+        )
+        root.addView(status, fullWidthParams(topMargin = gap))
+        root.addView(detail, fullWidthParams(topMargin = gap))
+        root.addView(closeButton, fullWidthParams(topMargin = dp(28)))
+        return DebugDiagnosticsViews(root, progress, status, detail)
+    }
+
+    private fun fullWidthParams(topMargin: Int = 0): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply {
+            this.topMargin = topMargin
+        }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun lockToPortrait() {
         if (requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
