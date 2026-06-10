@@ -24,6 +24,7 @@ import com.chromalab.feature.processing.debug.RustAxisElementCropSmokeDiagnostic
 import com.chromalab.feature.processing.debug.RustAxisElementCropCorpusDiagnostics
 import com.chromalab.feature.processing.debug.RustCvBridgeSmokeDiagnostics
 import com.chromalab.feature.processing.debug.TurboVecAppPrivateSmokeDiagnostics
+import com.chromalab.feature.processing.debug.TurboVecKnowledgeIndexGateDiagnostics
 import com.chromalab.feature.processing.inference.VlmEngineHolder
 import com.chromalab.feature.processing.export.FileSharer
 import com.chromalab.feature.settings.ModelManagerController
@@ -42,6 +43,8 @@ class MainActivity : ComponentActivity() {
             "com.chromalab.app.DEBUG_RUST_AXIS_ELEMENT_CORPUS"
         private const val ACTION_DEBUG_TURBOVEC_APP_PRIVATE =
             "com.chromalab.app.DEBUG_TURBOVEC_APP_PRIVATE"
+        private const val ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE =
+            "com.chromalab.app.DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE"
         private const val ACTION_RUN_VALIDATION_FIXTURE = "com.chromalab.app.RUN_VALIDATION_FIXTURE"
         private const val EXTRA_FIXTURE = "fixture"
         private const val EXTRA_MODEL_MODE = "modelMode"
@@ -58,7 +61,10 @@ class MainActivity : ComponentActivity() {
         AutonomousValidationArtifactExporter.contextProvider = { applicationContext }
         AutonomousValidationArtifactExporter.validationRunIdProvider = { activeValidationRunId }
 
-        if (intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE) {
+        if (
+            intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE ||
+            intent?.action == ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE
+        ) {
             handleDebugIntent(intent)
             return
         }
@@ -155,6 +161,10 @@ class MainActivity : ComponentActivity() {
         }
         if (intent?.action == ACTION_DEBUG_TURBOVEC_APP_PRIVATE) {
             handleTurboVecAppPrivateDebugIntent()
+            return
+        }
+        if (intent?.action == ACTION_DEBUG_TURBOVEC_KNOWLEDGE_INDEX_GATE) {
+            handleTurboVecKnowledgeIndexGateDebugIntent()
             return
         }
         if (intent?.action != ACTION_DEBUG_GGUF_PARITY) return
@@ -329,6 +339,25 @@ class MainActivity : ComponentActivity() {
                 "TurboVec app-private smoke result runId=${summary.runId} " +
                     "decision=${summary.decision} status=${summary.status} " +
                     "topIds=${summary.topIds.joinToString()} " +
+                    "artifacts=${summary.artifactDirectory}",
+            )
+        }
+    }
+
+    private fun handleTurboVecKnowledgeIndexGateDebugIntent() {
+        if (!isDebuggable()) {
+            Log.w(TAG, "Ignoring TurboVec Knowledge index diagnostics intent in non-debug build")
+            return
+        }
+
+        lifecycleScope.launch {
+            val summary = TurboVecKnowledgeIndexGateDiagnostics(applicationContext).run()
+            Log.i(
+                TAG,
+                "TurboVec Knowledge index gate result runId=${summary.runId} " +
+                    "decision=${summary.decision} status=${summary.status} " +
+                    "realIndex=${summary.realIndexGatePassed} " +
+                    "localEmbedding=${summary.localAndroidEmbeddingAvailable} " +
                     "artifacts=${summary.artifactDirectory}",
             )
         }

@@ -1,0 +1,69 @@
+{
+  "phase": "TV-8",
+  "title": "Real Knowledge Index And Local Query Embedding Gate",
+  "status": "TV8_REAL_INDEX_PASSED_LOCAL_EMBEDDING_BLOCKED_RUNTIME_NOT_PROMOTED",
+  "generatedAt": "2026-06-10",
+  "device": {
+    "model": "I2407",
+    "abi": "arm64-v8a",
+    "packageName": "com.chromalab.app.validation"
+  },
+  "run": {
+    "runId": "turbovec_knowledge_gate_1781086551463",
+    "decision": "BLOCKED_LOCAL_QUERY_EMBEDDING_UNAVAILABLE",
+    "ffiContract": "TV8_TURBOVEC_REAL_KNOWLEDGE_INDEX_GATE_V1",
+    "backendId": "TURBOVEC_DENSE_SHADOW",
+    "pathClass": "APP_PRIVATE",
+    "profileKey": "minilm",
+    "modelId": "sentence-transformers/all-MiniLM-L6-v2",
+    "entryCount": 112,
+    "dimension": 384,
+    "bitWidth": 4,
+    "indexBytes": 25938,
+    "loadMs": 0,
+    "queryMs": 2478,
+    "rssBeforeKb": 246752,
+    "rssAfterKb": 254416,
+    "queryEmbeddingRuntime": "PC_SENTENCE_TRANSFORMERS_REFERENCE",
+    "localAndroidEmbeddingAvailable": false,
+    "realIndexGatePassed": true,
+    "queryTimedOut": false,
+    "cleanupResult": "deleted,deleted,deleted",
+    "filesExistAfterCleanup": false,
+    "runtimePromotion": false,
+    "activeRetrievalOwnerUnchanged": true,
+    "cases": [
+      {
+        "queryId": "sn_signal_to_noise",
+        "status": "PASS",
+        "top1Hit": true,
+        "requiredMissing": 0,
+        "forbiddenPresent": 0
+      },
+      {
+        "queryId": "ion71_title_channel",
+        "status": "PASS",
+        "top1Hit": false,
+        "requiredMissing": 0,
+        "forbiddenPresent": 0
+      },
+      {
+        "queryId": "knowledge_cannot_create_metrics",
+        "status": "PASS",
+        "top1Hit": true,
+        "requiredMissing": 0,
+        "forbiddenPresent": 0
+      }
+    ]
+  },
+  "boundaries": {
+    "activeRetrievalOwner": "LexicalKnowledgeRetrievalBackend",
+    "turboVecBackendState": "real index provider gate only",
+    "calculationEngineTouched": false,
+    "chromatogramAnalyzerBehaviorChanged": false,
+    "reportGateBehaviorChanged": false,
+    "cloudEmbeddingUsed": false,
+    "privateImagesEmbedded": false
+  },
+  "nextPhase": "TV-8B - Android Local Embedding Runtime Selection"
+}

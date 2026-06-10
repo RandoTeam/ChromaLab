@@ -39,17 +39,17 @@ Source: [Phase 9J Autonomous Analysis Truth Audit](PHASE9J_AUTONOMOUS_ANALYSIS_T
 Latest gate attempt: [R15A Multi-Panel Android Evidence Gate](R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md).
 
 Latest Knowledge retrieval gate:
-[TV-5 Dense Provider Promotion/Rejection Gate](TV5_DENSE_PROVIDER_PROMOTION_REJECTION_GATE_CLOSEOUT.md).
-TV-5 did not change Android analysis validation. It keeps lexical retrieval as
-the active product owner and defers TurboVec runtime promotion until Android
-native feasibility is proven.
+[TV-8 Real Knowledge Index And Local Query Embedding Gate](TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md).
+TV-8 did not change Android analysis validation. It keeps lexical retrieval as
+the active product owner and defers TurboVec runtime promotion until
+Android-local query embedding is proven.
 
 Latest TurboVec native gate:
-[TV-7 App-Private TurboVec Provider Prototype](TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md).
-TV-7 proved debug-only app-private TurboVec `.tvim` load/query/cleanup behavior
-inside the ChromaLab Android app process on a connected `arm64-v8a` target. It
-did not promote TurboVec into active product retrieval because real Knowledge
-Pack indexing and local query embeddings remain unproven.
+[TV-8 Real Knowledge Index And Local Query Embedding Gate](TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md).
+TV-8 proved debug-only app-private load/query/cleanup for the real Knowledge
+Pack v2 MiniLM TurboVec index on a connected `arm64-v8a` target. It did not
+promote TurboVec into active product retrieval because Android-local query
+embeddings remain unavailable.
 
 ## Report Gates
 
@@ -959,11 +959,11 @@ Interpretation:
 - on-device shell load/query feasibility is positive;
 - TV-7 has since proven debug-only app-private provider load/query/cleanup
   feasibility inside the ChromaLab Android app process;
-- real Knowledge index size, local query embedding, weak-device memory, and
-  citation-policy wiring are not proven;
+- TV-8 has since proven real Knowledge index load/query;
+- local query embedding, weak-device memory, and citation-policy wiring are not
+  proven;
 - lexical retrieval remains the active product owner;
-- the next TurboVec step is TV-8 real Knowledge index and local query embedding
-  gate.
+- the next TurboVec step is TV-8B Android local embedding runtime selection.
 
 ## TV-7 App-Private TurboVec Provider Prototype
 
@@ -990,8 +990,42 @@ Interpretation:
 
 - app-private provider feasibility is positive for a tiny fixture;
 - TurboVec is still not active product retrieval;
-- TV-8 must prove a real Knowledge Pack index and local/offline query embedding
-  path before any promotion candidate can proceed.
+- TV-8 has since proven real Knowledge Pack index load/query, but local/offline
+  Android query embedding remains the promotion blocker.
+
+## TV-8 Real Knowledge Index And Local Query Embedding Gate
+
+TV-8 tested a real Knowledge Pack v2 MiniLM TurboVec index inside the
+ChromaLab Android app process.
+
+Result:
+
+- connected target: `I2407`, ABI `arm64-v8a`;
+- package: `com.chromalab.app.validation`;
+- Rust/JNI contract: `TV8_TURBOVEC_REAL_KNOWLEDGE_INDEX_GATE_V1`;
+- run id: `turbovec_knowledge_gate_1781086551463`;
+- profile: `minilm`;
+- model: `sentence-transformers/all-MiniLM-L6-v2`;
+- entry count: `112`;
+- dimension: `384`;
+- index size: `25,938 bytes`;
+- app-private load/query passed for the real `.tvim` index;
+- query cases `sn_signal_to_noise`, `ion71_title_channel`, and
+  `knowledge_cannot_create_metrics` all returned required entries with no
+  forbidden entries;
+- query vectors were generated on PC as
+  `PC_SENTENCE_TRANSFORMERS_REFERENCE`;
+- local Android embedding runtime is unavailable;
+- cleanup removed the imported index, sidecar, and query-vector manifest;
+- active product retrieval owner remained unchanged.
+
+Interpretation:
+
+- real Knowledge index loading is no longer the blocker;
+- local/offline Android query embedding is the blocker;
+- TurboVec remains debug/provider candidate only;
+- the next Knowledge retrieval step is TV-8B Android local embedding runtime
+  selection, not TV-9 promotion.
 
 ## Current Engineering Blockers
 
@@ -1000,9 +1034,8 @@ Highest-priority blockers:
 1. `bench_01_mz71_screenshot_page`: Y calibration blocked by insufficient usable anchors after OCR/tick pairing.
 2. `bench_05_tic_plus_ions`: TIC+ions layout propagation and Y calibration direction remain blocked.
 3. Multi-panel graph semantics need stronger truth and report propagation.
-4. R15A Android evidence gate still needs fixture reruns; TV-7 repaired the
-   validation APK host shader-generator build environment and confirmed adb
-   device access for a TurboVec smoke probe.
+4. R15A Android evidence gate still needs fixture reruns; TV-8 confirmed adb
+   device access for a real TurboVec Knowledge index gate.
 5. Axis scale and label evidence need ground truth for method comparisons.
 6. Trace and peak evidence need reference metrics before release-quality accuracy can be claimed.
 7. Public documentation still needs later real screenshots only when they show current app output honestly.

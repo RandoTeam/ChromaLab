@@ -179,3 +179,14 @@ persist, load, query, and delete a tiny TurboVec `.tvim` index in app-private
 storage. It still does not promote TurboVec into active product retrieval.
 Bundled/imported real Knowledge indexes, local query embeddings, weak-device
 memory, and citation-policy wiring remain TV-8+ work.
+
+TV-8 real-index gate is documented in
+`docs/TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md`.
+
+TV-8 proves that the real Knowledge Pack v2 MiniLM TurboVec index can be
+imported into app-private storage, loaded, queried, mapped back to valid
+Knowledge entries, and deleted on Android. It still does not promote TurboVec
+because the query vectors were generated on PC with
+`sentence-transformers/all-MiniLM-L6-v2`; the app does not yet have an
+Android-local MiniLM/ONNX/TFLite embedding runtime. The next Knowledge slice is
+TV-8B Android local embedding runtime selection, not TV-9 promotion.

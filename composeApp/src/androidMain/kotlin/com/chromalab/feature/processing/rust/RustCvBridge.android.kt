@@ -31,6 +31,23 @@ object RustCvBridge {
         return nativeTurboVecAppPrivateProbeJson(appPrivateRoot, cleanup)
     }
 
+    fun turboVecKnowledgeIndexGateJson(
+        appPrivateRoot: String,
+        indexRelativePath: String,
+        sidecarRelativePath: String,
+        queryVectorsRelativePath: String,
+        cleanup: Boolean,
+    ): String {
+        loadResult.getOrThrow()
+        return nativeTurboVecKnowledgeIndexGateJson(
+            appPrivateRoot,
+            indexRelativePath,
+            sidecarRelativePath,
+            queryVectorsRelativePath,
+            cleanup,
+        )
+    }
+
     fun loadError(): Throwable? = loadResult.exceptionOrNull()
 
     private external fun nativeProbeJson(): String
@@ -43,6 +60,14 @@ object RustCvBridge {
 
     private external fun nativeTurboVecAppPrivateProbeJson(
         appPrivateRoot: String,
+        cleanup: Boolean,
+    ): String
+
+    private external fun nativeTurboVecKnowledgeIndexGateJson(
+        appPrivateRoot: String,
+        indexRelativePath: String,
+        sidecarRelativePath: String,
+        queryVectorsRelativePath: String,
         cleanup: Boolean,
     ): String
 }

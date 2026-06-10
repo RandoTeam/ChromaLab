@@ -1,7 +1,7 @@
-# TV-2 Knowledge Retrieval Tools
+# TurboVec Knowledge Retrieval Tools
 
-This folder contains PC-only tooling for the TurboVec Knowledge retrieval
-prototype. It is not Android runtime code.
+This folder contains PC-side tooling for the TurboVec Knowledge retrieval
+prototype and Android gate inputs. It is not active product retrieval code.
 
 ## Boundary
 
@@ -9,6 +9,8 @@ prototype. It is not Android runtime code.
 - Builds local dense indexes for curated Knowledge entries only.
 - Writes large generated artifacts under ignored `artifacts/tv2-turbovec-knowledge/`.
 - Writes compact benchmark summaries under `benchmark/reports/tv2_turbovec_knowledge/`.
+- Writes TV-8 Android gate query-vector manifests under ignored
+  `artifacts/tv8-turbovec-knowledge-index-gate/`.
 - Does not change graph detection, calibration, trace extraction, peak metrics,
   report gates, `CalculationEngine`, or Android runtime dependencies.
 
@@ -43,3 +45,17 @@ The benchmark compares lexical retrieval with TurboVec indexes for:
 
 Both models remain PC-only candidates until the benchmark and later Android
 packaging gates pass.
+
+## Build TV-8 Android gate query vectors
+
+TV-8 uses real Knowledge Pack MiniLM query vectors to test Android TurboVec
+index load/query. These vectors are PC-generated references, not Android-local
+embedding proof.
+
+```powershell
+artifacts\tv2-turbovec-knowledge\.venv\Scripts\python.exe tools\knowledge-retrieval\build_tv8_android_query_vectors.py `
+  --pack docs\knowledge\chromalab_knowledge_seed_v2.json `
+  --sidecar artifacts\tv2-turbovec-knowledge\minilm\chromalab_knowledge_v2_minilm_sidecar.json `
+  --out artifacts\tv8-turbovec-knowledge-index-gate\chromalab_knowledge_v2_minilm_queries.json `
+  --profile minilm
+```

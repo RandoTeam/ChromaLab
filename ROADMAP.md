@@ -94,11 +94,17 @@ Current priorities:
    - TV-7 proved debug-only app-private TurboVec provider load/query/cleanup
      inside the ChromaLab Android app process, while keeping lexical as the
      active product retrieval owner;
+   - TV-8 proved that the real Knowledge Pack v2 MiniLM TurboVec index can be
+     imported into app-private storage, loaded, queried, mapped back to valid
+     Knowledge entries, and cleaned up on Android;
+   - TV-8 blocked runtime promotion because query vectors were still generated
+     by PC `sentence-transformers`; the app has no Android-local MiniLM
+     embedding runtime yet;
    - dense-only MiniLM/BGE remain rejected as promotion targets;
-   - next Knowledge retrieval step: TV-8 real Knowledge index and local query
-     embedding gate;
-   - do not promote TurboVec to active Android retrieval until real index,
-     local embedding, citation-safety, memory, and latency gates pass.
+   - next Knowledge retrieval step: TV-8B Android local embedding runtime
+     selection;
+   - do not promote TurboVec to active Android retrieval until local embedding,
+     citation-safety, memory, and latency gates pass.
 
 ## Historical Alpha Track
 

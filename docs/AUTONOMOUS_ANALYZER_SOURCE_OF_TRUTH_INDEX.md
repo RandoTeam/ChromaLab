@@ -106,6 +106,7 @@ current behavior.
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md` | Android Rust target compile feasibility for TurboVec and remaining on-device load/query blocker. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md` | On-device Android shell load/query proof for TurboVec `.tvim` indexes and remaining app-private runtime provider blocker. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md` | Debug-only Android app-private TurboVec provider load/query/cleanup proof and remaining real Knowledge index/local embedding blocker. |
+| `ACTIVE_SOURCE_OF_TRUTH` | `docs/TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md` | Real Knowledge Pack v2 MiniLM TurboVec Android app-private load/query proof and remaining local embedding blocker. |
 | `ACTIVE_SOURCE_OF_TRUTH` | `docs/AUTONOMOUS_ANALYZER_LAYER_REPLACEMENT_ROADMAP.md` | Current plan superseding additive TurboVec-only integration. |
 
 ## Current Rust / Benchmark Sources
@@ -170,10 +171,12 @@ current behavior.
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv6_android_native_feasibility/` | TV-6 compact Android native compile-feasibility summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv6b_turbovec_android_load_query/` | TV-6B compact on-device TurboVec shell load/query summary. |
 | `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv7_turbovec_app_private_provider/` | TV-7 compact app-private TurboVec provider smoke summary. |
+| `SOURCE_CONTROLLED_GENERATED_OUTPUT` | `benchmark/reports/tv8_real_knowledge_index_embedding_gate/` | TV-8 compact real Knowledge index and local embedding gate summary. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv2-turbovec-knowledge/` | TV-2 local venv, downloaded models, TurboVec `.tvim` indexes, sidecars, build manifests, and ignored heavy artifacts. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv6-turbovec-android-feasibility/` | TV-6 local TurboVec Android compile probe crate, logs, cargo tree, and target build output. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv6b-turbovec-android-load-query/` | TV-6B local Android shell probe crate, build logs, device logs, and ignored native artifacts. |
 | `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv7-turbovec-app-private/` | TV-7 local pulled Android app-private provider smoke logs and JSON/Markdown artifacts. |
+| `GENERATED_IGNORED_ARTIFACT_REFERENCE` | `artifacts/tv8-turbovec-knowledge-index-gate/` | TV-8 local MiniLM query-vector manifest and pulled Android real-index gate artifacts. |
 
 ## Active Code Owner Areas
 
@@ -296,11 +299,13 @@ owner. TV-5 is complete and deferred runtime dense-provider promotion. TV-6 is
 complete as compile feasibility and proved TurboVec `0.8.1` checks for Android
 Rust targets. TV-6B is complete as an on-device shell load/query probe on an
 `arm64-v8a` Android target. TV-7 is complete as a debug-only app-private
-provider smoke proof. The active Knowledge retrieval owner remains
+provider smoke proof. TV-8 is complete as a real Knowledge Pack MiniLM index
+load/query gate and blocks runtime promotion because Android-local query
+embedding is unavailable. The active Knowledge retrieval owner remains
 `LexicalKnowledgeRetrievalBackend`. The next Knowledge retrieval phase is:
 
 ```text
-TV-8 - Real Knowledge Index And Local Query Embedding Gate
+TV-8B - Android Local Embedding Runtime Selection
 ```
 
 This does not change Android analyzer phase order. TurboVec remains Knowledge

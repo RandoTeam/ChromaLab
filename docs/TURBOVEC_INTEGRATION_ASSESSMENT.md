@@ -240,6 +240,18 @@ promotion because real Knowledge Pack indexing, local query embeddings,
 weak-device memory, and citation-policy wiring remain unproven. The next step is
 `TV-8 - Real Knowledge Index And Local Query Embedding Gate`.
 
+TV-8 closeout:
+`docs/TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md`.
+
+TV-8 proved debug-only app-private load/query/cleanup for the real Knowledge
+Pack v2 MiniLM TurboVec index. The validation package imported the 112-entry,
+384-dimensional, 25,938-byte `.tvim` index, mapped results back to valid
+Knowledge entries, and passed three safety-oriented query cases. Runtime
+promotion remains blocked because the query vectors were generated on PC with
+`sentence-transformers`; ChromaLab does not yet have an Android-local MiniLM,
+ONNX, or TFLite embedding path. The next step is `TV-8B - Android Local
+Embedding Runtime Selection`, not TV-9 promotion.
+
 ## What Not To Do
 
 - Do not use TurboVec for graph detection.
@@ -272,10 +284,11 @@ can be built and benchmarked for Knowledge Pack v2. TV-3 selected
 `HYBRID_UNION_RRF` as the next benchmark target. TV-4 added a Kotlin-side
 hybrid policy candidate. TV-5 deferred runtime promotion. TV-6 proved native
 compile feasibility. TV-6B proved on-device shell load/query behavior. TV-7
-proved debug-only app-private provider load/query/cleanup. Do not integrate
+proved debug-only app-private provider load/query/cleanup. TV-8 proved real
+Knowledge Pack MiniLM index load/query/cleanup and blocked promotion on missing
+Android-local query embeddings. Do not integrate
 TurboVec into Android product retrieval or chromatogram analysis calculations
-until TV-8 real Knowledge indexing, local embeddings, and later citation gates
-pass.
+until local embeddings and later citation gates pass.
 
 ## Deep Audit Follow-Up
 

@@ -104,6 +104,7 @@ These documents explain how models are used without becoming numeric authority.
 | [TV-6 Android Native Feasibility Spike Closeout](TV6_ANDROID_NATIVE_FEASIBILITY_SPIKE_CLOSEOUT.md) | Android Rust target compile feasibility for TurboVec and next on-device load/query gate. |
 | [TV-6B On-Device TurboVec Load And Query Probe Closeout](TV6B_ON_DEVICE_TURBOVEC_LOAD_QUERY_PROBE_CLOSEOUT.md) | Android shell load/query proof for TurboVec `.tvim` indexes and next app-private provider gate. |
 | [TV-7 App-Private TurboVec Provider Prototype Closeout](TV7_APP_PRIVATE_TURBOVEC_PROVIDER_PROTOTYPE_CLOSEOUT.md) | Debug-only Android app-private TurboVec load/query/cleanup proof and next real Knowledge index gate. |
+| [TV-8 Real Knowledge Index And Local Query Embedding Gate Closeout](TV8_REAL_KNOWLEDGE_INDEX_AND_LOCAL_EMBEDDING_GATE_CLOSEOUT.md) | Real Knowledge Pack MiniLM TurboVec Android load/query proof and local embedding blocker. |
 
 ## Rust CV And Deep Research
 
