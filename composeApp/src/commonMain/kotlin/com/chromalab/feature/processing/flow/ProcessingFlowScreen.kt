@@ -253,6 +253,47 @@ fun ProcessingFlowScreen(
         }
     }
 
+    val exportNoUsableSignalsFailure = { timedStep: ProcessingStep ->
+        runCatching {
+            val failureClass = RuntimeFailureClass.REPORT_GATE_FAILURE
+            val failureMessage = "No usable signal graphs were produced for report export."
+            val now = System.currentTimeMillis()
+            val failureTimings = stageDurationMillis.toMap().toMutableMap().apply {
+                this[timedStep] = (this[timedStep] ?: 0L) + 0L
+            }.toReportStageTimings()
+
+            AutonomousValidationTerminalFailureExporter.exportFailureArtifacts(
+                sourceImagePath = imagePath,
+                sourceType = sourceType,
+                failureClass = failureClass,
+                stageId = timedStep.name,
+                failureMessage = failureMessage,
+                analysisStartedAtEpochMillis = flowStartedAt,
+                analysisCompletedAtEpochMillis = now,
+                stageTimings = failureTimings,
+                deviceName = currentReportDeviceName(),
+                modelAvailabilityDiagnostics = modelAvailabilityDiagnostics,
+                graphFailurePackages = buildRuntimeGraphFailurePackages(
+                    failureClass = failureClass,
+                    failureStage = timedStep.name,
+                    failureReason = failureMessage,
+                    imagePath = imagePath,
+                    normalizedImagePath = currentImagePath,
+                    currentGraphIndex = currentGraphIndex,
+                    selectedRegion = selectedRegion,
+                    graphResult = graphResult,
+                    geometryResult = geometryResult,
+                    ocrResult = ocrResult,
+                    xCalibration = xCalibration,
+                    yCalibration = yCalibration,
+                    stageTimings = failureTimings,
+                ),
+            )
+        }.onFailure { exportError ->
+            println("PIPELINE[VALIDATION_FAILURE_EVIDENCE] no_usable_graphs_export_failed=${exportError.message}")
+        }
+    }
+
     // When signal is saved, navigate to analysis
     LaunchedEffect(savedSignalId) {
         savedSignalId?.let { onFinish(it) }
@@ -807,6 +848,7 @@ fun ProcessingFlowScreen(
                             try {
                                 if (graphsToSave.isEmpty()) {
                                     println("PIPELINE[AUTO-SAVE] No usable signals to save")
+                                    exportNoUsableSignalsFailure(ProcessingStep.QUALITY_REPORT)
                                     return@withContext null
                                 }
 
@@ -976,9 +1018,10 @@ fun ProcessingFlowScreen(
                     val reportDeviceName = currentReportDeviceName()
                     val resultId = withContext(Dispatchers.IO) {
                         val now = System.currentTimeMillis()
-                        try {
+                            try {
                             if (graphsToSave.isEmpty()) {
                                 println("PIPELINE[AUTO-SAVE] No usable signals to save")
+                                exportNoUsableSignalsFailure(ProcessingStep.QUALITY_REPORT)
                                 return@withContext null
                             }
 

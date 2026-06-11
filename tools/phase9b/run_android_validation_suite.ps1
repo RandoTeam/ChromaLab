@@ -4,6 +4,7 @@ param(
     [string]$SuiteId = "phase9b_all",
     [string]$OutputRoot = "artifacts/phase9b-multi-fixture-android",
     [string]$SummaryPrefix = "phase9b",
+    [switch]$SkipModelCheck,
     [string[]]$Fixtures = @(
         "white_tiger_ion71",
         "bench_01_mz71_screenshot_page",
@@ -20,17 +21,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Trim-OrEmpty {
+    param([object]$Value)
+    if ($null -eq $Value) { return "" }
+    return "$Value".Trim()
+}
+
+function Get-AdbDeviceArgs {
+    if ($global:AdbDevice) {
+        return @("-s", $global:AdbDevice)
+    }
+    return @()
+}
+
 function Invoke-Adb {
-    & adb @args
+    param([string[]]$AdbArgs)
+    if ($global:AdbDevice) {
+        & adb -s $global:AdbDevice @AdbArgs
+    } else {
+        & adb @AdbArgs
+    }
     if ($LASTEXITCODE -ne 0) {
-        throw "adb $($args -join ' ') failed with exit code $LASTEXITCODE"
+        throw "adb $($AdbArgs -join ' ') failed with exit code $LASTEXITCODE"
     }
 }
 
 function Find-RunDirectory {
     param([string]$FixtureId)
-    $value = (& adb shell "ls -dt /sdcard/Download/ChromaLab/validation/${FixtureId}_* 2>/dev/null | head -n 1") -join "`n"
-    return $value.Trim()
+    $deviceArgs = Get-AdbDeviceArgs
+    $value = (& adb @deviceArgs shell "ls -dt /sdcard/Download/ChromaLab/validation/${FixtureId}_* 2>/dev/null | head -n 1") -join "`n"
+    return (Trim-OrEmpty $value)
 }
 
 function Wait-RunManifest {
@@ -39,9 +59,10 @@ function Wait-RunManifest {
     do {
         Start-Sleep -Seconds 5
         $dir = Find-RunDirectory -FixtureId $FixtureId
-        if ($dir -and $dir -ne $PreviousRunDirectory) {
-            $manifest = (& adb shell "ls $dir/artifact_manifest_*.json 2>/dev/null | head -n 1") -join "`n"
-            if ($manifest.Trim()) {
+        if (-not [string]::IsNullOrWhiteSpace($dir) -and $dir -ne $PreviousRunDirectory) {
+            $deviceArgs = Get-AdbDeviceArgs
+            $manifest = (& adb @deviceArgs shell "ls $dir/artifact_manifest_*.json 2>/dev/null | head -n 1") -join "`n"
+            if (-not [string]::IsNullOrWhiteSpace((Trim-OrEmpty $manifest))) {
                 return $dir
             }
         }
@@ -52,7 +73,11 @@ function Wait-RunManifest {
 function Read-JsonFileOrNull {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
-    return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+    try {
+        return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+    } catch {
+        return $null
+    }
 }
 
 function Read-FixtureMetadataOrNull {
@@ -171,10 +196,20 @@ $deviceLines = (& adb devices) -join "`n"
 if ($deviceLines -notmatch "`tdevice") {
     throw "No attached Android device found."
 }
+$defaultDevice = (& adb devices | Select-String -Pattern "	device$" | Select-Object -First 1).ToString().Split("`t")[0]
+if ([string]::IsNullOrWhiteSpace($defaultDevice)) {
+    throw "Could not resolve active adb device id."
+}
+$global:AdbDevice = $defaultDevice
 
-$modelCheck = (& adb shell run-as $Package ls -l files/models/gemma4-e2b 2>&1) -join "`n"
-if ($modelCheck -notmatch "gemma-4-E2B-it\.litertlm") {
-    throw "E2B model precheck failed for $Package. Output: $modelCheck"
+if (-not $SkipModelCheck) {
+    $modelCheck = (& adb @((Get-AdbDeviceArgs) + @("shell", "run-as $Package ls -l files/models/gemma4-e2b 2>&1"))) -join "`n"
+    if ($modelCheck -notmatch "gemma-4-E2B-it\.litertlm") {
+        throw "E2B model precheck failed for $Package. Output: $modelCheck"
+    }
+    Write-Host "[INFO] E2B model precheck passed for $Package."
+} else {
+    Write-Host "[INFO] E2B model precheck skipped (SkipModelCheck=true)."
 }
 
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
@@ -183,31 +218,48 @@ $summary = @()
 foreach ($fixture in $Fixtures) {
     foreach ($mode in $Modes) {
         try {
-            Invoke-Adb shell logcat -c
+            Invoke-Adb -AdbArgs @("shell", "logcat", "-c")
             $previousRunDirectory = Find-RunDirectory -FixtureId $fixture
-            Invoke-Adb shell am start -S -n "$Package/$Activity" -a "com.chromalab.app.RUN_VALIDATION_FIXTURE" --es fixture $fixture --es modelMode $mode | Out-Null
+            Write-Host "[INFO] Starting fixture=$fixture mode=$mode (previousDir=$previousRunDirectory)"
+            Invoke-Adb -AdbArgs @(
+                "shell",
+                "am",
+                "start",
+                "-S",
+                "-n",
+                "$Package/$Activity",
+                "-a",
+                "com.chromalab.app.RUN_VALIDATION_FIXTURE",
+                "--es",
+                "fixture",
+                $fixture,
+                "--es",
+                "modelMode",
+                $mode
+            ) | Out-Null
+            Start-Sleep -Seconds 2
             $deviceRunDir = Wait-RunManifest -FixtureId $fixture -TimeoutSeconds $TimeoutSeconds -PreviousRunDirectory $previousRunDirectory
             $runId = Split-Path -Leaf $deviceRunDir
             $localModeDir = Join-Path (Join-Path $OutputRoot $fixture) $mode
             New-Item -ItemType Directory -Force -Path $localModeDir | Out-Null
-            Invoke-Adb pull $deviceRunDir $localModeDir | Out-Null
+            Invoke-Adb -AdbArgs @("pull", $deviceRunDir, $localModeDir) | Out-Null
             $localRunDir = Join-Path $localModeDir $runId
             if (-not (Test-Path -LiteralPath $localRunDir)) {
                 throw "Pulled artifact directory was not created: $localRunDir"
             }
             try {
-                & adb exec-out screencap -p | Set-Content -Encoding Byte -LiteralPath (Join-Path $localRunDir "final_screen.png")
+                & adb -s $global:AdbDevice exec-out screencap -p | Set-Content -Encoding Byte -LiteralPath (Join-Path $localRunDir "final_screen.png")
             } catch {
                 $_.Exception.Message | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $localRunDir "final_screen_missing_reason.txt")
             }
-            & adb logcat -d -t 800 > (Join-Path $localRunDir "logcat_excerpt.txt")
+            & adb -s $global:AdbDevice logcat -d -t 800 > (Join-Path $localRunDir "logcat_excerpt.txt")
             $summary += Summarize-Run -FixtureId $fixture -Mode $mode -RunId $runId -LocalRunDir $localRunDir
         } catch {
             $runId = "${fixture}_$mode`_failed"
             $localRunDir = Join-Path (Join-Path (Join-Path $OutputRoot $fixture) $mode) $runId
             New-Item -ItemType Directory -Force -Path $localRunDir | Out-Null
-            $_.Exception.Message | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $localRunDir "runner_failure.txt")
-            & adb logcat -d -t 800 > (Join-Path $localRunDir "logcat_excerpt.txt")
+            $_.Exception | Out-String | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $localRunDir "runner_failure.txt")
+            & adb -s $global:AdbDevice logcat -d -t 800 > (Join-Path $localRunDir "logcat_excerpt.txt")
             $summary += [pscustomobject]@{
                 fixtureId = $fixture
                 mode = $mode
