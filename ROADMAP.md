@@ -41,9 +41,9 @@ Current priorities:
      selected/rejected strategy evidence; R15 added per-graph runtime geometry
      results, resolved physical-panel iteration, and explicit unsupported
      aggregate multi-panel report warnings. R15A attempted the Android evidence
-     gate but produced no fixture truth because no adb target was connected and
-     the fresh validation APK build failed in the native host shader-generator
-     toolchain step. The next slice is an R15A retry; trace extraction evidence
+     gate but produced no fixture truth because no adb target was connected.
+     The 2026-06-14 retry built the validation APK successfully, so the next
+     slice is an R15A retry once adb sees a device; trace extraction evidence
      starts only after Android reruns prove multi-panel propagation is stable.
 
 3. **E2B baseline validation**

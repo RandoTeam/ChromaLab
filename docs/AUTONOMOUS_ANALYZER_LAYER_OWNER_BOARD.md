@@ -22,7 +22,7 @@ targets. It does not change runtime behavior.
 | 0 Input/provenance | `feature/capture`, `processing/pipeline`, `feature/validation/AutonomousValidationFixtureContracts.kt`, Android `FileImportBridge`, validation runner/exporter | `AutonomousValidationFixtureAssetTest`, `AutonomousValidationFixtureContractTest`; Android assets under `composeApp/src/androidMain/assets/validation/` | `ACTIVE_IMPLEMENTATION`; provenance exists but source-of-truth is spread across capture, validation, and runtime evidence. | Consolidate input provenance contract before changing image preparation. |
 | 1 Image preparation | `processing/normalize`, `processing/preprocess`, `processing/quality`, `processing/document`, `processing/perspective`; Android adapters for ML Kit scanner, normalizer, preprocessor, warper | `QualityCalculatorTest`; indirect coverage through bench/Android fixtures | `ACTIVE_IMPLEMENTATION`; likely heavy and variant-rich, not yet a clean Rust owner. | Replace with Rust/Kotlin contract after parity inventory; keep old path only as shadow during comparison. |
 | 2 Graph discovery | `processing/graph`, `processing/geometry/ScreenshotEmbeddedChartDetector.kt`, `GraphMultiplicityResolver.kt`, `AutoSweepEngine.kt` | `AutoSweepGraphSelectionTest`, `GraphRegionOrderingTest`, `GraphMultiplicityResolverTest`, Android fixture suite | `ACTIVE_IMPLEMENTATION`; still a product blocker for multi-panel and 0-graph cases. | High-priority replacement target after R0: graph candidate generation and multiplicity resolution. |
-| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GraphMultiplicityResolver.kt`, `GeometryPipelineRunner.kt`, `ProcessingFlowScreen.kt` | `GraphLayoutClassifierTest`, `GraphMultiplicityResolverTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; R15 preserves resolved physical graph panels and graph results through runtime processing. R15A did not produce Android proof because no adb target was connected and the fresh validation APK build failed in the native host shader-generator step. | Retry R15A after device/toolchain readiness before starting R16; do not use raw pseudo-panel lists as physical graph count. |
+| 3 PlotArea/layout semantics | `GraphPlotAreaDetector.kt`, `GraphLayoutClassifier.kt`, `GraphMultiplicityResolver.kt`, `GeometryPipelineRunner.kt`, `ProcessingFlowScreen.kt` | `GraphLayoutClassifierTest`, `GraphMultiplicityResolverTest`, `GeometryPipelineMultiplicityTest`, Phase 9J truth docs | `ACTIVE_IMPLEMENTATION`; R15 preserves resolved physical graph panels and graph results through runtime processing. R15A did not produce Android proof because no adb target was connected. The 2026-06-14 retry built the validation APK successfully. | Retry R15A after adb device readiness before starting R16; do not use raw pseudo-panel lists as physical graph count. |
 | 4 Axis/grid/OCR labels | `AxisDetector`, `AxisTickGeometryDetector`, `TickLocalizationPipeline`, `TickOcrCropRegions`, `TickOcrMatcher`, `AxisOcrReader` | `TickLocalizationPipelineTest`, `TickOcrMatcherTest`, `TickOcrCropRegionsTest`, `ChartPromptsAxisTickTest` | `ACTIVE_IMPLEMENTATION`; tick/label evidence remains brittle for bench_01 and related classes. | Replace only after graph/plotArea ownership is stable; do not let OCR create geometry. |
 | 5 Calibration | `processing/calibration`, `AxisCalibrationFitter`, `AxisScaleResolver`, `CalibrationStrategyEnsemble` | `AxisCalibrationFitterTest`, `AxisScaleResolverTest`, `CalibrationStrategyEnsembleTest`, White Tiger regression shield docs, R11 shadow calibration closure records | `ACTIVE_IMPLEMENTATION`; R14 adds `ANDROID_RUNTIME_OCR_ANCHOR` as a named strategy candidate while preserving legacy fallback and AxisScaleResolver. | Preserve ensemble; improve only with residual/anchor evidence and no `CalculationEngine` changes. |
 | 6 Trace extraction | `processing/curve`, `FragmentedTraceReconstruction`, `SkeletonGraphTrunkPath`, `processing/signal` | `CurveMaskPreparerPlotAreaTest`, guided trace tests, bench fixtures | `ACTIVE_IMPLEMENTATION`; sparse/dense/stacked trace evidence is active but depends on upstream geometry. | Replace with Rust trace mask/centerline only after Stage 2-5 contracts are stable. |
@@ -268,9 +268,10 @@ R15A is documented in:
 - `docs/R15A_MULTI_PANEL_ANDROID_EVIDENCE_GATE.md`.
 
 R15A attempted the Android evidence gate for R15 but produced no new fixture
-truth because no adb target was connected and the fresh validation APK build
-failed in the native host shader-generator toolchain step. The next executable
-action is an R15A retry after device/toolchain readiness.
+truth because no adb target was connected. The 2026-06-14 retry built the
+validation APK successfully, so the previous native host shader-generator
+toolchain blocker is no longer active on this machine. The next executable
+action is an R15A retry after adb device readiness.
 
 ## Next Broad Phase
 
@@ -280,7 +281,7 @@ Recommended:
 R15A - Multi-Panel Android Evidence Gate Retry
 ```
 
-Retry R15A once adb and the validation APK native host toolchain are ready.
+Retry R15A once adb sees a connected Android target.
 Run R16 only if Android reruns prove R15 multi-panel report/evidence propagation
 is complete. If the rerun exposes continued one-section report aggregation,
 close that blocker as R15B before R16.

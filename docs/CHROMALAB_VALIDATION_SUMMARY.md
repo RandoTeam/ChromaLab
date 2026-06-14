@@ -11,8 +11,10 @@ Current state:
 - Phase 9 is not accepted as production autonomous validation.
 - Phase 10 must not be presented as started or approved by validation evidence.
 - R15A multi-panel Android evidence gate has not produced new Android fixture
-  evidence yet because no adb target was connected and the fresh validation APK
-  build failed in the native llama/Vulkan shader-generator host toolchain step.
+  evidence yet because adb currently sees no connected target. The 2026-06-14
+  retry did build the validation APK successfully, so the previous native
+  llama/Vulkan shader-generator host toolchain blocker is no longer active on
+  this machine.
 - The Android validation suite has real artifact coverage across 8 fixtures and 2 modes.
 - No fixture is currently `RELEASE_READY`.
 - Most successful-looking outputs are `REVIEW_ONLY`, not final scientific proof.
@@ -764,10 +766,17 @@ The current validation does not prove:
 ## R15A Multi-Panel Android Evidence Gate
 
 R15A attempted to verify R15 on Android for `bench_04`, `bench_05`,
-`bench_06`, and regression witnesses. The gate did not produce new Android
-artifacts because adb reported no connected device or emulator. A fresh
+`bench_06`, and regression witnesses. The original gate did not produce new
+Android artifacts because adb reported no connected device or emulator. A fresh
 validation APK build also failed in the native llama/Vulkan shader-generator
 host build because the Windows host linker libraries were unavailable.
+
+The 2026-06-14 retry changed the environment diagnosis:
+
+- `.\gradlew.bat :androidApp:assembleValidation` passed.
+- `androidApp/build/outputs/apk/validation/androidApp-validation.apk` was
+  produced.
+- `adb devices` still listed no connected device or emulator.
 
 Interpretation:
 
@@ -775,8 +784,8 @@ Interpretation:
 - R15A did not prove an E2B regression or no-regression result.
 - The current product truth remains Phase 9J/R12 plus R15 implementation
   status.
-- The next executable action is an R15A retry after device and toolchain
-  readiness, not R16.
+- The next executable action is an R15A retry after adb device readiness, not
+  R16.
 
 ## TV-0/TV-1 TurboVec Knowledge Replacement Foundation
 
